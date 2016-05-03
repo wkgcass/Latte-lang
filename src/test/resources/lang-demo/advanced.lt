@@ -1,0 +1,74 @@
+; advanced features in LessTyping
+; ============
+; inner method
+; ============
+class TestInnerMethod
+    outer()
+        inner()  ; a method defined inside another is `inner method`
+            <1
+        <inner() ; invoke inner method
+; inner methods are private and can only be accessed in the current scope
+; the inner method generates a new private method inside the class,
+; the method name is automatically generated and there's rare chance you would
+; invoke the generated method directly instead of invoking by inner method name
+
+; the inner method have several limitations
+; 1. parameters of inner methods don't have default values
+; 2. inner methods don't have annotations and modifiers
+; 3. inner method cannot be overwritten
+
+; Note That, the inner method can catch local variables,
+; and can change their values `inside` the inner method,
+; but it won't have effect on the outer method variables
+
+; =========
+; procedure
+; =========
+class TestProcedure
+    method()
+        <(<1) ; the procedure is surrounded by (),
+              ; and there should be at least one statement
+              ; or more than one expression in the procedure
+; the procedure allow you to write code anywhere
+; e.g.
+; in java, you use boolValue?exp1:exp2, in LessTyping, you can use
+; (   if boolValue
+;         <exp1
+;     else
+;         <exp2)
+; the procedure itself is considered as a Value
+; so it can be filled into any position that requires a value
+
+; the procedure is based on inner method
+; it simply creates an inner method with no parameters and invokes it
+
+; ======
+; lambda
+; ======
+; java supports lambda for FunctionalInterface
+; LessTyping not only supports that, but also supports `FunctionalAbstractClass`
+; a FunctionalAbstractClass means An abstract class with only one unimplemented
+; method and it has an accessible constructor with no parameters
+; e.g.
+abs class Func
+    abs apply(o)=...
+; Func is a FunctionalAbstractClass
+; (o)->... creates a subclass
+; and overrides `apply(o)`
+
+; here's how to use
+class TestLambda
+    pub func1:Func=(o)->o+1 ; creates an instance of Func and it adds o with 1
+    pub func2:java::util::function::Function=(o)->o+1 ; uses jdk LambdaMetaFactory
+    pub func3=(o)->o+1      ; lt::lang::function::Function1
+    ; the type of the lambda is lt::lang::function::Function1
+    ; there are 27 functions from Function0 to Function26
+    ; taking parameters whose sizes range from 0 to 26
+    pub list=[1,2,3]
+    list=list.stream().map(
+        ((v)->v.toString()) as java::util::function::Function
+    ).collect(java::util::stream::Collectors.toList())
+; lambda is based on inner method
+; it creates an inner method and retreive MethodHandle of the method
+; and uses LambdaMetaFactory or create a subclass,
+; at runtime, it basically invokes the generated method

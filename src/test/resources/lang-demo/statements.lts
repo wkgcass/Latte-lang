@@ -1,0 +1,153 @@
+; LessTyping have the following statements
+
+; 1.flow control
+
+; ===
+; for
+; ===
+; for <variable> in <iterator/iterable/array/enumeration>
+arr=[1,2,3]
+res0=0
+for i in arr
+    res0 += i
+
+; =====
+; while
+; =====
+; while <expression>
+res1=0
+index=0
+while index<arr.size()
+    res1 += arr[index++]
+
+; 2.logic branch
+; ==
+; if
+; ==
+; if <expression>
+;     ...
+; elseif <expression>
+;     ...
+; else
+;     ...
+method_if_elseif_else(a,b)
+    if a
+        <1
+    elseif b
+        <2
+    else
+        <3
+
+; 3.exceptions
+; =================
+; try-catch-finally
+; =================
+; try
+;     ...
+; catch <exVar>
+;     <ExceptionType> [, ...]
+;         ...
+;     ...
+; finally
+;     ...
+method_try_catch_finally(func)
+    a=0
+    try
+        func.apply()
+        a=1
+    catch e
+        RuntimeException
+            a=2
+        Error, Exception
+            a=3
+        Throwable
+            a=4
+    finally
+        ++a
+    <a
+
+; =====
+; throw
+; =====
+res2=0
+try
+    throw RuntimeException()
+catch e
+    RuntimeException
+        res2=1
+
+; 4.synchronized
+; sync(a,b,c)
+;     ...
+
+; 5.basic grammar
+; ===================
+; variable definition
+; ===================
+variable1 = 1            ; type is java.lang.Object, and initialize with 1
+variable2 : int = 1      ; type is int, and initialize with 1
+variable3 : int          ; type is int, with no initialize expression
+; only in class constructing block, the variable can have no init expression
+; in method block, variables are parsed as local variable
+; it cannnot be uninitialized
+
+; =================
+; method invocation
+; =================
+res3=method_if_elseif_else(true,false)
+
+; ==================
+; invoke constructor
+; ==================
+res4 = Object()
+
+; ========================
+; operator-like invocation
+; ========================
+; a op b
+; a op
+list1=java::util::ArrayList()
+list1 add 1
+; same as list.add(1)
+
+list2=java::util::ArrayList()
+list2 add 1
+list2 clear
+; same as list.clear()
+
+; note that the operation priority is like this:
+;
+; a op b op c op d op
+; ==>
+; it will be parsed into
+; a.op(b).op(c).op(d).op()
+;
+; so the priority should be:
+; (((a op b) op c) op d) op
+;
+; and all "operator like invocation" priorities are the same, and are lower than any two variable operator's
+
+; =========
+; get field
+; =========
+res5 = this.list1  ; get this.list
+; if field not found, the method invokes lt::lang::Lang.getField(o,fieldname,callerClass) to get field
+; first it checks all fields
+; if still not found, it tries to invoke get(String) on the object
+
+; ============
+; index access
+; ============
+list3=[1,2,3]
+res6 = list3[0]    ; get element in an array or invoke get(?) on the object
+; arr[?] ==> arr.get(?)
+; inside [] can contain 0, 1 or more arguments
+
+list3[0]=2  ; set the element value to 2 (for array, set the element value, otherwise invoke set(?1,?2) or put(?1,?2))
+; arr[?1]=?2 ==> arr.set(?1,?2)
+; ?2 can only be one expression, ?1 can be 0, 1 or more expressions
+; if set(?) method not found, the runtime would try to invoke put(?)
+
+; e.g.
+map={}
+map["a"]="b"
