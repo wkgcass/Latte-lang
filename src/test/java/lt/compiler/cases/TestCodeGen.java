@@ -29,7 +29,7 @@ public class TestCodeGen {
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map);
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);
@@ -1280,7 +1280,7 @@ public class TestCodeGen {
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map);
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);
@@ -1320,7 +1320,7 @@ public class TestCodeGen {
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map);
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);
@@ -1360,7 +1360,7 @@ public class TestCodeGen {
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map);
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);

@@ -72,7 +72,7 @@ public class Compiler {
                         }
                 }
 
-                SemanticProcessor processor = new SemanticProcessor(statements);
+                SemanticProcessor processor = new SemanticProcessor(statements, Thread.currentThread().getContextClassLoader());
                 Set<STypeDef> types = processor.parse();
                 CodeGenerator codeGen = new CodeGenerator(types);
                 Map<String, byte[]> results = codeGen.generate();

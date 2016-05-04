@@ -68,14 +68,20 @@ public class SemanticProcessor {
          * these types are to be compiled into byte codes
          */
         private final Set<STypeDef> typeDefSet = new HashSet<>();
+        /**
+         * retrieve existing classes from this class loader
+         */
+        private final ClassLoader classLoader;
 
         /**
          * initialize the Processor
          *
          * @param mapOfStatements a map of fileName to statements
+         * @param classLoader
          */
-        public SemanticProcessor(Map<String, List<Statement>> mapOfStatements) {
+        public SemanticProcessor(Map<String, List<Statement>> mapOfStatements, ClassLoader classLoader) {
                 this.mapOfStatements = mapOfStatements;
+                this.classLoader = classLoader;
                 // initiate types map
                 // primitive and void
                 types.put("int", IntTypeDef.get());
@@ -184,7 +190,7 @@ public class SemanticProcessor {
                         for (ClassDef c : classDefs) {
                                 String className = pkg + c.name;
                                 // check occurrence
-                                if (types.containsKey(className)) {
+                                if (typeExists(className)) {
                                         throw new SyntaxException("duplicate type names " + className, c.line_col());
                                 }
 
@@ -219,7 +225,7 @@ public class SemanticProcessor {
                         for (InterfaceDef i : interfaceDefs) {
                                 String interfaceName = pkg + i.name;
                                 // check occurrence
-                                if (types.containsKey(interfaceName)) {
+                                if (typeExists(interfaceName)) {
                                         throw new SyntaxException("duplicate type names " + interfaceName, i.line_col());
                                 }
 
@@ -606,7 +612,7 @@ public class SemanticProcessor {
                                 SAnnoDef annoDef = (SAnnoDef) typeDef;
                                 Class<?> cls;
                                 try {
-                                        cls = Class.forName(annoDef.fullName());
+                                        cls = loadClass(annoDef.fullName());
                                 } catch (ClassNotFoundException e) {
                                         throw new LtBug(e);
                                 }
@@ -6240,7 +6246,7 @@ public class SemanticProcessor {
                 } else {
                         // check already compiled class
                         try {
-                                Class<?> cls = Class.forName(clsName);
+                                Class<?> cls = loadClass(clsName);
                                 if (cls.isArray()) {
                                         String name = cls.getName();
                                         int dimension = 0;
@@ -6330,7 +6336,7 @@ public class SemanticProcessor {
                                         return typeDef;
                                 }
                         } catch (ClassNotFoundException e) {
-                                throw new SyntaxException("undefined class", lineCol);
+                                throw new SyntaxException("undefined class " + clsName, lineCol);
                         }
                 }
         }
@@ -6547,7 +6553,7 @@ public class SemanticProcessor {
         private boolean typeExists(String type) {
                 if (!types.containsKey(type)) {
                         try {
-                                Class.forName(type);
+                                loadClass(type);
                         } catch (ClassNotFoundException e) {
                                 return false;
                         }
@@ -6671,6 +6677,21 @@ public class SemanticProcessor {
                         throw new SyntaxException("duplicate type names " + type.fullName(), lineCol);
                 } else {
                         types.put(type.fullName(), type);
+                }
+        }
+
+        /**
+         * load a class
+         *
+         * @param name class name
+         * @return load a class
+         * @throws ClassNotFoundException exception
+         */
+        private Class<?> loadClass(String name) throws ClassNotFoundException {
+                try {
+                        return Class.forName(name);
+                } catch (ClassNotFoundException e) {
+                        return classLoader.loadClass(name);
                 }
         }
 }

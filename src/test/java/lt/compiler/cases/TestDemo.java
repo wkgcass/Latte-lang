@@ -25,7 +25,7 @@ public class TestDemo {
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put(fileName, syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map);
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);

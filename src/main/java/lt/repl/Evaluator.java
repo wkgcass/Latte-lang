@@ -8,6 +8,7 @@ import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Expression;
 import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.def.ClassDef;
+import lt.compiler.syntactic.def.MethodDef;
 import lt.compiler.syntactic.def.VariableDef;
 
 import java.io.BufferedReader;
@@ -20,9 +21,28 @@ import java.util.*;
  * evaluator for LessTyping
  */
 public class Evaluator {
-        private JarLoader jarLoader;
-
         private List<Entry> recordedEntries = new ArrayList<>();
+
+        private String recordedStatements = "\n";
+
+        private List<Class<?>> compiledClasses = new ArrayList<>();
+
+        private class CL extends ClassLoader {
+                private Map<String, byte[]> byteCodes = new HashMap<>();
+
+                CL(ClassLoader cl) {
+                        super(cl);
+                }
+
+                @Override
+                protected Class<?> findClass(String name) throws ClassNotFoundException {
+                        byte[] byteCode = byteCodes.get(name);
+                        if (byteCode == null) throw new ClassNotFoundException(name);
+                        return defineClass(name, byteCode, 0, byteCode.length);
+                }
+        }
+
+        private final CL cl;
 
         private static final String EVALUATE_BASIC_FORMAT = "" +
                 "#>  java::util::_\n" +
@@ -39,7 +59,7 @@ public class Evaluator {
 
         public Evaluator(String varNameBase, JarLoader jarLoader) {
                 this.varNameBase = varNameBase;
-                this.jarLoader = jarLoader;
+                cl = new CL(jarLoader);
         }
 
         public static class Entry {
@@ -54,122 +74,163 @@ public class Evaluator {
 
         public Entry eval(String stmt) throws Exception {
                 if (null == stmt || stmt.trim().isEmpty()) throw new IllegalArgumentException("the input string cannot be empty or null");
-                BufferedReader bufferedReader = new BufferedReader(new StringReader(stmt));
 
-                StringBuilder sb = new StringBuilder();
+                if (stmt.startsWith("class") || stmt.startsWith("interface")) {
+                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(stmt), 4);
+                        Parser parser = new Parser(scanner.parse());
+                        SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
+                                put("EVALUATE.lts", parser.parse());
+                        }}, cl);
+                        CodeGenerator codeGen = new CodeGenerator(processor.parse());
+                        Map<String, byte[]> byteCodes = codeGen.generate();
 
-                sb.append(EVALUATE_BASIC_FORMAT).append("(");
-
-                // build local variables
-                boolean isFirst = true;
-                for (Entry entry : recordedEntries) {
-                        if (isFirst) {
-                                isFirst = false;
-                        } else {
-                                sb.append(",");
+                        List<Class<?>> classes = new ArrayList<>();
+                        cl.byteCodes.putAll(byteCodes);
+                        for (String s : byteCodes.keySet()) {
+                                Class<?> c = cl.loadClass(s);
+                                compiledClasses.add(c);
+                                classes.add(c);
                         }
-                        sb.append(entry.name);
-                }
-                sb.append(")\n");
 
-                String s;
-                while ((s = bufferedReader.readLine()) != null) {
-                        sb.append("    ").append(s).append("\n");
-                }
-                for (Entry entry : recordedEntries) {
-                        sb.append("    this.").append(entry.name).append("=").append(entry.name).append("\n");
-                }
+                        return new Entry("definedClasses", classes);
+                } else {
 
+                        BufferedReader bufferedReader = new BufferedReader(new StringReader(stmt));
 
-                String code = sb.toString(); // the generated code
-                Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(code), 4);
-                ElementStartNode root = scanner.parse();
+                        StringBuilder sb = new StringBuilder();
 
-                Parser parser = new Parser(root);
-                List<Statement> statements = parser.parse();
+                        sb.append(EVALUATE_BASIC_FORMAT).append("(");
 
-                ClassDef classDef = (ClassDef) statements.get(1); // it must be class def (class Evaluate)
-                List<Statement> classStatements = classDef.statements;
-                int lastIndex = classStatements.size() - 1 - recordedEntries.size();
-                Statement lastStatement = classStatements.get(lastIndex);
+                        // build local variables
+                        boolean isFirst = true;
+                        for (Entry entry : recordedEntries) {
+                                if (isFirst) {
+                                        isFirst = false;
+                                } else {
+                                        sb.append(",");
+                                }
+                                sb.append(entry.name);
+                        }
+                        sb.append(")\n");
+                        sb.append(recordedStatements);
 
-                String varName = null;
-                if (lastStatement instanceof VariableDef) {
-                        // variable def
-                        // so, the name can be retrieved
-                        VariableDef v = (VariableDef) lastStatement;
-                        varName = v.getName();
-                } else if (lastStatement instanceof AST.Assignment) {
-                        // it's an assignment
-                        // the name can be retrieved
-                        AST.Assignment ass = (AST.Assignment) lastStatement;
-                        AST.Access assignTo = ass.assignTo;
-                        if (assignTo.exp == null) {
-                                // assign to the field
-                                varName = assignTo.name;
-                        } else {
-                                // cannot catch the name
-                                // generate a name
+                        String s;
+                        while ((s = bufferedReader.readLine()) != null) {
+                                sb.append("    ").append(s).append("\n");
+                        }
+                        for (Entry entry : recordedEntries) {
+                                sb.append("    this.").append(entry.name).append("=").append(entry.name).append("\n");
+                        }
+
+                        String code = sb.toString(); // the generated code
+                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(code), 4);
+                        ElementStartNode root = scanner.parse();
+
+                        Parser parser = new Parser(root);
+                        List<Statement> statements = parser.parse();
+
+                        ClassDef classDef = (ClassDef) statements.get(1); // it must be class def (class Evaluate)
+                        List<Statement> classStatements = classDef.statements;
+                        int lastIndex = classStatements.size() - 1 - recordedEntries.size();
+                        Statement lastStatement = classStatements.get(lastIndex);
+
+                        String varName = null;
+                        if (lastStatement instanceof VariableDef) {
+                                // variable def
+                                // so, the name can be retrieved
+                                VariableDef v = (VariableDef) lastStatement;
+                                varName = v.getName();
+                        } else if (lastStatement instanceof AST.Assignment) {
+                                // it's an assignment
+                                // the name can be retrieved
+                                AST.Assignment ass = (AST.Assignment) lastStatement;
+                                AST.Access assignTo = ass.assignTo;
+                                if (assignTo.exp == null) {
+                                        // assign to the field
+                                        varName = assignTo.name;
+                                } else {
+                                        // cannot catch the name
+                                        // generate a name
+                                        // $resX
+                                        varName = varNameBase + (generatedVariableIndex++);
+                                        VariableDef v = defineAVariable(varName, (Expression) lastStatement);
+                                        classStatements.set(lastIndex, v);
+                                }
+                        } else if (lastStatement instanceof Expression) {
+                                // the last statement is an expression
+                                // it can be assigned to a variable
+                                // the variable should be
                                 // $resX
                                 varName = varNameBase + (generatedVariableIndex++);
                                 VariableDef v = defineAVariable(varName, (Expression) lastStatement);
                                 classStatements.set(lastIndex, v);
                         }
-                } else if (lastStatement instanceof Expression) {
-                        // the last statement is an expression
-                        // it can be assigned to a variable
-                        // the variable should be
-                        // $resX
-                        varName = varNameBase + (generatedVariableIndex++);
-                        VariableDef v = defineAVariable(varName, (Expression) lastStatement);
-                        classStatements.set(lastIndex, v);
-                }
-
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
-                        put("EVALUATE.lts", statements);
-                }});
-                Set<STypeDef> types = processor.parse();
-
-                CodeGenerator codeGen = new CodeGenerator(types);
-                Map<String, byte[]> byteCodes = codeGen.generate();
-
-                ClassLoader loader = new ClassLoader(jarLoader) {
-                        @Override
-                        protected Class<?> findClass(String name) throws ClassNotFoundException {
-                                byte[] byteCode = byteCodes.get(name);
-                                return defineClass(name, byteCode, 0, byteCode.length);
+                        if (lastStatement instanceof MethodDef) {
+                                // lastStatement is MethodDef
+                                // then the input should be recorded
+                                BufferedReader tmpReader = new BufferedReader(new StringReader(stmt));
+                                StringBuilder recorded = new StringBuilder();
+                                while ((s = tmpReader.readLine()) != null) {
+                                        if (s.startsWith(" ")) {
+                                                // indentation is not 0
+                                                // simply record this
+                                                recorded.append("    ").append(s).append("\n");
+                                        } else {
+                                                // indentation is 0
+                                                // clear the recorded string builder and record the line
+                                                recorded.delete(0, recorded.length());
+                                                recorded.append("    ").append(s).append("\n");
+                                        }
+                                }
+                                recordedStatements += recorded;
                         }
-                };
-                Class<?> cls = loader.loadClass("Evaluate");
-                Class<?>[] consParams = new Class[recordedEntries.size()];
-                Object[] args = new Object[recordedEntries.size()];
-                for (int i = 0; i < consParams.length; ++i) {
-                        consParams[i] = Object.class;
-                        args[i] = recordedEntries.get(i).result;
-                }
-                Constructor<?> con = cls.getDeclaredConstructor(consParams);
-                Object o = con.newInstance(args);
 
-                Entry toReturn;
-                if (varName == null) {
-                        // there's nothing to print
-                        // simply return the instance
-                        toReturn = new Entry(null, o);
-                } else {
-                        Field f = cls.getDeclaredField(varName);
-                        f.setAccessible(true);
-                        toReturn = new Entry(varName, f.get(o));
-                }
+                        SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
+                                put("EVALUATE.lts", statements);
+                        }}, cl);
+                        Set<STypeDef> types = processor.parse();
 
-                // record the entry if name is not null
-                recordedEntries.clear();
-                for (Field f : cls.getDeclaredFields()) {
-                        f.setAccessible(true);
-                        Object value = f.get(o);
-                        recordedEntries.add(new Entry(f.getName(), value));
-                }
+                        CodeGenerator codeGen = new CodeGenerator(types);
+                        Map<String, byte[]> byteCodes = codeGen.generate();
 
-                return toReturn;
+                        ClassLoader loader = new ClassLoader(cl) {
+                                @Override
+                                protected Class<?> findClass(String name) throws ClassNotFoundException {
+                                        byte[] byteCode = byteCodes.get(name);
+                                        return defineClass(name, byteCode, 0, byteCode.length);
+                                }
+                        };
+                        Class<?> cls = loader.loadClass("Evaluate");
+                        Class<?>[] consParams = new Class[recordedEntries.size()];
+                        Object[] args = new Object[recordedEntries.size()];
+                        for (int i = 0; i < consParams.length; ++i) {
+                                consParams[i] = Object.class;
+                                args[i] = recordedEntries.get(i).result;
+                        }
+                        Constructor<?> con = cls.getDeclaredConstructor(consParams);
+                        Object o = con.newInstance(args);
+
+                        Entry toReturn;
+                        if (varName == null) {
+                                // there's nothing to print
+                                // simply return the instance
+                                toReturn = new Entry(null, o);
+                        } else {
+                                Field f = cls.getDeclaredField(varName);
+                                f.setAccessible(true);
+                                toReturn = new Entry(varName, f.get(o));
+                        }
+
+                        // record the entry if name is not null
+                        recordedEntries.clear();
+                        for (Field f : cls.getDeclaredFields()) {
+                                f.setAccessible(true);
+                                Object value = f.get(o);
+                                recordedEntries.add(new Entry(f.getName(), value));
+                        }
+
+                        return toReturn;
+                }
         }
 
         private VariableDef defineAVariable(String name, Expression initValue) {

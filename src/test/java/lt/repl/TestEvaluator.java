@@ -118,4 +118,11 @@ public class TestEvaluator {
                 Method m = o.getClass().getDeclaredMethod("method");
                 assertEquals(1, m.invoke(o));
         }
+
+        @Test
+        public void testEvaluateMethod() throws Exception {
+                Evaluator evaluator = new Evaluator(jarLoader);
+                evaluator.eval("method()=1");
+                assertEquals(1, evaluator.eval("method()").result);
+        }
 }

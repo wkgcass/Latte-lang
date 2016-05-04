@@ -30,7 +30,7 @@ public class TestSemantic {
                         Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                         map.put(fileName, syntacticProcessor.parse());
                 }
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map);
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
                 return semanticProcessor.parse();
         }
 
@@ -625,7 +625,7 @@ public class TestSemantic {
 
         @Test
         public void testVariableWithNoLimit() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>());
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader());
                 processor.parse();
 
                 assertEquals(new IntValue(1), parseValueFromExpression(processor, new NumberLiteral("1", LineCol.SYNTHETIC), null, null));
@@ -639,7 +639,7 @@ public class TestSemantic {
 
         @Test
         public void testPrimitiveVariableWithLimit() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>());
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader());
                 processor.parse();
 
                 assertEquals(new CharValue('c'), parseValueFromExpression(processor, new StringLiteral("\"c\"", LineCol.SYNTHETIC), CharTypeDef.get(), null));
@@ -656,7 +656,7 @@ public class TestSemantic {
 
         @Test
         public void testCharAndString() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>());
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader());
                 processor.parse();
 
                 STypeDef charSequenceType = getTypeWithName(processor, "java.lang.CharSequence", LineCol.SYNTHETIC);
