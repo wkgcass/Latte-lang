@@ -12,7 +12,11 @@ public class REPL {
         }
 
         public static void main(String[] args) {
-                System.out.println("LessTyping REPL");
+                System.out.println("Welcome to LessTyping");
+                System.out.println("Type in expressions and double Enter to have them evaluated.");
+                System.out.println("ctrl-c to exit");
+                System.out.println("for syntax help, please visit https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/");
+                System.out.println();
                 System.out.print(">");
                 Evaluator evaluator = new Evaluator();
                 Scanner scanner = new Scanner(System.in);

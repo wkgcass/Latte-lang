@@ -2,16 +2,41 @@
 
 最下面有中文 ：）
 
+##How to build
+
+clone the repository, and run
+
+	mvn clean package
+	
+you will get a runnable jar in target directory.
+
+run:
+
+	java -jar *.jar
+	
+then the [REPL.java](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) starts
+    
+    Welcome to LessTyping
+    Type in expressions and double Enter to have them evaluated.
+    ctrl-c to exit
+    for syntax help, please visit https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/
+    
+    >1+1
+    >
+    $res_0 : java.lang.Integer = 2
+    
+    >
+
 check `src/test/resources/lang-demo` for syntax tutorials.
 
 here's what every file explains
 
-* `advanced.lt` -- something about `inner method`, `procedure`, and `lambda`
-* `literals.lts` -- about all literals in LessTyping
-* `ltFileStructure.lt` -- the general idea of a LessTyping file structure
-* `operator.lt` -- info about operator binding
-* `statements.lts` -- avaliable statements in LessTyping, e.g. for, if, while...
-* `typeDef.lt` -- things about definition of classes and interfaces
+* [advanced.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/advanced.lt) -- something about `inner method`, `procedure`, and `lambda`
+* [literals.lts](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/literals.lts) -- about all literals in LessTyping
+* [ltFileStructure.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/ltFileStructure.lt) -- the general idea of a LessTyping file structure
+* [operator.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/operator.lt) -- info about operator binding
+* [statements.lts](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/statements.lts) -- available statements in LessTyping, e.g. for, if, while...
+* [typeDef.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/typeDef.lt) -- things about definition of classes and interfaces
 
 Generally the syntax looks like `Python`,  4 spaces indentation is forced , and it doesn't require `;` at the end of a statement/expression
 
@@ -35,7 +60,7 @@ e.g.
 	; same as
 	list.add(o)
 	
->check `src/test/resources/lang-demo/operator.lt` for more info
+>check [operator.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/operator.lt) for more info
 
 --
 
@@ -51,7 +76,7 @@ which would be converted into method invocation
 
     db.select(id,name).form(User).where(id>10).and(name!='cass').orderBy(id.desc)
     
->check `/lang-demo/statements.lts` for more info
+>check [statements.lts](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/statements.lts) for more info
 
 --
 
@@ -74,7 +99,7 @@ e.g.
     undef 'VARCHAR'
     undef 'NUMBER'
    
->check `src/test/resources/lang-demo/ltFileStructure.lt` for more info
+>check [ltFileStructure.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/ltFileStructure.lt) for more info
 
 --
 
@@ -138,7 +163,7 @@ e.g.
 
 there are 27 Functions defined in `lt.lang.function`, ranges from Function0 to Function26. if no type is required, the lambda expression generates these functional interfaces' implementations.
 
->for more info about `inner method`, `procedure` and `lambda`, check `src/test/resources/lang-demo/advanced.lt`
+>for more info about `inner method`, `procedure` and `lambda`, check [advanced.lt]([advanced.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/advanced.lt))
 
 --
 
@@ -164,7 +189,7 @@ there are 27 Functions defined in `lt.lang.function`, ranges from Function0 to F
 
 `,` at the end can be omitted
 
->check `src/test/resources/lang-demo/literals.lts` for more info
+>check [literals.lts](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/literals.lts) for more info
 
 --
 
@@ -189,7 +214,7 @@ defines a class. in java, we write :
 		}
 	}
 
->check `src/test/resources/lang-demo/typeDef.lt` for more info
+>check [typeDef.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/typeDef.lt) for more info
 
 --
 
@@ -217,14 +242,39 @@ Chinese Version README
 
 `LessTyping`基于java8。它既有强类型语言的特性，又有弱类型语言的特性。它被编译到JVM字节码，可以与任何Java类库完美互通。
 
+##如何构建工程
+
+clone这个仓库,然后执行
+
+	mvn clean package
+	
+你将会在target目录下获取一个可执行jar
+
+执行
+
+	java -jar *.jar
+	
+接着, [REPL.java](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) 将开始运行
+    
+    Welcome to LessTyping
+    Type in expressions and double Enter to have them evaluated.
+    ctrl-c to exit
+    for syntax help, please visit https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/
+    
+    >1+1
+    >
+    $res_0 : java.lang.Integer = 2
+    
+    >
+
 `src/test/resources/lang-demo` 中包含了语法说明
 
-* `advanced.lt` 有关 `内部方法`, `过程`, 和 `lambda`
-* `literals.lts` 有关LessTyping的所有字面量
-* `ltFileStructure.lt` LessTyping文件的大体结构
-* `operator.lt` 有关运算符绑定的一些信息
-* `statements.lts` LessTyping中可用的表达式，例如 for, if, while 之类
-* `typeDef.lt` 类和接口的定义方式
+* [advanced.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/advanced.lt) 有关 `内部方法`, `过程`, 和 `lambda`
+* [literals.lts](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/literals.lts) 有关LessTyping的所有字面量
+* [ltFileStructure.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/ltFileStructure.lt) LessTyping文件的大体结构
+* [operator.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/operator.lt) 有关运算符绑定的一些信息
+* [statements.lts](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/statements.lts) LessTyping中可用的表达式，例如 for, if, while 之类
+* [typeDef.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/typeDef.lt) 类和接口的定义方式
 
 大体而言语法看起来很像 `Python`, 强制4空格缩进 , 它不需要行末的`;`
 
@@ -248,7 +298,7 @@ e.g.
 	; 和如下表达式相同
 	list.add(o)
 	
->在`src/test/resources/lang-demo/operator.lt`中获取更多信息
+>在[operator.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/operator.lt)中获取更多信息
 
 --
 
@@ -264,7 +314,7 @@ e.g.
 
     db.select(id,name).form(User).where(id>10).and(name!='cass').orderBy(id.desc)
     
->在`/lang-demo/statements.lts`中获取更多信息
+>在[statements.lts](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/statements.lts)中获取更多信息
 
 --
 
@@ -287,7 +337,7 @@ e.g.
     undef 'VARCHAR'
     undef 'NUMBER'
    
->在`src/test/resources/lang-demo/ltFileStructure.lt`中获取更多信息
+>在[ltFileStructure.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/ltFileStructure.lt)中获取更多信息
 
 --
 
@@ -351,7 +401,7 @@ e.g.
 
 在`lt.lang.function`中定义了27种Function，从Funcion0到Function26. 如果没有指定类型，那么将生成这些接口的实现类。
 
->在`src/test/resources/lang-demo/advanced.lt`里查看更多有关`内部方法`, `过程` 和 `lambda` 的信息
+>在[advanced.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/advanced.lt)里查看更多有关`内部方法`, `过程` 和 `lambda` 的信息
 
 --
 
@@ -377,7 +427,7 @@ e.g.
 
 末尾的`,`可以省略
 
->查看 `src/test/resources/lang-demo/literals.lts` 获取更多信息
+>查看 [literals.lts](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/literals.lts) 获取更多信息
 
 --
 
@@ -402,7 +452,7 @@ e.g.
 		}
 	}
 
->查看 `src/test/resources/lang-demo/typeDef.lt` 获取更多信息
+>查看 [typeDef.lt](https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/typeDef.lt) 获取更多信息
 
 --
 
