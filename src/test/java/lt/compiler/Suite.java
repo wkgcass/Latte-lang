@@ -2,6 +2,7 @@ package lt.compiler;
 
 import junit.framework.TestSuite;
 import lt.compiler.cases.*;
+import lt.repl.TestEvaluator;
 import org.junit.runner.RunWith;
 
 /**
@@ -15,7 +16,8 @@ import org.junit.runner.RunWith;
         TestSemantic.class,
         TestCodeGen.class,
         TestLang.class,
-        TestDemo.class
+        TestDemo.class,
+        TestEvaluator.class
 })
 public class Suite extends TestSuite {
 }

@@ -299,7 +299,7 @@ java中的基本类型没有被舍弃。由于弱类型，而且在编译期和�
 
 对于找不到的方法，统一使用`invokedynamic`来完成调用。将在运行时寻找方法。也采用。若仍旧找不到，则在运行时报错。
 
-对于找不到的字段，则会使用`lt.lang.Lang.getField(object,name)`来完成。设置字段使用`lt.lang.Lang.putField(object,name)`来完成。它们都采用反射获取字段。若找不到字段或者不可设置字段，则在运行时报错。
+对于找不到的字段，则会使用`lt.lang.Lang.getField(object,name,callerClass)`来完成。设置字段使用`lt.lang.Lang.putField(object,name,callerClass)`来完成。它们都采用反射获取字段。若找不到字段或者不可设置字段，则在运行时报错。
 
 对于`[]`运算符，例如`arr[i]`，若arr不是数组类型，则调用`get(?)`方法。
 `[]`内的变量即为`get`方法的参数。
@@ -346,7 +346,7 @@ java中的基本类型没有被舍弃。由于弱类型，而且在编译期和�
 	#> java::util::List ; 引入类 : java::util::List
 	#> java::util::Collections._ ; 引入java::util::Collections中的静态成员和方法
 	
-默认将`当前命名空间`，`java::lang::_`与`lt::lang::_`依次放在0，1，2的位置引入
+默认将`当前命名空间`放在引入的首位, `java::lang::_`与`lt::lang::_`依次放在倒数2，1的位置引入
 
 一个`#>`可以包含多个引入项。
 

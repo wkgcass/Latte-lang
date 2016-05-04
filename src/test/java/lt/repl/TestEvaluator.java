@@ -11,21 +11,23 @@ import static org.junit.Assert.*;
  * test evaluator
  */
 public class TestEvaluator {
+        private static final JarLoader jarLoader = new JarLoader();
+
         @Test
         public void testSimpleCode() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 assertEquals(1, evaluator.eval("1").result);
         }
 
         @Test
         public void testSimpleExpression() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 assertEquals(2, evaluator.eval("1+1").result);
         }
 
         @Test
         public void testMultipleLineExpression() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 assertEquals(
                         new LinkedHashMap<Object, Object>() {{
                                 put("id", 1);
@@ -41,14 +43,14 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateTwice() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 assertEquals(1, evaluator.eval("1").result);
                 assertEquals(2, evaluator.eval("1+1").result);
         }
 
         @Test
         public void testEvaluateTwiceWithMultipleLineExp() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 assertEquals(
                         new LinkedHashMap<Object, Object>() {{
                                 put("id", 1);
@@ -65,7 +67,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateThreeTimes() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 assertEquals(1, evaluator.eval("1").result);
                 assertEquals(2, evaluator.eval("1+1").result);
                 assertEquals(100, evaluator.eval("10*10").result);
@@ -73,7 +75,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateThreeTimesWithMultipleLineExp() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 assertEquals(
                         new LinkedHashMap<Object, Object>() {{
                                 put("id", 1);
@@ -91,7 +93,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateVariableDef() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 Evaluator.Entry entry = evaluator.eval("i=10*10");
                 assertEquals("i", entry.name);
                 assertEquals(100, entry.result);
@@ -99,7 +101,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateFieldSet() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 Evaluator.Entry entry = evaluator.eval("i=10*10");
                 assertEquals("i", entry.name);
                 assertEquals(100, entry.result);
@@ -109,7 +111,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateStmt() throws Exception {
-                Evaluator evaluator = new Evaluator();
+                Evaluator evaluator = new Evaluator(jarLoader);
                 Evaluator.Entry entry = evaluator.eval("method()=1");
                 assertNull(entry.name);
                 Object o = entry.result;

@@ -12,6 +12,7 @@ import lt.compiler.syntactic.def.VariableDef;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -19,26 +20,26 @@ import java.util.*;
  * evaluator for LessTyping
  */
 public class Evaluator {
-        /**
-         * the originally input and transformed statements
-         */
-        private String recordedStatements = EVALUATE_BASIC_FORMAT;
-        private int lines = 3;
+        private JarLoader jarLoader;
+
+        private List<Entry> recordedEntries = new ArrayList<>();
 
         private static final String EVALUATE_BASIC_FORMAT = "" +
                 "#>  java::util::_\n" +
                 "    java::math::_\n" +
-                "class Evaluate\n";
+                "    lt::repl::_\n" +
+                "class Evaluate";
 
         private int generatedVariableIndex = 0;
         private final String varNameBase;
 
-        public Evaluator() {
-                this("$res_");
+        public Evaluator(JarLoader jarLoader) {
+                this("$res_", jarLoader);
         }
 
-        public Evaluator(String varNameBase) {
+        public Evaluator(String varNameBase, JarLoader jarLoader) {
                 this.varNameBase = varNameBase;
+                this.jarLoader = jarLoader;
         }
 
         public static class Entry {
@@ -56,13 +57,29 @@ public class Evaluator {
                 BufferedReader bufferedReader = new BufferedReader(new StringReader(stmt));
 
                 StringBuilder sb = new StringBuilder();
-                sb.append(recordedStatements);
-                int newLines = 0;
+
+                sb.append(EVALUATE_BASIC_FORMAT).append("(");
+
+                // build local variables
+                boolean isFirst = true;
+                for (Entry entry : recordedEntries) {
+                        if (isFirst) {
+                                isFirst = false;
+                        } else {
+                                sb.append(",");
+                        }
+                        sb.append(entry.name);
+                }
+                sb.append(")\n");
+
                 String s;
                 while ((s = bufferedReader.readLine()) != null) {
                         sb.append("    ").append(s).append("\n");
-                        ++newLines;
                 }
+                for (Entry entry : recordedEntries) {
+                        sb.append("    this.").append(entry.name).append("=").append(entry.name).append("\n");
+                }
+
 
                 String code = sb.toString(); // the generated code
                 Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(code), 4);
@@ -73,10 +90,10 @@ public class Evaluator {
 
                 ClassDef classDef = (ClassDef) statements.get(1); // it must be class def (class Evaluate)
                 List<Statement> classStatements = classDef.statements;
-                Statement lastStatement = classStatements.get(classStatements.size() - 1);
+                int lastIndex = classStatements.size() - 1 - recordedEntries.size();
+                Statement lastStatement = classStatements.get(lastIndex);
 
                 String varName = null;
-                LineCol changeLastInputLine = null;
                 if (lastStatement instanceof VariableDef) {
                         // variable def
                         // so, the name can be retrieved
@@ -96,10 +113,7 @@ public class Evaluator {
                                 // $resX
                                 varName = varNameBase + (generatedVariableIndex++);
                                 VariableDef v = defineAVariable(varName, (Expression) lastStatement);
-                                classStatements.remove(classStatements.size() - 1);
-                                classStatements.add(v);
-
-                                changeLastInputLine = lastStatement.line_col();
+                                classStatements.set(lastIndex, v);
                         }
                 } else if (lastStatement instanceof Expression) {
                         // the last statement is an expression
@@ -108,10 +122,7 @@ public class Evaluator {
                         // $resX
                         varName = varNameBase + (generatedVariableIndex++);
                         VariableDef v = defineAVariable(varName, (Expression) lastStatement);
-                        classStatements.remove(classStatements.size() - 1);
-                        classStatements.add(v);
-
-                        changeLastInputLine = lastStatement.line_col();
+                        classStatements.set(lastIndex, v);
                 }
 
                 SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
@@ -122,7 +133,7 @@ public class Evaluator {
                 CodeGenerator codeGen = new CodeGenerator(types);
                 Map<String, byte[]> byteCodes = codeGen.generate();
 
-                ClassLoader loader = new ClassLoader() {
+                ClassLoader loader = new ClassLoader(jarLoader) {
                         @Override
                         protected Class<?> findClass(String name) throws ClassNotFoundException {
                                 byte[] byteCode = byteCodes.get(name);
@@ -130,7 +141,14 @@ public class Evaluator {
                         }
                 };
                 Class<?> cls = loader.loadClass("Evaluate");
-                Object o = cls.newInstance();
+                Class<?>[] consParams = new Class[recordedEntries.size()];
+                Object[] args = new Object[recordedEntries.size()];
+                for (int i = 0; i < consParams.length; ++i) {
+                        consParams[i] = Object.class;
+                        args[i] = recordedEntries.get(i).result;
+                }
+                Constructor<?> con = cls.getDeclaredConstructor(consParams);
+                Object o = con.newInstance(args);
 
                 Entry toReturn;
                 if (varName == null) {
@@ -143,35 +161,12 @@ public class Evaluator {
                         toReturn = new Entry(varName, f.get(o));
                 }
 
-                // record last statements
-                if (changeLastInputLine == null) {
-                        recordedStatements = code;
-                        this.lines += newLines;
-                } else {
-                        int line = changeLastInputLine.line;
-                        line -= this.lines; // line of the input
-
-                        int tmpLine = 0;
-                        BufferedReader br = new BufferedReader(new StringReader(stmt));
-                        sb = new StringBuilder();
-                        boolean hasPar = false;
-                        while ((s = br.readLine()) != null) {
-                                ++tmpLine;
-                                sb.append("    ");
-                                if (hasPar) sb.append("    ");
-                                if (tmpLine == line) {
-                                        sb.append(varName).append("=(");
-                                        hasPar = true;
-                                }
-                                sb.append(s).append("\n");
-                        }
-
-                        assert newLines == tmpLine;
-
-                        sb.setCharAt(sb.length() - 1, ')');
-                        sb.append("\n");
-                        this.recordedStatements += sb.toString();
-                        this.lines += tmpLine;
+                // record the entry if name is not null
+                recordedEntries.clear();
+                for (Field f : cls.getDeclaredFields()) {
+                        f.setAccessible(true);
+                        Object value = f.get(o);
+                        recordedEntries.add(new Entry(f.getName(), value));
                 }
 
                 return toReturn;
