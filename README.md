@@ -2,8 +2,6 @@
 
 最下面有中文 ：）
 
-`LessTyping` is based on java 8. it is a language with both strong and week typing. it is compiled to JVM byte code, and can collaborate with any Java library.
-
 check `src/test/resources/lang-demo` for syntax tutorials.
 
 here's what every file explains
@@ -204,6 +202,13 @@ the class name is the same as `lts` file name, and a `main` method would be adde
 the scripts would be filled into `class constructing block`
 
 this feature is still in development, but i'm sure it won't take much time.
+
+run `lt.repl.REPL` then you will see
+
+    LessTyping REPL
+    >
+   
+write expressions and double `Enter`, you will get the result
 
 ---------
 
@@ -410,3 +415,10 @@ e.g.
 脚本内容讲被写入到`类构造块`中
 
 该特性仍在开发，不过我想应该花不了太长时间
+
+执行 `lt.repl.REPL` ,你将会看到
+
+    LessTyping REPL
+    >
+   
+输入表达式,然后按两次`Enter`就可以获得结果
