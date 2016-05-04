@@ -32,8 +32,14 @@ public class REPL {
                                                         System.out.println(name + " : " + o.getClass().getName() + " = " + o);
                                                 }
                                                 System.out.print("\n>");
-                                        } catch (Exception e) {
-                                                e.printStackTrace();
+                                        } catch (Throwable t) {
+                                                t.printStackTrace();
+                                                try {
+                                                        Thread.sleep(10);
+                                                } catch (InterruptedException e) {
+                                                        e.printStackTrace();
+                                                }
+                                                System.out.print(">");
                                         }
                                         sb.delete(0, sb.length());
                                 }
