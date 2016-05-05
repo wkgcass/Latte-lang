@@ -1,5 +1,18 @@
 #LessTyping
 
+LessTyping is a JVM language. It's highly readable and extensible.
+
+LessTyping supports 
+
+* Operator Binding
+* Operator-Like Invocation
+* Pre-Processing define/undef
+* Inner Method
+* Lambda
+* JSON Literal
+* Read Eval Print Loop
+* scripts
+
 最下面有中文 ：）
 
 ##How to build
@@ -24,7 +37,7 @@ then the [REPL](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/
 	for syntax help, please visit https://github.com/wkgcass/LessTyping/
     
     >1+1
-    >
+    |
     $res_0 : java.lang.Integer = 2
     
     >
@@ -96,7 +109,7 @@ e.g.
 
 ##Operator-Like Invocation
 
-`LessTyping` supports a syntax that makes method invocation looks like using operators. It's useful for DSL programming.
+`LessTyping` supports a syntax that makes method invocation looks like operators. It's useful for DSL programming.
 
 e.g.
 
@@ -272,6 +285,19 @@ the scripts would be filled into `class constructing block`
 ##中文版 
 Chinese Version README
 
+LessTyping是一种JVM编程语言。 它非常可读，同时也非常可扩展。
+
+LessTyping 支持如下功能
+
+* 运算符绑定
+* 类似运算符的方法调用
+* 预处理 define/undef
+* 内部方法
+* Lambda
+* JSON 字面量
+* Read Eval Print Loop
+* 脚本
+
 `LessTyping`基于java8。它既有强类型语言的特性，又有弱类型语言的特性。它被编译到JVM字节码，可以与任何Java类库完美互通。
 
 ##如何构建工程
@@ -296,7 +322,7 @@ clone这个仓库,然后执行
 	for syntax help, please visit https://github.com/wkgcass/LessTyping/
         
     >1+1
-    >
+    |
     $res_0 : java.lang.Integer = 2
     
     >
