@@ -33,8 +33,8 @@ class Num(pub i)
     `or`(o)=Num(i|o)           ; bind |
     logicNot()                 ; bind unary !
         throw UnsupportedOperationException()
-    not()=Num(~i)              ; bind ~
-    negate()=Num(-i)        ; bind -
+    `not`()=Num(~i)            ; bind ~
+    negate()=Num(-i)           ; bind -
 
     toString():String="Num("+i+")"
 

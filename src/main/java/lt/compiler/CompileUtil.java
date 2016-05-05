@@ -1,9 +1,6 @@
 package lt.compiler;
 
-import lt.compiler.lexical.Element;
-import lt.compiler.lexical.ElementStartNode;
-import lt.compiler.lexical.EndingNode;
-import lt.compiler.lexical.Node;
+import lt.compiler.lexical.*;
 import lt.compiler.syntactic.pre.Modifier;
 
 import java.util.*;
@@ -50,7 +47,7 @@ public class CompileUtil {
         }
 
         private static Set<String> keys = new HashSet<>(Arrays.asList(
-                "is", "bool", "yes", "no", "type", "as", "undefined"
+                "is", "not", "bool", "yes", "no", "type", "as", "undefined", "in", "elseif"
         ));
 
         private static Set<String> javaKeys = new HashSet<>(Arrays.asList(
@@ -58,10 +55,14 @@ public class CompileUtil {
                 "catch", "char", "class", "const", "continue", "default",
                 "do", "double", "else", "enum", "extends", "final", "finally",
                 "float", "for", "if", "implements", "import", "instanceof",
-                "int", "interface", "long", "native", "new", "package",
+                "int", "interface", "long", "native", "new", "null", "package",
                 "private", "protected", "public", "return", "short", "static",
-                "strictfp", "null"
+                "strictfp", "throw", "try", "while"
         ));
+
+        public static boolean isKey(String str) {
+                return keys.contains(str);
+        }
 
         /**
          * check whether the given string can be a valid java name
@@ -105,14 +106,14 @@ public class CompileUtil {
          */
         public static boolean isPackage(Element element) {
                 String content = element.getContent();
-                if (isValidName(content) && element.hasNext()) {
+                if (element.getTokenType() == TokenType.VALID_NAME && element.hasNext()) {
                         Node next = element.next();
                         if (next instanceof Element) {
                                 String nextContent = ((Element) next).getContent();
                                 if (nextContent.equals("::") && next.hasNext()) {
                                         Node nextNext = next.next();
                                         if (nextNext instanceof Element) {
-                                                return isValidName(((Element) nextNext).getContent());
+                                                return ((Element) nextNext).getTokenType() == TokenType.VALID_NAME;
                                         }
                                 }
                         }
@@ -208,8 +209,7 @@ public class CompileUtil {
         }
 
         public static int checkMethodDef(Element elem) throws UnexpectedEndException {
-                String content = elem.getContent();
-                if (isValidName(content)) {
+                if (elem.getTokenType() == TokenType.VALID_NAME) {
                         Node nodeAfterRightPar = null;
 
                         // method
@@ -315,15 +315,11 @@ public class CompileUtil {
         public static boolean twoVar_higherOrEqual(String a, String b) {
                 int indexA = find_twoVar_priority(a);
                 if (indexA == -1) {
-                        if (isValidName(a)) {
-                                indexA = twoVar_priority.length;
-                        } else throw new IllegalArgumentException(a + " is not valid two variable operator");
+                        indexA = twoVar_priority.length;
                 }
                 int indexB = find_twoVar_priority(b);
                 if (indexB == -1) {
-                        if (isValidName(b)) {
-                                indexB = twoVar_priority.length;
-                        } else throw new IllegalArgumentException(b + " is not valid two variable operator");
+                        indexB = twoVar_priority.length;
                 }
                 return indexA <= indexB;
         }
@@ -390,5 +386,13 @@ public class CompileUtil {
         public static String validateValidName(String validName) {
                 if (validName.startsWith("`")) return validName.substring(1, validName.length() - 1);
                 return validName;
+        }
+
+        public static boolean isSymbol(String str) {
+                return isTwoVariableOperator(str)
+                        || isOneVariableOperatorPost(str)
+                        || isOneVariableOperatorPreMustCheckExps(str)
+                        || isOneVariableOperatorPreWithoutCheckingExps(str)
+                        || isAssign(str);
         }
 }

@@ -1,6 +1,7 @@
 package lt.compiler.cases;
 
 import lt.compiler.*;
+import lt.compiler.Scanner;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 import lt.lang.RangeList;
@@ -25,7 +26,7 @@ import static org.junit.Assert.*;
  */
 public class TestCodeGen {
         private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), 4);
+                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), new Scanner.Properties());
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -1134,7 +1135,7 @@ public class TestCodeGen {
         public void testTryCatchCanLoad() throws Exception {
                 retrieveClass(
                         "" +
-                                "class Test\n" +
+                                "class TestTryCatchCanLoad\n" +
                                 "    method():int\n" +
                                 "        i:int=1\n" +
                                 "        try\n" +
@@ -1156,7 +1157,7 @@ public class TestCodeGen {
                                 "                    <4\n" +
                                 "        finally\n" +
                                 "            i=6",
-                        "Test"
+                        "TestTryCatchCanLoad"
                 );
         }
 
@@ -1276,7 +1277,7 @@ public class TestCodeGen {
                         "    static\n" +
                         "        method():TestLambdaFunc\n" +
                         "            i=1\n" +
-                        "            <(o)->o+1+i"), 4);
+                        "            <(o)->o+1+i"), new Scanner.Properties());
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -1316,7 +1317,7 @@ public class TestCodeGen {
                         "class TestLambdaLT\n" +
                         "    method():TestLambdaFunc\n" +
                         "        i=1\n" +
-                        "        <(o)->o+1+i"), 4);
+                        "        <(o)->o+1+i"), new Scanner.Properties());
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -1356,7 +1357,7 @@ public class TestCodeGen {
                         "class TestLambdaLT\n" +
                         "    method():Function\n" +
                         "        i=1\n" +
-                        "        <(o)->o+1+i"), 4);
+                        "        <(o)->o+1+i"), new Scanner.Properties());
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());

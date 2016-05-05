@@ -1,6 +1,7 @@
 package lt.compiler.cases;
 
 import lt.compiler.*;
+import lt.compiler.Scanner;
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
 import lt.compiler.semantic.builtin.ClassValue;
@@ -26,7 +27,7 @@ public class TestSemantic {
         private Set<STypeDef> parse(Map<String, String> fileMap) throws IOException, SyntaxException {
                 Map<String, List<Statement>> map = new HashMap<>();
                 for (String fileName : fileMap.keySet()) {
-                        lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test", new StringReader(fileMap.get(fileName)), 4);
+                        lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test", new StringReader(fileMap.get(fileName)), new Scanner.Properties());
                         Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                         map.put(fileName, syntacticProcessor.parse());
                 }

@@ -7,10 +7,9 @@ import lt.compiler.CompileUtil;
  */
 public class Element extends Node {
         private String content;
-        public boolean isValidName;
 
-        public Element(Args args, String content) {
-                super(args);
+        public Element(Args args, String content, TokenType tokenType) {
+                super(args, tokenType);
                 this.content = content;
         }
 
@@ -19,11 +18,8 @@ public class Element extends Node {
         }
 
         public void checkWhetherIsValidName() {
-                if (CompileUtil.isValidName(content)) {
-                        isValidName = true;
-                }
-                if (content.startsWith("`")) {
-                        content = content.substring(1, content.length() - 1);
+                if (getTokenType() == TokenType.VALID_NAME) {
+                        content = CompileUtil.validateValidName(content);
                 }
         }
 

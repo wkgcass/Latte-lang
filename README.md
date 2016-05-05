@@ -4,6 +4,8 @@
 
 ##How to build
 
+`JRE 8` and `maven 3` is required.
+
 clone the repository, and run
 
 	mvn clean package
@@ -14,18 +16,46 @@ run:
 
 	java -jar *.jar
 	
-then the [REPL.java](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) starts
+then the [REPL](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) starts
     
-    Welcome to LessTyping
-    Type in expressions and double Enter to have them evaluated.
-    ctrl-c to exit
-    for syntax help, please visit https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/
+	Welcome to LessTyping
+	Type in expressions and double Enter to have them evaluated.
+	Type :help for more information.
+	for syntax help, please visit https://github.com/wkgcass/LessTyping/
     
     >1+1
     >
     $res_0 : java.lang.Integer = 2
     
     >
+
+##Compile `lt` Files
+
+start the `REPL` interpreter, and construct a `Compiler`
+
+	compiler = Compiler()
+
+use `<<` operator to add source code directory
+
+	compiler << '...'
+	// or
+	compiler << File('...')
+
+use `>>` operator to specify output directory
+
+	compiler >> '...'
+	// or
+	compiler >> File('...')
+
+use `compile` to start compiling
+
+	compiler compile
+	
+these method invocations can be chained up
+
+	Compiler() << '...' >> '...' compile
+
+##README
 
 check `src/test/resources/lang-demo` for syntax tutorials.
 
@@ -218,22 +248,24 @@ defines a class. in java, we write :
 
 --
 
-##Scripts and REPL (still developing)
+##REPL
+
+run `lt.repl.REPL`, or start `jar` file generated via `maven package`, you will see
+
+    lt>
+   
+Type expressions and double `Enter`, you will get the result
+
+--
+
+##Scripts (still developing)
 
 `LessTyping` supports scripts. the suffix is usually `lt`, but for scripts, it should be `lts`
 
-the scripts would be compiled to classes as well,   
+the scripts would be compiled to classes as well
+
 the class name is the same as `lts` file name, and a `main` method would be added into the class  
 the scripts would be filled into `class constructing block`
-
-this feature is still in development, but i'm sure it won't take much time.
-
-run `lt.repl.REPL` then you will see
-
-    LessTyping REPL
-    >
-   
-write expressions and double `Enter`, you will get the result
 
 ---------
 
@@ -243,6 +275,8 @@ Chinese Version README
 `LessTyping`基于java8。它既有强类型语言的特性，又有弱类型语言的特性。它被编译到JVM字节码，可以与任何Java类库完美互通。
 
 ##如何构建工程
+
+环境需要 `JRE 8` 和 `maven 3`
 
 clone这个仓库,然后执行
 
@@ -254,18 +288,46 @@ clone这个仓库,然后执行
 
 	java -jar *.jar
 	
-接着, [REPL.java](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) 将开始运行
+接着, [REPL](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) 将开始运行
     
-    Welcome to LessTyping
-    Type in expressions and double Enter to have them evaluated.
-    ctrl-c to exit
-    for syntax help, please visit https://github.com/wkgcass/LessTyping/blob/master/src/test/resources/lang-demo/
-    
+	Welcome to LessTyping
+	Type in expressions and double Enter to have them evaluated.
+	Type :help for more information.
+	for syntax help, please visit https://github.com/wkgcass/LessTyping/
+        
     >1+1
     >
     $res_0 : java.lang.Integer = 2
     
     >
+
+##Compile `lt` Files
+
+开启`REPL`, 然后构造一个`Compiler`
+
+	compiler = Compiler()
+
+使用 `<<` 运算符来添加源代码目录
+
+	compiler << '...'
+	// or
+	compiler << File('...')
+
+使用 `>>` 运算符来设定编译输出目录
+
+	compiler >> '...'
+	// or
+	compiler >> File('...')
+
+使用 `compile` 来开启编译
+
+	compiler compile
+	
+这些方法调用可以串联起来
+
+	Compiler() << '...' >> '...' compile
+
+##README
 
 `src/test/resources/lang-demo` 中包含了语法说明
 
@@ -456,19 +518,20 @@ e.g.
 
 --
 
-##脚本和REPL(仍在开发中)
+##REPL
+
+执行 `lt.repl.REPL`,或者执行 `maven package` 后的`jar`文件，你将会看到
+
+    lt>
+   
+输入表达式,然后按两次`Enter`就可以获得结果
+
+--
+
+##脚本（仍在开发）
 
 `LessTyping`支持脚本. 通常来说后缀为`lt`, 不过对于脚本，后缀名为`lts`
 
 脚本也会被编译到类，  
 该类的名称是`lts`文件的文件名， 并且会自动添加一个`main`方法到该类中  
 脚本内容讲被写入到`类构造块`中
-
-该特性仍在开发，不过我想应该花不了太长时间
-
-执行 `lt.repl.REPL` ,你将会看到
-
-    LessTyping REPL
-    >
-   
-输入表达式,然后按两次`Enter`就可以获得结果

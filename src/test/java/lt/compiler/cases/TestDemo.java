@@ -1,9 +1,6 @@
 package lt.compiler.cases;
 
-import lt.compiler.CodeGenerator;
-import lt.compiler.Parser;
-import lt.compiler.SemanticProcessor;
-import lt.compiler.SyntaxException;
+import lt.compiler.*;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 import lt.lang.function.Function1;
@@ -21,7 +18,7 @@ import static org.junit.Assert.*;
  */
 public class TestDemo {
         private Map<String, byte[]> generate(BufferedReader br, String fileName) throws IOException, SyntaxException, ClassNotFoundException {
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner(fileName, br, 4);
+                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner(fileName, br, new lt.compiler.Scanner.Properties());
                 Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put(fileName, syntacticProcessor.parse());

@@ -49,6 +49,7 @@ public class Evaluator {
                 "    java::math::_\n" +
                 "    lt::repl::_\n" +
                 "class Evaluate";
+        private static final int EVALUATE_BASIC_LINES = 4;
 
         private int generatedVariableIndex = 0;
         private final String varNameBase;
@@ -76,7 +77,7 @@ public class Evaluator {
                 if (null == stmt || stmt.trim().isEmpty()) throw new IllegalArgumentException("the input string cannot be empty or null");
 
                 if (stmt.startsWith("class") || stmt.startsWith("interface")) {
-                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(stmt), 4);
+                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(stmt), new Scanner.Properties());
                         Parser parser = new Parser(scanner.parse());
                         SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                                 put("EVALUATE.lts", parser.parse());
@@ -123,7 +124,14 @@ public class Evaluator {
                         }
 
                         String code = sb.toString(); // the generated code
-                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(code), 4);
+
+                        // check lines in recordedStatements
+                        String[] strs = recordedStatements.split("\\n|\\r");
+
+                        Scanner.Properties scanner$properties = new Scanner.Properties();
+                        scanner$properties._COLUMN_BASE_ = -4;
+                        scanner$properties._LINE_BASE_ = -strs.length - EVALUATE_BASIC_LINES - 1;
+                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(code), scanner$properties);
                         ElementStartNode root = scanner.parse();
 
                         Parser parser = new Parser(root);

@@ -158,8 +158,10 @@ public class SemanticProcessor {
                         // add java.lang into import list
                         // java::lang::_
                         // lt::lang::_
+                        // lt::lang::Utils._
                         imports.add(new Import(Collections.singletonList(new Import.ImportDetail(new AST.PackageRef("java::lang", LineCol.SYNTHETIC), null, true)), LineCol.SYNTHETIC));
                         imports.add(new Import(Collections.singletonList(new Import.ImportDetail(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true)), LineCol.SYNTHETIC));
+                        imports.add(new Import(Collections.singletonList(new Import.ImportDetail(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Utils", LineCol.SYNTHETIC), true)), LineCol.SYNTHETIC));
 
                         fileNameToPackageName.put(fileName, pkg);
 

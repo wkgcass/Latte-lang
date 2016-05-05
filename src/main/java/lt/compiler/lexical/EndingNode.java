@@ -10,7 +10,7 @@ public class EndingNode extends Node {
         private int type;
 
         public EndingNode(Args args, int type) {
-                super(args);
+                super(args, type == STRONG ? TokenType.EndingNodeStrong : TokenType.EndingNode);
                 if (type != STRONG && type != WEAK) {
                         throw new IllegalArgumentException("unexpected type number " + type + ", use EndingNode.STRONG or EndingNode.WEAK");
                 }

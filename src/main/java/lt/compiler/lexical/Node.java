@@ -12,7 +12,10 @@ public abstract class Node implements Iterator<Node>, Iterable {
         private Node next;
         private Node previous;
 
-        public Node(Args args) {
+        private final TokenType tokenType;
+
+        public Node(Args args, TokenType tokenType) {
+                this.tokenType = tokenType;
                 lineCol = new LineCol(args.fileName, args.currentLine, args.currentCol);
                 this.previous = args.previous;
 
@@ -22,6 +25,10 @@ public abstract class Node implements Iterator<Node>, Iterable {
                 } else if (!args.startNodeStack.empty()) {
                         args.startNodeStack.lastElement().setLinkedNode(this);
                 }
+        }
+
+        public TokenType getTokenType() {
+                return tokenType;
         }
 
         public boolean hasNext() {
@@ -62,8 +69,8 @@ public abstract class Node implements Iterator<Node>, Iterable {
                 if (o == null || getClass() != o.getClass()) return false;
 
                 Node node = (Node) o;
+                return tokenType == node.tokenType && !(next != null ? !next.equals(node.next) : node.next != null);
 
-                return !(next != null ? !next.equals(node.next) : node.next != null);
         }
 
         @Override

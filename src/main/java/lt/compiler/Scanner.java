@@ -1,6 +1,7 @@
 package lt.compiler;
 
 import lt.compiler.lexical.*;
+import lt.compiler.syntactic.UnknownTokenException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.util.stream.Collectors;
 
 /**
  * transform plain <tt>LessTyping</tt> text into Token Tree<br>
- * <tt>LessTyping</tt> forces {@link #_INDENT} indents to differ program blocks<br>
+ * <tt>LessTyping</tt> forces {@link lt.compiler.Scanner.Properties#_INDENTATION_} indents to differ program blocks<br>
  * so, instead of a stream of Tokens, the Scanner builds a Tree of Tokens to record different layers of the code<br>
  * the parse method returns the root token of the Token Tree<br>
  * the Tree starts with an ElementStartNode. Element represents useful info about the program.<br>
@@ -22,6 +23,12 @@ import java.util.stream.Collectors;
  * @see EndingNode
  */
 public class Scanner {
+        public static class Properties {
+                public int _INDENTATION_ = 4;
+                public int _LINE_BASE_ = 0;
+                public int _COLUMN_BASE_ = 0;
+        }
+
         /**
          * create a new layer if it's the first element of a line<br>
          * and only when indent becomes smaller than when entering the layer, the layer would finish
@@ -96,7 +103,7 @@ public class Scanner {
         }
 
         private final BufferedReader reader;
-        private final int _INDENT;
+        private final Properties properties;
         private final String fileName;
 
         /**
@@ -104,9 +111,9 @@ public class Scanner {
          *
          * @param reader text reader
          */
-        public Scanner(String fileName, Reader reader, int _INDENT) {
+        public Scanner(String fileName, Reader reader, Properties properties) {
                 this.fileName = fileName;
-                this._INDENT = _INDENT;
+                this.properties = properties;
                 if (reader instanceof BufferedReader) {
                         this.reader = (BufferedReader) reader;
                 } else {
@@ -133,6 +140,7 @@ public class Scanner {
                 args.fileName = fileName;
                 ElementStartNode elementStartNode = new ElementStartNode(args, 0);
                 args.startNodeStack.push(elementStartNode);
+                args.currentLine = properties._LINE_BASE_;
                 parse(args);
                 finalCheck(elementStartNode);
                 return elementStartNode;
@@ -199,7 +207,7 @@ public class Scanner {
          * <ol>
          * <li>read a line from the {@link #reader}</li>
          * <li>check indent</li>
-         * <li>check layer:indent = lastLayerIndent + {@link #_INDENT} means start a new startNode. indent < lastLayerIndent means it should resume to upper layers</li>
+         * <li>check layer:indent = lastLayerIndent + {@link lt.compiler.Scanner.Properties#_INDENTATION_} means start a new startNode. indent < lastLayerIndent means it should resume to upper layers</li>
          * <li>invoke {@link #parse(String, Args)}</li>
          * <li>append {@link EndingNode}</li>
          * </ol>
@@ -260,7 +268,7 @@ public class Scanner {
                                         args.defined.put(target, replacement);
 
                                         line = reader.readLine();
-                                        args.currentCol = 0;
+                                        args.currentCol = properties._COLUMN_BASE_;
                                         continue;
                                 }
                         } else if (line.startsWith("undef")) {
@@ -287,7 +295,7 @@ public class Scanner {
                                         args.defined.remove(target);
 
                                         line = reader.readLine();
-                                        args.currentCol = 0;
+                                        args.currentCol = properties._COLUMN_BASE_;
                                         continue;
                                 }
                         }
@@ -330,12 +338,13 @@ public class Scanner {
                         }
 
                         // check space indent
-                        if (spaces % _INDENT != 0) throw new IllegalIndentationException(_INDENT, args.generateLineCol());
+                        if (spaces % properties._INDENTATION_ != 0) throw new IllegalIndentationException(
+                                properties._INDENTATION_, args.generateLineCol());
 
                         // remove spaces
                         line = line.trim();
 
-                        args.currentCol = spaces + 1 + rootIndent;
+                        args.currentCol = spaces + 1 + rootIndent + properties._COLUMN_BASE_;
 
                         // check it's an empty line
                         if (line.isEmpty()) {
@@ -347,12 +356,12 @@ public class Scanner {
                         if (args.startNodeStack.lastElement().getIndent() != spaces) {
                                 if (args.startNodeStack.lastElement().getIndent() > spaces) {
                                         // smaller indent
-                                        redirectToStartNodeByIndent(args, spaces + _INDENT);
-                                } else if (args.startNodeStack.lastElement().getIndent() == spaces - _INDENT) {
+                                        redirectToStartNodeByIndent(args, spaces + properties._INDENTATION_);
+                                } else if (args.startNodeStack.lastElement().getIndent() == spaces - properties._INDENTATION_) {
                                         // greater indent
                                         createStartNode(args);
                                 } else {
-                                        throw new IllegalIndentationException(_INDENT, args.generateLineCol());
+                                        throw new IllegalIndentationException(properties._INDENTATION_, args.generateLineCol());
                                 }
                         }
 
@@ -409,25 +418,25 @@ public class Scanner {
 
                 if (token == null) {
                         // not found, append to previous
-                        args.previous = new Element(args, line);
+                        args.previous = new Element(args, line, getTokenType(line, args.generateLineCol()));
                 } else {
                         String copyOfLine = line;
                         String str = line.substring(0, minIndex);
                         if (!str.isEmpty()) {
                                 // record text before the token
-                                args.previous = new Element(args, str);
+                                args.previous = new Element(args, str, getTokenType(str, args.generateLineCol()));
                                 args.currentCol += str.length();
                         }
 
                         if (LAYER.contains(token)) {
                                 // start new layer
-                                args.previous = new Element(args, token);
+                                args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
                                 createStartNode(args);
                         } else if (SPLIT_X.contains(token)) {
                                 // do split check
                                 if (!NO_RECORD.contains(token)) {
                                         // record this token
-                                        args.previous = new Element(args, token);
+                                        args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
                                 }
                         } else if (STRING.contains(token)) {
                                 // string literal
@@ -441,7 +450,7 @@ public class Scanner {
                                                 // the string starts at minIndex and ends at index
                                                 String s = line.substring(minIndex, index + 1);
 
-                                                args.previous = new Element(args, s);
+                                                args.previous = new Element(args, s, getTokenType(s, args.generateLineCol()));
                                                 args.currentCol += (index - minIndex + 1 - token.length());
                                                 line = line.substring(index + 1);
 
@@ -461,7 +470,7 @@ public class Scanner {
                                 line = ""; // ignore all
                         } else if (PAIR.containsKey(token)) {
                                 // pair start
-                                args.previous = new Element(args, token);
+                                args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
                                 createStartNode(args);
                                 args.pairEntryStack.push(new PairEntry(token, args.startNodeStack.lastElement()));
                         } else if (PAIR.containsValue(token)) {
@@ -479,12 +488,14 @@ public class Scanner {
 
                                 if (args.startNodeStack.lastElement().getIndent() >= startNode.getIndent()) {
                                         redirectToStartNodeByIndent(args, startNode.getIndent());
-                                } else if (args.startNodeStack.lastElement().getIndent() == startNode.getIndent() - _INDENT) {
+                                } else if (args.startNodeStack.lastElement().getIndent() == startNode.getIndent() - properties._INDENTATION_) {
                                         args.previous = startNode;
                                 } else {
-                                        throw new SyntaxException("indentation of " + token + " should >= " + start + "'s indent or equal to " + start + "'s indent - " + _INDENT, args.generateLineCol());
+                                        throw new SyntaxException(
+                                                "indentation of " + token + " should >= " + start + "'s indent or equal to " + start + "'s indent - " + properties._INDENTATION_,
+                                                args.generateLineCol());
                                 }
-                                args.previous = new Element(args, token);
+                                args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
                         } else {
                                 throw new UnexpectedTokenException(token, args.generateLineCol());
                         }
@@ -519,9 +530,21 @@ public class Scanner {
         }
 
         private void createStartNode(Args args) {
-                ElementStartNode elementStartNode = new ElementStartNode(args, args.startNodeStack.lastElement().getIndent() + _INDENT);
+                ElementStartNode elementStartNode = new ElementStartNode(args, args.startNodeStack.lastElement().getIndent() + properties._INDENTATION_);
                 args.previous = null;
                 args.startNodeStack.push(elementStartNode);
+        }
+
+        private TokenType getTokenType(String str, LineCol lineCol) throws UnknownTokenException {
+                if (CompileUtil.isBoolean(str)) return TokenType.BOOL;
+                if (CompileUtil.isModifier(str)) return TokenType.MODIFIER;
+                if (CompileUtil.isNumber(str)) return TokenType.NUMBER;
+                if (CompileUtil.isString(str)) return TokenType.STRING;
+                if (CompileUtil.isKey(str)) return TokenType.KEY; // however in/is/not are two variable operators, they are marked as keys
+                if (CompileUtil.isSymbol(str)) return TokenType.SYMBOL;
+                if (SPLIT.contains(str)) return TokenType.SYMBOL;
+                if (CompileUtil.isValidName(str)) return TokenType.VALID_NAME;
+                throw new UnknownTokenException(str, lineCol);
         }
 
         /**
@@ -531,7 +554,7 @@ public class Scanner {
          *
          * @param root root node
          */
-        private void finalCheck(ElementStartNode root) {
+        private void finalCheck(ElementStartNode root) throws UnknownTokenException {
                 if (root.hasLinkedNode()) {
                         Node n = root.getLinkedNode();
                         while (n != null) {
@@ -559,7 +582,7 @@ public class Scanner {
                                                 Element pre = (Element) n.previous();
                                                 Element ne = (Element) n.next();
                                                 String s = pre.getContent() + "." + ne.getContent();
-                                                Element element = new Element(new Args(), s);
+                                                Element element = new Element(new Args(), s, getTokenType(s, pre.getLineCol()));
                                                 element.setLineCol(pre.getLineCol());
 
                                                 element.setPrevious(pre.previous());

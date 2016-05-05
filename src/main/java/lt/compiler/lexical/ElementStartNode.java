@@ -8,7 +8,7 @@ public class ElementStartNode extends Node {
         private Node linkedNode;
 
         public ElementStartNode(Args args, int indent) {
-                super(args);
+                super(args, TokenType.ElementStartNode);
                 this.indent = indent;
         }
 

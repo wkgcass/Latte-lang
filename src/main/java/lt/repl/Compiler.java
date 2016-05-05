@@ -63,7 +63,7 @@ public class Compiler {
                         for (File f : dir.listFiles()) {
                                 if (f.getName().endsWith(".lt")) {
                                         Reader reader = new FileReader(f);
-                                        Scanner scanner = new Scanner(f.getName(), reader, _INDENT);
+                                        Scanner scanner = new Scanner(f.getName(), reader, new Scanner.Properties());
                                         ElementStartNode root = scanner.parse();
 
                                         Parser parser = new Parser(root);
@@ -82,10 +82,10 @@ public class Compiler {
                         byte[] bytes = result.getValue();
 
                         String dir = outputDir.getAbsolutePath();
-                        File path = new File(dir + File.separator + (className.contains(".") ? className.substring(0, className.lastIndexOf('.')) : ""));
+                        File path = new File(dir + File.separator + (className.contains(".") ? className.substring(0, className.lastIndexOf('.')).replace(".", File.separator) : ""));
                         if (!path.exists()) if (!path.mkdirs()) throw new IOException("cannot create directory " + path);
 
-                        File newFile = new File(path + File.separator + (className.contains(".") ? className.substring(className.lastIndexOf('.')) : className) + ".class");
+                        File newFile = new File(path + File.separator + (className.contains(".") ? className.substring(className.lastIndexOf('.') + 1) : className) + ".class");
                         if (!newFile.exists()) if (!newFile.createNewFile()) throw new IOException("cannot create file " + newFile);
 
                         FileOutputStream fos = new FileOutputStream(newFile);

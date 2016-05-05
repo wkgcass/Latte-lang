@@ -1,6 +1,9 @@
 package lt.repl;
 
+import lt.compiler.SyntaxException;
+
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Scanner;
 import java.util.jar.JarFile;
@@ -74,8 +77,9 @@ public class REPL {
                                 if (str.trim().isEmpty()) {
                                         if (sb.length() != 0) {
                                                 // do repl
+                                                String stmt = sb.toString();
                                                 try {
-                                                        Evaluator.Entry entry = evaluator.eval(sb.toString());
+                                                        Evaluator.Entry entry = evaluator.eval(stmt);
                                                         String name = entry.name;
                                                         Object o = entry.result;
                                                         if (name == null) {
@@ -85,7 +89,26 @@ public class REPL {
                                                         }
                                                         System.out.print("\n" + lineStarter);
                                                 } catch (Throwable t) {
-                                                        t.printStackTrace();
+                                                        if (t instanceof InvocationTargetException) {
+                                                                t.getCause().printStackTrace();
+                                                        } else if (t instanceof SyntaxException) {
+                                                                int line = ((SyntaxException) t).lineCol.line - 1;
+                                                                int col = ((SyntaxException) t).lineCol.column - 1;
+                                                                String[] strs = stmt.split("\\n|\\r");
+                                                                String s = strs[line];
+                                                                System.err.println(s);
+                                                                for (int i = 0; i < col; ++i) {
+                                                                        System.err.print(" ");
+                                                                }
+                                                                System.err.print("^ ");
+                                                                System.err.println(
+                                                                        t.getClass().getSimpleName() +
+                                                                                " : " +
+                                                                                t.getMessage()
+                                                                );
+                                                        } else {
+                                                                t.printStackTrace();
+                                                        }
                                                         sleep(10);
                                                         System.out.print(lineStarter);
                                                 }
