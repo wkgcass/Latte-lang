@@ -16,7 +16,7 @@ public abstract class Node implements Iterator<Node>, Iterable {
 
         public Node(Args args, TokenType tokenType) {
                 this.tokenType = tokenType;
-                lineCol = new LineCol(args.fileName, args.currentLine, args.currentCol);
+                lineCol = args.generateLineCol();
                 this.previous = args.previous;
 
                 if (hasPrevious()) {

@@ -222,6 +222,7 @@ public class Scanner {
                 int rootIndent = -1;
                 while (line != null) {
                         ++args.currentLine;
+                        args.useDefine.clear();
 
                         // pre processing
                         if (line.startsWith("define")) {
@@ -311,12 +312,20 @@ public class Scanner {
                                 String pre = line.substring(0, COMMENT_index);
                                 String post = line.substring(COMMENT_index);
                                 for (Map.Entry<String, String> definedEntry : args.defined.entrySet()) {
+                                        String tmp = pre;
                                         pre = pre.replace(definedEntry.getKey(), definedEntry.getValue());
+                                        if (!tmp.equals(pre)) {
+                                                args.useDefine.put(definedEntry.getKey(), definedEntry.getValue());
+                                        }
                                 }
                                 line = pre + post;
                         } else {
                                 for (Map.Entry<String, String> definedEntry : args.defined.entrySet()) {
+                                        String tmp = line;
                                         line = line.replace(definedEntry.getKey(), definedEntry.getValue());
+                                        if (!tmp.equals(line)) {
+                                                args.useDefine.put(definedEntry.getKey(), definedEntry.getValue());
+                                        }
                                 }
                         }
 
@@ -451,10 +460,8 @@ public class Scanner {
                                                 String s = line.substring(minIndex, index + 1);
 
                                                 args.previous = new Element(args, s, getTokenType(s, args.generateLineCol()));
-                                                args.currentCol += (index - minIndex + 1 - token.length());
+                                                args.currentCol += (index - minIndex);
                                                 line = line.substring(index + 1);
-
-                                                token = s;
                                                 break;
                                         }
 

@@ -29,9 +29,21 @@ public class Args {
          */
         public Stack<PairEntry> pairEntryStack = new Stack<>();
 
+        /**
+         * @return a new LineCol object containing current file, line, column and whether it uses define command
+         */
         public LineCol generateLineCol() {
-                return new LineCol(fileName, currentLine, currentCol);
+                LineCol res = new LineCol(fileName, currentLine, currentCol);
+                res.useDefine.putAll(useDefine);
+                return res;
         }
 
+        /**
+         * the defined strings
+         */
         public Map<String, String> defined = new LinkedHashMap<>();
+        /**
+         * whether this line uses define
+         */
+        public Map<String, String> useDefine = new LinkedHashMap<>();
 }

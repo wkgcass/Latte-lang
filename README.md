@@ -17,7 +17,7 @@ LessTyping supports
 
 ##How to build
 
-`JRE 8` and `maven 3` is required.
+`JRE 8` and `maven 3` are required.
 
 clone the repository, and run
 
