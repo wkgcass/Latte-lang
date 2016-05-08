@@ -10,6 +10,7 @@ public class LineCol {
         public final String fileName;
         public final int line;
         public final int column;
+        public int length;
         public final Map<String, String> useDefine = new LinkedHashMap<>();
 
         /**

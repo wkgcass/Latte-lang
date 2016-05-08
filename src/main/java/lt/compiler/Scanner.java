@@ -595,6 +595,8 @@ public class Scanner {
                                                 element.setPrevious(pre.previous());
                                                 element.setNext(ne.next());
 
+                                                element.getLineCol().length = s.length();
+
                                                 if (element.hasPrevious()) {
                                                         element.previous().setNext(element);
                                                 } else {

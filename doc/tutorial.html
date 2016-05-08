@@ -3,14 +3,14 @@
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-    <title>LessTyping - Download</title>
+    <title>LessTyping - Tutorial</title>
     <link href="http://cdn.bootcss.com/semantic-ui/2.1.8/semantic.css" rel="stylesheet"/>
     <link href="stylesheets/style.css" rel="stylesheet"/>
     <link href="stylesheets/code.css" rel="stylesheet"/>
     <script src="http://cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
     <script src="http://cdn.bootcss.com/semantic-ui/2.1.8/semantic.js"></script>
     <script src="javascripts/common.js"></script>
-    <script src="javascripts/download.js"></script>
+    <script src="javascripts/tutorial.js"></script>
     <script src="javascripts/code.js"></script>
     <script src="javascripts/scanner.js"></script>
     <script src="http://cdn.bootcss.com/angular.js/1.3.20/angular.min.js"></script>
@@ -25,7 +25,7 @@
     <link href="http://cdn.bootcss.com/codemirror/5.12.0/codemirror.min.css" rel="stylesheet">
     <!-- code mirror ends-->
 </head>
-<body ng-app="download" ng-controller="controller" class="pushable">
+<body ng-app="tutorial" ng-controller="controller" class="pushable">
 <div class="ui large top fixed borderless menu">
     <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a>
 
@@ -38,35 +38,28 @@
     <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a></div>
 <div class="pusher">
     <div class="ui black big launch right attached fixed button"><a style="color:white" class="toc item"><i class="sidebar icon"></i></a></div>
-    <div style="margin-top:60px;" class="ui text container">
-        <div class="ui middle aligned stackable grid container">
-            <div class="row">
-                <div style="padding-left:0px" class="seven wide column">
-                    <h1>{{source_code.title}}</h1>
+    <div style="margin-top:60px;" class="ui container">
+        <div>{{descr}}</div>
+        <br>
+        <br>
+
+        <div ng-repeat="tutorial in tutorials">
+            <h1>{{tutorial.title}}</h1>
+
+            <div class="ui two column stackable grid container">
+                <div class="column">
+                    <h4>LessTyping</h4>
+                    <pre ng-bind-html="tutorial.lesstyping"></pre>
                 </div>
-                <div class="seven wide right floated column"><a href="{{source_code.link}}" class="ui grey button">{{source_code.download}}</a></div>
+                <div class="column">
+                    <h4>Java</h4>
+                    <textarea id="java_{{$index}}">{{tutorial.java}}</textarea>
+                    <script ng-bind="printScriptForJava($index, tutorial.java)"></script>
+                </div>
             </div>
+            <blockquote ng-bind-html="tutorial.note"></blockquote>
+            <h4 class="ui horizontal header divider" style="margin-bottom: 20px;" ng-show="$index!=(tutorials.length-1)">•</h4>
         </div>
-        <br/>
-
-        <p ng-bind-html="content" ng-repeat="content in source_code.contents"></p>
-        <h4 class="ui horizontal header divider">next</h4>
-
-        <h1>{{build.title}}</h1>
-
-        <p ng-bind-html="content" ng-repeat="content in build.contents"></p>
-
-        <h4 class="ui horizontal header divider">next</h4>
-
-        <h1>{{compile.title}}</h1>
-
-        <p ng-bind-html="content" ng-repeat="content in compile.contents"></p>
-
-        <h4 class="ui horizontal header divider">next</h4>
-
-        <h1>{{highlight.title}}</h1>
-
-        <p ng-bind-html="content" ng-repeat="content in highlight.contents"></p>
     </div>
 </div>
 </body>

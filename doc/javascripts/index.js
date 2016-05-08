@@ -185,12 +185,7 @@ $(document).ready(function () {
                 $sce.trustAsHtml("LessTyping提供一个REPL, 您可以运行自动Build后生成的jar包,或者直接执行 <code>lt.repl.REPL</code> 类以使用"),
                 $sce.trustAsHtml("REPL环境除去任何LessTyping代码都会执行的导入以外, 还会自动导入 <ul><li><code>java::util::_</code></li><li><code>java::math::_</code></li><li><code>lt::repl::_</code></li></ul>"),
                 $sce.trustAsHtml("若需要编译LessTyping源代码文件(<code>*.lt</code>), 您可以在REPL环境下使用 <code>Compiler()</code> 构造一个 <code>lt::repl::Compiler</code> 对象. 您也可以在java代码中用类似的方式进行 <code>lt</code> 文件的编译"),
-                $sce.trustAsHtml("<code>\n" +
-                    "compiler = Compiler()<br>" +
-                    "compiler << 'source file directory'<br>" +
-                    "compiler >> 'output directory'<br>" +
-                    "compiler compile<br>" +
-                    "</code>")
+                $sce.trustAsHtml(common_compile_highlighting())
             ],
             help: $sce.trustAsHtml("<a href=''>运算符绑定</a> 可能对您有帮助")
         };

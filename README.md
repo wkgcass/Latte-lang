@@ -13,6 +13,10 @@ LessTyping supports
 * Read Eval Print Loop
 * scripts
 
+[LessTyping WebSite](http://lesstyping.cassite.net/)
+
+`LessTyping` is based on java 8. it's a hybrid of strong and weak typing. It's compiled to JVM byte code, and can collaborate with any java libraries.
+
 最下面有中文 ：）
 
 ##How to build
@@ -297,6 +301,8 @@ LessTyping 支持如下功能
 * JSON 字面量
 * Read Eval Print Loop
 * 脚本
+
+[LessTyping 网站](http://lesstyping.cassite.net/)
 
 `LessTyping`基于java8。它既有强类型语言的特性，又有弱类型语言的特性。它被编译到JVM字节码，可以与任何Java类库完美互通。
 

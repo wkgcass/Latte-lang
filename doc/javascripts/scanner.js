@@ -49,8 +49,15 @@ function Node(args, type, indent, elem) {
     this.lineCol = args.generateLineCol();
     this.indent = indent;
     this.elem = elem;
+    this.original = elem;
     this.previous = args.previous;
     this.next = null;
+
+    if (this.elem) {
+        this.lineCol.length = this.elem.length;
+    } else {
+        this.lineCol.length = 0;
+    }
 
     this.getTokenType = function () {
         return this.type;
@@ -433,7 +440,7 @@ function Scanner(filename, input, config) {
 
                     if (!args.defined[target]) throw SyntaxException("\"" + target + "\" is not defined", lineStart);
 
-                    args.defined.remove(target);
+                    args.defined[target] = undefined;
 
                     line = lines.length == cursor ? null : lines[cursor++];
                     args.currentCol = properties._COLUMN_BASE_;
@@ -532,7 +539,7 @@ function Scanner(filename, input, config) {
             // do redirect
             args.previous = startNode;
         } else {
-            if (startNode.indent < indent || args.startNodeStack.empty()) {
+            if (startNode.indent < indent || args.startNodeStack.length == 0) {
                 throw "NoSuchElementException(position=" + args.currentLine + ":" + args.currentCol + ",indent=" + indent;
             }
             redirectToStartNodeByIndent(args, indent);
@@ -707,8 +714,19 @@ function Scanner(filename, input, config) {
                         var pre = n.previous;
                         var ne = n.next;
                         var s = pre.elem + "." + ne.elem;
-                        var element = new Node(new Args(), getTokenType(s, pre.getLineCol()), undefined, s);
+                        var element = new Node({
+                            startNodeStack: [],
+                            generateLineCol: function () {
+                                return {
+                                    fileName: pre.getLineCol().fileName,
+                                    line: pre.getLineCol().line,
+                                    column: pre.getLineCol().column,
+                                    useDefine: pre.getLineCol().useDefine
+                                }
+                            }
+                        }, getTokenType(s, pre.getLineCol()), undefined, s);
                         element.setLineCol(pre.getLineCol());
+                        element.getLineCol().length = element.elem.length;
 
                         element.setPrevious(pre.previous);
                         element.setNext(ne.next);

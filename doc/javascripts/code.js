@@ -1,3 +1,42 @@
+Array.prototype.addAll = function ($array) {
+    if ($array == null || $array.length == 0)
+        return;
+    for (var $i = 0; $i < $array.length; $i++)
+        this.push($array[$i]);
+};
+String.prototype.startsWith = function (str) {
+    if (str == null || str == "" || this.length == 0 || str.length > this.length)
+        return false;
+    if (this.substr(0, str.length) == str)
+        return true;
+    else
+        return false;
+    return true;
+};
+String.prototype.endsWith = function (s) {
+    if (s == null || s == "" || this.length == 0 || s.length > this.length)
+        return false;
+    if (this.substring(this.length - s.length) == s)
+        return true;
+    else
+        return false;
+    return true;
+}
+String.prototype.contains = function (str) {
+    return this.indexOf(str) != -1;
+}
+Array.prototype.contains = function (item) {
+    for (i = 0; i < this.length; i++) {
+        if (this[i] == item) {
+            return true;
+        }
+    }
+    return false;
+};
+String.prototype.trim = function () {
+    return this.replace(/(^\s*)|(\s*$)/g, "");
+};
+
 function highlighting(file, code, config) {
     var root = new Scanner(file, code, config).parse();
     var lines = code.split(/\n|\r/);
@@ -26,9 +65,14 @@ function highlighting(file, code, config) {
                     break;
                 }
                 if (isEmpty) {
-                    var replacement = "<span class='" + getDomClass(node.type) + "'>" + node.elem + "</span>";
                     var lineCol = node.getLineCol();
-                    replace(lineCol.line - 1, lineCol.column - 1, node.elem.length, replacement);
+
+                    if (node.original) {
+                        node.elem = node.original;
+                    }
+
+                    var replacement = "<span class='" + getDomClass(node.type) + "'>" + node.elem + "</span>";
+                    replace(lineCol.line - 1, lineCol.column - 1, lineCol.length, replacement);
                 }
             }
             travelNormal(node.next);
@@ -84,7 +128,7 @@ function highlighting(file, code, config) {
 
     var res = "";
     for (var i = 0; i < lines.length; ++i) {
-        res += (lines[i] + "\n");
+        res += (lines[i] + "<br>");
     }
     return res;
 }

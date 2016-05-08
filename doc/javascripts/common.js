@@ -1,41 +1,3 @@
-Array.prototype.addAll = function ($array) {
-    if ($array == null || $array.length == 0)
-        return;
-    for (var $i = 0; $i < $array.length; $i++)
-        this.push($array[$i]);
-};
-String.prototype.startWith = function (str) {
-    if (str == null || str == "" || this.length == 0 || str.length > this.length)
-        return false;
-    if (this.substr(0, str.length) == str)
-        return true;
-    else
-        return false;
-    return true;
-};
-String.prototype.endsWith = function (s) {
-    if (s == null || s == "" || this.length == 0 || s.length > this.length)
-        return false;
-    if (this.substring(this.length - s.length) == s)
-        return true;
-    else
-        return false;
-    return true;
-}
-String.prototype.contains = function (str) {
-    return this.indexOf(str) != -1;
-}
-Array.prototype.contains = function (item) {
-    for (i = 0; i < this.length; i++) {
-        if (this[i] == item) {
-            return true;
-        }
-    }
-    return false;
-};
-String.prototype.trim = function () {
-    return this.replace(/(^\s*)|(\s*$)/g, "");
-};
 function common_git_repo() {
     return "https://github.com/wkgcass/LessTyping";
 }
@@ -62,9 +24,9 @@ function common_navs() {
             link: "syntax.html"
         },
         {
-            name: "示例",
+            name: "文档",
             active: false,
-            link: "examples.html"
+            link: "javadoc/index.html"
         },
         {
             name: "开发",
@@ -72,4 +34,15 @@ function common_navs() {
             link: "dev.html"
         }
     ]
+}
+function common_compile_highlighting() {
+    return "<pre class='code'>" +
+        highlighting("compile.lt",
+            "compiler = Compiler()\n" +
+            "compiler << 'source file directory'\n" +
+            "compiler >> 'output directory'\n" +
+            "compiler compile\n" +
+            "; or you can chain these invocations up\n" +
+            "Compiler() << 'source file dir' >> 'output dir' compile", {}) +
+        "</pre>";
 }

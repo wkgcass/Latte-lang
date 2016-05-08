@@ -11,6 +11,7 @@ public class Element extends Node {
         public Element(Args args, String content, TokenType tokenType) {
                 super(args, tokenType);
                 this.content = content;
+                getLineCol().length = this.content.length();
         }
 
         public String getContent() {

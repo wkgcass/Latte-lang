@@ -281,101 +281,103 @@ public class Parser {
                                         return null;
 
                                 } else if (current.getTokenType() == TokenType.KEY) {
-                                        if (content.equals("if")) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
+                                        switch (content) {
+                                                case "if":
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
 
-                                                return parse_if();
-                                        } else if (content.equals("for")) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
+                                                        return parse_if();
+                                                case "for":
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
 
-                                                return parse_for();
-                                        } else if (content.equals("do")) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
+                                                        return parse_for();
+                                                case "do":
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
 
-                                                return parse_do_while();
-                                        } else if (content.equals("while")) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
+                                                        return parse_do_while();
+                                                case "while":
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
 
-                                                return parse_while();
-                                        } else if (content.equals("static")) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
+                                                        return parse_while();
+                                                case "static":
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
 
-                                                LineCol lineCol = current.getLineCol();
-                                                if (current.next() instanceof ElementStartNode) {
-                                                        // static
-                                                        //     ...
-                                                        nextNode(false);
-                                                        return new AST.StaticScope(
-                                                                parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false, false),
-                                                                lineCol);
+                                                        LineCol lineCol = current.getLineCol();
+                                                        if (current.next() instanceof ElementStartNode) {
+                                                                // static
+                                                                //     ...
+                                                                nextNode(false);
+                                                                return new AST.StaticScope(
+                                                                        parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false, false),
+                                                                        lineCol);
 
-                                                } else if (current.next() instanceof Element) {
-                                                        // static ...
-                                                        nextNode(false);
-                                                        Element curr = (Element) current;
-                                                        Statement stmt = parse_statement();
-                                                        if (stmt == null)
-                                                                throw new UnexpectedTokenException("a valid statement", curr.toString(), curr.getLineCol());
-                                                        return new AST.StaticScope(Collections.singletonList(stmt), lineCol);
+                                                        } else if (current.next() instanceof Element) {
+                                                                // static ...
+                                                                nextNode(false);
+                                                                Element curr = (Element) current;
+                                                                Statement stmt = parse_statement();
+                                                                if (stmt == null)
+                                                                        throw new UnexpectedTokenException("a valid statement", curr.toString(), curr.getLineCol());
+                                                                return new AST.StaticScope(Collections.singletonList(stmt), lineCol);
 
-                                                } else {
-                                                        // static
-                                                        // and no other statements/expressions
-                                                        return null;
-                                                }
-                                        } else if (content.equals("class")) {
-                                                return parse_class();
-                                        } else if (content.equals("interface")) {
-                                                return parse_interface();
+                                                        } else {
+                                                                // static
+                                                                // and no other statements/expressions
+                                                                return null;
+                                                        }
+                                                case "class":
+                                                        return parse_class();
+                                                case "interface":
+                                                        return parse_interface();
 
-                                        } else if (content.equals("try")) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
+                                                case "try":
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
 
-                                                return parse_try();
-                                        } else if (content.equals("throw")) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
+                                                        return parse_try();
+                                                case "throw":
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
 
-                                                return parse_throw();
+                                                        return parse_throw();
                                         }
                                 } else if (current.getTokenType() == TokenType.SYMBOL) {
-                                        if (content.equals("...")) {
-                                                return new AST.Pass(current.getLineCol());
-                                        } else if (content.equals("@")) {
-                                                modifiersIsEmpty();
+                                        switch (content) {
+                                                case "...":
+                                                        return new AST.Pass(current.getLineCol());
+                                                case "@":
+                                                        modifiersIsEmpty();
 
-                                                parse_anno();
-                                                return null;
-                                        } else if (content.equals("<")) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
+                                                        parse_anno();
+                                                        return null;
+                                                case "<":
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
 
-                                                // return
-                                                LineCol lineCol = current.getLineCol();
+                                                        // return
+                                                        LineCol lineCol = current.getLineCol();
 
-                                                if (!(current.next() instanceof Element)) {
-                                                        return new AST.Return(null, lineCol);
-                                                } else {
-                                                        Expression e = next_exp(false);
-                                                        return new AST.Return(e, lineCol);
-                                                }
+                                                        if (!(current.next() instanceof Element)) {
+                                                                return new AST.Return(null, lineCol);
+                                                        } else {
+                                                                Expression e = next_exp(false);
+                                                                return new AST.Return(e, lineCol);
+                                                        }
 
-                                        } else if (content.equals("#")) {
-                                                modifiersIsEmpty();
+                                                case "#":
+                                                        modifiersIsEmpty();
 
-                                                // package declare
-                                                return parse_pkg_declare();
-                                        } else if (content.equals("#>")) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
+                                                        // package declare
+                                                        return parse_pkg_declare();
+                                                case "#>":
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
 
-                                                return parse_pkg_import();
+                                                        return parse_pkg_import();
                                         }
                                 }
 
@@ -1401,7 +1403,7 @@ public class Parser {
                         String content = ((Element) current).getContent();
 
                         boolean doCheckParsedExps = true;
-
+                        // first go to `doCheckParsedExps` branch, if not handled, then goto normal branch
                         while (true) {
                                 if (doCheckParsedExps) {
                                         if (parsedExps.empty()) {
@@ -1461,46 +1463,51 @@ public class Parser {
                                                 parse_twoVarOperation();
 
                                         } else if (current.getTokenType() == TokenType.KEY) {
-                                                if (content.equals("type")) {
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
+                                                switch (content) {
+                                                        case "type":
+                                                                annosIsEmpty();
+                                                                modifiersIsEmpty();
 
-                                                        LineCol lineCol = current.getLineCol();
-                                                        nextNode(false);
-                                                        AST.Access access = parse_cls_for_type_spec();
-                                                        parsedExps.push(new AST.TypeOf(access, lineCol));
-                                                        // TODO nextNode(true);
-                                                        parse_expression();
-
-                                                } else if (content.equals("null")) {
-
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-                                                        parsedExps.push(new AST.Null(current.getLineCol()));
-                                                        nextNode(true);
-                                                        parse_expression();
-                                                } else if (content.equals("as")) {
-
-                                                        annosIsEmpty();
-                                                        if (parsedExps.isEmpty()) {
-                                                                throw new UnexpectedTokenException("expression", "as", current.getLineCol());
-                                                        } else {
                                                                 LineCol lineCol = current.getLineCol();
-                                                                Expression exp = parsedExps.pop();
                                                                 nextNode(false);
-                                                                AST.Access type = parse_cls_for_type_spec();
-                                                                AST.AsType asType = new AST.AsType(exp, type, lineCol);
-                                                                parsedExps.push(asType);
-                                                        }
-                                                } else if (content.equals("undefined")) {
+                                                                AST.Access access = parse_cls_for_type_spec();
+                                                                parsedExps.push(new AST.TypeOf(access, lineCol));
 
-                                                        annosIsEmpty();
-                                                        parsedExps.push(new AST.UndefinedExp(current.getLineCol()));
-                                                        nextNode(true);
-                                                        parse_expression();
+                                                                parse_expression();
 
-                                                } else {
-                                                        throw new UnexpectedTokenException(content, current.getLineCol());
+                                                                break;
+                                                        case "null":
+
+                                                                annosIsEmpty();
+                                                                modifiersIsEmpty();
+                                                                parsedExps.push(new AST.Null(current.getLineCol()));
+                                                                nextNode(true);
+                                                                parse_expression();
+                                                                break;
+                                                        case "as":
+
+                                                                annosIsEmpty();
+                                                                if (parsedExps.isEmpty()) {
+                                                                        throw new UnexpectedTokenException("expression", "as", current.getLineCol());
+                                                                } else {
+                                                                        lineCol = current.getLineCol();
+                                                                        Expression exp = parsedExps.pop();
+                                                                        nextNode(false);
+                                                                        AST.Access type = parse_cls_for_type_spec();
+                                                                        AST.AsType asType = new AST.AsType(exp, type, lineCol);
+                                                                        parsedExps.push(asType);
+                                                                }
+                                                                break;
+                                                        case "undefined":
+
+                                                                annosIsEmpty();
+                                                                parsedExps.push(new AST.UndefinedExp(current.getLineCol()));
+                                                                nextNode(true);
+                                                                parse_expression();
+
+                                                                break;
+                                                        default:
+                                                                throw new UnexpectedTokenException(content, current.getLineCol());
                                                 }
 
                                         } else if (current.getTokenType() == TokenType.SYMBOL) {

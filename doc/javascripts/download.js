@@ -32,8 +32,45 @@ $(document).ready(function () {
         $scope.compile = {
             title: "编译",
             contents: [
-                $sce.trustAsHtml("")
+                $sce.trustAsHtml("可以在REPL中, 也可以编写java代码进行编译"),
+                $sce.trustAsHtml("<h3>REPL中编译</h3>"),
+                $sce.trustAsHtml("在REPL环境中使用Compiler()构造一个编译器对象, 然后通过如下的方法调用进行编译"),
+                $sce.trustAsHtml(common_compile_highlighting()),
+                $sce.trustAsHtml("<h3>编写java代码编译</h3>"),
+                $sce.trustAsHtml("" +
+                    "<textarea id='compile_java'>\n" +
+                    "Compiler compiler=new Compiler();\n" +
+                    "compiler.shiftLeft(\"source file directory\")\n" +
+                    "    .shiftRight(\"output directory\")\n" +
+                    "    .compile()" +
+                    "</textarea>" +
+                    "<script>var editor = CodeMirror.fromTextArea(document.getElementById('compile_java'));editor.setSize('auto', '100px');</script>")
+            ]
+        };
+        $scope.highlight = {
+            title: "语法高亮",
+            contents: [
+                $sce.trustAsHtml("LessTyping 支持 <code>HTML</code> 和 <code>Atom 编辑器</code> 的语法高亮"),
+                $sce.trustAsHtml("<h3>HTML</h3>"),
+                $sce.trustAsHtml("HTML语法高亮基于<code>LessTyping Scanner for JavaScript</code>. 在您的html文件中引入如下文件和代码即可获取高亮生成的内容"),
+                $sce.trustAsHtml("<textarea id='highlighting_html'>\n" +
+                    "<script src=\"javascripts/scanner.js\"></script>\n" +
+                    "<script src=\"javascripts/code.js\"></script>\n" +
+                    "<link rel='stylesheet' href=\"stylesheets/code.css\">\n\n" +
+                    "<script>\n" +
+                    "var code = ''\n" +
+                    "var res = highlighting('', code, {});\n" +
+                    "$('pre').html(res);\n" +
+                    "</script>" +
+                    "</textarea>\n" +
+                    "<script>var editor = CodeMirror.fromTextArea(document.getElementById('highlighting_html'));editor.setSize('auto', '220px');</script>"),
+                $sce.trustAsHtml("<h3>Atom</h3>"),
+                $sce.trustAsHtml("将下载文档的 <code>/language-lesstyping</code> , 直接放置在<code> ~/.atom/packages/ </code>目录下即可"),
+                $sce.trustAsHtml("<img src='images/highlight.png'></img>")
             ]
         }
-    }]);
-});
+    }
+    ])
+    ;
+})
+;
