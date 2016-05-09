@@ -1,7 +1,9 @@
-package lt.compiler;
+package lt;
 
 import junit.framework.TestSuite;
 import lt.compiler.cases.*;
+import lt.compiler.err_rec.TestScannerErrorRecovery;
+import lt.repl.TestBugsInEval;
 import lt.repl.TestEvaluator;
 import org.junit.runner.RunWith;
 
@@ -17,7 +19,9 @@ import org.junit.runner.RunWith;
         TestCodeGen.class,
         TestLang.class,
         TestDemo.class,
-        TestEvaluator.class
+        TestEvaluator.class,
+        TestBugsInEval.class,
+        TestScannerErrorRecovery.class
 })
 public class Suite extends TestSuite {
 }

@@ -1,6 +1,7 @@
 package lt.compiler.lexical;
 
 import lt.compiler.LineCol;
+import lt.compiler.LtBug;
 
 import java.util.Iterator;
 
@@ -15,6 +16,7 @@ public abstract class Node implements Iterator<Node>, Iterable {
         private final TokenType tokenType;
 
         public Node(Args args, TokenType tokenType) {
+                if (tokenType == null) throw new LtBug("tokenType should not be null");
                 this.tokenType = tokenType;
                 lineCol = args.generateLineCol();
                 this.previous = args.previous;

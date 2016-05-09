@@ -11,6 +11,15 @@ import java.util.List;
 public class ValuePack implements Value, Instruction {
         private final List<Instruction> instructions = new ArrayList<>();
         private STypeDef type;
+        private final boolean autoPop;
+
+        public ValuePack(boolean autoPop) {
+                this.autoPop = autoPop;
+        }
+
+        public boolean autoPop() {
+                return autoPop;
+        }
 
         public void setType(STypeDef type) {
                 this.type = type;

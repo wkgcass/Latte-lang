@@ -1,5 +1,6 @@
 package lt.compiler.cases;
 
+import lt.compiler.ErrorManager;
 import lt.compiler.Scanner;
 import lt.compiler.SyntaxException;
 import lt.compiler.lexical.*;
@@ -16,8 +17,8 @@ public class TestScanner {
         @Test
         public void testPkg() throws Exception {
                 // # lt.test
-                Scanner processor = new Scanner("test", new StringReader("# lt::test"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                Scanner processor = new Scanner("test", new StringReader("# lt::test"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -39,8 +40,8 @@ public class TestScanner {
                 // #> packageName._
                 Scanner processor = new Scanner("test", new StringReader("" +
                         "#> Package::name::*\n" +
-                        "    Package::name::Test"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                        "    Package::name::Test"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -67,8 +68,8 @@ public class TestScanner {
         @Test
         public void testCls1() throws Exception {
                 // class ClassName
-                Scanner processor = new Scanner("test", new StringReader("class ClassName"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                Scanner processor = new Scanner("test", new StringReader("class ClassName"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -82,8 +83,8 @@ public class TestScanner {
         @Test
         public void testCls2() throws Exception {
                 // class ClassName(arg1:Type1,arg2:Type2)
-                Scanner processor = new Scanner("test", new StringReader("class ClassName(arg1,arg2=value2)"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                Scanner processor = new Scanner("test", new StringReader("class ClassName(arg1,arg2=value2)"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -112,8 +113,8 @@ public class TestScanner {
         @Test
         public void testVariable3() throws Exception {
                 // val value:Type = 1
-                Scanner processor = new Scanner("test", new StringReader("val value = 1"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                Scanner processor = new Scanner("test", new StringReader("val value = 1"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -132,8 +133,8 @@ public class TestScanner {
                 //    <input.trim()
                 Scanner processor = new Scanner("test", new StringReader("" +
                         "val trim(input)\n" +
-                        "    <input.trim()"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                        "    <input.trim()"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -166,8 +167,8 @@ public class TestScanner {
         @Test
         public void testMethod2() throws Exception {
                 // voidMethod(input)=0
-                Scanner processor = new Scanner("test", new StringReader("voidMethod(input)=0"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                Scanner processor = new Scanner("test", new StringReader("voidMethod(input)=0"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -191,8 +192,8 @@ public class TestScanner {
         @Test
         public void testModifiers() throws Exception {
                 //pub val abs class X
-                Scanner processor = new Scanner("test", new StringReader("pub val abs class X"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                Scanner processor = new Scanner("test", new StringReader("pub val abs class X"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -221,8 +222,8 @@ public class TestScanner {
                                 "elseif false\n" +
                                 "    <\"hello\"\n" +
                                 "else\n" +
-                                "    <\"world\""), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                                "    <\"world\""), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -265,8 +266,8 @@ public class TestScanner {
                 Scanner processor = new Scanner("test", new StringReader(
                         "" +
                                 "for i in iterable\n" +
-                                "    i"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                                "    i"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -290,8 +291,8 @@ public class TestScanner {
                 Scanner processor = new Scanner("test", new StringReader(
                         "" +
                                 "while true\n" +
-                                "    i+=1"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                                "    i+=1"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -318,8 +319,8 @@ public class TestScanner {
                         "" +
                                 "do\n" +
                                 "    i+=1\n" +
-                                "while true"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                                "while true"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -359,8 +360,8 @@ public class TestScanner {
                                 "        throw RuntimeException(e)\n" +
                                 "    OtherException\n" +
                                 "finally\n" +
-                                "    <ret"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                                "    <ret"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -420,8 +421,8 @@ public class TestScanner {
                 //    (e)=>
                 //        e>10
                 //)
-                Scanner processor = new Scanner("test", new StringReader("list.stream().filter(\n    (e)->e>10)"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                Scanner processor = new Scanner("test", new StringReader("list.stream().filter(\n    (e)->e>10)"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -547,8 +548,8 @@ public class TestScanner {
                                 "++i\n" +
                                 "--i\n" +
                                 "x=:=y\n" +
-                                "x!:=y"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                                "x!:=y"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
@@ -651,8 +652,8 @@ public class TestScanner {
         public void testSpacesAtTheFront() throws Exception {
                 Scanner processor = new Scanner("test", new StringReader(
                         "  #> package::name::*"
-                ), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                ), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
                 Node n = root.getLinkedNode();
                 assertTrue(n instanceof Element);
                 Element e = (Element) n;
@@ -673,8 +674,8 @@ public class TestScanner {
                                 "elseif false\n" +
                                 "  <\"hello\"\n" +
                                 "else\n" +
-                                "  <\"world\""), properties);
-                processor.parse();
+                                "  <\"world\""), properties, new ErrorManager(true));
+                processor.scan();
         }
 
         @Test
@@ -682,8 +683,8 @@ public class TestScanner {
                 Scanner processor = new Scanner("test", new StringReader(
                         "" +
                                 "define 'CREATE TABLE' as 'class'\n" +
-                                "CREATE TABLE User"), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                                "CREATE TABLE User"), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
                 Node n = root.getLinkedNode();
                 assertTrue(n instanceof Element);
                 assertEquals("class", ((Element) n).getContent());
@@ -699,9 +700,9 @@ public class TestScanner {
                 Scanner processor = new Scanner("test", new StringReader(
                         "" +
                                 "define 'CREATE TABLE' 'class'"), // there should be an `as`
-                        new Scanner.Properties());
+                        new Scanner.Properties(), new ErrorManager(true));
                 try {
-                        processor.parse();
+                        processor.scan();
                         fail();
                 } catch (SyntaxException e) {
                         assertEquals(22, e.lineCol.column);
@@ -714,9 +715,9 @@ public class TestScanner {
                         "" +
                                 "define 'CREATE TABLE' as 'class'\n" +
                                 "undef 'A'"), // A is not defined
-                        new Scanner.Properties());
+                        new Scanner.Properties(), new ErrorManager(true));
                 try {
-                        processor.parse();
+                        processor.scan();
                         fail();
                 } catch (SyntaxException e) {
                         assertEquals("\"A\" is not defined at test(2,1)", e.getMessage());

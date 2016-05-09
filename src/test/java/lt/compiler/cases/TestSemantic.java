@@ -27,8 +27,8 @@ public class TestSemantic {
         private Set<STypeDef> parse(Map<String, String> fileMap) throws IOException, SyntaxException {
                 Map<String, List<Statement>> map = new HashMap<>();
                 for (String fileName : fileMap.keySet()) {
-                        lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test", new StringReader(fileMap.get(fileName)), new Scanner.Properties());
-                        Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
+                        lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test", new StringReader(fileMap.get(fileName)), new Scanner.Properties(), new ErrorManager(true));
+                        Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
                         map.put(fileName, syntacticProcessor.parse());
                 }
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -1779,14 +1779,12 @@ public class TestSemantic {
                 ValuePack valuePack = (ValuePack) i;
 
                 Instruction i0 = valuePack.instructions().get(0); // TLoad
-                Instruction i1 = valuePack.instructions().get(1); // TStore
-                Instruction i2 = valuePack.instructions().get(2); // TLoad
-                Instruction i3 = valuePack.instructions().get(3); // pop
+                Instruction i1 = valuePack.instructions().get(1); // ValuePack
+                Instruction i2 = valuePack.instructions().get(2); // pop
 
                 assertTrue(i0 instanceof Ins.TLoad);
-                assertTrue(i1 instanceof Ins.TStore);
-                assertTrue(i2 instanceof Ins.TLoad);
-                assertTrue(i3 instanceof Ins.Pop);
+                assertTrue(i1 instanceof ValuePack);
+                assertTrue(i2 instanceof Ins.Pop);
         }
 
         @Test

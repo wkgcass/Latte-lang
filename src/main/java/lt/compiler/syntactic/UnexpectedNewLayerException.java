@@ -8,6 +8,6 @@ import lt.compiler.SyntaxException;
  */
 public class UnexpectedNewLayerException extends SyntaxException {
         public UnexpectedNewLayerException(LineCol lineCol) {
-                super(lineCol);
+                super("unexpected new layer", lineCol);
         }
 }

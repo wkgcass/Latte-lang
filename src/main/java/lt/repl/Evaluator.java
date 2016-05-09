@@ -25,8 +25,6 @@ public class Evaluator {
 
         private String recordedStatements = "\n";
 
-        private List<Class<?>> compiledClasses = new ArrayList<>();
-
         private class CL extends ClassLoader {
                 private Map<String, byte[]> byteCodes = new HashMap<>();
 
@@ -77,8 +75,12 @@ public class Evaluator {
                 if (null == stmt || stmt.trim().isEmpty()) throw new IllegalArgumentException("the input string cannot be empty or null");
 
                 if (stmt.startsWith("class") || stmt.startsWith("interface")) {
-                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(stmt), new Scanner.Properties());
-                        Parser parser = new Parser(scanner.parse());
+
+                        ErrorManager errorManager = new ErrorManager(true);
+                        errorManager.out = ErrorManager.Out.allNull();
+
+                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(stmt), new Scanner.Properties(), errorManager);
+                        Parser parser = new Parser(scanner.scan());
                         SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                                 put("EVALUATE.lts", parser.parse());
                         }}, cl);
@@ -89,7 +91,6 @@ public class Evaluator {
                         cl.byteCodes.putAll(byteCodes);
                         for (String s : byteCodes.keySet()) {
                                 Class<?> c = cl.loadClass(s);
-                                compiledClasses.add(c);
                                 classes.add(c);
                         }
 
@@ -131,8 +132,12 @@ public class Evaluator {
                         Scanner.Properties scanner$properties = new Scanner.Properties();
                         scanner$properties._COLUMN_BASE_ = -4;
                         scanner$properties._LINE_BASE_ = -strs.length - EVALUATE_BASIC_LINES - 1;
-                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(code), scanner$properties);
-                        ElementStartNode root = scanner.parse();
+
+                        ErrorManager errorManager = new ErrorManager(true);
+                        errorManager.out = ErrorManager.Out.allNull();
+
+                        Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(code), scanner$properties, errorManager);
+                        ElementStartNode root = scanner.scan();
 
                         Parser parser = new Parser(root);
                         List<Statement> statements = parser.parse();
@@ -205,6 +210,7 @@ public class Evaluator {
                                 @Override
                                 protected Class<?> findClass(String name) throws ClassNotFoundException {
                                         byte[] byteCode = byteCodes.get(name);
+                                        if (byteCode == null) throw new ClassNotFoundException(name);
                                         return defineClass(name, byteCode, 0, byteCode.length);
                                 }
                         };

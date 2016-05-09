@@ -24,8 +24,8 @@ import static org.junit.Assert.*;
  */
 public class TestParserMix {
         private static List<Statement> parse(String stmt) throws IOException, SyntaxException {
-                lt.compiler.Scanner processor = new lt.compiler.Scanner("test", new StringReader(stmt), new Scanner.Properties());
-                ElementStartNode root = processor.parse();
+                lt.compiler.Scanner processor = new lt.compiler.Scanner("test", new StringReader(stmt), new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
 
                 Parser syntacticProcessor = new Parser(root);
 

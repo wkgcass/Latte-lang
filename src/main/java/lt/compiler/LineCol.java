@@ -30,4 +30,9 @@ public class LineCol {
          * a synthetic line col object
          */
         public static final LineCol SYNTHETIC = new LineCol(null, 0, 0);
+
+        @Override
+        public String toString() {
+                return fileName + "(" + line + ", " + column + ")";
+        }
 }

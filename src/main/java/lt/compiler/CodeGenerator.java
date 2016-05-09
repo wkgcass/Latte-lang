@@ -77,10 +77,9 @@ public class CodeGenerator {
          * @return internal name
          */
         private String typeToInternalName(STypeDef type) {
+                if (type.equals(NullTypeDef.get())) return "java/lang/Object";
                 if (type instanceof SArrayTypeDef) {
-                        String desc = typeToDesc(type);
-                        if (desc.endsWith(";")) return desc.substring(0, desc.length() - 1);
-                        return desc;
+                        return typeToDesc(type);
                 } else return type.fullName().replace(".", "/");
         }
 
@@ -676,9 +675,24 @@ public class CodeGenerator {
                 } else if (value instanceof Ins.TwoVarOp) {
                         buildTwoVarOp(methodVisitor, info, (Ins.TwoVarOp) value);
                 } else if (value instanceof ValuePack) {
-                        for (Instruction ins : ((ValuePack) value).instructions()) {
-                                buildOneIns(methodVisitor, info, ins);
+                        int depth = info.getCurrentStackDepth();
+                        List<Instruction> instructions = ((ValuePack) value).instructions();
+                        for (int i = 0; i < instructions.size() - 1; ++i) {
+                                buildOneIns(methodVisitor, info, instructions.get(i));
+
+                                if (((ValuePack) value).autoPop()) {
+                                        while (info.getCurrentStackDepth() != depth) {
+                                                if (info.peekSize() == CodeInfo.Size._1) {
+                                                        methodVisitor.visitInsn(Opcodes.POP);
+                                                } else {
+                                                        methodVisitor.visitInsn(Opcodes.POP2);
+                                                }
+                                                info.pop(1);
+                                        }
+                                }
                         }
+                        Instruction ins = instructions.get(instructions.size() - 1);
+                        buildOneIns(methodVisitor, info, ins);
                 } else if (value instanceof Ins.GetField) {
                         buildGetField(methodVisitor, info, (Ins.GetField) value);
                 } else if (value instanceof Ins.LogicAnd) {
@@ -942,7 +956,7 @@ public class CodeGenerator {
                                 buildValueAccess(methodVisitor, info, v);
                         }
 
-                        // invoke special
+                        // invoke dynamic
                         Ins.InvokeDynamic invokeDynamic = (Ins.InvokeDynamic) invoke;
                         SInvokable bootstrapMethod = invokeDynamic.invokable();
 

@@ -1,5 +1,6 @@
 package lt.repl;
 
+import lt.compiler.JarLoader;
 import lt.compiler.SyntaxException;
 
 import java.lang.reflect.Field;
@@ -47,7 +48,6 @@ public class REPL {
                                         System.out.println("compiler << '<directory>'   add the <directory> to compiling list");
                                         System.out.println("compiler >> '<directory>'   set compiler output directory");
                                         System.out.println("compiler compile            start compiling and generate class files");
-                                        System.out.println("compiler configure {}       configure the compiler with given configuration");
                                 } else if (cmd.equals(":q")) {
                                         break;
                                 } else if (cmd.equals(":reset")) {

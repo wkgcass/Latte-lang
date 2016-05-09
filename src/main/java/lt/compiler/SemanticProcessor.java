@@ -2335,7 +2335,7 @@ public class SemanticProcessor {
                                 type,
                                 scope);
 
-                        ValuePack pack = new ValuePack();
+                        ValuePack pack = new ValuePack(true);
                         if (null != field) {
                                 if (field.modifiers().contains(SModifier.STATIC)) {
                                         // putStatic
@@ -3334,7 +3334,7 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         private ValuePack parseValueFromAssignment(AST.Assignment exp, SemanticScope scope) throws SyntaxException {
-                ValuePack pack = new ValuePack(); // value pack
+                ValuePack pack = new ValuePack(true); // value pack
                 // assignment
                 // =/+=/-=/*=//=/%=
                 parseInstructionFromAssignment(exp, scope, pack.instructions());
@@ -3929,7 +3929,6 @@ public class SemanticProcessor {
                                 new NumberLiteral("1", exp.line_col()),
                                 exp.line_col());
                         ValuePack valuePack = parseValueFromAssignment(assignment, scope);
-                        STypeDef type = valuePack.type();
                         if (!exp.isUnary()) {
                                 /*
                                  * get value
@@ -3937,14 +3936,21 @@ public class SemanticProcessor {
                                  * pop result
                                  * // the stack top value would be original value
                                  */
+                                ValuePack thePackToReturn = new ValuePack(false);
+
                                 Value v = parseValueFromAccess((AST.Access) e, scope);
                                 assert v instanceof Instruction;
-                                valuePack.instructions().add(0, (Instruction) v);
-                                valuePack.instructions().add(new Ins.Pop());
+                                thePackToReturn.instructions().add((Instruction) v);
+                                thePackToReturn.instructions().add(valuePack);
+                                thePackToReturn.instructions().add(new Ins.Pop());
 
-                                valuePack.setType(type);
+                                STypeDef type = valuePack.type();
+                                thePackToReturn.setType(type);
+
+                                return thePackToReturn;
+                        } else {
+                                return valuePack;
                         }
-                        return valuePack;
                 } else if (exp.operator().equals("--")) {
                         AST.Assignment assignment = new AST.Assignment(
                                 (AST.Access) e,
@@ -3952,7 +3958,6 @@ public class SemanticProcessor {
                                 new NumberLiteral("1", exp.line_col()),
                                 exp.line_col());
                         ValuePack valuePack = parseValueFromAssignment(assignment, scope);
-                        STypeDef type = valuePack.type();
                         if (!exp.isUnary()) {
                                 /*
                                  * get value
@@ -3960,14 +3965,21 @@ public class SemanticProcessor {
                                  * pop result
                                  * // the stack top value would be original value
                                  */
+                                ValuePack thePackToReturn = new ValuePack(false);
+
                                 Value v = parseValueFromAccess((AST.Access) e, scope);
                                 assert v instanceof Instruction;
-                                valuePack.instructions().add(0, (Instruction) v);
-                                valuePack.instructions().add(new Ins.Pop());
+                                thePackToReturn.instructions().add((Instruction) v);
+                                thePackToReturn.instructions().add(valuePack);
+                                thePackToReturn.instructions().add(new Ins.Pop());
 
-                                valuePack.setType(type);
+                                STypeDef type = valuePack.type();
+                                thePackToReturn.setType(type);
+
+                                return thePackToReturn;
+                        } else {
+                                return valuePack;
                         }
-                        return valuePack;
                 } else throw new LtBug("this method only supports ++ and --, but got unknown op " + exp.operator());
         }
 

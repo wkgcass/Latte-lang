@@ -63,8 +63,8 @@ public class Compiler {
                         for (File f : dir.listFiles()) {
                                 if (f.getName().endsWith(".lt")) {
                                         Reader reader = new FileReader(f);
-                                        Scanner scanner = new Scanner(f.getName(), reader, new Scanner.Properties());
-                                        ElementStartNode root = scanner.parse();
+                                        Scanner scanner = new Scanner(f.getName(), reader, new Scanner.Properties(), new ErrorManager(true));
+                                        ElementStartNode root = scanner.scan();
 
                                         Parser parser = new Parser(root);
                                         statements.put(f.getName(), parser.parse());

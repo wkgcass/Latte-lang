@@ -104,6 +104,7 @@ public class Scanner {
 
         private final BufferedReader reader;
         private final Properties properties;
+        private final ErrorManager err;
         private final String fileName;
 
         /**
@@ -111,9 +112,10 @@ public class Scanner {
          *
          * @param reader text reader
          */
-        public Scanner(String fileName, Reader reader, Properties properties) {
+        public Scanner(String fileName, Reader reader, Properties properties, ErrorManager err) {
                 this.fileName = fileName;
                 this.properties = properties;
+                this.err = err;
                 if (reader instanceof BufferedReader) {
                         this.reader = (BufferedReader) reader;
                 } else {
@@ -125,7 +127,7 @@ public class Scanner {
          * parse the strings from the reader<br>
          * the method will create an Args object as context of the parsing process.<br>
          * then create a new ElementStartNode<br>
-         * then invoke {@link Scanner#parse(Args)} to parse text to node of the tree<br>
+         * then invoke {@link Scanner#scan(Args)} to parse text to node of the tree<br>
          * after the parsing process finishes, a check for useless EndingNodes and number literals will be invoked<br>
          * finally the root node {@link ElementStartNode} would be returned
          *
@@ -133,15 +135,15 @@ public class Scanner {
          * @throws IOException     exceptions during reading chars from reader
          * @throws SyntaxException syntax exceptions, including {@link SyntaxException}, {@link UnexpectedTokenException}, {@link IllegalIndentationException}
          * @see Args
-         * @see #parse(Args)
+         * @see #scan(Args)
          */
-        public ElementStartNode parse() throws IOException, SyntaxException {
+        public ElementStartNode scan() throws IOException, SyntaxException {
                 Args args = new Args();
                 args.fileName = fileName;
                 ElementStartNode elementStartNode = new ElementStartNode(args, 0);
                 args.startNodeStack.push(elementStartNode);
                 args.currentLine = properties._LINE_BASE_;
-                parse(args);
+                scan(args);
                 finalCheck(elementStartNode);
                 return elementStartNode;
         }
@@ -160,17 +162,22 @@ public class Scanner {
          * @param args           args
          * @param originalString the original line
          * @param command        command (define|undef)
-         * @return (retrievedStr, lineWithOutTheRetrievedStr)
+         * @return (retrievedStr, lineWithOutTheRetrievedStr) or null if the process failed
          * @throws SyntaxException compiling error
          */
         private LineAndString getStringForPreProcessing(String line, Args args, String originalString, String command) throws SyntaxException {
                 String str = line.trim();
-                if (str.isEmpty()) throw new SyntaxException("illegal " + command + " command " + originalString,
-                        args.generateLineCol());
+                if (str.isEmpty()) {
+                        err.SyntaxException("illegal " + command + " command " + originalString,
+                                args.generateLineCol());
+                        return null;
+                }
 
                 String token = String.valueOf(str.charAt(0));
-                if (!STRING.contains(token))
-                        throw new SyntaxException("illegal " + command + " command " + originalString, args.generateLineCol());
+                if (!STRING.contains(token)) {
+                        err.SyntaxException("illegal " + command + " command " + originalString, args.generateLineCol());
+                        return null;
+                }
                 args.currentCol += line.indexOf(token); // set current column
 
                 line = str;
@@ -179,26 +186,32 @@ public class Scanner {
                 LineCol lineCol = args.generateLineCol();
                 while (true) {
                         int index = line.indexOf(token, lastIndex + 1);
-                        if (line.length() <= 1 || index == -1)
-                                throw new SyntaxException("end of string not found", lineCol);
-                        String c = String.valueOf(line.charAt(index - 1));
-                        if (!ESCAPE.equals(c)) {
-                                // the string starts at minIndex and ends at index
-                                String s = line.substring(0, index + 1);
-
-                                args.currentCol += (index + token.length());
-                                line = line.substring(index + 1);
-
-                                token = s;
-
+                        if (line.length() <= 1 || index == -1) {
+                                err.SyntaxException("end of string not found", lineCol);
+                                // assume that the string ends at line end
+                                err.debug("assume that the " + token + " end is line end");
+                                token = line + token;
                                 break;
-                        }
+                        } else {
+                                String c = String.valueOf(line.charAt(index - 1));
+                                if (!ESCAPE.equals(c)) {
+                                        // the string starts at minIndex and ends at index
+                                        String s = line.substring(0, index + 1);
 
-                        lastIndex = index;
+                                        args.currentCol += (index + token.length());
+                                        line = line.substring(index + 1);
+
+                                        token = s;
+
+                                        break;
+                                }
+
+                                lastIndex = index;
+                        }
                 }
                 LineAndString las = new LineAndString();
                 las.line = line;
-                las.str = token;
+                las.str = token; // the token is used to store the whole string
                 las.lineCol = lineCol;
                 return las;
         }
@@ -208,20 +221,21 @@ public class Scanner {
          * <li>read a line from the {@link #reader}</li>
          * <li>check indent</li>
          * <li>check layer:indent = lastLayerIndent + {@link lt.compiler.Scanner.Properties#_INDENTATION_} means start a new startNode. indent < lastLayerIndent means it should resume to upper layers</li>
-         * <li>invoke {@link #parse(String, Args)}</li>
+         * <li>invoke {@link #scan(String, Args)}</li>
          * <li>append {@link EndingNode}</li>
          * </ol>
          *
          * @param args args context
          * @throws IOException     exceptions during reading chars from reader
          * @throws SyntaxException syntax exceptions, including {@link SyntaxException}, {@link UnexpectedTokenException}, {@link IllegalIndentationException}
-         * @see #parse(String, Args)
+         * @see #scan(String, Args)
          */
-        private void parse(Args args) throws IOException, SyntaxException {
+        private void scan(Args args) throws IOException, SyntaxException {
                 String line = reader.readLine();
                 int rootIndent = -1;
                 while (line != null) {
                         ++args.currentLine;
+                        args.currentCol = properties._COLUMN_BASE_;
                         args.useDefine.clear();
 
                         // pre processing
@@ -235,41 +249,76 @@ public class Scanner {
                                         line = line.substring("define".length());
                                         args.currentCol += "define".length();
                                         LineAndString las1 = getStringForPreProcessing(line, args, originalString, "define");
+
+                                        if (las1 == null) {
+                                                line = reader.readLine();
+                                                continue;
+                                        }
+
                                         line = las1.line;
                                         String target = las1.str.substring(1, las1.str.length() - 1);
-                                        if (target.length() == 0) throw new SyntaxException("define <target> length cannot be 0", las1.lineCol);
-                                        if (target.contains(ESCAPE)) throw new SyntaxException("define <target> cannot contain escape char", las1.lineCol);
+                                        if (target.length() == 0) {
+                                                err.SyntaxException("define <target> length cannot be 0", las1.lineCol);
+                                                line = reader.readLine();
+                                                continue;
+                                        }
+                                        if (target.contains(ESCAPE)) {
+                                                err.SyntaxException("define <target> cannot contain escape char", las1.lineCol);
+                                                line = reader.readLine();
+                                                continue;
+                                        }
 
                                         if (!line.trim().startsWith("as")) {
-                                                throw new SyntaxException("illegal define command " +
-                                                        "(there should be an `as` between <target> and <replacement>)",
+                                                err.SyntaxException("illegal define command " +
+                                                                "(there should be an `as` between <target> and <replacement>)",
                                                         args.generateLineCol());
+                                                line = reader.readLine();
+                                                continue;
                                         }
 
                                         int asPos = line.indexOf("as");
                                         line = line.substring(asPos + 2);
 
-                                        if (line.isEmpty()) throw new SyntaxException("illegal define command " + originalString,
-                                                args.generateLineCol());
-                                        if (!SPLIT.contains(String.valueOf(line.charAt(0))))
-                                                throw new SyntaxException("illegal define command " +
-                                                        "(there should be an `as` between <target> and <replacement>)",
+                                        if (line.isEmpty()) {
+                                                err.SyntaxException("illegal define command " + originalString,
                                                         args.generateLineCol());
+                                                line = reader.readLine();
+                                                continue;
+                                        }
+                                        if (!SPLIT.contains(String.valueOf(line.charAt(0)))) {
+                                                err.SyntaxException("illegal define command " +
+                                                                "(there should be an `as` between <target> and <replacement>)",
+                                                        args.generateLineCol());
+                                                line = reader.readLine();
+                                                continue;
+                                        }
 
                                         args.currentCol += (asPos + 2);
 
                                         LineAndString las2 = getStringForPreProcessing(line, args, originalString, "define");
+
+                                        if (las2 == null) {
+                                                line = reader.readLine();
+                                                continue;
+                                        }
+
                                         line = las2.line;
                                         String replacement = las2.str.substring(1, las2.str.length() - 1); // defined replacement
-                                        if (replacement.contains(ESCAPE))
-                                                throw new SyntaxException("define <replacement> cannot contain escape char", las2.lineCol);
-                                        if (line.trim().length() != 0) throw new SyntaxException("illegal define command " +
-                                                "(there should not be characters after <replacement>)", args.generateLineCol());
+                                        if (replacement.contains(ESCAPE)) {
+                                                err.SyntaxException("define <replacement> cannot contain escape char", las2.lineCol);
+                                                line = reader.readLine();
+                                                continue;
+                                        }
+                                        if (line.trim().length() != 0) {
+                                                err.SyntaxException("illegal define command " +
+                                                        "(there should not be characters after <replacement>)", args.generateLineCol());
+                                                line = reader.readLine();
+                                                continue;
+                                        }
 
                                         args.defined.put(target, replacement);
 
                                         line = reader.readLine();
-                                        args.currentCol = properties._COLUMN_BASE_;
                                         continue;
                                 }
                         } else if (line.startsWith("undef")) {
@@ -283,20 +332,41 @@ public class Scanner {
                                         line = line.substring("undef".length());
                                         args.currentCol += "undef".length();
                                         LineAndString las1 = getStringForPreProcessing(line, args, originalString, "undef");
+
+                                        if (las1 == null) {
+                                                line = reader.readLine();
+                                                continue;
+                                        }
+
                                         line = las1.line;
                                         String target = las1.str.substring(1, las1.str.length() - 1);
-                                        if (target.length() == 0) throw new SyntaxException("undef <target> length cannot be 0", las1.lineCol);
-                                        if (target.contains(ESCAPE)) throw new SyntaxException("undef <target> cannot contain escape char", las1.lineCol);
+                                        if (target.length() == 0) {
+                                                err.SyntaxException("undef <target> length cannot be 0", las1.lineCol);
+                                                line = reader.readLine();
+                                                continue;
+                                        }
+                                        if (target.contains(ESCAPE)) {
+                                                err.SyntaxException("undef <target> cannot contain escape char", las1.lineCol);
+                                                line = reader.readLine();
+                                                continue;
+                                        }
 
-                                        if (line.trim().length() != 0) throw new SyntaxException("illegal undef command " +
-                                                "(there should not be characters after <target>)", args.generateLineCol());
+                                        if (line.trim().length() != 0) {
+                                                err.SyntaxException("illegal undef command " +
+                                                        "(there should not be characters after <target>)", args.generateLineCol());
+                                                line = reader.readLine();
+                                                continue;
+                                        }
 
-                                        if (!args.defined.containsKey(target)) throw new SyntaxException("\"" + target + "\" is not defined", lineStart);
+                                        if (!args.defined.containsKey(target)) {
+                                                err.SyntaxException("\"" + target + "\" is not defined", lineStart);
+                                                line = reader.readLine();
+                                                continue;
+                                        }
 
                                         args.defined.remove(target);
 
                                         line = reader.readLine();
-                                        args.currentCol = properties._COLUMN_BASE_;
                                         continue;
                                 }
                         }
@@ -346,14 +416,22 @@ public class Scanner {
                                 spaces -= rootIndent;
                         }
 
+                        args.currentCol = spaces + 1 + rootIndent + properties._COLUMN_BASE_;
+
                         // check space indent
-                        if (spaces % properties._INDENTATION_ != 0) throw new IllegalIndentationException(
-                                properties._INDENTATION_, args.generateLineCol());
+                        int indentation;
+                        if (spaces % properties._INDENTATION_ != 0) {
+                                err.IllegalIndentationException(
+                                        properties._INDENTATION_, args.generateLineCol());
+                                // assume that the indentation is spaces + (spaces%INDENTATION)
+                                int calculatedIndent = spaces + properties._INDENTATION_ - (spaces % properties._INDENTATION_);
+                                err.debug("assume that the indentation is spaces + _INDENTATION_ - (spaces % _INDENTATION_) : " + calculatedIndent);
+
+                                indentation = calculatedIndent;
+                        } else indentation = spaces;
 
                         // remove spaces
                         line = line.trim();
-
-                        args.currentCol = spaces + 1 + rootIndent + properties._COLUMN_BASE_;
 
                         // check it's an empty line
                         if (line.isEmpty()) {
@@ -362,20 +440,25 @@ public class Scanner {
                         }
 
                         // check start node
-                        if (args.startNodeStack.lastElement().getIndent() != spaces) {
-                                if (args.startNodeStack.lastElement().getIndent() > spaces) {
+                        if (args.startNodeStack.lastElement().getIndent() != indentation) {
+                                if (args.startNodeStack.lastElement().getIndent() > indentation) {
                                         // smaller indent
-                                        redirectToStartNodeByIndent(args, spaces + properties._INDENTATION_);
-                                } else if (args.startNodeStack.lastElement().getIndent() == spaces - properties._INDENTATION_) {
+                                        redirectToStartNodeByIndent(args, indentation + properties._INDENTATION_);
+                                } else if (args.startNodeStack.lastElement().getIndent() == indentation - properties._INDENTATION_) {
                                         // greater indent
                                         createStartNode(args);
                                 } else {
-                                        throw new IllegalIndentationException(properties._INDENTATION_, args.generateLineCol());
+                                        err.IllegalIndentationException(properties._INDENTATION_, args.generateLineCol());
+                                        // greater than parent indentation too much
+                                        // assume it's parent + _INDENTATION_
+                                        err.debug("assume it's parent.indentation + _INDENTATION_");
+                                        createStartNode(args);
+
                                 }
                         }
 
                         // start parsing
-                        parse(line, args);
+                        scan(line, args);
 
                         if (args.previous instanceof Element) {
                                 args.previous = new EndingNode(args, EndingNode.WEAK);
@@ -409,7 +492,7 @@ public class Scanner {
          * @param args args context
          * @throws SyntaxException syntax exceptions, including {@link SyntaxException}, {@link UnexpectedTokenException}
          */
-        private void parse(String line, Args args) throws SyntaxException {
+        private void scan(String line, Args args) throws SyntaxException {
                 if (line.isEmpty()) return;
                 // check SPLIT
                 // find the pattern at minimum location index and with longest words
@@ -426,14 +509,21 @@ public class Scanner {
                 }
 
                 if (token == null) {
-                        // not found, append to previous
-                        args.previous = new Element(args, line, getTokenType(line, args.generateLineCol()));
+                        // not found, simply append whole input to previous
+                        TokenType type = getTokenType(line, args.generateLineCol());
+                        if (type != null) {
+                                // unknown token, ignore this token
+                                args.previous = new Element(args, line, type);
+                        }
                 } else {
                         String copyOfLine = line;
                         String str = line.substring(0, minIndex);
                         if (!str.isEmpty()) {
                                 // record text before the token
-                                args.previous = new Element(args, str, getTokenType(str, args.generateLineCol()));
+                                TokenType type = getTokenType(str, args.generateLineCol());
+                                if (type != null) {
+                                        args.previous = new Element(args, str, type);
+                                }
                                 args.currentCol += str.length();
                         }
 
@@ -452,20 +542,32 @@ public class Scanner {
                                 int lastIndex = minIndex;
                                 while (true) {
                                         int index = line.indexOf(token, lastIndex + 1);
-                                        if (line.length() <= 1 || index == -1)
-                                                throw new SyntaxException("end of string not found", args.generateLineCol());
-                                        String c = String.valueOf(line.charAt(index - 1));
-                                        if (!ESCAPE.equals(c)) {
-                                                // the string starts at minIndex and ends at index
-                                                String s = line.substring(minIndex, index + 1);
+                                        if (line.length() <= 1 || index == -1) {
+                                                err.SyntaxException("end of string not found", args.generateLineCol());
+                                                // assume that the end is line end
+                                                err.debug("assume that the " + token + " end is line end");
 
-                                                args.previous = new Element(args, s, getTokenType(s, args.generateLineCol()));
-                                                args.currentCol += (index - minIndex);
+                                                String generated = line.substring(minIndex) + token;
+
+                                                args.previous = new Element(args, generated, getTokenType(generated, args.generateLineCol()));
+                                                args.currentCol += (index - minIndex) - token.length(); // the length would be added in later steps
                                                 line = line.substring(index + 1);
-                                                break;
-                                        }
 
-                                        lastIndex = index;
+                                                break;
+                                        } else {
+                                                String c = String.valueOf(line.charAt(index - 1));
+                                                if (!ESCAPE.equals(c)) {
+                                                        // the string starts at minIndex and ends at index
+                                                        String s = line.substring(minIndex, index + 1);
+
+                                                        args.previous = new Element(args, s, getTokenType(s, args.generateLineCol()));
+                                                        args.currentCol += (index - minIndex);
+                                                        line = line.substring(index + 1);
+                                                        break;
+                                                }
+
+                                                lastIndex = index;
+                                        }
                                 }
                         } else if (ENDING.equals(token)) {
                                 // ending
@@ -485,12 +587,21 @@ public class Scanner {
                                 PairEntry entry = args.pairEntryStack.pop();
                                 String start = entry.key;
                                 if (!token.equals(PAIR.get(start))) {
-                                        throw new UnexpectedTokenException(PAIR.get(start), token, args.generateLineCol());
+                                        err.UnexpectedTokenException(PAIR.get(start), token, args.generateLineCol());
+                                        // assume that the pair ends
+                                        err.debug("assume that the pair ends");
                                 }
 
                                 ElementStartNode startNode = entry.startNode;
                                 if (startNode.hasNext()) {
-                                        throw new UnexpectedTokenException("null", startNode.next().toString(), args.generateLineCol());
+                                        err.SyntaxException(
+                                                "indentation of " + startNode.next() + " should be " + startNode.getIndent(),
+                                                startNode.next().getLineCol());
+                                        // fill the LinkedNode with all nodes that are next to the startNode
+                                        Node n = startNode.next();
+                                        n.setPrevious(null);
+                                        startNode.setNext(null);
+                                        startNode.setLinkedNode(n);
                                 }
 
                                 if (args.startNodeStack.lastElement().getIndent() >= startNode.getIndent()) {
@@ -498,13 +609,18 @@ public class Scanner {
                                 } else if (args.startNodeStack.lastElement().getIndent() == startNode.getIndent() - properties._INDENTATION_) {
                                         args.previous = startNode;
                                 } else {
-                                        throw new SyntaxException(
-                                                "indentation of " + token + " should >= " + start + "'s indent or equal to " + start + "'s indent - " + properties._INDENTATION_,
+                                        err.SyntaxException(
+                                                "indentation of " + token + " (" + args.startNodeStack.lastElement().getIndent() + ") should >= " + start + "'s indentation - 4 (" + (startNode.getIndent() - 4) + ")",
                                                 args.generateLineCol());
+                                        // assume they are the same
+                                        err.debug("assume that " + token + "'s indentation is the same with " + start + "'s indentation");
+                                        args.previous = startNode;
                                 }
-                                args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
+                                args.previous = new Element(args, PAIR.get(start), getTokenType(token, args.generateLineCol()));
                         } else {
-                                throw new UnexpectedTokenException(token, args.generateLineCol());
+                                err.UnknownTokenException(token, args.generateLineCol());
+                                // unknown token
+                                // simply ignore the token
                         }
 
                         // column
@@ -514,23 +630,26 @@ public class Scanner {
                                 line = line.substring(minIndex + token.length());
                         }
                         // recursively parse
-                        parse(line, args);
+                        scan(line, args);
                 }
         }
 
         private void redirectToStartNodeByIndent(Args args, int indent) throws UnexpectedTokenException {
+                if (args.startNodeStack.empty()) {
+                        throw new LtBug("this should never happen");
+                }
+
                 ElementStartNode startNode = args.startNodeStack.pop();
 
-                if (startNode == null) throw new NoSuchElementException();
                 if (startNode.getIndent() == indent) {
                         if (startNode.hasNext()) {
-                                throw new UnexpectedTokenException("null", startNode.next().toString(), args.generateLineCol());
+                                throw new LtBug("startNode in this step should never have nodes appended");
                         }
                         // do redirect
                         args.previous = startNode;
                 } else {
                         if (startNode.getIndent() < indent || args.startNodeStack.empty()) {
-                                throw new NoSuchElementException("position=" + args.currentLine + ":" + args.currentCol + ",indent=" + indent);
+                                throw new LtBug("position=" + args.currentLine + ":" + args.currentCol + ",indent=" + indent);
                         }
                         redirectToStartNodeByIndent(args, indent);
                 }
@@ -542,6 +661,12 @@ public class Scanner {
                 args.startNodeStack.push(elementStartNode);
         }
 
+        /**
+         * @param str     the token to check type
+         * @param lineCol line column file
+         * @return TokenType or null if it's an unknown token
+         * @throws UnknownTokenException exception
+         */
         private TokenType getTokenType(String str, LineCol lineCol) throws UnknownTokenException {
                 if (CompileUtil.isBoolean(str)) return TokenType.BOOL;
                 if (CompileUtil.isModifier(str)) return TokenType.MODIFIER;
@@ -551,7 +676,9 @@ public class Scanner {
                 if (CompileUtil.isSymbol(str)) return TokenType.SYMBOL;
                 if (SPLIT.contains(str)) return TokenType.SYMBOL;
                 if (CompileUtil.isValidName(str)) return TokenType.VALID_NAME;
-                throw new UnknownTokenException(str, lineCol);
+                err.UnknownTokenException(str, lineCol);
+                // ignore the token, and return null
+                return null;
         }
 
         /**

@@ -1,5 +1,6 @@
 package lt.repl;
 
+import lt.compiler.JarLoader;
 import org.junit.Test;
 
 import java.lang.reflect.Method;

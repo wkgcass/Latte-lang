@@ -3,6 +3,7 @@ package lt.lang;
 import lt.compiler.LtBug;
 
 import java.lang.invoke.*;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -78,11 +79,20 @@ public class Dynamic {
                         // do nothing
 
                         for (int i = 0; i < args.length; ++i) {
-                                if (!m.getParameterTypes()[i].isInstance(args[i])) {
+                                if (!m.getParameterTypes()[i].isInstance(args[i]) &&
+                                        (
+                                                // null can be assigned to reference type
+                                                m.getParameterTypes()[i].isPrimitive()
+                                                        ||
+                                                        args[i] != null
+                                        )) {
                                         // is not instance
                                         // check primitive
                                         Class<?> cls = m.getParameterTypes()[i];
+
                                         Object obj = args[i];
+                                        if (null == obj) continue;
+
                                         if (cls.equals(int.class)) {
                                                 if (!obj.getClass().equals(Integer.class)) continue out;
                                         } else if (cls.equals(short.class)) {
@@ -169,21 +179,30 @@ public class Dynamic {
                 }
 
                 if (methodList.isEmpty()) {
-                        if (args.length == 1 && isBoxType(o.getClass()) && isBoxType(args[0].getClass())) {
-                                return invokePrimitive(o, method, args[0]);
-                        } else if (args.length == 0 && isBoxType(o.getClass())) {
-                                return invokePrimitive(o, method);
-                        } else if (method.equals("add")
-                                && args.length == 1
-                                && (args[0] instanceof String || o instanceof String)
-                                && !(o instanceof Undefined)
-                                && !(args[0] instanceof Undefined)) {
-                                // string add
-                                return String.valueOf(o) + String.valueOf(args[0]);
-                        } else if (method.equals("set")) {
-                                return invoke(o, invoker, "put", primitives, args);
-                        } else
-                                throw new RuntimeException("cannot find method to invoke " + o + "." + method + Arrays.toString(args));
+                        if (o.getClass().isArray()) {
+                                if (method.equals("get") && args.length == 1 && args[0] instanceof Integer) {
+                                        return Array.get(o, (Integer) args[0]);
+                                } else if (method.equals("set") && args.length == 2 && args[0] instanceof Integer) {
+                                        Array.set(o, (Integer) args[0], args[1]);
+                                        return args[1];
+                                }
+                        } else {
+                                if (args.length == 1 && isBoxType(o.getClass()) && isBoxType(args[0].getClass())) {
+                                        return invokePrimitive(o, method, args[0]);
+                                } else if (args.length == 0 && isBoxType(o.getClass())) {
+                                        return invokePrimitive(o, method);
+                                } else if (method.equals("add")
+                                        && args.length == 1
+                                        && (args[0] instanceof String || o instanceof String)
+                                        && !(o instanceof Undefined)
+                                        && !(args[0] instanceof Undefined)) {
+                                        // string add
+                                        return String.valueOf(o) + String.valueOf(args[0]);
+                                } else if (method.equals("set")) {
+                                        return invoke(o, invoker, "put", primitives, args);
+                                }
+                        }
+                        throw new RuntimeException("cannot find method to invoke " + o + "." + method + Arrays.toString(args));
                 }
 
                 // calculate every method's cast steps
@@ -203,7 +222,9 @@ public class Dynamic {
                                         step[i] = PRIMITIVE_BOX_CAST_BASE; // cast to primitive
                                 } else {
                                         // both not primitive
-                                        step[i] = bfsSearch(args[i].getClass(), type);
+                                        // check null
+                                        if (args[i] == null) step[i] = 0;
+                                        else step[i] = bfsSearch(args[i].getClass(), type);
                                 }
                         }
                         steps.put(m, step);
@@ -243,7 +264,9 @@ public class Dynamic {
                 methodToInvoke.setAccessible(true);
 
                 try {
-                        return methodToInvoke.invoke(o, args);
+                        Object res = methodToInvoke.invoke(o, args);
+                        if (methodToInvoke.getReturnType() == void.class) return Undefined.get();
+                        else return res;
                 } catch (InvocationTargetException e) {
                         throw e.getCause();
                 }

@@ -5,7 +5,7 @@ LessTyping is a JVM language. It's highly readable and extensible.
 LessTyping supports 
 
 * Operator Binding
-* Operator-Like Invocation
+* DSL
 * Pre-Processing define/undef
 * Inner Method
 * Lambda
@@ -111,7 +111,7 @@ e.g.
 
 --
 
-##Operator-Like Invocation
+##DSL
 
 `LessTyping` supports a syntax that makes method invocation looks like operators. It's useful for DSL programming.
 
@@ -294,7 +294,7 @@ LessTyping是一种JVM编程语言。 它非常可读，同时也非常可扩展
 LessTyping 支持如下功能
 
 * 运算符绑定
-* 类似运算符的方法调用
+* DSL
 * 预处理 define/undef
 * 内部方法
 * Lambda
@@ -396,7 +396,7 @@ e.g.
 
 --
 
-##看起来像运算符的方法调用
+##DSL
 
 `LessTyping`支持“看起来像运算符的方法调用”这种语法。它对于构建DSL非常有用。
 

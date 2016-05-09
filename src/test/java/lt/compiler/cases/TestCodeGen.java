@@ -11,10 +11,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
@@ -26,8 +23,8 @@ import static org.junit.Assert.*;
  */
 public class TestCodeGen {
         private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), new Scanner.Properties());
-                Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
+                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), new Scanner.Properties(), new ErrorManager(true));
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -1277,8 +1274,8 @@ public class TestCodeGen {
                         "    static\n" +
                         "        method():TestLambdaFunc\n" +
                         "            i=1\n" +
-                        "            <(o)->o+1+i"), new Scanner.Properties());
-                Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
+                        "            <(o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -1317,8 +1314,8 @@ public class TestCodeGen {
                         "class TestLambdaLT\n" +
                         "    method():TestLambdaFunc\n" +
                         "        i=1\n" +
-                        "        <(o)->o+1+i"), new Scanner.Properties());
-                Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
+                        "        <(o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -1357,8 +1354,8 @@ public class TestCodeGen {
                         "class TestLambdaLT\n" +
                         "    method():Function\n" +
                         "        i=1\n" +
-                        "        <(o)->o+1+i"), new Scanner.Properties());
-                Parser syntacticProcessor = new Parser(lexicalProcessor.parse());
+                        "        <(o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -1418,5 +1415,24 @@ public class TestCodeGen {
                 Method methodRemoveInteger1 = cls.getMethod("methodRemoveInteger1", Object.class);
                 methodRemoveInteger1.invoke(null, list);
                 assertEquals(Arrays.asList(2, 3), list);
+        }
+
+        @Test
+        public void testArrayAccess() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestArrayAccess\n" +
+                                "    static\n" +
+                                "        arr:[]String = ['test1','test2']\n" +
+                                "        method(i,o)\n" +
+                                "            arr[i]=o",
+                        "TestArrayAccess");
+                Field f = cls.getDeclaredField("arr");
+                f.setAccessible(true);
+                Method method = cls.getMethod("method", Object.class, Object.class);
+                method.invoke(null, 1, "changed");
+                String[] arr = (String[]) f.get(null);
+                assertEquals("test1", arr[0]);
+                assertEquals("changed", arr[1]);
         }
 }

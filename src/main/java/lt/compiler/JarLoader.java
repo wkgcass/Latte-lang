@@ -1,4 +1,4 @@
-package lt.repl;
+package lt.compiler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

@@ -16,8 +16,4 @@ public class SyntaxException extends CompileException {
                                 : "\nThis line uses defined replacement (" + lineCol.useDefine + "), the column might not be precise"));
                 this.lineCol = lineCol;
         }
-
-        public SyntaxException(LineCol lineCol) {
-                this("syntax exception", lineCol);
-        }
 }

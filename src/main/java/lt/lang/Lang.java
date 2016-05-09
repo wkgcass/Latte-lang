@@ -1,5 +1,6 @@
 package lt.lang;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 
 /**
@@ -126,6 +127,12 @@ public class Lang {
          */
         @SuppressWarnings("unused")
         public static Object getField(Object o, String fieldName, Class<?> callerClass) {
+                if (o.getClass().isArray()) {
+                        if (fieldName.equals("length")) {
+                                return Array.getLength(o);
+                        } else return Undefined.get();
+                }
+
                 // try to get field
                 try {
                         Field f = o.getClass().getDeclaredField(fieldName);
