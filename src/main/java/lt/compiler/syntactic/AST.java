@@ -914,54 +914,15 @@ public class AST {
          * try
          */
         public static class Try implements Statement {
-                public static class Catch implements Statement {
-                        public final List<Access> exceptionTypes;
-                        public final List<Statement> statements;
-                        private final LineCol lineCol;
-
-                        public Catch(List<Access> exceptionTypes, List<Statement> statements, LineCol lineCol) {
-                                this.exceptionTypes = exceptionTypes;
-                                this.statements = statements;
-                                this.lineCol = lineCol;
-                        }
-
-                        @Override
-                        public String toString() {
-                                return "(" + exceptionTypes + " " + statements + ")";
-                        }
-
-                        @Override
-                        public boolean equals(Object o) {
-                                if (this == o) return true;
-                                if (o == null || getClass() != o.getClass()) return false;
-
-                                Catch aCatch = (Catch) o;
-
-                                return !(exceptionTypes != null ? !exceptionTypes.equals(aCatch.exceptionTypes) : aCatch.exceptionTypes != null) && !(statements != null ? !statements.equals(aCatch.statements) : aCatch.statements != null);
-                        }
-
-                        @Override
-                        public int hashCode() {
-                                int result = exceptionTypes != null ? exceptionTypes.hashCode() : 0;
-                                result = 31 * result + (statements != null ? statements.hashCode() : 0);
-                                return result;
-                        }
-
-                        @Override
-                        public LineCol line_col() {
-                                return lineCol;
-                        }
-                }
-
                 public final List<Statement> statements;
-                public final List<Catch> catches;
+                public final List<Statement> catchStatements;
                 public final String varName;
                 public final List<Statement> fin;
                 private final LineCol lineCol;
 
-                public Try(List<Statement> statements, String varName, List<Catch> catches, List<Statement> fin, LineCol lineCol) {
+                public Try(List<Statement> statements, String varName, List<Statement> catchStatements, List<Statement> fin, LineCol lineCol) {
                         this.statements = statements;
-                        this.catches = catches;
+                        this.catchStatements = catchStatements;
                         this.varName = varName;
                         this.fin = fin;
                         this.lineCol = lineCol;
@@ -969,7 +930,7 @@ public class AST {
 
                 @Override
                 public String toString() {
-                        return "(try " + statements + " catch " + varName + " (" + catches + ") finally " + fin + ")";
+                        return "(try " + statements + " catch " + varName + " " + catchStatements + " finally " + fin + ")";
                 }
 
                 @Override
@@ -979,14 +940,19 @@ public class AST {
 
                         Try aTry = (Try) o;
 
-                        return !(statements != null ? !statements.equals(aTry.statements) : aTry.statements != null) && !(catches != null ? !catches.equals(aTry.catches) : aTry.catches != null) && !(varName != null ? !varName.equals(aTry.varName) : aTry.varName != null);
+                        if (statements != null ? !statements.equals(aTry.statements) : aTry.statements != null) return false;
+                        if (catchStatements != null ? !catchStatements.equals(aTry.catchStatements) : aTry.catchStatements != null) return false;
+                        if (varName != null ? !varName.equals(aTry.varName) : aTry.varName != null) return false;
+                        //
+                        return !(fin != null ? !fin.equals(aTry.fin) : aTry.fin != null);
                 }
 
                 @Override
                 public int hashCode() {
                         int result = statements != null ? statements.hashCode() : 0;
-                        result = 31 * result + (catches != null ? catches.hashCode() : 0);
+                        result = 31 * result + (catchStatements != null ? catchStatements.hashCode() : 0);
                         result = 31 * result + (varName != null ? varName.hashCode() : 0);
+                        result = 31 * result + (fin != null ? fin.hashCode() : 0);
                         return result;
                 }
 

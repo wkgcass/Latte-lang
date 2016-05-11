@@ -483,7 +483,8 @@ public class CoreCompiler {
 
                 @Override
                 public void run() {
-                        Parser parser = new Parser(root);
+                        // TODO
+                        Parser parser = new Parser(root, new ErrorManager(true));
                         try {
                                 resultMap.put(
                                         fileName,

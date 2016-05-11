@@ -12,7 +12,7 @@ define "VARCHAR" as ": String"
 define "NUMBER" as ": int"
 ; there can be 0 or 1 or more defines in this part
 
-; Note that define is a preprocessing command, it simply replaces <target> with <replacement>
+; Note that define is a preprocessing command, it simply replaces [target] with [replacement]
 ; use as few of define as you can, and remember to use undef when the define is useless
 
 ; then there's code part

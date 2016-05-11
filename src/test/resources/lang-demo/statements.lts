@@ -5,7 +5,7 @@
 ; ===
 ; for
 ; ===
-; for <variable> in <iterator/iterable/array/enumeration>
+; for [variable] in [iterator/iterable/array/enumeration]
 arr=[1,2,3]
 res0=0
 for i in arr
@@ -14,7 +14,7 @@ for i in arr
 ; =====
 ; while
 ; =====
-; while <expression>
+; while [expression]
 res1=0
 index=0
 while index<arr.size()
@@ -24,9 +24,9 @@ while index<arr.size()
 ; ==
 ; if
 ; ==
-; if <expression>
+; if [expression]
 ;     ...
-; elseif <expression>
+; elseif [expression]
 ;     ...
 ; else
 ;     ...
@@ -44,9 +44,7 @@ method_if_elseif_else(a,b)
 ; =================
 ; try
 ;     ...
-; catch <exVar>
-;     <ExceptionType> [, ...]
-;         ...
+; catch [exVar]
 ;     ...
 ; finally
 ;     ...
@@ -56,11 +54,11 @@ method_try_catch_finally(func)
         func.apply()
         a=1
     catch e
-        RuntimeException
+        if e is type RuntimeException
             a=2
-        Error, Exception
+        elseif e is type Error or e is type Exception
             a=3
-        Throwable
+        elseif e is type Throwable
             a=4
     finally
         ++a
@@ -69,12 +67,12 @@ method_try_catch_finally(func)
 ; =====
 ; throw
 ; =====
-res2=0
+res2=null
 try
-    throw RuntimeException()
+    throw 'abc'
 catch e
-    RuntimeException
-        res2=1
+    res2=e ; res2 should be 'abc'
+; throw and catch anything!
 
 ; 4.synchronized
 ; sync(a,b,c)
@@ -101,9 +99,9 @@ res3=method_if_elseif_else(true,false)
 ; ==================
 res4 = Object()
 
-; ========================
-; operator-like invocation
-; ========================
+; ===
+; DSL
+; ===
 ; a op b
 ; a op
 list1=java::util::ArrayList()

@@ -1078,7 +1078,7 @@ public class Ins {
                 public static final int IReturn = 0xac;
                 public static final int LReturn = 0xad;
 
-                private final Value value;
+                private Value value;
                 private final int returnIns;
                 private final LineCol lineCol;
 
@@ -1086,6 +1086,10 @@ public class Ins {
                         this.value = value;
                         this.returnIns = returnIns;
                         this.lineCol = lineCol;
+                }
+
+                public void setReturnValue(Value value) {
+                        this.value = value;
                 }
 
                 @Override

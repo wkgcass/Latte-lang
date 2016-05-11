@@ -80,7 +80,7 @@ public class Evaluator {
                         errorManager.out = ErrorManager.Out.allNull();
 
                         Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(stmt), new Scanner.Properties(), errorManager);
-                        Parser parser = new Parser(scanner.scan());
+                        Parser parser = new Parser(scanner.scan(), errorManager);
                         SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                                 put("EVALUATE.lts", parser.parse());
                         }}, cl);
@@ -139,7 +139,7 @@ public class Evaluator {
                         Scanner scanner = new Scanner("EVALUATE.lts", new StringReader(code), scanner$properties, errorManager);
                         ElementStartNode root = scanner.scan();
 
-                        Parser parser = new Parser(root);
+                        Parser parser = new Parser(root, errorManager);
                         List<Statement> statements = parser.parse();
 
                         ClassDef classDef = (ClassDef) statements.get(1); // it must be class def (class Evaluate)

@@ -28,7 +28,7 @@ public class TestSemantic {
                 Map<String, List<Statement>> map = new HashMap<>();
                 for (String fileName : fileMap.keySet()) {
                         lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test", new StringReader(fileMap.get(fileName)), new Scanner.Properties(), new ErrorManager(true));
-                        Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
+                        Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                         map.put(fileName, syntacticProcessor.parse());
                 }
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -1329,47 +1329,53 @@ public class TestSemantic {
                 SClassDef classDef = (SClassDef) it.next();
                 SMethodDef method = classDef.methods().get(0);
 
-                Instruction i1 = method.statements().get(0); // if true
-                Instruction i2 = method.statements().get(1); // if false
-                Instruction i3 = method.statements().get(2); // if true
-                Instruction i4 = method.statements().get(3); // goto
+                Instruction i1 = method.statements().get(0); // true ifNe goto nop1
+                Instruction i2 = method.statements().get(1); // return 1
+                Instruction i3 = method.statements().get(2); // goto nop
+                Instruction i4 = method.statements().get(3); // nop1
 
-                Instruction i5 = method.statements().get(4); // return 1
-                Instruction i6 = method.statements().get(5); // goto
+                Instruction i5 = method.statements().get(4); // false ifNe goto nop2
+                Instruction i6 = method.statements().get(5); // return 2
+                Instruction i7 = method.statements().get(6); // goto nop
+                Instruction i8 = method.statements().get(7); // nop2
 
-                Instruction i7 = method.statements().get(6); // return 2
-                Instruction i8 = method.statements().get(7); // goto
+                Instruction i9 = method.statements().get(8); // true ifNe goto nop3
+                Instruction i10 = method.statements().get(9); // return 3
+                Instruction i11 = method.statements().get(10); // goto nop
+                Instruction i12 = method.statements().get(11); // nop3
 
-                Instruction i9 = method.statements().get(8); // return 3
-                Instruction i10 = method.statements().get(9); // goto
+                Instruction i13 = method.statements().get(12); // return 4
 
-                Instruction i11 = method.statements().get(10); // return 4
-                Instruction i12 = method.statements().get(11); // goto
+                Instruction i14 = method.statements().get(13); // nop
 
-                Instruction i13 = method.statements().get(12); // nop
+                assertEquals(14, method.statements().size());
 
-                assertTrue(i1 instanceof Ins.IfNe);
-                assertEquals(i5, ((Ins.IfNe) i1).gotoIns());
-                assertTrue(i2 instanceof Ins.IfNe);
-                assertEquals(i7, ((Ins.IfNe) i2).gotoIns());
-                assertTrue(i3 instanceof Ins.IfNe);
-                assertEquals(i9, ((Ins.IfNe) i3).gotoIns());
-                assertTrue(i4 instanceof Ins.Goto);
-                assertEquals(i11, ((Ins.Goto) i4).gotoIns());
+                assertTrue(i1 instanceof Ins.IfEq);
+                assertEquals(i4, ((Ins.IfEq) i1).gotoIns());
+                assertTrue(i5 instanceof Ins.IfEq);
+                assertEquals(i8, ((Ins.IfEq) i5).gotoIns());
+                assertTrue(i9 instanceof Ins.IfEq);
+                assertEquals(i12, ((Ins.IfEq) i9).gotoIns());
 
-                assertTrue(i5 instanceof Ins.TReturn);
-                assertTrue(i6 instanceof Ins.Goto);
+                assertTrue(i3 instanceof Ins.Goto);
+                assertEquals(i14, ((Ins.Goto) i3).gotoIns());
+                assertTrue(i7 instanceof Ins.Goto);
+                assertEquals(i14, ((Ins.Goto) i7).gotoIns());
+                assertTrue(i11 instanceof Ins.Goto);
+                assertEquals(i14, ((Ins.Goto) i11).gotoIns());
 
-                assertTrue(i7 instanceof Ins.TReturn);
-                assertTrue(i8 instanceof Ins.Goto);
+                assertTrue(i2 instanceof Ins.TReturn);
+                assertTrue(i4 instanceof Ins.Nop);
 
-                assertTrue(i9 instanceof Ins.TReturn);
-                assertTrue(i10 instanceof Ins.Goto);
+                assertTrue(i6 instanceof Ins.TReturn);
+                assertTrue(i8 instanceof Ins.Nop);
 
-                assertTrue(i11 instanceof Ins.TReturn);
-                assertTrue(i12 instanceof Ins.Goto);
+                assertTrue(i10 instanceof Ins.TReturn);
+                assertTrue(i12 instanceof Ins.Nop);
 
-                assertTrue(i13 instanceof Ins.Nop);
+                assertTrue(i13 instanceof Ins.TReturn);
+
+                assertTrue(i14 instanceof Ins.Nop);
         }
 
         @Test
@@ -1502,11 +1508,11 @@ public class TestSemantic {
                         "    try\n" +
                         "        throw RuntimeException()\n" +
                         "    catch e\n" +
-                        "        RuntimeException,Exception\n" +
+                        "        if e is type RuntimeException or e is type Exception\n" +
                         "            e.printStackTrace()\n" +
-                        "        Error\n" +
+                        "        elseif e is type Error\n" +
                         "            e.printStackTrace()\n" +
-                        "        Throwable\n" +
+                        "        elseif e is type Throwable\n" +
                         "            e.printStackTrace()");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
@@ -1517,200 +1523,75 @@ public class TestSemantic {
                 SConstructorDef con = classDef.constructors().get(0);
 
                 Instruction i1 = con.statements().get(1); // throw
-                Instruction i2 = con.statements().get(2); // goto
-                Instruction i3 = con.statements().get(3); // exStore (RuntimeException)
-                Instruction i4 = con.statements().get(4); // invokeVirtual
-                Instruction i5 = con.statements().get(5); // goto
-                Instruction i6 = con.statements().get(6); // exStore (Exception)
-                Instruction i7 = con.statements().get(7); // invokeVirtual
-                Instruction i8 = con.statements().get(8); // goto
-                Instruction i9 = con.statements().get(9); // exStore (Error)
-                Instruction i10 = con.statements().get(10); // invokeVirtual
-                Instruction i11 = con.statements().get(11); // goto
-                Instruction i12 = con.statements().get(12); // exStore (Throwable)
-                Instruction i13 = con.statements().get(13); // invokeVirtual
-                Instruction i14 = con.statements().get(14); // goto
-                Instruction i15 = con.statements().get(15); // exStore (Throwable) exceptionFinally
-                Instruction i16 = con.statements().get(16); // throw
+                Instruction i2 = con.statements().get(2); // goto nopX
+                Instruction i3 = con.statements().get(3); // exStore
+                Instruction i4 = con.statements().get(4); // TStore
+                Instruction i5 = con.statements().get(5); // if eq to (nop1)7
+                Instruction i6 = con.statements().get(6); // InvokeDynamic
+                Instruction i7 = con.statements().get(7); // goto nop
+                Instruction i8 = con.statements().get(8); // nop1
+                Instruction i9 = con.statements().get(9); // if eq to (nop2)11
+                Instruction i10 = con.statements().get(10); // InvokeDynamic
+                Instruction i11 = con.statements().get(11); // goto nop
+                Instruction i12 = con.statements().get(12); // nop2
+                Instruction i13 = con.statements().get(13); // if eq to (nop3)15
+                Instruction i14 = con.statements().get(14); // InvokeDynamic
+                Instruction i15 = con.statements().get(15); // goto nop
+                Instruction i16 = con.statements().get(16); // nop3
                 Instruction i17 = con.statements().get(17); // nop
+                Instruction i18 = con.statements().get(18); // goto nopX
+                Instruction i19 = con.statements().get(19); // exStore
+                Instruction i20 = con.statements().get(20); // aThrow
+                Instruction i21 = con.statements().get(21); // nopX
+
+                assertEquals(22, con.statements().size());
 
                 assertTrue(i1 instanceof Ins.AThrow);
                 assertTrue(i2 instanceof Ins.Goto);
                 assertTrue(i3 instanceof Ins.ExStore);
-                assertTrue(i4 instanceof Ins.InvokeVirtual);
-                assertTrue(i5 instanceof Ins.Goto);
-                assertTrue(i6 instanceof Ins.ExStore);
-                assertTrue(i7 instanceof Ins.InvokeVirtual);
-                assertTrue(i8 instanceof Ins.Goto);
-                assertTrue(i9 instanceof Ins.ExStore);
-                assertTrue(i10 instanceof Ins.InvokeVirtual);
+                assertTrue(i4 instanceof Ins.TStore);
+                assertTrue(i5 instanceof Ins.IfEq);
+                assertTrue(i6 instanceof Ins.InvokeDynamic);
+                assertTrue(i7 instanceof Ins.Goto);
+                assertTrue(i8 instanceof Ins.Nop);
+                assertTrue(i9 instanceof Ins.IfEq);
+                assertTrue(i10 instanceof Ins.InvokeDynamic);
                 assertTrue(i11 instanceof Ins.Goto);
-                assertTrue(i12 instanceof Ins.ExStore);
-                assertTrue(i13 instanceof Ins.InvokeVirtual);
-                assertTrue(i14 instanceof Ins.Goto);
-                assertTrue(i15 instanceof Ins.ExStore);
-                assertTrue(i16 instanceof Ins.AThrow);
+                assertTrue(i12 instanceof Ins.Nop);
+                assertTrue(i13 instanceof Ins.IfEq);
+                assertTrue(i14 instanceof Ins.InvokeDynamic);
+                assertTrue(i15 instanceof Ins.Goto);
+                assertTrue(i16 instanceof Ins.Nop);
                 assertTrue(i17 instanceof Ins.Nop);
-                assertEquals(18, con.statements().size());
+                assertTrue(i18 instanceof Ins.Goto);
+                assertTrue(i19 instanceof Ins.ExStore);
+                assertTrue(i20 instanceof Ins.AThrow);
+                assertTrue(i21 instanceof Ins.Nop);
 
-                assertEquals(i17, ((Ins.Goto) i2).gotoIns());
-                assertEquals(i17, ((Ins.Goto) i5).gotoIns());
-                assertEquals(i17, ((Ins.Goto) i8).gotoIns());
+                assertEquals(i8, ((Ins.IfEq) i5).gotoIns());
+                assertEquals(i12, ((Ins.IfEq) i9).gotoIns());
+                assertEquals(i16, ((Ins.IfEq) i13).gotoIns());
+
+                assertEquals(i21, ((Ins.Goto) i2).gotoIns());
+                assertEquals(i17, ((Ins.Goto) i7).gotoIns());
                 assertEquals(i17, ((Ins.Goto) i11).gotoIns());
-                assertEquals(i17, ((Ins.Goto) i14).gotoIns());
+                assertEquals(i17, ((Ins.Goto) i15).gotoIns());
+                assertEquals(i21, ((Ins.Goto) i18).gotoIns());
 
-                ExceptionTable tbl0 = con.exceptionTables().get(0); // 1-2 goto 3   NullPointerException
-                ExceptionTable tbl1 = con.exceptionTables().get(1); // 3-5 goto 15  any
-                ExceptionTable tbl2 = con.exceptionTables().get(2); // 1-2 goto 6   Exception
-                ExceptionTable tbl3 = con.exceptionTables().get(3); // 6-8 goto 15  any
-                ExceptionTable tbl4 = con.exceptionTables().get(4); // 1-2 goto 9   Error
-                ExceptionTable tbl5 = con.exceptionTables().get(5); // 9-11goto 15  any
-                ExceptionTable tbl6 = con.exceptionTables().get(6); // 1-2 goto 12  Throwable
-                ExceptionTable tbl7 = con.exceptionTables().get(7); // 12-14goto15  any
-                assertEquals(8, con.exceptionTables().size());
+                ExceptionTable tbl0 = con.exceptionTables().get(0); // 1-2 to 3 Throwable
+                ExceptionTable tbl1 = con.exceptionTables().get(1); // 3-18 to 19 any
+
+                assertEquals(2, con.exceptionTables().size());
 
                 assertEquals(i1, tbl0.getFrom());
-                assertEquals(i1, tbl2.getFrom());
-                assertEquals(i1, tbl4.getFrom());
-                assertEquals(i1, tbl6.getFrom());
+                assertEquals(i2, tbl0.getTo());
+                assertEquals(i3, tbl0.getTarget());
+                assertEquals("java.lang.Throwable", tbl0.getType().fullName());
 
                 assertEquals(i3, tbl1.getFrom());
-                assertEquals(i6, tbl3.getFrom());
-                assertEquals(i9, tbl5.getFrom());
-                assertEquals(i12, tbl7.getFrom());
-
-                assertEquals(i2, tbl0.getTo());
-                assertEquals(i2, tbl2.getTo());
-                assertEquals(i2, tbl4.getTo());
-                assertEquals(i2, tbl6.getTo());
-
-                assertEquals(i5, tbl1.getTo());
-                assertEquals(i8, tbl3.getTo());
-                assertEquals(i11, tbl5.getTo());
-                assertEquals(i14, tbl7.getTo());
-
-                assertEquals(i3, tbl0.getTarget());
-                assertEquals(i6, tbl2.getTarget());
-                assertEquals(i9, tbl4.getTarget());
-                assertEquals(i12, tbl6.getTarget());
-
-                assertEquals(i15, tbl1.getTarget());
-                assertEquals(i15, tbl3.getTarget());
-                assertEquals(i15, tbl5.getTarget());
-                assertEquals(i15, tbl7.getTarget());
-
-                assertEquals("java.lang.RuntimeException", tbl0.getType().fullName());
-                assertEquals("java.lang.Exception", tbl2.getType().fullName());
-                assertEquals("java.lang.Error", tbl4.getType().fullName());
-                assertEquals("java.lang.Throwable", tbl6.getType().fullName());
-
+                assertEquals(i18, tbl1.getTo());
+                assertEquals(i19, tbl1.getTarget());
                 assertNull(tbl1.getType());
-                assertNull(tbl3.getType());
-                assertNull(tbl5.getType());
-                assertNull(tbl7.getType());
-        }
-
-        @Test
-        public void testTryCatchWithoutThrowable() throws Exception {
-                Map<String, String> map = new HashMap<>();
-                map.put("test", "" +
-                        "# test\n" +
-                        "class A\n" +
-                        "    try\n" +
-                        "        throw RuntimeException()\n" +
-                        "    catch e\n" +
-                        "        RuntimeException,Exception\n" +
-                        "            e.printStackTrace()\n" +
-                        "        Error\n" +
-                        "            e.printStackTrace()");
-                Set<STypeDef> set = parse(map);
-                assertEquals(1, set.size());
-
-                Iterator<STypeDef> it = set.iterator();
-
-                SClassDef classDef = (SClassDef) it.next();
-                SConstructorDef con = classDef.constructors().get(0);
-
-                Instruction i1 = con.statements().get(1); // throw
-                Instruction i2 = con.statements().get(2); // goto
-                Instruction i3 = con.statements().get(3); // exStore (RuntimeException)
-                Instruction i4 = con.statements().get(4); // invokeVirtual
-                Instruction i5 = con.statements().get(5); // goto
-                Instruction i6 = con.statements().get(6); // exStore (Exception)
-                Instruction i7 = con.statements().get(7); // invokeVirtual
-                Instruction i8 = con.statements().get(8); // goto
-                Instruction i9 = con.statements().get(9); // exStore (Error)
-                Instruction i10 = con.statements().get(10); // invokeVirtual
-                Instruction i11 = con.statements().get(11); // goto
-                Instruction i12 = con.statements().get(12); // exStore (Throwable) exceptionFinally
-                Instruction i13 = con.statements().get(13); // throw
-                Instruction i14 = con.statements().get(14); // nop
-
-                assertTrue(i1 instanceof Ins.AThrow);
-                assertTrue(i2 instanceof Ins.Goto);
-                assertTrue(i3 instanceof Ins.ExStore);
-                assertTrue(i4 instanceof Ins.InvokeVirtual);
-                assertTrue(i5 instanceof Ins.Goto);
-                assertTrue(i6 instanceof Ins.ExStore);
-                assertTrue(i7 instanceof Ins.InvokeVirtual);
-                assertTrue(i8 instanceof Ins.Goto);
-                assertTrue(i9 instanceof Ins.ExStore);
-                assertTrue(i10 instanceof Ins.InvokeVirtual);
-                assertTrue(i11 instanceof Ins.Goto);
-                assertTrue(i12 instanceof Ins.ExStore);
-                assertTrue(i13 instanceof Ins.AThrow);
-                assertTrue(i14 instanceof Ins.Nop);
-                assertEquals(15, con.statements().size());
-
-                assertEquals(i14, ((Ins.Goto) i2).gotoIns());
-                assertEquals(i14, ((Ins.Goto) i5).gotoIns());
-                assertEquals(i14, ((Ins.Goto) i8).gotoIns());
-                assertEquals(i14, ((Ins.Goto) i11).gotoIns());
-
-                ExceptionTable tbl0 = con.exceptionTables().get(0); // 1-2 goto 3   NullPointerException
-                ExceptionTable tbl1 = con.exceptionTables().get(1); // 3-5 goto 15  any
-                ExceptionTable tbl2 = con.exceptionTables().get(2); // 1-2 goto 6   Exception
-                ExceptionTable tbl3 = con.exceptionTables().get(3); // 6-8 goto 15  any
-                ExceptionTable tbl4 = con.exceptionTables().get(4); // 1-2 goto 9   Error
-                ExceptionTable tbl5 = con.exceptionTables().get(5); // 9-11goto 15  any
-                ExceptionTable tbl6 = con.exceptionTables().get(6); // 1-2 goto 12  any
-                assertEquals(7, con.exceptionTables().size());
-
-                assertEquals(i1, tbl0.getFrom());
-                assertEquals(i1, tbl2.getFrom());
-                assertEquals(i1, tbl4.getFrom());
-                assertEquals(i1, tbl6.getFrom());
-
-                assertEquals(i3, tbl1.getFrom());
-                assertEquals(i6, tbl3.getFrom());
-                assertEquals(i9, tbl5.getFrom());
-
-                assertEquals(i2, tbl0.getTo());
-                assertEquals(i2, tbl2.getTo());
-                assertEquals(i2, tbl4.getTo());
-                assertEquals(i2, tbl6.getTo());
-
-                assertEquals(i5, tbl1.getTo());
-                assertEquals(i8, tbl3.getTo());
-                assertEquals(i11, tbl5.getTo());
-
-                assertEquals(i3, tbl0.getTarget());
-                assertEquals(i6, tbl2.getTarget());
-                assertEquals(i9, tbl4.getTarget());
-                assertEquals(i12, tbl6.getTarget());
-
-                assertEquals(i12, tbl1.getTarget());
-                assertEquals(i12, tbl3.getTarget());
-                assertEquals(i12, tbl5.getTarget());
-
-                assertEquals("java.lang.RuntimeException", tbl0.getType().fullName());
-                assertEquals("java.lang.Exception", tbl2.getType().fullName());
-                assertEquals("java.lang.Error", tbl4.getType().fullName());
-
-                assertNull(tbl1.getType());
-                assertNull(tbl3.getType());
-                assertNull(tbl5.getType());
-                assertNull(tbl6.getType());
         }
 
         @Test
@@ -2119,7 +2000,7 @@ public class TestSemantic {
                         "    try\n" +
                         "        System.out.println('hello')\n" +
                         "    catch e\n" +
-                        "        RuntimeException\n" +
+                        "        if e is type RuntimeException\n" +
                         "            e.printStackTrace()\n" +
                         "    finally\n" +
                         "        System.out.println(' world')");
@@ -2134,46 +2015,126 @@ public class TestSemantic {
                 Instruction i1 = con.statements().get(1); // InvokeVirtual
                 Instruction i2 = con.statements().get(2); // goto (normal finally)
                 Instruction i3 = con.statements().get(3); // exStore
-                Instruction i4 = con.statements().get(4); // invokeVirtual
-                Instruction i5 = con.statements().get(5); // goto (normal finally)
-                Instruction i6 = con.statements().get(6); // exStore (exception finally)
-                Instruction i7 = con.statements().get(7); // InvokeVirtual
-                Instruction i8 = con.statements().get(8); // aThrow
-                Instruction i9 = con.statements().get(9); // InvokeVirtual (normal finally)
-                assertEquals(10, con.statements().size());
+                Instruction i4 = con.statements().get(4); // Tstore
+                Instruction i5 = con.statements().get(5); // ifEq nop
+                Instruction i6 = con.statements().get(6); // InvokeDynamic
+                Instruction i7 = con.statements().get(7); // goto nop1
+                Instruction i8 = con.statements().get(8); // nop
+                Instruction i9 = con.statements().get(9); // nop1
+                Instruction i10 = con.statements().get(10); // goto (normal finally)
+                Instruction i11 = con.statements().get(11); // exStore
+                Instruction i12 = con.statements().get(12); // invokeVirtual
+                Instruction i13 = con.statements().get(13); // aThrow
+                Instruction i14 = con.statements().get(14); // invokeVirtual (normal finally)
+                assertEquals(15, con.statements().size());
 
                 assertTrue(i1 instanceof Ins.InvokeVirtual);
                 assertTrue(i2 instanceof Ins.Goto);
                 assertTrue(i3 instanceof Ins.ExStore);
-                assertTrue(i4 instanceof Ins.InvokeVirtual);
-                assertTrue(i5 instanceof Ins.Goto);
-                assertTrue(i6 instanceof Ins.ExStore);
-                assertTrue(i7 instanceof Ins.InvokeVirtual);
-                assertTrue(i8 instanceof Ins.AThrow);
-                assertTrue(i9 instanceof Ins.InvokeVirtual);
+                assertTrue(i4 instanceof Ins.TStore);
+                assertTrue(i5 instanceof Ins.IfEq);
+                assertTrue(i6 instanceof Ins.InvokeDynamic);
+                assertTrue(i7 instanceof Ins.Goto);
+                assertTrue(i8 instanceof Ins.Nop);
+                assertTrue(i9 instanceof Ins.Nop);
+                assertTrue(i10 instanceof Ins.Goto);
+                assertTrue(i11 instanceof Ins.ExStore);
+                assertTrue(i12 instanceof Ins.InvokeVirtual);
+                assertTrue(i13 instanceof Ins.AThrow);
+                assertTrue(i14 instanceof Ins.InvokeVirtual);
 
-                assertEquals(i9, ((Ins.Goto) i2).gotoIns());
-                assertEquals(i9, ((Ins.Goto) i5).gotoIns());
+                assertEquals(i14, ((Ins.Goto) i2).gotoIns());
+                assertEquals(i8, ((Ins.IfEq) i5).gotoIns());
+                assertEquals(i9, ((Ins.Goto) i7).gotoIns());
+                assertEquals(i14, ((Ins.Goto) i10).gotoIns());
 
-                ExceptionTable tbl0 = con.exceptionTables().get(0); // 1-2 goto 3  RuntimeException
-                ExceptionTable tbl1 = con.exceptionTables().get(1); // 3-5 goto 6  any
-                ExceptionTable tbl2 = con.exceptionTables().get(2); // 1-2 goto 6  any
-                assertEquals(3, con.exceptionTables().size());
+                ExceptionTable tbl0 = con.exceptionTables().get(0); // 1-2 goto 3  Throwable
+                ExceptionTable tbl1 = con.exceptionTables().get(1); // 3-10 goto 11  any
+                assertEquals(2, con.exceptionTables().size());
 
                 assertEquals(i1, tbl0.getFrom());
                 assertEquals(i2, tbl0.getTo());
                 assertEquals(i3, tbl0.getTarget());
-                assertEquals("java.lang.RuntimeException", tbl0.getType().fullName());
+                assertEquals("java.lang.Throwable", tbl0.getType().fullName());
 
                 assertEquals(i3, tbl1.getFrom());
-                assertEquals(i5, tbl1.getTo());
-                assertEquals(i6, tbl1.getTarget());
+                assertEquals(i10, tbl1.getTo());
+                assertEquals(i11, tbl1.getTarget());
                 assertNull(tbl1.getType());
+        }
 
-                assertEquals(i1, tbl2.getFrom());
-                assertEquals(i2, tbl2.getTo());
-                assertEquals(i6, tbl2.getTarget());
-                assertNull(tbl2.getType());
+        @Test
+        public void testReturnFinally() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "# test\n" +
+                        "class A\n" +
+                        "    method()\n" +
+                        "        try\n" +
+                        "            <1\n" +
+                        "        catch e\n" +
+                        "            <2\n" +
+                        "        finally\n" +
+                        "            1+1");
+                Set<STypeDef> set = parse(map);
+                assertEquals(1, set.size());
+
+                Iterator<STypeDef> it = set.iterator();
+
+                SClassDef classDef = (SClassDef) it.next();
+                SMethodDef met = classDef.methods().get(0);
+
+                Instruction i0 = met.statements().get(0); // Nop
+                Instruction i1 = met.statements().get(1); // AStore (store 1)
+                Instruction i2 = met.statements().get(2); // IAdd (finally)
+                Instruction i3 = met.statements().get(3); // AReturn (load 1)
+                Instruction i4 = met.statements().get(4); // goto (normal finally)
+                Instruction i5 = met.statements().get(5); // exStore
+                Instruction i6 = met.statements().get(6); // TStore
+                Instruction i7 = met.statements().get(7); // AStore (store 2)
+                Instruction i8 = met.statements().get(8); // IAdd (finally)
+                Instruction i9 = met.statements().get(9); // AReturn (load 2)
+                Instruction i10 = met.statements().get(10); // goto (normal finally)
+                Instruction i11 = met.statements().get(11); // exStore
+                Instruction i12 = met.statements().get(12); // IAdd
+                Instruction i13 = met.statements().get(13); // AThrow
+                Instruction i14 = met.statements().get(14); // IAdd (normal finally)
+
+                assertEquals(15, met.statements().size());
+
+                assertTrue(i0 instanceof Ins.Nop);
+                assertTrue(i1 instanceof Ins.TStore);
+                assertTrue(i2 instanceof Ins.TwoVarOp);
+                assertTrue(i3 instanceof Ins.TReturn);
+                assertTrue(i4 instanceof Ins.Goto);
+                assertTrue(i5 instanceof Ins.ExStore);
+                assertTrue(i6 instanceof Ins.TStore);
+                assertTrue(i7 instanceof Ins.TStore);
+                assertTrue(i8 instanceof Ins.TwoVarOp);
+                assertTrue(i9 instanceof Ins.TReturn);
+                assertTrue(i10 instanceof Ins.Goto);
+                assertTrue(i11 instanceof Ins.ExStore);
+                assertTrue(i12 instanceof Ins.TwoVarOp);
+                assertTrue(i13 instanceof Ins.AThrow);
+                assertTrue(i14 instanceof Ins.TwoVarOp);
+
+                assertEquals(i14, ((Ins.Goto) i4).gotoIns());
+                assertEquals(i14, ((Ins.Goto) i10).gotoIns());
+
+                ExceptionTable tbl0 = met.exceptionTables().get(0); // 0-2 to 5 Throwable
+                ExceptionTable tbl1 = met.exceptionTables().get(1); // 5-8 to 11 any
+
+                assertEquals(2, met.exceptionTables().size());
+
+                assertEquals(i0, tbl0.getFrom());
+                assertEquals(i2, tbl0.getTo());
+                assertEquals(i5, tbl0.getTarget());
+                assertEquals("java.lang.Throwable", tbl0.getType().fullName());
+
+                assertEquals(i5, tbl1.getFrom());
+                assertEquals(i8, tbl1.getTo());
+                assertEquals(i11, tbl1.getTarget());
+                assertNull(tbl1.getType());
         }
 
         @Test

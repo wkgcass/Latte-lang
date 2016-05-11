@@ -15,6 +15,8 @@ public class Utils {
         private Utils() {
         }
 
+        public static Implicitly implicitly = Implicitly.get();
+
         public static void println(Object o) {
                 System.out.println(o);
         }

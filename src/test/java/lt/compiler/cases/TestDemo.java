@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 public class TestDemo {
         private Map<String, byte[]> generate(BufferedReader br, String fileName) throws IOException, SyntaxException, ClassNotFoundException {
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner(fileName, br, new lt.compiler.Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put(fileName, syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -368,7 +368,7 @@ public class TestDemo {
                 // res2
                 Field res2 = cls.getDeclaredField("res2");
                 res2.setAccessible(true);
-                assertEquals(1, res2.get(o));
+                assertEquals("abc", res2.get(o));
 
                 // variable1
                 Field variable1 = cls.getDeclaredField("variable1");

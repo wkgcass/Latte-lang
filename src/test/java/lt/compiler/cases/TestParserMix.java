@@ -27,7 +27,7 @@ public class TestParserMix {
                 lt.compiler.Scanner processor = new lt.compiler.Scanner("test", new StringReader(stmt), new Scanner.Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
-                Parser syntacticProcessor = new Parser(root);
+                Parser syntacticProcessor = new Parser(root, new ErrorManager(true));
 
                 return syntacticProcessor.parse();
         }

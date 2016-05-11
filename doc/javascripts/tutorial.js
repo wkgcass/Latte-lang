@@ -189,12 +189,14 @@ $(document).ready(function () {
                     "try\n" +
                     "    stream read\n" +
                     "catch e\n" +
-                    "    IOException\n" +
+                    "    if e is type IOException\n" +
                     "        LOGGER.info(e.getMessage())\n" +
-                    "    RuntimeException\n" +
+                    "    elseif e is type RuntimeException\n" +
                     "        LOGGER.debug(e.getMessage())\n" +
                     "finally\n" +
-                    "    stream close")
+                    "    stream close\n" +
+                    "\n" +
+                    "throw 'a string' ; LessTyping允许throw与catch任何类型")
             },
             {
                 title: "Synchronized",

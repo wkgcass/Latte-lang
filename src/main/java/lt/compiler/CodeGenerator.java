@@ -700,9 +700,39 @@ public class CodeGenerator {
                 } else if (value instanceof Ins.LogicOr) {
                         buildLogicOr(methodVisitor, info, (Ins.LogicOr) value);
                 } else if (value instanceof Ins.GetClass) {
-                        methodVisitor.visitLdcInsn(Type.getObjectType(
-                                typeToInternalName(((Ins.GetClass) value).targetType())
-                        ));
+                        STypeDef targetType = ((Ins.GetClass) value).targetType();
+
+                        if (targetType.equals(VoidType.get())) {
+                                methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/Void", "TYPE", "Ljava/lang/Class;");
+                        } else if (targetType instanceof PrimitiveTypeDef) {
+                                String TYPE = "TYPE";
+                                String CLASS = "Ljava/lang/Class;";
+                                String OWNER;
+
+                                if (targetType.equals(IntTypeDef.get())) {
+                                        OWNER = "java/lang/Integer";
+                                } else if (targetType.equals(ShortTypeDef.get())) {
+                                        OWNER = "java/lang/Short";
+                                } else if (targetType.equals(ByteTypeDef.get())) {
+                                        OWNER = "java/lang/Byte";
+                                } else if (targetType.equals(BoolTypeDef.get())) {
+                                        OWNER = "java/lang/Boolean";
+                                } else if (targetType.equals(CharTypeDef.get())) {
+                                        OWNER = "java/lang/Character";
+                                } else if (targetType.equals(LongTypeDef.get())) {
+                                        OWNER = "java/lang/Long";
+                                } else if (targetType.equals(FloatTypeDef.get())) {
+                                        OWNER = "java/lang/Float";
+                                } else if (targetType.equals(DoubleTypeDef.get())) {
+                                        OWNER = "java/lang/Double";
+                                } else throw new LtBug("unknown primitive type " + targetType);
+
+                                methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, OWNER, TYPE, CLASS);
+                        } else {
+                                methodVisitor.visitLdcInsn(Type.getObjectType(
+                                        typeToInternalName(targetType)
+                                ));
+                        }
                         info.push(CodeInfo.Size._1);
                 } else if (value instanceof Ins.TALoad) {
                         buildTALoad(methodVisitor, info, (Ins.TALoad) value);

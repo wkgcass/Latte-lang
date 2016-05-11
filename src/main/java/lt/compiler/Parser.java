@@ -24,6 +24,9 @@ import static lt.compiler.CompileUtil.*;
  * syntactic processor
  */
 public class Parser {
+        private class ParseFail extends RuntimeException {
+        }
+
         /**
          * current node
          */
@@ -60,12 +63,6 @@ public class Parser {
         private boolean expectingStartNode = false;
         /**
          * <b>state</b>  <br>
-         * is parsing try <br>
-         * the strategies of parsing <tt>try-catch-finally</tt> is different from parsing normal code blocks
-         */
-        private boolean isParsingTry = false;
-        /**
-         * <b>state</b>  <br>
          * is parsing map literal
          */
         private boolean isParsingMap = false;
@@ -74,14 +71,19 @@ public class Parser {
          * is parsing operator like invocation
          */
         private boolean isParsingOperatorLikeInvocation = false;
+        /**
+         * error manager
+         */
+        private final ErrorManager err;
 
         /**
          * init the syntactic processor with element start node
          *
          * @param root root node
          */
-        public Parser(ElementStartNode root) {
+        public Parser(ElementStartNode root, ErrorManager err) {
                 this.current = root.getLinkedNode();
+                this.err = err;
         }
 
         /**
@@ -139,13 +141,16 @@ public class Parser {
                                         // invoking parse_expression()
 
                                         // generate exception cause message
+                                        LineCol theFirstLineCol = null;
                                         StringBuilder sb = new StringBuilder();
                                         for (Expression e : parsedExps) {
                                                 sb.append(e.toString()).append(" at ").append(e.line_col().fileName).append("(").append(e.line_col().line).append(",").append(e.line_col().column).append(")\n");
+                                                if (theFirstLineCol == null)
+                                                        theFirstLineCol = e.line_col();
                                         }
                                         // it should be a bug
                                         // this err only appears only because parse_x methods don't correctly stop the parsing process when meet an invalid input
-                                        throw new LtBug("parsed expression stack should be empty, but got\n" + sb + "and got statement " + stmt);
+                                        throw new SyntaxException("got tokens which are no where to place\n" + sb + "the parsed statement is \n" + stmt + "\n", theFirstLineCol);
                                 }
 
                                 // these operators must be empty
@@ -175,10 +180,26 @@ public class Parser {
                 Node next = current.next();
                 if (next == null || (next instanceof EndingNode && ((EndingNode) next).getType() == EndingNode.STRONG)) {
                         if (!canBeEnd) {
-                                throw new UnexpectedEndException(current.getLineCol());
+                                LineCol lineCol = new LineCol(
+                                        current.getLineCol().fileName,
+                                        current.getLineCol().line,
+                                        current.getLineCol().column + current.getLineCol().length);
+                                err.UnexpectedEndException(lineCol);
+                                // if it's not the last node, jump this token
+                                // if it's the last node, ignore the whole statement
+                                if (next == null || next.next() == null) {
+                                        err.debug("the next node is null, ignore the whole statement");
+                                        throw new ParseFail();
+                                } else {
+                                        err.debug("the next node is not null, jump to next directly");
+                                        current = next.next();
+                                }
+                        } else {
+                                current = next;
                         }
+                } else {
+                        current = next;
                 }
-                current = next;
                 if (next instanceof EndingNode && ((EndingNode) next).getType() == EndingNode.WEAK) {
                         if (!canBeEnd) {
                                 nextNode(false);
@@ -210,211 +231,156 @@ public class Parser {
          */
         private Statement parse_statement() throws SyntaxException {
                 if (current == null) return null; // there's no node
-                if (isParsingTry) {
-                        annosIsEmpty();
-                        modifiersIsEmpty();
-                        // specially handled : try
-                        // syntax of 'catch' is presented as:
-                        // catch <exception variable>
-                        //     <Exception Type>[,...]
-                        //         handling process
+                // common process
+                if (current instanceof Element) {
+                        String content = ((Element) current).getContent(); // get content
 
-                        // as a result, 'catch' is differed from any other processes
-                        // this branch of code would be invoked when current node is Element(<Exception Type>) node
-                        LineCol lineCol = current.getLineCol();
+                        if (isSync((Element) current)) {
+                                // sync is both key and modifier
+                                // it's parsed independently
+                                annosIsEmpty();
+                                modifiersIsEmpty();
 
-                        List<AST.Access> exceptionTypes = new ArrayList<>();
-                        while (current instanceof Element) {
-                                Expression exp = get_exp(true); // get expression
-                                if (exp instanceof AST.Access) {
-                                        // the expression has to be Access
-                                        // e.g. java::lang::Exception or Exception are all parsed into Access
-                                        exceptionTypes.add((AST.Access) exp);
-                                } else {
-                                        throw new UnexpectedTokenException("exception type", exp.toString(), exp.line_col());
+                                return parse_synchronized();
+                        } else if (current.getTokenType() == TokenType.MODIFIER) {
+
+                                parse_modifier();
+                                return null;
+
+                        } else if (current.getTokenType() == TokenType.KEY) {
+                                switch (content) {
+                                        case "if":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return parse_if();
+                                        case "for":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return parse_for();
+                                        case "do":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return parse_do_while();
+                                        case "while":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return parse_while();
+                                        case "static":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                LineCol lineCol = current.getLineCol();
+                                                if (current.next() instanceof ElementStartNode) {
+                                                        // static
+                                                        //     ...
+                                                        nextNode(false);
+                                                        return new AST.StaticScope(
+                                                                parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false),
+                                                                lineCol);
+
+                                                } else if (current.next() instanceof Element) {
+                                                        // static ...
+                                                        nextNode(false);
+                                                        Element curr = (Element) current;
+                                                        Statement stmt = parse_statement();
+                                                        if (stmt == null)
+                                                                throw new UnexpectedTokenException("a valid statement", curr.toString(), curr.getLineCol());
+                                                        return new AST.StaticScope(Collections.singletonList(stmt), lineCol);
+
+                                                } else {
+                                                        // static
+                                                        // and no other statements/expressions
+                                                        return null;
+                                                }
+                                        case "class":
+                                                return parse_class();
+                                        case "interface":
+                                                return parse_interface();
+
+                                        case "try":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return parse_try();
+                                        case "throw":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return parse_throw();
                                 }
+                        } else if (current.getTokenType() == TokenType.SYMBOL) {
+                                switch (content) {
+                                        case "...":
+                                                return new AST.Pass(current.getLineCol());
+                                        case "@":
+                                                modifiersIsEmpty();
 
-                                // current node might be ending node
-                                // if it's STRONG, means there are other Exception Types to go
-                                // or it's WEAK or null, means there's no Exception Type to parse and no exception handling process
-                                // else, it should be ElementStartNode
-                                if (current instanceof EndingNode && ((EndingNode) current).getType() == EndingNode.STRONG) {
-                                        nextNode(true);
+                                                parse_anno();
+                                                return null;
+                                        case "<":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                // return
+                                                LineCol lineCol = current.getLineCol();
+
+                                                if (!(current.next() instanceof Element)) {
+                                                        return new AST.Return(null, lineCol);
+                                                } else {
+                                                        Expression e = next_exp(false);
+                                                        return new AST.Return(e, lineCol);
+                                                }
+
+                                        case "#":
+                                                modifiersIsEmpty();
+
+                                                // package declare
+                                                return parse_pkg_declare();
+                                        case "#>":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return parse_pkg_import();
                                 }
                         }
 
-                        // no exception handling process
-                        if (current == null || current instanceof EndingNode) {
-                                // the catch is not necessary, it might not exist
-                                // so if reaching an ending node and no exception type found, it should return null
-                                if (exceptionTypes.isEmpty()) {
-                                        return null;
-                                } else {
-                                        // only catch but no handling process
-                                        return new AST.Try.Catch(exceptionTypes, Collections.emptyList(), lineCol);
+                        // other tokens
+
+                        if (current.getTokenType() == TokenType.VALID_NAME) {
+                                // check whether is method def
+                                int def_method_type = checkMethodDef((Element) current);
+                                if (def_method_type == METHOD_DEF_TYPE) {
+                                        // method():Type
+                                        return parse_method_def_type();
+                                } else if (def_method_type == METHOD_DEF_EMPTY) {
+                                        // method()=pass
+                                        return parse_method_def_empty();
+                                } else if (def_method_type == METHOD_DEF_NORMAL) {
+                                        // method()
+                                        //     ...
+                                        return parse_method_def_normal();
+                                } else if (def_method_type == METHOD_DEF_ONE_STMT) {
+                                        // method()=....
+                                        return parse_method_def_one_stmt();
                                 }
                         }
-                        // parse element start node (the exception handling process)
-                        if (current instanceof ElementStartNode) {
-                                return new AST.Try.Catch(
-                                        exceptionTypes,
-                                        parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false),
-                                        lineCol);
-                        } else {
-                                throw new UnexpectedTokenException(current.toString(), current.getLineCol());
+
+                        // parse expression until EndingNode or null
+                        while (true) {
+                                parse_expression();
+                                if (current == null || !(current instanceof Element)) {
+                                        if (parsedExps.empty()) return null;
+                                        return parsedExps.pop();
+                                }
                         }
                 } else {
-                        // common process
-                        if (current instanceof Element) {
-                                String content = ((Element) current).getContent(); // get content
-
-                                if (isSync((Element) current)) {
-                                        // sync is both key and modifier
-                                        // it's parsed independently
-                                        annosIsEmpty();
-                                        modifiersIsEmpty();
-
-                                        return parse_synchronized();
-                                } else if (current.getTokenType() == TokenType.MODIFIER) {
-
-                                        parse_modifier();
-                                        return null;
-
-                                } else if (current.getTokenType() == TokenType.KEY) {
-                                        switch (content) {
-                                                case "if":
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        return parse_if();
-                                                case "for":
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        return parse_for();
-                                                case "do":
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        return parse_do_while();
-                                                case "while":
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        return parse_while();
-                                                case "static":
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        LineCol lineCol = current.getLineCol();
-                                                        if (current.next() instanceof ElementStartNode) {
-                                                                // static
-                                                                //     ...
-                                                                nextNode(false);
-                                                                return new AST.StaticScope(
-                                                                        parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false, false),
-                                                                        lineCol);
-
-                                                        } else if (current.next() instanceof Element) {
-                                                                // static ...
-                                                                nextNode(false);
-                                                                Element curr = (Element) current;
-                                                                Statement stmt = parse_statement();
-                                                                if (stmt == null)
-                                                                        throw new UnexpectedTokenException("a valid statement", curr.toString(), curr.getLineCol());
-                                                                return new AST.StaticScope(Collections.singletonList(stmt), lineCol);
-
-                                                        } else {
-                                                                // static
-                                                                // and no other statements/expressions
-                                                                return null;
-                                                        }
-                                                case "class":
-                                                        return parse_class();
-                                                case "interface":
-                                                        return parse_interface();
-
-                                                case "try":
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        return parse_try();
-                                                case "throw":
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        return parse_throw();
-                                        }
-                                } else if (current.getTokenType() == TokenType.SYMBOL) {
-                                        switch (content) {
-                                                case "...":
-                                                        return new AST.Pass(current.getLineCol());
-                                                case "@":
-                                                        modifiersIsEmpty();
-
-                                                        parse_anno();
-                                                        return null;
-                                                case "<":
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        // return
-                                                        LineCol lineCol = current.getLineCol();
-
-                                                        if (!(current.next() instanceof Element)) {
-                                                                return new AST.Return(null, lineCol);
-                                                        } else {
-                                                                Expression e = next_exp(false);
-                                                                return new AST.Return(e, lineCol);
-                                                        }
-
-                                                case "#":
-                                                        modifiersIsEmpty();
-
-                                                        // package declare
-                                                        return parse_pkg_declare();
-                                                case "#>":
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        return parse_pkg_import();
-                                        }
-                                }
-
-                                // other tokens
-
-                                if (current.getTokenType() == TokenType.VALID_NAME) {
-                                        // check whether is method def
-                                        int def_method_type = checkMethodDef((Element) current);
-                                        if (def_method_type == METHOD_DEF_TYPE) {
-                                                // method():Type
-                                                return parse_method_def_type();
-                                        } else if (def_method_type == METHOD_DEF_EMPTY) {
-                                                // method()=pass
-                                                return parse_method_def_empty();
-                                        } else if (def_method_type == METHOD_DEF_NORMAL) {
-                                                // method()
-                                                //     ...
-                                                return parse_method_def_normal();
-                                        } else if (def_method_type == METHOD_DEF_ONE_STMT) {
-                                                // method()=....
-                                                return parse_method_def_one_stmt();
-                                        }
-                                }
-
-                                // parse expression until EndingNode or null
-                                while (true) {
-                                        parse_expression();
-                                        if (current == null || !(current instanceof Element)) {
-                                                if (parsedExps.empty()) return null;
-                                                return parsedExps.pop();
-                                        }
-                                }
-                        } else {
-                                // not element, go on and try to parse again
-                                nextNode(true);
-                                return parse_statement();
-                        }
+                        // not element, go on and try to parse again
+                        nextNode(true);
+                        return parse_statement();
                 }
         }
 
@@ -436,13 +402,15 @@ public class Parser {
                 List<AST.Access> expressions = new ArrayList<>();
                 if (current.next() instanceof ElementStartNode) {
                         nextNode(false);
-                        List<Statement> statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false);
+                        List<Statement> statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
 
                         for (Statement s : statements) {
                                 if (s instanceof AST.Access) {
                                         expressions.add((AST.Access) s);
                                 } else {
-                                        throw new UnexpectedTokenException("object reference", s.toString(), s.line_col());
+                                        err.UnexpectedTokenException("object reference", s.toString(), s.line_col());
+                                        // ignore this value and continue on
+                                        err.debug("ignore this value");
                                 }
                         }
                 }
@@ -452,7 +420,7 @@ public class Parser {
                 nextNode(true);
                 List<Statement> statements = null;
                 if (current instanceof ElementStartNode) {
-                        statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false);
+                        statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                 }
                 return new AST.Synchronized(
                         expressions,
@@ -466,7 +434,6 @@ public class Parser {
          * @param startNode    ElementStartNode (root node)
          * @param addUsedNames if true, invoke {@link #addUsedVarNames(Set)}
          * @param parseMap     set {@link #isParsingMap} to given arg
-         * @param parseTry     set {@link #isParsingTry} to given arg
          * @return parsed result (list of statements)
          * @throws SyntaxException compiling error
          */
@@ -474,16 +441,14 @@ public class Parser {
                 ElementStartNode startNode,
                 boolean addUsedNames,
                 Set<String> names,
-                boolean parseMap,
-                boolean parseTry)
+                boolean parseMap)
                 throws SyntaxException {
-                Parser parser = new Parser(startNode);
+                Parser parser = new Parser(startNode, err);
                 if (addUsedNames) {
                         parser.addUsedVarNames(usedVarNames);
                         parser.addUsedVarNames(names);
                 }
                 parser.isParsingMap = parseMap;
-                parser.isParsingTry = parseTry;
                 return parser.parse();
         }
 
@@ -504,7 +469,7 @@ public class Parser {
 
                 if (current instanceof ElementStartNode) {
                         // parse while body
-                        return new AST.While(condition, parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false), false, lineCol);
+                        return new AST.While(condition, parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false), false, lineCol);
                 } else {
                         throw new UnexpectedTokenException("while body", current.toString(), current.getLineCol());
                 }
@@ -527,7 +492,7 @@ public class Parser {
                 nextNode(true); // current node should be ElementStartNode
 
                 if (current instanceof ElementStartNode) {
-                        List<Statement> statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false);
+                        List<Statement> statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                         nextNode(false);
                         expecting("while", current.previous(), current);
 
@@ -560,8 +525,7 @@ public class Parser {
                 nextNode(false);
 
                 if (current instanceof ElementStartNode) {
-                        Parser processor = new Parser((ElementStartNode) current);
-                        List<Statement> statements = processor.parse();
+                        List<Statement> statements = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false);
 
                         for (Statement stmt : statements) {
                                 if (stmt instanceof AST.Access) {
@@ -730,18 +694,15 @@ public class Parser {
         private AST.Try parse_try() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
 
-                if (current.next() instanceof EndingNode) {
+                if (!(current.next() instanceof ElementStartNode)) {
                         throw new SyntaxException("invalid try statement", current.next().getLineCol());
                 }
 
-                nextNode(true);
+                nextNode(true); // try[|] catch <var> [|] / finally [|]
 
-                List<Statement> statements = null;
-                if (current instanceof ElementStartNode) {
-                        statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false);
+                List<Statement> statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
 
-                        nextNode(true);
-                }
+                nextNode(true); // catch <var> [|] finally [|]
 
                 if (current instanceof EndingNode
                         && current.next() instanceof Element
@@ -754,12 +715,12 @@ public class Parser {
                 }
 
                 String eName = null;
-                List<AST.Try.Catch> catchList = new ArrayList<>();
+                List<Statement> catchStatements = new ArrayList<>();
                 if (current instanceof Element) {
                         String cat = ((Element) current).getContent();
                         // catch
                         if (cat.equals("catch")) {
-                                nextNode(false);
+                                nextNode(false); // <var> [|] finally [|]
 
                                 if (current instanceof Element) {
                                         eName = ((Element) current).getContent(); // catch e
@@ -768,24 +729,17 @@ public class Parser {
                                                         throw new DuplicateVariableNameException(eName, current.getLineCol());
                                                 } else {
                                                         // catch e
-                                                        nextNode(true);
-                                                        if (!(current instanceof EndingNode)) {
+                                                        nextNode(true); // [|] finally [|]
+                                                        if (null != current && !(current instanceof EndingNode)) {
                                                                 if (current instanceof ElementStartNode) {
-                                                                        List<Statement> catches = parseElemStart(
-                                                                                (ElementStartNode) current,
-                                                                                true,
-                                                                                new HashSet<>(Collections.singletonList(eName)), // the exception holder name
-                                                                                false, true);
+                                                                        catchStatements.addAll(
+                                                                                parseElemStart(
+                                                                                        (ElementStartNode) current,
+                                                                                        true,
+                                                                                        Collections.singleton(eName), // the exception holder name
+                                                                                        false));
 
-                                                                        for (Statement stmt : catches) {
-                                                                                if (stmt instanceof AST.Try.Catch) {
-                                                                                        catchList.add((AST.Try.Catch) stmt);
-                                                                                } else {
-                                                                                        throw new UnexpectedTokenException("catch statements", stmt.toString(), stmt.line_col());
-                                                                                }
-                                                                        }
-
-                                                                        nextNode(true);
+                                                                        nextNode(true); // finally [|]
                                                                         // if it's finally then go next
                                                                         // else just return, let invoker (parse_statement()) to invoke nextNode()
                                                                         if (current instanceof EndingNode
@@ -815,7 +769,7 @@ public class Parser {
                         if (f.equals("finally")) {
                                 nextNode(true);
                                 if (current instanceof ElementStartNode) {
-                                        fin = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false);
+                                        fin = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                                 }
                         }
                 }
@@ -823,7 +777,7 @@ public class Parser {
                 return new AST.Try(
                         statements == null ? Collections.emptyList() : statements,
                         eName,
-                        catchList,
+                        catchStatements,
                         fin,
                         lineCol);
         }
@@ -885,7 +839,7 @@ public class Parser {
                                 if (current instanceof ElementStartNode) {
                                         // interface name
                                         //     ...
-                                        statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false);
+                                        statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                                         nextNode(true);
                                 }
 
@@ -940,8 +894,8 @@ public class Parser {
                                                         nextNode(false);
                                                         if (current instanceof ElementStartNode) {
                                                                 // class ClassName(口
-                                                                Parser processor = new Parser((ElementStartNode) current);
-                                                                List<Statement> list = processor.parse();
+                                                                List<Statement> list = parseElemStart(
+                                                                        (ElementStartNode) current, false, Collections.emptySet(), false);
 
                                                                 params = new ArrayList<>();
                                                                 boolean MustHaveInit = false;
@@ -1042,7 +996,7 @@ public class Parser {
                                 // statements
                                 List<Statement> stmts = null;
                                 if (current instanceof ElementStartNode) {
-                                        stmts = parseElemStart((ElementStartNode) current, true, newParamNames, false, false);
+                                        stmts = parseElemStart((ElementStartNode) current, true, newParamNames, false);
                                 }
 
                                 return new ClassDef(
@@ -1090,13 +1044,7 @@ public class Parser {
 
                 List<Statement> statements = null;
                 if (current instanceof ElementStartNode) {
-                        Parser processor = new Parser((ElementStartNode) current);
-
-                        Set<String> set = new HashSet<>(usedVarNames);
-                        set.add(varName);
-                        processor.addUsedVarNames(set);
-
-                        statements = processor.parse();
+                        statements = parseElemStart((ElementStartNode) current, true, Collections.singleton(varName), false);
                 }
 
                 return new AST.For(
@@ -1164,7 +1112,7 @@ public class Parser {
 
                         List<Statement> list = null;
                         if (current instanceof ElementStartNode) {
-                                list = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false);
+                                list = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                         }
 
                         if (condition == null)
@@ -1202,8 +1150,7 @@ public class Parser {
                 nextNode(false);
                 if (current instanceof ElementStartNode) {
                         // method(口
-                        Parser processor = new Parser((ElementStartNode) current);
-                        List<Statement> statements = processor.parse();
+                        List<Statement> statements = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false);
                         boolean MustHaveInit = false;
                         for (Statement s : statements) {
                                 if (s instanceof AST.Access && ((AST.Access) s).exp == null) {
@@ -1254,10 +1201,7 @@ public class Parser {
                 // method(..)
                 nextNode(false); // 口
 
-                Parser processor = new Parser((ElementStartNode) current);
-                names.addAll(usedVarNames);
-                processor.addUsedVarNames(names);
-                List<Statement> stmts = processor.parse();
+                List<Statement> stmts = parseElemStart((ElementStartNode) current, true, names, false);
                 MethodDef def = new MethodDef(methodName, modifiers, null, variableList, annos, stmts, lineCol);
                 annos.clear();
                 modifiers.clear();
@@ -1370,12 +1314,8 @@ public class Parser {
                         return def;
                 } else {
                         if (current instanceof ElementStartNode) {
-                                // initialize processor
-                                Parser processor = new Parser((ElementStartNode) current);
-                                names.addAll(usedVarNames);
-                                processor.addUsedVarNames(names);
                                 // parse
-                                List<Statement> list = processor.parse();
+                                List<Statement> list = parseElemStart((ElementStartNode) current, true, names, false);
                                 MethodDef def = new MethodDef(methodName, modifiers, returnType, variableList, annos, list, lineCol);
                                 annos.clear();
                                 modifiers.clear();
@@ -1590,7 +1530,7 @@ public class Parser {
                                                                 } else if (current instanceof ElementStartNode) {
                                                                         // element start node : ...(口)...
                                                                         ElementStartNode startNode = (ElementStartNode) current;
-                                                                        List<Statement> statements = parseElemStart(startNode, false, Collections.emptySet(), false, false);
+                                                                        List<Statement> statements = parseElemStart(startNode, false, Collections.emptySet(), false);
 
                                                                         if (!statements.isEmpty()) {
                                                                                 if (!parsedExps.empty() && (parsedExps.peek() instanceof AST.Access)) {
@@ -1782,7 +1722,7 @@ public class Parser {
          * @throws SyntaxException compiling error
          */
         private AST.MapExp parseExpMap(ElementStartNode startNode) throws SyntaxException {
-                List<Statement> stmts = parseElemStart(startNode, true, Collections.emptySet(), true, false);
+                List<Statement> stmts = parseElemStart(startNode, true, Collections.emptySet(), true);
                 if (stmts.size() % 2 != 0) {
                         throw new SyntaxException("invalid map contents", startNode.getLineCol());
                 }
@@ -1827,7 +1767,7 @@ public class Parser {
                 } else {
                         // current instance of ElementStartNode
                         expecting("]", current, current.next() == null ? null : current.next().next());
-                        List<Statement> stmts = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false);
+                        List<Statement> stmts = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                         List<Expression> exps = new ArrayList<>();
 
                         for (Statement stmt : stmts) {
@@ -1867,7 +1807,7 @@ public class Parser {
                         // current instanceof ElementStartNode
                         // [...]
                         expecting("]", current, current.next() == null ? null : current.next().next());
-                        List<Statement> stmts = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false, false);
+                        List<Statement> stmts = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                         List<Expression> exps = new ArrayList<>();
 
                         for (Statement stmt : stmts) {
@@ -1902,7 +1842,7 @@ public class Parser {
                 List<VariableDef> variableDefList = new ArrayList<>();
                 Set<String> set = new HashSet<>();
                 if (current instanceof ElementStartNode) {
-                        List<Statement> list = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false, false);
+                        List<Statement> list = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false);
                         for (Statement statement : list) {
                                 if (statement instanceof AST.Access) {
                                         AST.Access access = (AST.Access) statement;
@@ -1932,10 +1872,7 @@ public class Parser {
                 nextNode(false);
                 // (...)=>口
 
-                Parser pr = new Parser((ElementStartNode) current);
-                set.addAll(usedVarNames);
-                pr.addUsedVarNames(set);
-                List<Statement> stmts = pr.parse();
+                List<Statement> stmts = parseElemStart((ElementStartNode) current, true, set, false);
                 if (stmts.size() == 1 && stmts.get(0) instanceof Expression) {
                         AST.Return ret = new AST.Return((Expression) stmts.get(0), stmts.get(0).line_col());
                         stmts.clear();

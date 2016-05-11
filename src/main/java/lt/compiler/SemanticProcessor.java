@@ -1380,7 +1380,7 @@ public class SemanticProcessor {
          * @return the cursor should += this return value
          */
         private int insertInstructionsBeforeReturn(List<Instruction> instructions, int returnIndex, List<? extends Instruction> toInsert, SemanticScope scope) {
-                Ins.TReturn tReturn = (Ins.TReturn) instructions.remove(returnIndex); // remove return
+                Ins.TReturn tReturn = (Ins.TReturn) instructions.remove(returnIndex); // get return
                 Value returnValue = tReturn.value();
                 if (returnValue != null) {
                         LocalVariable tmp = new LocalVariable(returnValue.type(), false);
@@ -1388,7 +1388,7 @@ public class SemanticProcessor {
 
                         Ins.TStore TStore = new Ins.TStore(tmp, returnValue, scope, LineCol.SYNTHETIC); // store the value
                         Ins.TLoad tLoad = new Ins.TLoad(tmp, scope, LineCol.SYNTHETIC); // retrieve the value
-                        tReturn = new Ins.TReturn(tLoad, tReturn.returnIns(), tReturn.line_col()); // return the value
+                        tReturn.setReturnValue(tLoad); // return the value
 
                         instructions.add(returnIndex++, TStore);
                 }
@@ -1401,15 +1401,34 @@ public class SemanticProcessor {
         }
 
         /**
+         * {@link Lang#throwableWrapperObject(Throwable)}
+         */
+        private SMethodDef Lang_throwableWrapperObject;
+
+        /**
+         * @return {@link Lang#throwableWrapperObject(Throwable)}
+         * @throws SyntaxException exception
+         */
+        private SMethodDef getLang_throwableWrapperObject() throws SyntaxException {
+                if (Lang_throwableWrapperObject == null) {
+                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                        for (SMethodDef m : Lang.methods()) {
+                                if (m.name().equals("throwableWrapperObject")) {
+                                        Lang_throwableWrapperObject = m;
+                                        break;
+                                }
+                        }
+                }
+                return Lang_throwableWrapperObject;
+        }
+
+        /**
          * parse try<br>
          * <pre>
          * try
          *     A
          * catch Ex
-         *     Type1,...
-         *         B
-         *     Type2,...
-         *         C
+         *     B
          * finally
          *     D
          * E
@@ -1426,8 +1445,6 @@ public class SemanticProcessor {
          * )                  │
          * goto D1------------┘
          * B-----------------goto D2
-         * goto D1------------┘
-         * C-----------------goto D2
          * goto D1------------┘
          * D2 (exception)
          * D1 (normal)
@@ -1458,8 +1475,6 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         private void parseInstructionFromTry(AST.Try aTry, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions, List<ExceptionTable> exceptionTable) throws SyntaxException {
-                List<Import> imports = fileNameToImport.get(aTry.line_col().fileName);
-
                 // try ...
                 SemanticScope scopeA = new SemanticScope(scope);
                 List<Instruction> insA = new ArrayList<>(); // instructions in scope A
@@ -1470,7 +1485,7 @@ public class SemanticProcessor {
                 // record the start and end for exception table
                 // end is inclusive in this map
                 // and should be converted to an exclusive one when added into exception table
-                Map<Instruction, Instruction> startToEnd = new LinkedHashMap<>();
+                LinkedHashMap<Instruction, Instruction> startToEnd = new LinkedHashMap<>();
                 Instruction start = null;
                 for (int i1 = 0; i1 < insA.size(); i1++) {
                         Instruction i = insA.get(i1);
@@ -1493,6 +1508,12 @@ public class SemanticProcessor {
                 }
                 // put last pair
                 if (start != null) startToEnd.put(start, insA.get(insA.size() - 1));
+                if (startToEnd.isEmpty() && insA.size() == 1) {
+                        assert insA.get(0) instanceof Ins.TReturn;
+                        insA.add(0, new Ins.Nop());
+                        startToEnd.put(insA.get(0), insA.get(0));
+                }
+
                 // the map preparation is done
 
                 // build normal finally (D1)
@@ -1534,7 +1555,7 @@ public class SemanticProcessor {
                                 List<Instruction> list = new ArrayList<>();
                                 for (Statement stmt : aTry.fin) {
                                         parseStatement(stmt, methodReturnType,
-                                                new SemanticScope(scope),
+                                                new SemanticScope(scopeA),
                                                 // it shouldn't be sub scope of A
                                                 // because in the code , it can't access A block values
                                                 list, exceptionTable, false);
@@ -1548,7 +1569,7 @@ public class SemanticProcessor {
                 instructions.addAll(insA); // A
 
                 // create a map that end is exclusive
-                Map<Instruction, Instruction> startToEndEx = new LinkedHashMap<>();
+                LinkedHashMap<Instruction, Instruction> startToEndEx = new LinkedHashMap<>();
                 int cursor = 0;
                 for (Map.Entry<Instruction, Instruction> entry : startToEnd.entrySet()) {
                         Instruction key = entry.getKey();
@@ -1557,7 +1578,12 @@ public class SemanticProcessor {
                         for (; cursor < insA.size(); ++cursor) {
                                 Instruction i = insA.get(cursor);
                                 if (inclusive.equals(i)) {
-                                        exclusive = insA.get(++cursor);
+                                        Instruction tmp = insA.get(++cursor);
+                                        if (tmp instanceof Ins.Goto) {
+                                                exclusive = tmp;
+                                        } else if (tmp instanceof Ins.TStore) {
+                                                exclusive = insA.get(++cursor);
+                                        } else throw new LtBug("the instruction after should only be Goto or TStore");
                                         break;
                                 }
                         }
@@ -1565,103 +1591,112 @@ public class SemanticProcessor {
                         startToEndEx.put(key, exclusive);
                 }
 
-                boolean haveThrowableHandle = false;
-                for (AST.Try.Catch aCatch : aTry.catches) {
-                        for (AST.Access accessType : aCatch.exceptionTypes) {
-                                SemanticScope catchScope = new SemanticScope(scope); // catch scope
-                                STypeDef type = getTypeWithAccess(accessType, imports);
-                                // check whether it's throwable
-                                // if it's throwable then there won't be an additional ExceptionTable for insA
-                                // to jump to D2
-                                if (type.fullName().equals("java.lang.Throwable")) haveThrowableHandle = true;
+                SemanticScope catchScope = new SemanticScope(scope); // catch scope
 
-                                LocalVariable ex = new LocalVariable(type, true);
-                                catchScope.putLeftValue(aTry.varName, ex); // the exception value
+                STypeDef THROWABLE = getTypeWithName("java.lang.Throwable", LineCol.SYNTHETIC);
 
-                                // build instructions
-                                List<Instruction> insCatch = new ArrayList<>();
-                                insCatch.add(new Ins.ExStore(ex, catchScope));
-                                for (Statement stmt : aCatch.statements) {
-                                        parseStatement(stmt, methodReturnType, catchScope, insCatch, exceptionTable, false);
+                LocalVariable ex = new LocalVariable(THROWABLE, true);
+                catchScope.putLeftValue(catchScope.generateTempName(), ex); // the exception value
+
+                LocalVariable unwrapped = new LocalVariable(getTypeWithName("java.lang.Object", LineCol.SYNTHETIC), false);
+                catchScope.putLeftValue(aTry.varName, unwrapped);
+
+                // build instructions
+                List<Instruction> insCatch = new ArrayList<>();
+                insCatch.add(new Ins.ExStore(ex, catchScope)); // store the ex
+
+                Ins.InvokeStatic invokeUnwrap = new Ins.InvokeStatic(
+                        getLang_throwableWrapperObject(), LineCol.SYNTHETIC
+                );
+                invokeUnwrap.arguments().add(new Ins.TLoad(
+                        ex,
+                        catchScope,
+                        LineCol.SYNTHETIC
+                ));
+                Ins.TStore storeUnwrapped = new Ins.TStore(
+                        unwrapped,
+                        invokeUnwrap,
+                        catchScope,
+                        LineCol.SYNTHETIC
+                );
+                insCatch.add(storeUnwrapped);
+
+                for (Statement stmt : aTry.catchStatements) {
+                        parseStatement(stmt, methodReturnType, catchScope, insCatch, exceptionTable, false);
+                }
+
+                // record start to end for exception table
+                // end is inclusive
+                // and should be parsed into an exclusive one when added into exception table
+                LinkedHashMap<Instruction, Instruction> catch_startToEnd = new LinkedHashMap<>();
+                Instruction catch_start = null;
+                for (int i1 = 0; i1 < insCatch.size(); ++i1) {
+                        Instruction i = insCatch.get(i1);
+                        if (catch_start == null) { // the start hasn't been recorded
+                                // if i is return
+                                // then ignore it and continue
+                                // else record the instruction as start
+                                if (!(i instanceof Ins.TReturn)) {
+                                        catch_start = i;
                                 }
-
-                                // record start to end for exception table
-                                // end is inclusive
-                                // and should be parsed into an inclusive one when added into exception table
-                                Map<Instruction, Instruction> catch_startToEnd = new LinkedHashMap<>();
-                                Instruction catch_start = null;
-                                for (int i1 = 0; i1 < insCatch.size(); ++i1) {
-                                        Instruction i = insCatch.get(i1);
-                                        if (catch_start == null) { // the start haven't been recorded
-                                                // if i is return
-                                                // then ignore it and continue
-                                                // else record the instruction as start
-                                                if (!(i instanceof Ins.TReturn)) {
-                                                        catch_start = i;
-                                                }
-                                        } else { // start is already recorded
-                                                if (i instanceof Ins.TReturn) {
-                                                        // i is return
-                                                        catch_startToEnd.put(catch_start, insCatch.get(i1 - 1));
-                                                        catch_start = null;
-                                                }
-                                        }
-                                }
-                                // record last pair
-                                if (catch_start != null) catch_startToEnd.put(catch_start, insCatch.get(insCatch.size() - 1));
-
-                                // check return and add finally
-                                for (int i = 0; i < insCatch.size(); ++i) {
-                                        Instruction ins = insCatch.get(i);
-                                        if (ins instanceof Ins.TReturn) {
-                                                List<Instruction> list = new ArrayList<>();
-                                                for (Statement stmt : aTry.fin) {
-                                                        parseStatement(stmt, methodReturnType, new SemanticScope(catchScope), list, exceptionTable, false);
-                                                }
-                                                i += insertInstructionsBeforeReturn(insCatch, i, list, catchScope);
-                                        }
-                                }
-                                insCatch.add(new Ins.Goto(D1start)); // goto D1
-                                instructions.addAll(insCatch); // B
-
-                                // transform the startToEnd map into exclusive end map
-                                Map<Instruction, Instruction> catch_startToEndEx = new LinkedHashMap<>();
-                                cursor = 0;
-                                for (Map.Entry<Instruction, Instruction> entry : catch_startToEnd.entrySet()) {
-                                        Instruction key = entry.getKey();
-                                        Instruction inclusive = entry.getValue();
-                                        Instruction exclusive = null;
-                                        for (; cursor < insCatch.size(); ++cursor) {
-                                                Instruction i = insCatch.get(cursor);
-                                                if (i.equals(inclusive)) {
-                                                        exclusive = insCatch.get(++cursor);
-                                                        break;
-                                                }
-                                        }
-                                        if (exclusive == null) throw new LtBug("exclusive should not be null");
-                                        catch_startToEndEx.put(key, exclusive);
-                                }
-
-                                // build exception table for A
-                                for (Map.Entry<Instruction, Instruction> entry : startToEndEx.entrySet()) {
-                                        ExceptionTable tbl = new ExceptionTable(entry.getKey(), entry.getValue(), insCatch.get(0), type);
-                                        exceptionTable.add(tbl);
-                                }
-
-                                // build exception table for B
-                                for (Map.Entry<Instruction, Instruction> entry : catch_startToEndEx.entrySet()) {
-                                        ExceptionTable tbl = new ExceptionTable(entry.getKey(), entry.getValue(), D2start, null);
-                                        exceptionTable.add(tbl);
+                        } else { // start is already recorded
+                                if (i instanceof Ins.TReturn) {
+                                        // i is return
+                                        catch_startToEnd.put(catch_start, insCatch.get(i1 - 1));
+                                        catch_start = null;
                                 }
                         }
                 }
+                // record last pair
+                if (catch_start != null) catch_startToEnd.put(catch_start, insCatch.get(insCatch.size() - 1));
 
-                if (!haveThrowableHandle) {
-                        // add throwable handle for insA
-                        for (Map.Entry<Instruction, Instruction> entry : startToEndEx.entrySet()) {
-                                ExceptionTable tbl = new ExceptionTable(entry.getKey(), entry.getValue(), D2start, null);
-                                exceptionTable.add(tbl);
+                // check return and add finally
+                for (int i = 0; i < insCatch.size(); ++i) {
+                        Instruction ins = insCatch.get(i);
+                        if (ins instanceof Ins.TReturn) {
+                                List<Instruction> list = new ArrayList<>();
+                                for (Statement stmt : aTry.fin) {
+                                        parseStatement(stmt, methodReturnType, new SemanticScope(catchScope), list, exceptionTable, false);
+                                }
+                                i += insertInstructionsBeforeReturn(insCatch, i, list, catchScope);
                         }
+                }
+                insCatch.add(new Ins.Goto(D1start)); // goto D1
+                instructions.addAll(insCatch); // B
+
+                // transform the startToEnd map into exclusive end map
+                LinkedHashMap<Instruction, Instruction> catch_startToEndEx = new LinkedHashMap<>();
+                cursor = 0;
+                for (Map.Entry<Instruction, Instruction> entry : catch_startToEnd.entrySet()) {
+                        Instruction key = entry.getKey();
+                        Instruction inclusive = entry.getValue();
+                        Instruction exclusive = null;
+                        for (; cursor < insCatch.size(); ++cursor) {
+                                Instruction i = insCatch.get(cursor);
+                                if (i.equals(inclusive)) {
+                                        Instruction tmp = insCatch.get(++cursor);
+                                        if (tmp instanceof Ins.Goto) {
+                                                exclusive = tmp;
+                                        } else if (tmp instanceof Ins.TStore) {
+                                                exclusive = insCatch.get(++cursor);
+                                        } else throw new LtBug("the instruction after should only be Goto or TStore");
+                                        break;
+                                }
+                        }
+                        if (exclusive == null) throw new LtBug("exclusive should not be null");
+                        catch_startToEndEx.put(key, exclusive);
+                }
+
+                // build exception table for A
+                for (Map.Entry<Instruction, Instruction> entry : startToEndEx.entrySet()) {
+                        ExceptionTable tbl = new ExceptionTable(entry.getKey(), entry.getValue(), insCatch.get(0), THROWABLE);
+                        exceptionTable.add(tbl);
+                }
+
+                // build exception table for B
+                for (Map.Entry<Instruction, Instruction> entry : catch_startToEndEx.entrySet()) {
+                        ExceptionTable tbl = new ExceptionTable(entry.getKey(), entry.getValue(), D2start, null);
+                        exceptionTable.add(tbl);
                 }
 
                 instructions.addAll(exceptionFinally); // D2
@@ -1919,16 +1954,18 @@ public class SemanticProcessor {
          *
          * ==>
          *
-         * IfNe a (a==true) goto A
-         * IfNe b (b==true) goto B
-         * IfNe c (c==true) goto C
-         * goto D
+         * a ifEq (a!=true) goto nop1
          * A
          * goto nop
+         * nop1
+         * b ifEq (b!=true) goto nop2
          * B
          * goto nop
+         * nop2
+         * c ifEq (c!=true) goto nop3
          * C
          * goto nop
+         * nop3
          * D
          * nop
          * </pre>
@@ -1940,55 +1977,48 @@ public class SemanticProcessor {
          * @param exceptionTable   exception table
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromIf(AST.If anIf, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions, List<ExceptionTable> exceptionTable) throws SyntaxException {
-                List<Instruction> instructionList = new ArrayList<>();
-
+        private void parseInstructionFromIf(AST.If anIf,
+                                            STypeDef methodReturnType,
+                                            SemanticScope scope,
+                                            List<Instruction> instructions,
+                                            List<ExceptionTable> exceptionTable) throws SyntaxException {
                 Ins.Nop nop = new Ins.Nop();
-                Ins.Goto gotoNop = new Ins.Goto(nop);
 
                 for (AST.If.IfPair ifPair : anIf.ifs) {
+                        SemanticScope ifScope = new SemanticScope(scope);
+                        List<Instruction> instructionList = new ArrayList<>();
+
                         List<Instruction> ins = new ArrayList<>();
                         for (Statement stmt : ifPair.body) {
                                 parseStatement(
                                         stmt,
                                         methodReturnType,
-                                        scope,
+                                        ifScope,
                                         ins,
                                         exceptionTable, false);
                         }
-                        instructionList.addAll(ins);
-                        instructionList.add(gotoNop); // goto nop
 
                         if (ifPair.condition == null) {
-                                // else
-                                if (ins.isEmpty()) {
-                                        // goto end
-                                        Ins.Goto aGoto = new Ins.Goto(nop);
-                                        instructions.add(aGoto);
-                                } else {
-                                        // goto ins
-                                        Instruction i = ins.get(0);
-                                        Ins.Goto aGoto = new Ins.Goto(i);
-                                        instructions.add(aGoto);
-                                }
+                                // it's else
+                                instructionList.addAll(ins);
                         } else {
                                 // if/elseif
-                                Value condition = parseValueFromExpression(ifPair.condition, BoolTypeDef.get(), scope);
-                                if (ins.isEmpty()) {
-                                        // goto end
-                                        Ins.IfNe ifNe = new Ins.IfNe(condition, nop, ifPair.lineCol);
-                                        instructions.add(ifNe);
-                                } else {
-                                        // goto ins
-                                        Instruction i = ins.get(0);
-                                        Ins.IfNe ifNe = new Ins.IfNe(condition, i, ifPair.lineCol);
-                                        instructions.add(ifNe);
-                                }
+
+                                Ins.Goto gotoNop = new Ins.Goto(nop); // goto nop
+                                Ins.Nop thisNop = new Ins.Nop(); // nop1/nop2/nop3/...
+
+                                Value condition = parseValueFromExpression(ifPair.condition, BoolTypeDef.get(), ifScope);
+                                Ins.IfEq ifEq = new Ins.IfEq(condition, thisNop, ifPair.condition.line_col());
+                                instructionList.add(ifEq); // a ifEq (a!=true) goto nop
+                                instructionList.addAll(ins); // A
+                                instructionList.add(gotoNop); // goto nop
+                                instructionList.add(thisNop); // nop1
                         }
+
+                        instructions.addAll(instructionList);
                 }
 
-                instructions.addAll(instructionList);
-                instructions.add(nop);
+                instructions.add(nop); // nop
         }
 
         /**
@@ -6568,7 +6598,7 @@ public class SemanticProcessor {
                 if (!types.containsKey(type)) {
                         try {
                                 loadClass(type);
-                        } catch (ClassNotFoundException e) {
+                        } catch (ClassNotFoundException | NoClassDefFoundError e) {
                                 return false;
                         }
                 }

@@ -201,21 +201,21 @@ $(document).ready(function () {
     var cursor = 0;
 
     function sw() {
-        var codes = $(".code");
+        var codes = $(".code.play");
         var timeout = 300;
         if (cursor == codes.length - 1) {
-            $(".code:eq(" + cursor + ")").fadeOut(timeout);
+            $(".code.play:eq(" + cursor + ")").fadeOut(timeout);
             setTimeout(function () {
-                $(".code:eq(0)").fadeIn(timeout);
+                $(".code.play:eq(0)").fadeIn(timeout);
             }, timeout + 100);
             cursor = 0;
         } else {
-            $(".code:eq(" + cursor + ")").fadeOut(timeout);
+            $(".code.play:eq(" + cursor + ")").fadeOut(timeout);
             setTimeout(function () {
-                $(".code:eq(" + ++cursor + ")").fadeIn(timeout);
+                $(".code.play:eq(" + ++cursor + ")").fadeIn(timeout);
             }, timeout + 100);
         }
     }
 
-    setInterval(sw, 15000);
+    setInterval(sw, 18000);
 });

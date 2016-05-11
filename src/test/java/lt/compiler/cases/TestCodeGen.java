@@ -6,6 +6,7 @@ import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 import lt.lang.RangeList;
 import lt.lang.Undefined;
+import lt.lang.Wrapper;
 import lt.lang.function.Function1;
 import org.junit.Test;
 
@@ -24,7 +25,7 @@ import static org.junit.Assert.*;
 public class TestCodeGen {
         private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), new Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -414,6 +415,39 @@ public class TestCodeGen {
         }
 
         @Test
+        public void testIfComplex() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestIfComplex\n" +
+                                "    static\n" +
+                                "        method(a,b,c)\n" +
+                                "            i=0\n" +
+                                "            if a\n" +
+                                "                i=1\n" +
+                                "            elseif b\n" +
+                                "                i=2\n" +
+                                "            elseif c\n" +
+                                "                i=3\n" +
+                                "            else\n" +
+                                "                i=4\n" +
+                                "            <i",
+                        "TestIfComplex");
+
+                Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
+                assertEquals(1, method.invoke(null, true, false, false));
+                assertEquals(1, method.invoke(null, true, true, false));
+                assertEquals(1, method.invoke(null, true, false, true));
+                assertEquals(1, method.invoke(null, true, true, true));
+
+                assertEquals(2, method.invoke(null, false, true, false));
+                assertEquals(2, method.invoke(null, false, true, true));
+
+                assertEquals(3, method.invoke(null, false, false, true));
+
+                assertEquals(4, method.invoke(null, false, false, false));
+        }
+
+        @Test
         public void testWhile() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
@@ -497,11 +531,11 @@ public class TestCodeGen {
                                 "            try\n" +
                                 "                func.apply()\n" +
                                 "            catch e\n" +
-                                "                NullPointerException,ClassCastException\n" +
+                                "                if e is type NullPointerException or e is type ClassCastException\n" +
                                 "                    <1\n" +
-                                "                Error\n" +
+                                "                elseif e is type Error\n" +
                                 "                    <e.getMessage()\n" +
-                                "                Throwable\n" +
+                                "                elseif e is type Throwable\n" +
                                 "                    <3\n" +
                                 "            <4",
                         "TestTryCatch");
@@ -525,6 +559,29 @@ public class TestCodeGen {
                 }));
                 // none
                 assertEquals(4, method.invoke(null, (I) () -> {
+                }));
+        }
+
+        @Test
+        public void testTryCatchTemp() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestTryCatch\n" +
+                                "    static\n" +
+                                "        method(func)\n" +
+                                "            try\n" +
+                                "                func.apply()\n" +
+                                "            catch e\n" +
+                                "                if 1===1\n" +
+                                "                    <1\n" +
+                                "            finally\n" +
+                                "            <4",
+                        "TestTryCatch");
+
+                Method method = cls.getMethod("method", Object.class);
+                // null pointer exception
+                assertEquals(1, method.invoke(null, (I) () -> {
+                        throw new NullPointerException();
                 }));
         }
 
@@ -1144,7 +1201,7 @@ public class TestCodeGen {
                                 "                i=11\n" +
                                 "                <2\n" +
                                 "        catch e\n" +
-                                "            RuntimeException\n" +
+                                "            if e is type RuntimeException\n" +
                                 "                i=4\n" +
                                 "                if i==5\n" +
                                 "                    i=12\n" +
@@ -1275,7 +1332,7 @@ public class TestCodeGen {
                         "        method():TestLambdaFunc\n" +
                         "            i=1\n" +
                         "            <(o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -1315,7 +1372,7 @@ public class TestCodeGen {
                         "    method():TestLambdaFunc\n" +
                         "        i=1\n" +
                         "        <(o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -1355,7 +1412,7 @@ public class TestCodeGen {
                         "    method():Function\n" +
                         "        i=1\n" +
                         "        <(o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
@@ -1434,5 +1491,87 @@ public class TestCodeGen {
                 String[] arr = (String[]) f.get(null);
                 assertEquals("test1", arr[0]);
                 assertEquals("changed", arr[1]);
+        }
+
+        @Test
+        public void testPrimitiveType() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestPrimitiveType\n" +
+                                "    static\n" +
+                                "        typeInt=type int\n" +
+                                "        typeLong=type long\n" +
+                                "        typeShort=type short\n" +
+                                "        typeByte=type byte\n" +
+                                "        typeChar=type char\n" +
+                                "        typeBool=type bool\n" +
+                                "        typeFloat=type float\n" +
+                                "        typeDouble=type double\n" +
+                                "        typeVoid=type void\n" +
+                                "        typeUnit=type Unit",
+                        "TestPrimitiveType");
+                Field typeInt = cls.getDeclaredField("typeInt");
+                typeInt.setAccessible(true);
+                Field typeLong = cls.getDeclaredField("typeLong");
+                typeLong.setAccessible(true);
+                Field typeShort = cls.getDeclaredField("typeShort");
+                typeShort.setAccessible(true);
+                Field typeByte = cls.getDeclaredField("typeByte");
+                typeByte.setAccessible(true);
+                Field typeChar = cls.getDeclaredField("typeChar");
+                typeChar.setAccessible(true);
+                Field typeBool = cls.getDeclaredField("typeBool");
+                typeBool.setAccessible(true);
+                Field typeFloat = cls.getDeclaredField("typeFloat");
+                typeFloat.setAccessible(true);
+                Field typeDouble = cls.getDeclaredField("typeDouble");
+                typeDouble.setAccessible(true);
+                Field typeVoid = cls.getDeclaredField("typeVoid");
+                typeVoid.setAccessible(true);
+                Field typeUnit = cls.getDeclaredField("typeUnit");
+                typeUnit.setAccessible(true);
+
+                assertEquals(int.class, typeInt.get(null));
+                assertEquals(long.class, typeLong.get(null));
+                assertEquals(short.class, typeShort.get(null));
+                assertEquals(byte.class, typeByte.get(null));
+                assertEquals(char.class, typeChar.get(null));
+                assertEquals(boolean.class, typeBool.get(null));
+                assertEquals(float.class, typeFloat.get(null));
+                assertEquals(double.class, typeDouble.get(null));
+                assertEquals(void.class, typeVoid.get(null));
+                assertEquals(void.class, typeUnit.get(null));
+        }
+
+        @Test
+        public void testThrowAnyObject() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestThrowAnyObject\n" +
+                                "    static\n" +
+                                "        testThrow()\n" +
+                                "            throw 'abc'\n" +
+                                "        testCatch(func)\n" +
+                                "            try\n" +
+                                "                func.apply()\n" +
+                                "            catch e\n" +
+                                "                <e",
+                        "TestThrowAnyObject");
+                Method testThrow = cls.getMethod("testThrow");
+                try {
+                        testThrow.invoke(null);
+                        fail();
+                } catch (InvocationTargetException in) {
+                        Wrapper w = (Wrapper) in.getCause();
+                        assertEquals("abc", w.object);
+                }
+
+                Method testCatch = cls.getMethod("testCatch", Object.class);
+                assertEquals("abc", testCatch.invoke(null, (I) () -> {
+                        throw new Wrapper("abc");
+                }));
+                assertEquals(1, testCatch.invoke(null, (I) () -> {
+                        throw new Wrapper(1);
+                }));
         }
 }

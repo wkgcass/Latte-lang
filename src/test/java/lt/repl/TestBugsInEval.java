@@ -22,7 +22,7 @@ import static org.junit.Assert.*;
 public class TestBugsInEval {
         private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), new Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan());
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());

@@ -33,7 +33,7 @@ public class TestParser {
                 lt.compiler.Scanner processor = new lt.compiler.Scanner("test", new StringReader(stmt), new Scanner.Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
-                Parser syntacticProcessor = new Parser(root);
+                Parser syntacticProcessor = new Parser(root, new ErrorManager(true));
 
                 return syntacticProcessor.parse();
         }
@@ -1144,9 +1144,9 @@ public class TestParser {
                                 "try\n" +
                                 "    a=1\n" +
                                 "catch e\n" +
-                                "    Exception,Throwable\n" +
+                                "    if e is type Exception or e is type Throwable\n" +
                                 "        a=2\n" +
-                                "    RuntimeException\n" +
+                                "    elseif e is type RuntimeException\n" +
                                 "        a=3\n" +
                                 "finally\n" +
                                 "    a=4");
@@ -1167,50 +1167,48 @@ public class TestParser {
                 VariableDef v4 = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
                 v4.setInit(new NumberLiteral("4", LineCol.SYNTHETIC));
 
-                AST.Try t = new AST.Try(Collections.singletonList(v1), "e", Arrays.asList(
-                        new AST.Try.Catch(Arrays.asList(
-                                new AST.Access(null, "Exception", LineCol.SYNTHETIC),
-                                new AST.Access(null, "Throwable", LineCol.SYNTHETIC)
-                        ), Collections.singletonList(
-                                v2
-                        ), LineCol.SYNTHETIC),
-                        new AST.Try.Catch(Collections.singletonList(
-                                new AST.Access(null, "RuntimeException", LineCol.SYNTHETIC)
-                        ), Collections.singletonList(
-                                v3
-                        ), LineCol.SYNTHETIC)
-                ), Collections.singletonList(v4), LineCol.SYNTHETIC);
-
-                assertEquals(t, stmt);
-        }
-
-        @Test
-        public void testTryOneCatch() throws Exception {
-                List<Statement> list = parse(
-                        "" +
-                                "try\n" +
-                                "    a=1\n" +
-                                "catch e\n" +
-                                "    RuntimeException\n" +
-                                "        a=3");
-
-                assertEquals(1, list.size());
-
-                Statement stmt = list.get(0);
-
-                VariableDef v1 = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
-                v1.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
-
-                VariableDef v3 = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
-                v3.setInit(new NumberLiteral("3", LineCol.SYNTHETIC));
-
                 AST.Try t = new AST.Try(Collections.singletonList(v1), "e", Collections.singletonList(
-                        new AST.Try.Catch(Collections.singletonList(
-                                new AST.Access(null, "RuntimeException", LineCol.SYNTHETIC)
-                        ), Collections.singletonList(
-                                v3
-                        ), LineCol.SYNTHETIC)
-                ), Collections.emptyList(), LineCol.SYNTHETIC);
+                        new AST.If(
+                                Arrays.asList(
+                                        new AST.If.IfPair(
+                                                new TwoVariableOperation("or",
+                                                        new TwoVariableOperation("is",
+                                                                new AST.Access(
+                                                                        null, "e", LineCol.SYNTHETIC),
+                                                                new AST.TypeOf(
+                                                                        new AST.Access(null, "Exception", LineCol.SYNTHETIC),
+                                                                        LineCol.SYNTHETIC
+                                                                ),
+                                                                LineCol.SYNTHETIC),
+                                                        new TwoVariableOperation("is",
+                                                                new AST.Access(
+                                                                        null, "e", LineCol.SYNTHETIC),
+                                                                new AST.TypeOf(
+                                                                        new AST.Access(null, "Throwable", LineCol.SYNTHETIC),
+                                                                        LineCol.SYNTHETIC
+                                                                ),
+                                                                LineCol.SYNTHETIC),
+                                                        LineCol.SYNTHETIC
+                                                ),
+                                                Collections.singletonList(v2),
+                                                LineCol.SYNTHETIC
+                                        ),
+                                        new AST.If.IfPair(
+                                                new TwoVariableOperation("is",
+                                                        new AST.Access(
+                                                                null, "e", LineCol.SYNTHETIC),
+                                                        new AST.TypeOf(
+                                                                new AST.Access(null, "RuntimeException", LineCol.SYNTHETIC),
+                                                                LineCol.SYNTHETIC
+                                                        ),
+                                                        LineCol.SYNTHETIC),
+                                                Collections.singletonList(v3),
+                                                LineCol.SYNTHETIC
+                                        )
+                                ),
+                                LineCol.SYNTHETIC
+                        )
+                ), Collections.singletonList(v4), LineCol.SYNTHETIC);
 
                 assertEquals(t, stmt);
         }
@@ -1221,8 +1219,7 @@ public class TestParser {
                         "" +
                                 "try\n" +
                                 "    a=1\n" +
-                                "catch e\n" +
-                                "    RuntimeException");
+                                "catch e");
 
                 assertEquals(1, list.size());
 
@@ -1231,47 +1228,7 @@ public class TestParser {
                 VariableDef v1 = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
                 v1.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
 
-                AST.Try t = new AST.Try(Collections.singletonList(v1), "e", Collections.singletonList(
-                        new AST.Try.Catch(Collections.singletonList(
-                                new AST.Access(null, "RuntimeException", LineCol.SYNTHETIC)
-                        ), Collections.emptyList(), LineCol.SYNTHETIC)
-                ), Collections.emptyList(), LineCol.SYNTHETIC);
-
-                assertEquals(t, stmt);
-        }
-
-        @Test
-        public void testTryTwoCatchOneProcess() throws Exception {
-                List<Statement> list = parse(
-                        "" +
-                                "try\n" +
-                                "    a=1\n" +
-                                "catch e\n" +
-                                "    Exception,Throwable\n" +
-                                "    RuntimeException\n" +
-                                "        a=3");
-
-                assertEquals(1, list.size());
-
-                Statement stmt = list.get(0);
-
-                VariableDef v1 = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
-                v1.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
-
-                VariableDef v3 = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
-                v3.setInit(new NumberLiteral("3", LineCol.SYNTHETIC));
-
-                AST.Try t = new AST.Try(Collections.singletonList(v1), "e", Arrays.asList(
-                        new AST.Try.Catch(Arrays.asList(
-                                new AST.Access(null, "Exception", LineCol.SYNTHETIC),
-                                new AST.Access(null, "Throwable", LineCol.SYNTHETIC)
-                        ), Collections.emptyList(), LineCol.SYNTHETIC),
-                        new AST.Try.Catch(Collections.singletonList(
-                                new AST.Access(null, "RuntimeException", LineCol.SYNTHETIC)
-                        ), Collections.singletonList(
-                                v3
-                        ), LineCol.SYNTHETIC)
-                ), Collections.emptyList(), LineCol.SYNTHETIC);
+                AST.Try t = new AST.Try(Collections.singletonList(v1), "e", Collections.emptyList(), Collections.emptyList(), LineCol.SYNTHETIC);
 
                 assertEquals(t, stmt);
         }

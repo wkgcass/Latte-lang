@@ -121,8 +121,9 @@ public class Lang {
          * if field not found , then the method would try to invoke get(fieldName)<br>
          * or the method would return <tt>undefined</tt>
          *
-         * @param o         object
-         * @param fieldName field name
+         * @param o           object
+         * @param fieldName   field name
+         * @param callerClass caller class
          * @return the value or undefined
          */
         @SuppressWarnings("unused")
@@ -153,9 +154,10 @@ public class Lang {
          * if field not found , then the method would try to invoke set(fieldName, value)<br>
          * the method calls {@link Dynamic#invoke(Object, Class, String, boolean[], Object[])}, and <code>set(fieldName,value)</code> may be changed to <code>put(fieldName, value)</code>
          *
-         * @param o         object
-         * @param fieldName field name
-         * @param value     the value to set
+         * @param o           object
+         * @param fieldName   field name
+         * @param value       the value to set
+         * @param callerClass caller class
          * @throws Throwable exceptions
          */
         public static void putField(Object o, String fieldName, Object value, Class<?> callerClass) throws Throwable {
@@ -210,8 +212,9 @@ public class Lang {
         /**
          * <code>is</code> operator<br>
          *
-         * @param a a
-         * @param b b
+         * @param a           a
+         * @param b           b
+         * @param callerClass caller class
          * @return true/false
          */
         public static boolean is(Object a, Object b, Class<?> callerClass) {
@@ -233,8 +236,9 @@ public class Lang {
         /**
          * <code>not</code> operator
          *
-         * @param a a
-         * @param b b
+         * @param a           a
+         * @param b           b
+         * @param callerClass caller class
          * @return true/false
          */
         public static boolean not(Object a, Object b, Class<?> callerClass) {
@@ -251,5 +255,10 @@ public class Lang {
                 } catch (Throwable ignore) {
                 }
                 return true;
+        }
+
+        public static Object throwableWrapperObject(Throwable t) {
+                if (t instanceof Wrapper) return ((Wrapper) t).object;
+                return t;
         }
 }
