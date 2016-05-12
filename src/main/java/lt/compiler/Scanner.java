@@ -110,7 +110,10 @@ public class Scanner {
         /**
          * initiate the processor with a reader
          *
-         * @param reader text reader
+         * @param fileName   the input text file name
+         * @param reader     text reader
+         * @param properties properties for the Scanner
+         * @param err        error manager
          */
         public Scanner(String fileName, Reader reader, Properties properties, ErrorManager err) {
                 this.fileName = fileName;

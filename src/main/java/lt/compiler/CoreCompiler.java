@@ -114,6 +114,7 @@ public class CoreCompiler {
          *
          * @param config a map containing configuration
          * @return this
+         * @throws Exception all kinds of exceptions
          */
         public CoreCompiler configure(Map config) throws Exception {
                 List<JarFile> classpathToSet = new ArrayList<>();

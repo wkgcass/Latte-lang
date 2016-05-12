@@ -8,6 +8,6 @@ import lt.compiler.SyntaxException;
  */
 public class DuplicateVariableNameException extends SyntaxException {
         public DuplicateVariableNameException(String name, LineCol lineCol) {
-                super(name, lineCol);
+                super("duplicate name " + name, lineCol);
         }
 }

@@ -1,7 +1,7 @@
 package lt.compiler;
 
 import lt.compiler.semantic.Instruction;
-import org.objectweb.asm.Label;
+import lt.dependencies.asm.Label;
 
 import java.util.HashMap;
 import java.util.Map;

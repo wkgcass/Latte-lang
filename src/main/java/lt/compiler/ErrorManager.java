@@ -1,6 +1,7 @@
 package lt.compiler;
 
 import lt.compiler.lexical.IllegalIndentationException;
+import lt.compiler.syntactic.DuplicateVariableNameException;
 import lt.compiler.syntactic.UnexpectedNewLayerException;
 import lt.compiler.syntactic.UnknownTokenException;
 
@@ -48,6 +49,7 @@ public class ErrorManager {
                 public static final int Indentation = 4;
                 public static final int UnexpectedEnd = 5;
                 public static final int UnexpectedNewLayer = 6;
+                public static final int DuplicateVariableName = 7;
 
                 private CompilingError(String msg, LineCol lineCol, int type) {
                         this.msg = msg;
@@ -116,6 +118,7 @@ public class ErrorManager {
          *
          * @param msg     message
          * @param lineCol file,line,column info
+         * @throws SyntaxException compiling error
          */
         public void SyntaxException(String msg, LineCol lineCol) throws SyntaxException {
                 if (fastFail) throw new SyntaxException(msg, lineCol);
@@ -127,6 +130,7 @@ public class ErrorManager {
          * got an unexpected end
          *
          * @param lineCol file,line,column info
+         * @throws UnexpectedEndException compiling error
          */
         public void UnexpectedEndException(LineCol lineCol) throws UnexpectedEndException {
                 if (fastFail) throw new UnexpectedEndException(lineCol);
@@ -141,6 +145,7 @@ public class ErrorManager {
          * @param expected expected token structure
          * @param got      got token
          * @param lineCol  file,line,column info
+         * @throws UnexpectedTokenException compiling error
          */
         public void UnexpectedTokenException(String expected, String got, LineCol lineCol) throws UnexpectedTokenException {
                 if (fastFail) throw new UnexpectedTokenException(expected, got, lineCol);
@@ -155,6 +160,7 @@ public class ErrorManager {
          *
          * @param token   unexpected token
          * @param lineCol file,line,column info
+         * @throws UnexpectedTokenException compiling error
          */
         public void UnexpectedTokenException(String token, LineCol lineCol) throws UnexpectedTokenException {
                 if (fastFail) throw new UnexpectedTokenException(token, lineCol);
@@ -168,6 +174,7 @@ public class ErrorManager {
          *
          * @param expectedIndent the expected indent
          * @param lineCol        file,line,column info
+         * @throws IllegalIndentationException compiling error
          */
         public void IllegalIndentationException(int expectedIndent, LineCol lineCol) throws IllegalIndentationException {
                 if (fastFail) throw new IllegalIndentationException(expectedIndent, lineCol);
@@ -180,6 +187,7 @@ public class ErrorManager {
          * occurred an unexpected new Layer
          *
          * @param lineCol file,line,column info
+         * @throws UnexpectedNewLayerException compiling error
          */
         public void UnexpectedNewLayerException(LineCol lineCol) throws UnexpectedNewLayerException {
                 if (fastFail) throw new UnexpectedNewLayerException(lineCol);
@@ -193,11 +201,19 @@ public class ErrorManager {
          *
          * @param token   the unknown token
          * @param lineCol file,line,column info
+         * @throws UnknownTokenException compiling error
          */
         public void UnknownTokenException(String token, LineCol lineCol) throws UnknownTokenException {
                 if (fastFail) throw new UnknownTokenException(token, lineCol);
                 final String msg = "unknown token " + token;
                 error(msg + " at " + lineCol);
                 errorList.add(new CompilingError(msg, lineCol, CompilingError.UnknownToken));
+        }
+
+        public void DuplicateVariableNameException(String name, LineCol lineCol) throws DuplicateVariableNameException {
+                if (fastFail) throw new DuplicateVariableNameException(name, lineCol);
+                final String msg = "duplicate name " + name;
+                error(msg + " at " + lineCol);
+                errorList.add(new CompilingError(msg, lineCol, CompilingError.DuplicateVariableName));
         }
 }

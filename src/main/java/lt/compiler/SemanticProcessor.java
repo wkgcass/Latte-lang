@@ -21,7 +21,7 @@ import lt.lang.Dynamic;
 import lt.lang.Lang;
 import lt.lang.LtIterator;
 import lt.lang.Undefined;
-import org.objectweb.asm.MethodVisitor;
+import lt.dependencies.asm.MethodVisitor;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -77,7 +77,7 @@ public class SemanticProcessor {
          * initialize the Processor
          *
          * @param mapOfStatements a map of fileName to statements
-         * @param classLoader
+         * @param classLoader     retrieve loaded classes from this class loader
          */
         public SemanticProcessor(Map<String, List<Statement>> mapOfStatements, ClassLoader classLoader) {
                 this.mapOfStatements = mapOfStatements;

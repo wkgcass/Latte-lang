@@ -3,7 +3,7 @@ package lt.compiler;
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
 import lt.compiler.semantic.builtin.ClassValue;
-import org.objectweb.asm.*;
+import lt.dependencies.asm.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
