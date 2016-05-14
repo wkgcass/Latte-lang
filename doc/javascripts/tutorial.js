@@ -193,10 +193,12 @@ $(document).ready(function () {
                     "        LOGGER.info(e.getMessage())\n" +
                     "    elseif e is type RuntimeException\n" +
                     "        LOGGER.debug(e.getMessage())\n" +
+                    "    else\n" +
+                    "        throw e" +
                     "finally\n" +
                     "    stream close\n" +
                     "\n" +
-                    "throw 'a string' ; LessTyping允许throw与catch任何类型")
+                    "throw 'a string' ; LessTyping允许throw与catch任何类型, 例如 throw \"error message\", 所以并不直接提供java的catch Type")
             },
             {
                 title: "Synchronized",

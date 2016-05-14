@@ -1,3 +1,27 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package lt.compiler.cases;
 
 import lt.compiler.*;
@@ -1529,129 +1553,120 @@ public class TestParser {
 
         @Test
         public void testPkgDeclare1() throws Exception {
-                List<Statement> list = parse("# jes");
+                List<Statement> list = parse("package lt");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
 
-                PackageDeclare p = new PackageDeclare(new AST.PackageRef("jes", LineCol.SYNTHETIC), LineCol.SYNTHETIC);
+                PackageDeclare p = new PackageDeclare(new AST.PackageRef("lt", LineCol.SYNTHETIC), LineCol.SYNTHETIC);
                 assertEquals(p, stmt);
         }
 
         @Test
         public void testPkgDeclare2() throws Exception {
-                List<Statement> list = parse("# jes::lang::util");
+                List<Statement> list = parse("package lt::lang::util");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
 
-                PackageDeclare p = new PackageDeclare(new AST.PackageRef("jes::lang::util", LineCol.SYNTHETIC), LineCol.SYNTHETIC);
+                PackageDeclare p = new PackageDeclare(new AST.PackageRef("lt::lang::util", LineCol.SYNTHETIC), LineCol.SYNTHETIC);
                 assertEquals(p, stmt);
         }
 
         @Test
         public void testImportPackageAll() throws Exception {
-                List<Statement> list = parse("#> jes::lang::_");
+                List<Statement> list = parse("import lt::lang::_");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                Import i = new Import(Collections.singletonList(
-                        new Import.ImportDetail(new AST.PackageRef("jes::lang", LineCol.SYNTHETIC), null, true)
-                ), LineCol.SYNTHETIC);
+                Import i = new Import(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
         @Test
         public void testImportClass() throws Exception {
-                List<Statement> list = parse("#> jes::lang::Cls");
+                List<Statement> list = parse("import lt::lang::Cls");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                Import i = new Import(Collections.singletonList(
-                        new Import.ImportDetail(null, new AST.Access(new AST.PackageRef("jes::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), false)
-                ), LineCol.SYNTHETIC);
+                Import i = new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), false
+                        , LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
         @Test
         public void testImportClassAll() throws Exception {
-                List<Statement> list = parse("#> jes::lang::Cls._");
+                List<Statement> list = parse("import lt::lang::Cls._");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                Import i = new Import(Collections.singletonList(
-                        new Import.ImportDetail(null, new AST.Access(new AST.PackageRef("jes::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), true)
-                ), LineCol.SYNTHETIC);
+                Import i = new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), true
+                        , LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
         @Test
         public void testImportInnerClass() throws Exception {
-                List<Statement> list = parse("#> jes::lang::Cls.Inner");
+                List<Statement> list = parse("import lt::lang::Cls.Inner");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                Import i = new Import(Collections.singletonList(
-                        new Import.ImportDetail(null, new AST.Access(new AST.Access(new AST.PackageRef("jes::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), false)
-                ), LineCol.SYNTHETIC);
+                Import i = new Import(null, new AST.Access(new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), false
+                        , LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
         @Test
         public void testImportInnerClassAll() throws Exception {
-                List<Statement> list = parse("#> jes::lang::Cls.Inner._");
+                List<Statement> list = parse("import lt::lang::Cls.Inner._");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                Import i = new Import(Collections.singletonList(
-                        new Import.ImportDetail(null, new AST.Access(new AST.Access(new AST.PackageRef("jes::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), true)
-                ), LineCol.SYNTHETIC);
+                Import i = new Import(null, new AST.Access(new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), true
+                        , LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
         @Test
         public void testImportClassAllNoPKG() throws Exception {
-                List<Statement> list = parse("#> Cls._");
+                List<Statement> list = parse("import Cls._");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                Import i = new Import(Collections.singletonList(
-                        new Import.ImportDetail(null, new AST.Access(null, "Cls", LineCol.SYNTHETIC), true)
-                ), LineCol.SYNTHETIC);
+                Import i = new Import(null, new AST.Access(null, "Cls", LineCol.SYNTHETIC), true
+                        , LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
         @Test
         public void testImportInnerClassAllNoPKG() throws Exception {
-                List<Statement> list = parse("#> Cls.Inner._");
+                List<Statement> list = parse("import Cls.Inner._");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                Import i = new Import(Collections.singletonList(
-                        new Import.ImportDetail(null, new AST.Access(new AST.Access(null, "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), true)
-                ), LineCol.SYNTHETIC);
+                Import i = new Import(null, new AST.Access(new AST.Access(null, "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), true
+                        , LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
         @Test
         public void testImportInnerClassNoPKG() throws Exception {
-                List<Statement> list = parse("#> Cls.Inner");
+                List<Statement> list = parse("import Cls.Inner");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                Import i = new Import(Collections.singletonList(
-                        new Import.ImportDetail(null, new AST.Access(new AST.Access(null, "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), false)
-                ), LineCol.SYNTHETIC);
+                Import i = new Import(null, new AST.Access(new AST.Access(null, "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), false
+                        , LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 

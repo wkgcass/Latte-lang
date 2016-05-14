@@ -1,4 +1,4 @@
-var LAYER = ["#>", "#", "->"];
+var LAYER = ["->"];
 var SPLIT_X = [
     ".", // class positioning or method access
     ":", // type specification or generic extends
@@ -155,7 +155,7 @@ var javaKeys = ["abstract", "assert", "boolean", "break", "byte", "case",
     "private", "protected", "public", "return", "short", "static",
     "strictfp", "throw", "try", "while"];
 
-var keys = ["is", "not", "bool", "yes", "no", "type", "as", "undefined", "in", "elseif"];
+var keys = ["is", "not", "bool", "yes", "no", "type", "as", "undefined", "in", "elseif", "package", "import"];
 
 var modifiers = ["pub", "pro", "pri", "pkg",
     "abs", "val", "native", "sync", "transient", "volatile", "strictfp",

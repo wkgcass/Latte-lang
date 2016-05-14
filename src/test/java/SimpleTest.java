@@ -14,25 +14,24 @@ import java.util.Map;
 public class SimpleTest {
         public static void main(String[] args) throws Exception {
                 Scanner scanner = new Scanner("test.lt", new StringReader("" +
-                        "class TestTryCatch\n" +
+                        "class TestForTryBreak\n" +
                         "    static\n" +
-                        "        method(func)\n" +
-                        "            try\n" +
-                        "                func.apply()\n" +
-                        "            catch e\n" +
-                        "                if e type NullPointerException or e type ClassCastException\n" +
-                        "                    <1\n" +
-                        "                elseif e type Error\n" +
-                        "                    <e.getMessage()\n" +
-                        "                elseif e type Throwable\n" +
-                        "                    <3\n" +
-                        "            <4"), new Scanner.Properties(), new ErrorManager(true));
+                        "        method()\n" +
+                        "            n=0\n" +
+                        "            for i in 1..10\n" +
+                        "                try\n" +
+                        "                    if i==3\n" +
+                        "                        break\n" +
+                        "                    n+=i\n" +
+                        "                finally\n" +
+                        "                    ++n\n" +
+                        "            <n"), new Scanner.Properties(), new ErrorManager(true));
                 Parser parser = new Parser(scanner.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", parser.parse());
                 SemanticProcessor processor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
                 CodeGenerator codeGen = new CodeGenerator(processor.parse());
-                byte[] bs = codeGen.generate().get("TestTryCatch");
+                byte[] bs = codeGen.generate().get("TestForTryBreak");
 
                 File f = new File("/Volumes/PROJECTS/openSource/LessTyping/target/TestTryCatch.class");
                 FileOutputStream fos = new FileOutputStream(f);
@@ -40,20 +39,16 @@ public class SimpleTest {
                 fos.close();
         }
 
-        public Object test() {
-                try {
-                        Integer.parseInt("1");
-                } catch (Throwable e) {
-                        if (e instanceof NullPointerException || e instanceof ClassCastException) {
-                                return 1;
-                        } else if (e instanceof Error) {
-                                return e.getMessage();
-                        } else if (e instanceof Throwable) {
-                                return 3;
+        public void test() {
+                for (int i = 0; i < 10; ++i) {
+                        try {
+                                if (i == 7)
+                                        continue;
+                                else if (i == 8) break;
+                                i += 3;
+                        } finally {
+                                i += 1;
                         }
-                } finally {
-                        Integer.parseInt("2");
                 }
-                return 4;
         }
 }

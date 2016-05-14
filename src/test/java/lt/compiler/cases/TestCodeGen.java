@@ -1,3 +1,27 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package lt.compiler.cases;
 
 import lt.compiler.*;
@@ -50,7 +74,7 @@ public class TestCodeGen {
         public void testPkg() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "# my::test\n" +
+                                "package my::test\n" +
                                 "class TestPkg",
                         "my.test.TestPkg");
                 assertEquals("my.test.TestPkg", cls.getName());
@@ -168,7 +192,7 @@ public class TestCodeGen {
         public void testInvokeInterface() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "#> java::util::_\n" +
+                                "import java::util::_\n" +
                                 "class TestInvokeInterface\n" +
                                 "    static\n" +
                                 "        method()\n" +
@@ -270,7 +294,7 @@ public class TestCodeGen {
         public void testNew() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "#>java::util::_\n" +
+                                "import java::util::_\n" +
                                 "class TestNew\n" +
                                 "    static\n" +
                                 "        method()\n" +
@@ -286,7 +310,7 @@ public class TestCodeGen {
         public void testTwoVarOp() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "#>java::util::_\n" +
+                                "import java::util::_\n" +
                                 "class TestTwoVarOp\n" +
                                 "    static\n" +
                                 "        method(a,b)\n" +
@@ -364,7 +388,7 @@ public class TestCodeGen {
         public void testIn() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "#>java::util::_\n" +
+                                "import java::util::_\n" +
                                 "class TestIn\n" +
                                 "    static\n" +
                                 "        method(a,ls)\n" +
@@ -379,7 +403,7 @@ public class TestCodeGen {
         public void testInRange() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "#>java::util::_\n" +
+                                "import java::util::_\n" +
                                 "class TestInRange\n" +
                                 "    static\n" +
                                 "        method()\n" +
@@ -1041,7 +1065,7 @@ public class TestCodeGen {
         public void testAnnotation() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "#>lt::compiler::_\n" +
+                                "import lt::compiler::_\n" +
                                 "" +
                                 "class TestAnnotation\n" +
                                 "    static\n" +
@@ -1279,7 +1303,7 @@ public class TestCodeGen {
         @Test
         public void testLambdaJDK1() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                "#>java::util::function::_\n" +
+                                "import java::util::function::_\n" +
                                 "class TestLambdaJDK\n" +
                                 "    static\n" +
                                 "        method():Function\n" +
@@ -1294,7 +1318,7 @@ public class TestCodeGen {
         @Test
         public void testLambdaJDK2() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                "#>java::util::function::_\n" +
+                                "import java::util::function::_\n" +
                                 "class TestLambdaJDK\n" +
                                 "    static\n" +
                                 "        method():Function\n" +
@@ -1310,7 +1334,7 @@ public class TestCodeGen {
         @Test
         public void testLambdaJDK3() throws Throwable {
                 Class<?> cls = retrieveClass("" +
-                                "#>java::util::function::_\n" +
+                                "import java::util::function::_\n" +
                                 "class TestLambdaJDK\n" +
                                 "    static\n" +
                                 "        method()\n" +
@@ -1326,7 +1350,7 @@ public class TestCodeGen {
         @Test
         public void testLambdaLT1() throws Exception {
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
-                        "#>lt::compiler::_\n" +
+                        "import lt::compiler::_\n" +
                         "class TestLambdaLT\n" +
                         "    static\n" +
                         "        method():TestLambdaFunc\n" +
@@ -1367,7 +1391,7 @@ public class TestCodeGen {
         @Test
         public void testLambdaLT2() throws Exception {
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
-                        "#>lt::compiler::_\n" +
+                        "import lt::compiler::_\n" +
                         "class TestLambdaLT\n" +
                         "    method():TestLambdaFunc\n" +
                         "        i=1\n" +
@@ -1407,7 +1431,7 @@ public class TestCodeGen {
         @Test
         public void testLambdaLT3() throws Throwable {
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
-                        "#>java::util::function::_\n" +
+                        "import java::util::function::_\n" +
                         "class TestLambdaLT\n" +
                         "    method():Function\n" +
                         "        i=1\n" +
@@ -1448,7 +1472,7 @@ public class TestCodeGen {
         public void testListRemove() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "#> java::util::_\n" +
+                                "import java::util::_\n" +
                                 "class TestInvokeInterface\n" +
                                 "    static\n" +
                                 "        methodRemoveInt1(ls)\n" +
@@ -1573,5 +1597,142 @@ public class TestCodeGen {
                 assertEquals(1, testCatch.invoke(null, (I) () -> {
                         throw new Wrapper(1);
                 }));
+        }
+
+        @Test
+        public void testForBreak() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestForBreak\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            sum=0\n" +
+                                "            for i in 1..10\n" +
+                                "                if i==7\n" +
+                                "                    break\n" +
+                                "                sum+=i\n" +
+                                "            <sum",
+                        "TestForBreak");
+                Method method = cls.getMethod("method");
+                assertEquals(21, method.invoke(null));
+        }
+
+        @Test
+        public void testForContinue() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestForContinue\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            sum=0\n" +
+                                "            for i in 1..10\n" +
+                                "                if i==7\n" +
+                                "                    continue\n" +
+                                "                sum+=i\n" +
+                                "            <sum",
+                        "TestForContinue");
+                Method method = cls.getMethod("method");
+                assertEquals(48, method.invoke(null));
+        }
+
+        @Test
+        public void testWhileBreak() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestWhileBreak\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            sum=0\n" +
+                                "            i=1\n" +
+                                "            while i<=10\n" +
+                                "                if i==7\n" +
+                                "                    break\n" +
+                                "                sum+=(i++)\n" +
+                                "            <sum",
+                        "TestWhileBreak");
+                Method method = cls.getMethod("method");
+                assertEquals(21, method.invoke(null));
+        }
+
+        @Test
+        public void testWhileContinue() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestWhileContinue\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            sum=0\n" +
+                                "            i=1\n" +
+                                "            while i<=10\n" +
+                                "                if i==7\n" +
+                                "                    ++i\n" +
+                                "                    continue\n" +
+                                "                sum+=(i++)\n" +
+                                "            <sum",
+                        "TestWhileContinue");
+                Method method = cls.getMethod("method");
+                assertEquals(48, method.invoke(null));
+        }
+
+        @Test
+        public void testDoWhileBreak() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestWhileBreak\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            sum=0\n" +
+                                "            i=1\n" +
+                                "            do\n" +
+                                "                if i==7\n" +
+                                "                    break\n" +
+                                "                sum+=(i++)\n" +
+                                "            while i<=10\n" +
+                                "            <sum",
+                        "TestWhileBreak");
+                Method method = cls.getMethod("method");
+                assertEquals(21, method.invoke(null));
+        }
+
+        @Test
+        public void testDoWhileContinue() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestWhileContinue\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            sum=0\n" +
+                                "            i=1\n" +
+                                "            do\n" +
+                                "                if i==7\n" +
+                                "                    ++i\n" +
+                                "                    continue\n" +
+                                "                sum+=(i++)\n" +
+                                "            while i<=10\n" +
+                                "            <sum",
+                        "TestWhileContinue");
+                Method method = cls.getMethod("method");
+                assertEquals(48, method.invoke(null));
+        }
+
+        @Test
+        public void testForTryBreak() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestForTryBreak\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            n=0\n" +
+                                "            for i in 1..10\n" +
+                                "                try\n" +
+                                "                    if i==3\n" +
+                                "                        break\n" +
+                                "                    n+=i\n" +
+                                "                finally\n" +
+                                "                    ++n\n" +
+                                "            <n",
+                        "TestForTryBreak");
+                Method method = cls.getMethod("method");
+                assertEquals(6, method.invoke(null));
         }
 }

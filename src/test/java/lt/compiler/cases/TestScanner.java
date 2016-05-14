@@ -1,3 +1,27 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package lt.compiler.cases;
 
 import lt.compiler.ErrorManager;
@@ -16,18 +40,14 @@ import static org.junit.Assert.*;
 public class TestScanner {
         @Test
         public void testPkg() throws Exception {
-                // # lt.test
-                Scanner processor = new Scanner("test", new StringReader("# lt::test"), new Scanner.Properties(), new ErrorManager(true));
+                // package lt.test
+                Scanner processor = new Scanner("test", new StringReader("package lt::test"), new Scanner.Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
-                args.previous = new Element(args, "#", TokenType.SYMBOL);
+                args.previous = new Element(args, "package", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
-                args.previous = startNode;
-                args.startNodeStack.push(startNode);
-                args.previous = null;
                 args.previous = new Element(args, "lt", TokenType.VALID_NAME);
                 args.previous = new Element(args, "::", TokenType.SYMBOL);
                 args.previous = new Element(args, "test", TokenType.VALID_NAME);
@@ -36,26 +56,24 @@ public class TestScanner {
         }
 
         @Test
-        public void testUse() throws Exception {
-                // #> packageName._
+        public void testImport() throws Exception {
+                // import packageName._
                 Scanner processor = new Scanner("test", new StringReader("" +
-                        "#> Package::name::*\n" +
-                        "    Package::name::Test"), new Scanner.Properties(), new ErrorManager(true));
+                        "import Package::name::_\n" +
+                        "import Package::name::Test"), new Scanner.Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
-                args.previous = new Element(args, "#>", TokenType.SYMBOL);
+                args.previous = new Element(args, "import", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
-                args.previous = null;
                 args.previous = new Element(args, "Package", TokenType.VALID_NAME);
-                startNode.setLinkedNode(args.previous);
                 args.previous = new Element(args, "::", TokenType.SYMBOL);
                 args.previous = new Element(args, "name", TokenType.VALID_NAME);
                 args.previous = new Element(args, "::", TokenType.SYMBOL);
-                args.previous = new Element(args, "*", TokenType.SYMBOL);
+                args.previous = new Element(args, "_", TokenType.VALID_NAME);
                 args.previous = new EndingNode(args, EndingNode.WEAK);
+                args.previous = new Element(args, "import", TokenType.KEY);
                 args.previous = new Element(args, "Package", TokenType.VALID_NAME);
                 args.previous = new Element(args, "::", TokenType.SYMBOL);
                 args.previous = new Element(args, "name", TokenType.VALID_NAME);
@@ -651,7 +669,7 @@ public class TestScanner {
         @Test
         public void testSpacesAtTheFront() throws Exception {
                 Scanner processor = new Scanner("test", new StringReader(
-                        "  #> package::name::*"
+                        "  import package::name::_"
                 ), new Scanner.Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
                 Node n = root.getLinkedNode();

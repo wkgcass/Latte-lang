@@ -1,3 +1,27 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package lt.compiler;
 
 import lt.compiler.lexical.*;
@@ -94,6 +118,17 @@ public class Parser {
          */
         private void addUsedVarNames(Set<String> names) {
                 this.usedVarNames.addAll(names);
+        }
+
+        /**
+         * jump to the end of the statement
+         *
+         * @throws SyntaxException compiling error
+         */
+        private void jumpToTheNearestWeakEndingNode() throws SyntaxException {
+                while (current != null && (!(current instanceof EndingNode) || ((EndingNode) current).getType() != EndingNode.WEAK)) {
+                        nextNode(true);
+                }
         }
 
         /**
@@ -194,7 +229,7 @@ public class Parser {
                                         err.debug("the next node is null, ignore the whole statement");
                                         throw new ParseFail();
                                 } else {
-                                        err.debug("the next node is not null, jump to next directly");
+                                        err.debug("the next node is not null, skip current and go to the next node");
                                         current = next.next();
                                 }
                         } else {
@@ -292,10 +327,10 @@ public class Parser {
                                                         Statement stmt = parse_statement();
                                                         if (stmt == null) {
                                                                 err.UnexpectedTokenException("a valid statement", curr.toString(), curr.getLineCol());
-                                                                err.debug("ignore the static statements");
+                                                                err.debug("skip the static statements");
                                                                 // ignore the static
                                                                 // make it (static pass)
-                                                                stmt = new AST.Pass(LineCol.SYNTHETIC);
+                                                                throw new ParseFail();
                                                         }
                                                         return new AST.StaticScope(Collections.singletonList(stmt), lineCol);
 
@@ -319,6 +354,26 @@ public class Parser {
                                                 modifiersIsEmpty();
 
                                                 return parse_throw();
+                                        case "package":
+                                                modifiersIsEmpty();
+
+                                                // package declare
+                                                return parse_pkg_declare();
+                                        case "import":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return parse_pkg_import();
+                                        case "continue":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return new AST.Continue(current.getLineCol());
+                                        case "break":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                return new AST.Break(current.getLineCol());
                                 }
                         } else if (current.getTokenType() == TokenType.SYMBOL) {
                                 switch (content) {
@@ -342,17 +397,6 @@ public class Parser {
                                                         Expression e = next_exp(false);
                                                         return new AST.Return(e, lineCol);
                                                 }
-
-                                        case "#":
-                                                modifiersIsEmpty();
-
-                                                // package declare
-                                                return parse_pkg_declare();
-                                        case "#>":
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
-
-                                                return parse_pkg_import();
                                 }
                         }
 
@@ -484,6 +528,7 @@ public class Parser {
                         err.debug("assume that the body is empty");
                         // assume that the body is empty
                         body = Collections.emptyList();
+                        jumpToTheNearestWeakEndingNode();
                 }
                 return new AST.While(condition, body, false, lineCol);
         }
@@ -513,6 +558,7 @@ public class Parser {
                         err.debug("assume that the body is empty");
                         // assume that the body is empty
                         statements = Collections.emptyList();
+                        jumpToTheNearestWeakEndingNode();
                 }
 
                 nextNode(false);
@@ -540,43 +586,44 @@ public class Parser {
          */
         private Import parse_pkg_import() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
-                List<Import.ImportDetail> importDetails = new ArrayList<>();
-                nextNode(false);
 
-                if (current instanceof ElementStartNode) {
-                        List<Statement> statements = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false);
+                Expression stmt = next_exp(false);
 
-                        for (Statement stmt : statements) {
-                                if (stmt instanceof AST.Access) {
-                                        // import should firstly be parsed into Access
-                                        AST.Access a = (AST.Access) stmt;
-                                        Import.ImportDetail detail;
-                                        if (a.name.equals("_")) { // ends with '_'
-                                                if (a.exp instanceof AST.PackageRef) {
-                                                        // import all from a package
-                                                        detail = new Import.ImportDetail((AST.PackageRef) a.exp, null, true);
-                                                } else {
-                                                        // import static
-                                                        detail = new Import.ImportDetail(null, (AST.Access) a.exp, true);
-                                                }
-                                        } else {
-                                                // import class or inner class
-                                                detail = new Import.ImportDetail(null, a, false);
+                if (stmt instanceof AST.Access) {
+                        // import should firstly be parsed into Access
+                        AST.Access a = (AST.Access) stmt;
+                        AST.PackageRef pkg = null;
+                        AST.Access access = null;
+                        boolean importAll;
+                        if (a.name.equals("_")) { // ends with '_'
+                                if (a.exp instanceof AST.PackageRef) {
+                                        // import all from a package
+                                        pkg = (AST.PackageRef) a.exp;
+                                        importAll = true;
+                                } else {
+                                        // import static
+                                        if (!(a.exp instanceof AST.Access)) {
+                                                err.UnexpectedTokenException("package::class", a.exp.toString(), a.exp.line_col());
+                                                err.debug("ignore this import");
+                                                return null;
                                         }
 
-                                        importDetails.add(detail);
-                                } else {
-                                        err.UnexpectedTokenException("import statement", stmt.toString(), stmt.line_col());
-                                        // ignore the statement
-                                        err.debug("ignore this import");
+                                        access = (AST.Access) a.exp;
+                                        importAll = true;
                                 }
+                        } else {
+                                // import class or inner class
+                                access = a;
+                                importAll = false;
                         }
-                } else {
-                        err.UnexpectedTokenException("import statements", current.toString(), current.getLineCol());
-                        err.debug("ignore the import");
-                }
 
-                return new Import(importDetails, lineCol);
+                        return new Import(pkg, access, importAll, lineCol);
+                } else {
+                        err.UnexpectedTokenException("import statement", stmt.toString(), stmt.line_col());
+                        // ignore the statement
+                        err.debug("ignore this import");
+                        return null;
+                }
         }
 
         /**
@@ -592,36 +639,29 @@ public class Parser {
                 LineCol lineCol = current.getLineCol();
 
                 nextNode(false);
-                if (current instanceof ElementStartNode) {
-                        Node pkgNode = ((ElementStartNode) current).getLinkedNode();
-                        if (pkgNode instanceof Element) {
-                                StringBuilder sb = new StringBuilder();
-                                boolean isName = true;
+                if (current instanceof Element) {
+                        StringBuilder sb = new StringBuilder();
+                        boolean isName = true;
 
-                                while (pkgNode != null && (pkgNode instanceof Element) && (((Element) pkgNode).getContent().equals("::")
-                                        ||
-                                        pkgNode.getTokenType() == TokenType.VALID_NAME)) {
-                                        Element elem = (Element) pkgNode;
-                                        String s = elem.getContent();
-                                        if (!isName && !s.equals("::")) {
-                                                err.UnexpectedTokenException("::", s, elem.getLineCol());
-                                                err.debug("make it '::'");
-                                                s = "::";
-                                        }
-                                        isName = !isName;
-                                        sb.append(s);
-                                        pkgNode = pkgNode.next();
+                        while (current != null && (current instanceof Element) && (((Element) current).getContent().equals("::")
+                                ||
+                                current.getTokenType() == TokenType.VALID_NAME)) {
+                                Element elem = (Element) current;
+                                String s = elem.getContent();
+                                if (!isName && !s.equals("::")) {
+                                        err.UnexpectedTokenException("::", s, elem.getLineCol());
+                                        err.debug("make it '::'");
+                                        s = "::";
                                 }
-
-                                AST.PackageRef pkg = new AST.PackageRef(sb.toString(), lineCol);
-                                return new PackageDeclare(pkg, lineCol);
-                        } else {
-                                err.UnexpectedTokenException("package", pkgNode.toString(), pkgNode.getLineCol());
-                                err.debug("let it be (default package)");
-                                return new PackageDeclare(new AST.PackageRef("", LineCol.SYNTHETIC), lineCol);
+                                isName = !isName;
+                                sb.append(s);
+                                nextNode(true);
                         }
+
+                        AST.PackageRef pkg = new AST.PackageRef(sb.toString(), lineCol);
+                        return new PackageDeclare(pkg, lineCol);
                 } else {
-                        err.UnexpectedTokenException(current.toString(), current.getLineCol());
+                        err.UnexpectedTokenException("package declare", current.toString(), current.getLineCol());
                         err.debug("let it be (default package)");
                         return new PackageDeclare(new AST.PackageRef("", LineCol.SYNTHETIC), lineCol);
                 }
@@ -797,6 +837,7 @@ public class Parser {
                                                 // element
                                                 err.UnexpectedTokenException(current.toString(), current.getLineCol());
                                                 err.debug("ignore this token");
+                                                jumpToTheNearestWeakEndingNode();
                                         }
                                 }
                         }
@@ -1179,7 +1220,7 @@ public class Parser {
                                 if (!isLast) {
                                         isLast = true;
 
-                                        AST.If.IfPair pair = new AST.If.IfPair(condition, list == null ? Collections.emptyList() : list, ifPairLineCol);
+                                        AST.If.IfPair pair = new AST.If.IfPair(null, list == null ? Collections.emptyList() : list, ifPairLineCol);
                                         pairs.add(pair);
                                 }
                         } else {
@@ -1374,7 +1415,11 @@ public class Parser {
                         parse_expression();
                         Expression exp = parsedExps.pop();
                         if (!(current instanceof EndingNode || current == null)) {
-                                throw new UnexpectedTokenException("EndingNode", current.toString(), current.getLineCol());
+                                err.UnexpectedTokenException("Ending", current.toString(), current.getLineCol());
+                                err.debug("jump to the nearest ending");
+                                while (!(current instanceof EndingNode || current == null)) {
+                                        nextNode(true);
+                                }
                         }
                         MethodDef def = new MethodDef(methodName, modifiers, returnType, variableList, annos,
                                 Collections.singletonList(
@@ -1500,7 +1545,8 @@ public class Parser {
 
                                                                 annosIsEmpty();
                                                                 if (parsedExps.isEmpty()) {
-                                                                        throw new UnexpectedTokenException("expression", "as", current.getLineCol());
+                                                                        err.UnexpectedTokenException("expression", "as", current.getLineCol());
+                                                                        err.debug("ignore the 'as'");
                                                                 } else {
                                                                         lineCol = current.getLineCol();
                                                                         Expression exp = parsedExps.pop();
@@ -1519,7 +1565,10 @@ public class Parser {
 
                                                                 break;
                                                         default:
-                                                                throw new UnexpectedTokenException(content, current.getLineCol());
+                                                                err.UnexpectedTokenException(content, current.getLineCol());
+                                                                // ignore
+                                                                err.debug("ignore the token");
+                                                                nextNode(true);
                                                 }
 
                                         } else if (current.getTokenType() == TokenType.SYMBOL) {
@@ -1594,7 +1643,7 @@ public class Parser {
                                                                                 AST.Invocation invocation = new AST.Invocation(access, new Expression[0], access.line_col());
                                                                                 parsedExps.push(invocation);
                                                                         } else {
-                                                                                throw new UnexpectedTokenException(")", current.getLineCol());
+                                                                                err.SyntaxException("it should be the method to invoke", parsedExps.empty() ? current.getLineCol() : parsedExps.pop().line_col());
                                                                         }
 
                                                                         nextNode(true);
@@ -1611,35 +1660,36 @@ public class Parser {
                                                                                         Expression[] args = new Expression[statements.size()];
                                                                                         for (int i = 0; i < statements.size(); ++i) {
                                                                                                 Statement stmt = statements.get(i);
-                                                                                                if (!(stmt instanceof Expression)) {
-                                                                                                        throw new UnexpectedTokenException("expression", stmt.toString(), stmt.line_col());
+                                                                                                if ((stmt instanceof Expression)) {
+                                                                                                        args[i] = (Expression) stmt;
+                                                                                                } else {
+                                                                                                        err.UnexpectedTokenException("expression", stmt.toString(), stmt.line_col());
+                                                                                                        err.debug("ignore the argument");
                                                                                                 }
-                                                                                                args[i] = (Expression) stmt;
                                                                                         }
 
                                                                                         AST.Invocation invocation = new AST.Invocation(access, args, current.getLineCol());
                                                                                         parsedExps.push(invocation);
                                                                                 } else {
-                                                                                        // something like 3*(1+2)
                                                                                         if (statements.size() == 1) {
                                                                                                 Statement stmt = statements.get(0);
                                                                                                 if (stmt instanceof Expression) {
+                                                                                                        // something like 3*(1+2)
                                                                                                         parsedExps.push((Expression) stmt);
-                                                                                                } else if (stmt instanceof AST.Return) {
+                                                                                                } else {
+                                                                                                        // statement
                                                                                                         AST.Procedure procedure = new AST.Procedure(statements, startNode.getLineCol());
                                                                                                         parsedExps.push(procedure);
-                                                                                                } else {
-                                                                                                        throw new UnexpectedTokenException("return statement in closure", stmt.toString(), stmt.line_col());
                                                                                                 }
-                                                                                        } else if (statements.size() != 0) {
+                                                                                        } else {
                                                                                                 AST.Procedure procedure = new AST.Procedure(statements, startNode.getLineCol());
                                                                                                 parsedExps.push(procedure);
-                                                                                        } else {
-                                                                                                throw new UnexpectedTokenException("closure", startNode.getLineCol());
                                                                                         }
                                                                                 }
                                                                         } else {
-                                                                                throw new UnexpectedTokenException("arguments", startNode.toString(), startNode.getLineCol());
+                                                                                err.SyntaxException("statements between () should not be empty", startNode.getLineCol());
+                                                                                // ignore the ()
+                                                                                err.debug("ignore the ()");
                                                                         }
 
                                                                         nextNode(false); // should be ')'
@@ -1649,7 +1699,9 @@ public class Parser {
                                                                 }
                                                         }
                                                 } else {
-                                                        throw new UnexpectedTokenException(content, current.getLineCol());
+                                                        err.UnexpectedTokenException(content, current.getLineCol());
+                                                        err.debug("ignore the token");
+                                                        nextNode(true);
                                                 }
                                         } else if (current.getTokenType() == TokenType.VALID_NAME) {
                                                 if (isPackage((Element) current)) {
@@ -1670,7 +1722,9 @@ public class Parser {
 
                                                 }
                                         } else {
-                                                throw new UnexpectedTokenException(content, current.getLineCol());
+                                                err.UnexpectedTokenException(content, current.getLineCol());
+                                                err.debug("ignore the token");
+                                                nextNode(true);
                                         }
 
                                         break;
@@ -1679,7 +1733,9 @@ public class Parser {
 
                 } else if (current instanceof ElementStartNode) {
                         if (!expectingStartNode) {
-                                throw new UnexpectedNewLayerException(current.getLineCol());
+                                err.UnexpectedNewLayerException(current.getLineCol());
+                                err.debug("ignore the startNode");
+                                nextNode(true);
                         }
                 }
                 // else
@@ -1796,13 +1852,21 @@ public class Parser {
         private AST.MapExp parseExpMap(ElementStartNode startNode) throws SyntaxException {
                 List<Statement> stmts = parseElemStart(startNode, true, Collections.emptySet(), true);
                 if (stmts.size() % 2 != 0) {
-                        throw new SyntaxException("invalid map contents", startNode.getLineCol());
+                        err.SyntaxException("invalid map contents", startNode.getLineCol());
+                        return new AST.MapExp(new LinkedHashMap<>(), startNode.getLineCol());
                 }
 
                 boolean isKey = true;
                 LinkedHashMap<Expression, Expression> map = new LinkedHashMap<>();
                 Expression exp = null;
+
+                boolean jumpValue = false;
+
                 for (Statement s : stmts) {
+                        if (jumpValue) {
+                                jumpValue = false;
+                                continue;
+                        }
                         if (s instanceof Expression) {
                                 if (isKey) {
                                         exp = (Expression) s;
@@ -1811,7 +1875,13 @@ public class Parser {
                                 }
                                 isKey = !isKey;
                         } else {
-                                throw new UnexpectedTokenException("expression", s.toString(), s.line_col());
+                                err.UnexpectedTokenException("expression", s.toString(), s.line_col());
+                                err.debug("ignore this entry");
+                                if (isKey) {
+                                        jumpValue = true;
+                                } else {
+                                        isKey = true;
+                                }
                         }
                 }
                 return new AST.MapExp(map, startNode.getLineCol());
@@ -1846,7 +1916,8 @@ public class Parser {
                                 if (stmt instanceof Expression) {
                                         exps.add((Expression) stmt);
                                 } else {
-                                        throw new UnexpectedTokenException("index access expression", stmt.toString(), stmt.line_col());
+                                        err.UnexpectedTokenException("index access expression", stmt.toString(), stmt.line_col());
+                                        err.debug("ignore the statement");
                                 }
                         }
                         parsedExps.push(new AST.Index(e, exps, e.line_col()));
@@ -1886,7 +1957,8 @@ public class Parser {
                                 if (stmt instanceof Expression) {
                                         exps.add((Expression) stmt);
                                 } else {
-                                        throw new UnexpectedTokenException("array contents", stmt.toString(), stmt.line_col());
+                                        err.UnexpectedTokenException("array contents", stmt.toString(), stmt.line_col());
+                                        err.debug("ignore the statement");
                                 }
                         }
                         parsedExps.push(new AST.ArrayExp(exps, lineCol));
@@ -1925,7 +1997,8 @@ public class Parser {
 
                                                 set.add(access.name);
                                         } else {
-                                                throw new UnexpectedTokenException("variable", access.exp.toString(), access.exp.line_col());
+                                                err.UnexpectedTokenException("variable", access.exp.toString(), access.exp.line_col());
+                                                err.debug("ignore the variable");
                                         }
                                 } else if (statement instanceof VariableDef) {
                                         VariableDef v = (VariableDef) statement;
@@ -1933,7 +2006,8 @@ public class Parser {
 
                                         set.add(v.getName());
                                 } else {
-                                        throw new UnexpectedTokenException("variable", statement.toString(), statement.line_col());
+                                        err.UnexpectedTokenException("variable", statement.toString(), statement.line_col());
+                                        err.debug("ignore the variable");
                                 }
                         }
 
@@ -1959,9 +2033,16 @@ public class Parser {
                 parse_expression();
         }
 
+        /**
+         * check whether the parsedExps stack is empty
+         *
+         * @param tokenNode current token
+         * @throws UnexpectedTokenException compiling error
+         */
         private void parsedExpsNotEmpty(Node tokenNode) throws UnexpectedTokenException {
                 if (parsedExps.empty()) {
-                        throw new UnexpectedTokenException(tokenNode.toString(), tokenNode.getLineCol());
+                        err.UnexpectedTokenException(tokenNode.toString(), tokenNode.getLineCol());
+                        throw new ParseFail();
                 }
         }
 
@@ -2075,7 +2156,9 @@ public class Parser {
                         Element elem = (Element) current;
                         String s = elem.getContent();
                         if (!isName && !s.equals("::")) {
-                                throw new UnexpectedTokenException("::", s, elem.getLineCol());
+                                err.UnexpectedTokenException("::", s, elem.getLineCol());
+                                err.debug("let the string be '::'");
+                                s = "::";
                         }
                         isName = !isName;
                         sb.append(s);
@@ -2108,7 +2191,8 @@ public class Parser {
                 if (current instanceof Element) {
                         String name = ((Element) current).getContent();
                         if (current.getTokenType() != TokenType.VALID_NAME) {
-                                throw new UnexpectedTokenException("valid name", name, current.getLineCol());
+                                err.UnexpectedTokenException("valid name", name, current.getLineCol());
+                                err.debug("assume that the token is a valid name");
                         }
 
                         AST.Access access = new AST.Access(exp, name, lineCol);
@@ -2119,7 +2203,12 @@ public class Parser {
                                 parse_expression();
                         }
                 } else {
-                        throw new UnexpectedTokenException("valid name", current.toString(), current.getLineCol());
+                        err.UnexpectedTokenException("valid name", current.toString(), current.getLineCol());
+                        err.debug("ignore the statement");
+                        nextNode(true);
+                        if (parse_exp) {
+                                parse_expression();
+                        }
                 }
         }
 
@@ -2171,7 +2260,9 @@ public class Parser {
                                         }
                                 }
                         }
-                        throw new SyntaxException("annotations are not presented at correct position", lineCol);
+                        err.SyntaxException("annotations are not presented at correct position", lineCol);
+                        err.debug("clear the annotation set");
+                        annos.clear();
                 }
         }
 
@@ -2192,7 +2283,9 @@ public class Parser {
                                         }
                                 }
                         }
-                        throw new SyntaxException("modifiers are not in the right position", lineCol);
+                        err.SyntaxException("modifiers are not in the right position", lineCol);
+                        err.debug("clear the modifier set");
+                        modifiers.clear();
                 }
         }
 
@@ -2242,7 +2335,9 @@ public class Parser {
 
                         parsedExps.push(def);
                 } else {
-                        throw new UnexpectedTokenException("variable", exp.toString(), exp.line_col());
+                        err.UnexpectedTokenException("assignable variable", exp.toString(), exp.line_col());
+                        err.debug("ignore the assign statement");
+                        throw new ParseFail();
                 }
 
                 parse_expression();
@@ -2259,7 +2354,8 @@ public class Parser {
                 if (modifierIsCompatible(modifier, modifiers)) {
                         modifiers.add(new Modifier(modifier, current.getLineCol()));
                 } else {
-                        throw new UnexpectedTokenException("valid modifier", modifier, elem.getLineCol());
+                        err.UnexpectedTokenException("valid modifier", modifier, elem.getLineCol());
+                        err.debug("ignore this modifier");
                 }
         }
 
@@ -2273,7 +2369,8 @@ public class Parser {
                 if (!modifiers.isEmpty() || !annos.isEmpty()) {
                         // define
                         if (usedVarNames.contains(content)) {
-                                throw new DuplicateVariableNameException(content, current.getLineCol());
+                                err.DuplicateVariableNameException(content, current.getLineCol());
+                                err.debug("assume that it's an unused name");
                         }
 
                         VariableDef def = new VariableDef(content, modifiers, annos, current.getLineCol());
@@ -2299,6 +2396,9 @@ public class Parser {
          */
         private AST.Access parse_cls_for_type_spec() throws SyntaxException {
                 AST.Access a;
+
+                // parse array
+                // []Type or [][]Type ...
                 int arrayDepth = 0;
                 while (((Element) current).getContent().equals("[")) {
                         nextNode(false);
@@ -2331,7 +2431,9 @@ public class Parser {
 
                         a = (AST.Access) parsedExps.pop();
                 } else {
-                        throw new UnexpectedTokenException("type", ((Element) current).getContent(), current.getLineCol());
+                        err.UnexpectedTokenException("type", ((Element) current).getContent(), current.getLineCol());
+                        err.debug("assume that the token is Object");
+                        a = new AST.Access(null, "Object", LineCol.SYNTHETIC);
                 }
 
                 for (int i = 0; i < arrayDepth; ++i) {
@@ -2342,7 +2444,8 @@ public class Parser {
         }
 
         /**
-         * parse type specification (:)
+         * parse type specification (:)<br>
+         * the result would be VariableDef
          *
          * @throws SyntaxException compiling error
          */
@@ -2354,12 +2457,15 @@ public class Parser {
 
                 if (v instanceof AST.Access) {
                         if (((AST.Access) v).exp != null) {
-                                throw new UnexpectedTokenException("variable definition", v.toString(), v.line_col());
+                                err.UnexpectedTokenException("variable definition", v.toString(), v.line_col());
+                                err.debug("ignore current statement");
+                                throw new ParseFail();
                         }
 
                         String name = ((AST.Access) v).name;
                         if (usedVarNames.contains(name)) {
-                                throw new DuplicateVariableNameException(name, v.line_col());
+                                err.DuplicateVariableNameException(name, v.line_col());
+                                err.debug("assume that it's an unused name");
                         }
                         v = new VariableDef(name, modifiers, annos, v.line_col());
                         annos.clear();
@@ -2368,7 +2474,9 @@ public class Parser {
                 }
 
                 if (!(v instanceof VariableDef)) {
-                        throw new UnexpectedTokenException("variable", v.toString(), v.line_col());
+                        err.UnexpectedTokenException("variable", v.toString(), v.line_col());
+                        err.debug("ignore current statement");
+                        throw new ParseFail();
                 }
 
                 nextNode(false);
@@ -2376,7 +2484,9 @@ public class Parser {
                         AST.Access a = parse_cls_for_type_spec();
                         ((VariableDef) v).setType(a);
                 } else {
-                        throw new UnexpectedTokenException("type", current.toString(), current == null ? lineCol : current.getLineCol());
+                        err.UnexpectedTokenException("type", current.toString(), current == null ? lineCol : current.getLineCol());
+                        err.debug("ignore current statement");
+                        throw new ParseFail();
                 }
 
                 parsedExps.push(v);

@@ -2,35 +2,35 @@
 ; 1. pre processing
 ; 2. code
 
-; the pre processing part contains "define" command
+; the pre processing part contains "define" and "undef" command
 ; e.g.
 define "CREATE TABLE" as "class"
 ; then, all "create table" would be replaced with "class"
-; define must be the first word of the line
+; 'define' or 'undef' must be the first word of the line
 ; note that "define" is not a keyword of LessTyping, you can use this word freely in code part
 define "VARCHAR" as ": String"
 define "NUMBER" as ": int"
 ; there can be 0 or 1 or more defines in this part
 
 ; Note that define is a preprocessing command, it simply replaces [target] with [replacement]
-; use as few of define as you can, and remember to use undef when the define is useless
+; use as few defines as you can, and remember to use undef when the define is useless
 
 ; then there's code part
 ; code part starts with namespace declare
-# lt::demo
+package lt::demo
 ; declares that the whole file is in namespace "lt::demo"
-; namespace is java package
-; namespace can only appear once, and must at the first effective line of the file
-; (lines containing only comments or defines or undefs are not effective line)
+; namespaces are java packages
+; namespaces can only appear once, and must at the first effective line of the file
+; (lines containing only comments or defines or undefs are not effective lines)
 
 ; if there's no declaration of the namespace, the namespace would be ""
 
 ; then, there can be import commands
-#> java::awt::_               ; import all types from java::awt
-#> java::util::List           ; import java::util::List
-#> java::util::Collections._  ; import all static fields and methods from java::util::Collections
+import java::awt::_               ; import all types from java::awt
+import java::util::List           ; import java::util::List
+import java::util::Collections._  ; import all static fields and methods from java::util::Collections
 ; there can be 0 or 1 or more imports
-; and import can appear in any position in the root of the code part
+; and "import" can appear in any position in the root of the code part
 
 ; LessTyping allows class and interface definition
 ; if the file is *.lts, the rest part should be statements or expressions

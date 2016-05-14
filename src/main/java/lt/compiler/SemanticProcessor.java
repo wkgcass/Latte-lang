@@ -1,3 +1,27 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package lt.compiler;
 
 import lt.compiler.semantic.*;
@@ -150,36 +174,34 @@ public class SemanticProcessor {
                         }
 
                         // add package into import list at index 0
-                        imports.add(0, new Import(Collections.singletonList(new Import.ImportDetail(new AST.PackageRef(
+                        imports.add(0, new Import(new AST.PackageRef(
                                 pkg.endsWith(".")
                                         ? pkg.substring(0, pkg.length() - 1).replace(".", "::")
                                         : pkg
-                                , LineCol.SYNTHETIC), null, true)), LineCol.SYNTHETIC));
+                                , LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                         // add java.lang into import list
                         // java::lang::_
                         // lt::lang::_
                         // lt::lang::Utils._
-                        imports.add(new Import(Collections.singletonList(new Import.ImportDetail(new AST.PackageRef("java::lang", LineCol.SYNTHETIC), null, true)), LineCol.SYNTHETIC));
-                        imports.add(new Import(Collections.singletonList(new Import.ImportDetail(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true)), LineCol.SYNTHETIC));
-                        imports.add(new Import(Collections.singletonList(new Import.ImportDetail(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Utils", LineCol.SYNTHETIC), true)), LineCol.SYNTHETIC));
+                        imports.add(new Import(new AST.PackageRef("java::lang", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Utils", LineCol.SYNTHETIC), true, LineCol.SYNTHETIC));
 
                         fileNameToPackageName.put(fileName, pkg);
 
                         Set<String> importSimpleNames = new HashSet<>();
                         for (Import i : imports) {
-                                for (Import.ImportDetail detail : i.importDetails) {
-                                        if (detail.pkg == null) {
-                                                String className = getClassNameFromAccess(detail.access);
-                                                // check existence
-                                                if (!typeExists(className)) {
-                                                        throw new SyntaxException(className + " does not exist", i.line_col());
-                                                }
-                                                // simple fileName are the same
-                                                if (importSimpleNames.contains(detail.access.name)) {
-                                                        throw new SyntaxException("duplicate imports", i.line_col());
-                                                }
-                                                importSimpleNames.add(detail.access.name);
+                                if (i.pkg == null) {
+                                        String className = getClassNameFromAccess(i.access);
+                                        // check existence
+                                        if (!typeExists(className)) {
+                                                throw new SyntaxException(className + " does not exist", i.line_col());
                                         }
+                                        // simple fileName are the same
+                                        if (importSimpleNames.contains(i.access.name)) {
+                                                throw new SyntaxException("duplicate imports", i.line_col());
+                                        }
+                                        importSimpleNames.add(i.access.name);
                                 }
                         }
                         importSimpleNames.clear(); // release
@@ -721,6 +743,7 @@ public class SemanticProcessor {
                                                 constructorScope,
                                                 constructorToFillStatements.statements(),
                                                 constructorToFillStatements.exceptionTables(),
+                                                null, null,
                                                 true);
                                 }
 
@@ -745,6 +768,7 @@ public class SemanticProcessor {
                                                                 staticScope,
                                                                 sClassDef.staticStatements(),
                                                                 sClassDef.staticExceptionTable(),
+                                                                null, null,
                                                                 true);
                                                 }
                                         }
@@ -770,6 +794,7 @@ public class SemanticProcessor {
                                                 staticScope,
                                                 sInterfaceDef.staticStatements(),
                                                 sInterfaceDef.staticExceptionTable(),
+                                                null, null,
                                                 true);
                                 }
                         } else throw new IllegalArgumentException("wrong STypeDefType " + sTypeDef.getClass());
@@ -803,6 +828,7 @@ public class SemanticProcessor {
                                 scope,
                                 methodDef.statements(),
                                 methodDef.exceptionTables(),
+                                null, null,
                                 false);
                 }
         }
@@ -1053,16 +1079,27 @@ public class SemanticProcessor {
          * <li>{@link lt.compiler.syntactic.AST.Try} =&gt; a list of Instructions and some ExceptionTable</li>
          * <li>{@link lt.compiler.syntactic.AST.Synchronized} =&gt; {@link lt.compiler.semantic.Ins.MonitorEnter} and {@link lt.compiler.semantic.Ins.MonitorExit}</li>
          * <li>{@link MethodDef} =&gt; {@link #parseInnerMethod(MethodDef, SemanticScope)}</li>
+         * <li>{@link lt.compiler.syntactic.AST.Break =&gt; goto instruction}</li>
+         * <li>{@link lt.compiler.syntactic.AST.Continue =&gt; goto instruction}</li>
          * </ul>
          *
          * @param statement           instructions
          * @param scope               scope that contains local variables and local methods
          * @param instructions        currently parsing {@link SInvokable} object instructions
          * @param exceptionTable      the exception table (start,end,handle,type)
+         * @param breakIns            jump to this position when meets a break    (or null if it's not inside any loop)
+         * @param continueIns         jump to this position when meets a continue (or null if it's not inside any loop)
          * @param doNotParseMethodDef the methodDef should not be parsed( in this case, they should be outer methods instead of inner methods)
          * @throws SyntaxException compile error
          */
-        private void parseStatement(Statement statement, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions, List<ExceptionTable> exceptionTable, boolean doNotParseMethodDef) throws SyntaxException {
+        private void parseStatement(Statement statement,
+                                    STypeDef methodReturnType,
+                                    SemanticScope scope,
+                                    List<Instruction> instructions,
+                                    List<ExceptionTable> exceptionTable,
+                                    Ins.Nop breakIns,
+                                    Ins.Nop continueIns,
+                                    boolean doNotParseMethodDef) throws SyntaxException {
                 if (statement instanceof Expression) {
                         // expression
                         // required type is null , which means no required type
@@ -1074,7 +1111,8 @@ public class SemanticProcessor {
                         parseInstructionFromReturn((AST.Return) statement, methodReturnType, scope, instructions);
 
                 } else if (statement instanceof AST.If) {
-                        parseInstructionFromIf((AST.If) statement, methodReturnType, scope, instructions, exceptionTable);
+                        parseInstructionFromIf((AST.If) statement, methodReturnType, scope,
+                                instructions, exceptionTable, breakIns, continueIns);
                 } else if (statement instanceof AST.While) {
                         // while or do while
                         parseInstructionFromWhile((AST.While) statement, methodReturnType, scope, instructions, exceptionTable);
@@ -1096,12 +1134,23 @@ public class SemanticProcessor {
                         Ins.AThrow aThrow = new Ins.AThrow(throwable, statement.line_col());
                         instructions.add(aThrow);
                 } else if (statement instanceof AST.Try) {
-                        parseInstructionFromTry((AST.Try) statement, methodReturnType, scope, instructions, exceptionTable);
+                        parseInstructionFromTry((AST.Try) statement, methodReturnType, scope, instructions, exceptionTable, breakIns, continueIns);
                 } else if (statement instanceof AST.Synchronized) {
-                        parseInstructionFromSynchronized((AST.Synchronized) statement, methodReturnType, scope, instructions, exceptionTable);
+                        parseInstructionFromSynchronized((AST.Synchronized) statement,
+                                methodReturnType,
+                                scope,
+                                instructions,
+                                exceptionTable,
+                                breakIns, continueIns);
                 } else if (statement instanceof MethodDef) {
                         if (!doNotParseMethodDef)
                                 parseInnerMethod((MethodDef) statement, scope);
+                } else if (statement instanceof AST.Break) {
+                        if (breakIns == null) throw new SyntaxException("break should be inside a loop", statement.line_col());
+                        instructions.add(new Ins.Goto(breakIns));
+                } else if (statement instanceof AST.Continue) {
+                        if (continueIns == null) throw new SyntaxException("continue should be inside a loop", statement.line_col());
+                        instructions.add(new Ins.Goto(continueIns));
                 } else if (!(statement instanceof AST.StaticScope || statement instanceof AST.Pass)) {
                         throw new LtBug("unknown statement " + statement);
                 }
@@ -1132,7 +1181,7 @@ public class SemanticProcessor {
         /**
          * parse inner method<br>
          * the inner method name is automatically generated<br>
-         * method parameters would capture all existing local variables, ahead of params that the inner method requires<br>
+         * method parameters would capture all existing local variables. they are positioned ahead of params that the inner method requires<br>
          * e.g.<br>
          * <code>
          * outer()<br>
@@ -1290,14 +1339,17 @@ public class SemanticProcessor {
          * @param scope            current scope
          * @param instructions     instructions
          * @param exceptionTable   exception table
+         * @param breakIns         jump to this position when meets a break
+         * @param continueIns      jump to this position when meets a continue
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromSynchronized(
-                AST.Synchronized aSynchronized,
-                STypeDef methodReturnType,
-                SemanticScope scope,
-                List<Instruction> instructions,
-                List<ExceptionTable> exceptionTable) throws SyntaxException {
+        private void parseInstructionFromSynchronized(AST.Synchronized aSynchronized,
+                                                      STypeDef methodReturnType,
+                                                      SemanticScope scope,
+                                                      List<Instruction> instructions,
+                                                      List<ExceptionTable> exceptionTable,
+                                                      Ins.Nop breakIns,
+                                                      Ins.Nop continueIns) throws SyntaxException {
 
                 SemanticScope subScope = new SemanticScope(scope);
                 Stack<Ins.MonitorEnter> stack = new Stack<>();
@@ -1312,38 +1364,72 @@ public class SemanticProcessor {
                 // parse statements
                 List<Instruction> instructionList = new ArrayList<>();
                 for (Statement stmt : aSynchronized.statements) {
-                        parseStatement(stmt, methodReturnType, subScope, instructionList, exceptionTable, false);
+                        parseStatement(stmt, methodReturnType, subScope, instructionList, exceptionTable, breakIns, continueIns, false);
                 }
                 if (instructionList.size() == 0) instructionList.add(new Ins.Nop());
 
+                // build exit for return, continue and break
+
                 int returnCount = 0;
-                for (Instruction ins : instructionList) if (ins instanceof Ins.TReturn) ++returnCount;
-
-                List<Ins.MonitorExit> exits = new ArrayList<>(stack.size());
-                List<Ins.MonitorExit> exits2 = new ArrayList<>(stack.size());
-                List<List<Ins.MonitorExit>> listOfMonitorExits = new ArrayList<>();
-                for (int i = 0; i < returnCount; ++i) listOfMonitorExits.add(new ArrayList<>());
-
-                while (!stack.empty()) {
-                        Ins.MonitorEnter monitorEnter = stack.pop();
-                        exits.add(new Ins.MonitorExit(monitorEnter));
-                        exits2.add(new Ins.MonitorExit(monitorEnter));
-                        for (List<Ins.MonitorExit> list : listOfMonitorExits) {
-                                list.add(new Ins.MonitorExit(monitorEnter));
+                int continueCount = 0;
+                int breakCount = 0;
+                for (Instruction ins : instructionList) {
+                        if (ins instanceof Ins.TReturn) ++returnCount;
+                        else if (breakIns != null) {
+                                assert continueIns != null;
+                                if (ins instanceof Ins.Goto) {
+                                        if (((Ins.Goto) ins).gotoIns() == breakIns) ++breakCount;
+                                        else if (((Ins.Goto) ins).gotoIns() == continueIns) ++continueCount;
+                                }
                         }
                 }
 
+                List<Ins.MonitorExit> exitNormal = new ArrayList<>(stack.size());
+                List<Ins.MonitorExit> exitForExceptions = new ArrayList<>(stack.size());
+                List<List<Ins.MonitorExit>> exitForReturn = new ArrayList<>();
+                List<List<Ins.MonitorExit>> exitForBreak = new ArrayList<>();
+                List<List<Ins.MonitorExit>> exitForContinue = new ArrayList<>();
+                for (int i = 0; i < returnCount; ++i) exitForReturn.add(new ArrayList<>());
+                for (int i = 0; i < continueCount; ++i) exitForContinue.add(new ArrayList<>());
+                for (int i = 0; i < breakCount; ++i) exitForBreak.add(new ArrayList<>());
+
+                while (!stack.empty()) {
+                        Ins.MonitorEnter monitorEnter = stack.pop();
+                        exitNormal.add(new Ins.MonitorExit(monitorEnter));
+                        exitForExceptions.add(new Ins.MonitorExit(monitorEnter));
+                        for (List<Ins.MonitorExit> list : exitForReturn) list.add(new Ins.MonitorExit(monitorEnter));
+                        for (List<Ins.MonitorExit> list : exitForContinue) list.add(new Ins.MonitorExit(monitorEnter));
+                        for (List<Ins.MonitorExit> list : exitForBreak) list.add(new Ins.MonitorExit(monitorEnter));
+                }
+
+                // insert exit before return
                 returnCount = 0;
+                continueCount = 0;
+                breakCount = 0;
                 for (int i = 0; i < instructionList.size(); ++i) {
                         Instruction ins = instructionList.get(i);
 
                         if (ins instanceof Ins.TReturn) {
-                                i += insertInstructionsBeforeReturn(instructionList, i, listOfMonitorExits.get(returnCount++), subScope);
+                                i += insertInstructionsBeforeReturn(instructionList, i, exitForReturn.get(returnCount++), subScope);
+                        } else if (breakIns != null) {
+                                if (ins instanceof Ins.Goto) {
+                                        List<Ins.MonitorExit> exitList = null;
+                                        if (((Ins.Goto) ins).gotoIns() == breakIns) {
+                                                exitList = exitForBreak.get(breakCount++);
+                                        } else if (((Ins.Goto) ins).gotoIns() == continueIns) {
+                                                exitList = exitForContinue.get(continueCount++);
+                                        }
+
+                                        if (exitList != null) {
+                                                instructionList.addAll(i, exitList);
+                                                i += exitList.size();
+                                        }
+                                }
                         }
                 }
 
                 instructions.addAll(instructionList);
-                instructions.addAll(exits);
+                instructions.addAll(exitNormal);
 
                 // might occur an exception
                 LocalVariable localVariable = new LocalVariable(
@@ -1361,11 +1447,11 @@ public class SemanticProcessor {
                 Ins.Goto aGoto = new Ins.Goto(nop);
                 instructions.add(aGoto); // goto athrow
                 instructions.add(exStore); // astore
-                instructions.addAll(exits2);
+                instructions.addAll(exitForExceptions);
                 instructions.add(aThrow); // athrow
                 instructions.add(nop); // nop
 
-                ExceptionTable table = new ExceptionTable(instructionList.get(0), exits.get(0), exStore, null);
+                ExceptionTable table = new ExceptionTable(instructionList.get(0), exitNormal.get(0), exStore, null);
                 exceptionTable.add(table);
         }
 
@@ -1472,14 +1558,22 @@ public class SemanticProcessor {
          * @param scope            scope
          * @param instructions     instruction list
          * @param exceptionTable   exception table
+         * @param breakIns         jump to this position when meets a break
+         * @param continueIns      jump to this position when meets a continue
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromTry(AST.Try aTry, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions, List<ExceptionTable> exceptionTable) throws SyntaxException {
+        private void parseInstructionFromTry(AST.Try aTry,
+                                             STypeDef methodReturnType,
+                                             SemanticScope scope,
+                                             List<Instruction> instructions,
+                                             List<ExceptionTable> exceptionTable,
+                                             Ins.Nop breakIns,
+                                             Ins.Nop continueIns) throws SyntaxException {
                 // try ...
                 SemanticScope scopeA = new SemanticScope(scope);
                 List<Instruction> insA = new ArrayList<>(); // instructions in scope A
                 for (Statement stmt : aTry.statements) {
-                        parseStatement(stmt, methodReturnType, scopeA, insA, exceptionTable, false);
+                        parseStatement(stmt, methodReturnType, scopeA, insA, exceptionTable, breakIns, continueIns, false);
                 }
 
                 // record the start and end for exception table
@@ -1500,7 +1594,11 @@ public class SemanticProcessor {
                                 // start is already set
                                 // if it's return
                                 // put into map and set `start` to null
-                                if (i instanceof Ins.TReturn) {
+                                if (i instanceof Ins.TReturn
+                                        ||
+                                        (breakIns != null && i instanceof Ins.Goto && (((Ins.Goto) i).gotoIns() == breakIns
+                                                || ((Ins.Goto) i).gotoIns() == continueIns))
+                                        ) {
                                         startToEnd.put(start, insA.get(i1 - 1));
                                         start = null;
                                 }
@@ -1509,7 +1607,7 @@ public class SemanticProcessor {
                 // put last pair
                 if (start != null) startToEnd.put(start, insA.get(insA.size() - 1));
                 if (startToEnd.isEmpty() && insA.size() == 1) {
-                        assert insA.get(0) instanceof Ins.TReturn;
+                        // insA[0] is return / break / continue
                         insA.add(0, new Ins.Nop());
                         startToEnd.put(insA.get(0), insA.get(0));
                 }
@@ -1519,7 +1617,7 @@ public class SemanticProcessor {
                 // build normal finally (D1)
                 List<Instruction> normalFinally = new ArrayList<>();
                 for (Statement stmt : aTry.fin) {
-                        parseStatement(stmt, methodReturnType, new SemanticScope(scope), normalFinally, exceptionTable, false);
+                        parseStatement(stmt, methodReturnType, new SemanticScope(scope), normalFinally, exceptionTable, breakIns, continueIns, false);
                 }
                 if (normalFinally.isEmpty()) {
                         normalFinally.add(new Ins.Nop());
@@ -1544,11 +1642,13 @@ public class SemanticProcessor {
                 // fill the list
                 exceptionFinally.add(D2start);
                 for (Statement stmt : aTry.fin) {
-                        parseStatement(stmt, methodReturnType, exceptionFinallyScope, exceptionFinally, exceptionTable, false);
+                        parseStatement(stmt, methodReturnType, exceptionFinallyScope,
+                                exceptionFinally, exceptionTable, breakIns, continueIns, false);
                 }
                 exceptionFinally.add(aThrow);
 
-                // add D into every position before return in insA
+                // add D into every position before
+                // return, break, continue in insA
                 for (int i = 0; i < insA.size(); ++i) {
                         Instruction ins = insA.get(i);
                         if (ins instanceof Ins.TReturn) {
@@ -1556,11 +1656,24 @@ public class SemanticProcessor {
                                 for (Statement stmt : aTry.fin) {
                                         parseStatement(stmt, methodReturnType,
                                                 new SemanticScope(scopeA),
-                                                // it shouldn't be sub scope of A
-                                                // because in the code , it can't access A block values
-                                                list, exceptionTable, false);
+                                                list, exceptionTable, breakIns, continueIns, false);
                                 }
                                 i += insertInstructionsBeforeReturn(insA, i, list, scopeA);
+                        } else if (breakIns != null) {
+                                if (ins instanceof Ins.Goto) {
+                                        if (((Ins.Goto) ins).gotoIns() == breakIns
+                                                || ((Ins.Goto) ins).gotoIns() == continueIns) {
+
+                                                List<Instruction> list = new ArrayList<>();
+                                                for (Statement stmt : aTry.fin) {
+                                                        parseStatement(stmt, methodReturnType,
+                                                                new SemanticScope(scopeA),
+                                                                list, exceptionTable, breakIns, continueIns, false);
+                                                }
+                                                insA.addAll(i, list);
+                                                i += list.size();
+                                        }
+                                }
                         }
                 }
 
@@ -1579,11 +1692,11 @@ public class SemanticProcessor {
                                 Instruction i = insA.get(cursor);
                                 if (inclusive.equals(i)) {
                                         Instruction tmp = insA.get(++cursor);
-                                        if (tmp instanceof Ins.Goto) {
-                                                exclusive = tmp;
-                                        } else if (tmp instanceof Ins.TStore) {
+                                        if (tmp instanceof Ins.TStore) {
                                                 exclusive = insA.get(++cursor);
-                                        } else throw new LtBug("the instruction after should only be Goto or TStore");
+                                        } else {
+                                                exclusive = tmp;
+                                        }
                                         break;
                                 }
                         }
@@ -1622,7 +1735,8 @@ public class SemanticProcessor {
                 insCatch.add(storeUnwrapped);
 
                 for (Statement stmt : aTry.catchStatements) {
-                        parseStatement(stmt, methodReturnType, catchScope, insCatch, exceptionTable, false);
+                        parseStatement(stmt, methodReturnType, catchScope, insCatch,
+                                exceptionTable, breakIns, continueIns, false);
                 }
 
                 // record start to end for exception table
@@ -1640,8 +1754,11 @@ public class SemanticProcessor {
                                         catch_start = i;
                                 }
                         } else { // start is already recorded
-                                if (i instanceof Ins.TReturn) {
-                                        // i is return
+                                if (i instanceof Ins.TReturn
+                                        ||
+                                        (breakIns != null && i instanceof Ins.Goto && (((Ins.Goto) i).gotoIns() == breakIns
+                                                || ((Ins.Goto) i).gotoIns() == continueIns))
+                                        ) {
                                         catch_startToEnd.put(catch_start, insCatch.get(i1 - 1));
                                         catch_start = null;
                                 }
@@ -1650,15 +1767,31 @@ public class SemanticProcessor {
                 // record last pair
                 if (catch_start != null) catch_startToEnd.put(catch_start, insCatch.get(insCatch.size() - 1));
 
-                // check return and add finally
+                // add finally before every return, break and continue
                 for (int i = 0; i < insCatch.size(); ++i) {
                         Instruction ins = insCatch.get(i);
                         if (ins instanceof Ins.TReturn) {
                                 List<Instruction> list = new ArrayList<>();
                                 for (Statement stmt : aTry.fin) {
-                                        parseStatement(stmt, methodReturnType, new SemanticScope(catchScope), list, exceptionTable, false);
+                                        parseStatement(stmt, methodReturnType, new SemanticScope(catchScope),
+                                                list, exceptionTable, breakIns, continueIns, false);
                                 }
                                 i += insertInstructionsBeforeReturn(insCatch, i, list, catchScope);
+                        } else if (breakIns != null) {
+                                if (ins instanceof Ins.Goto) {
+                                        if (((Ins.Goto) ins).gotoIns() == breakIns
+                                                || ((Ins.Goto) ins).gotoIns() == continueIns) {
+
+                                                List<Instruction> list = new ArrayList<>();
+                                                for (Statement stmt : aTry.fin) {
+                                                        parseStatement(stmt, methodReturnType,
+                                                                new SemanticScope(catchScope),
+                                                                list, exceptionTable, breakIns, continueIns, false);
+                                                }
+                                                insCatch.addAll(i, list);
+                                                i += list.size();
+                                        }
+                                }
                         }
                 }
                 insCatch.add(new Ins.Goto(D1start)); // goto D1
@@ -1675,11 +1808,11 @@ public class SemanticProcessor {
                                 Instruction i = insCatch.get(cursor);
                                 if (i.equals(inclusive)) {
                                         Instruction tmp = insCatch.get(++cursor);
-                                        if (tmp instanceof Ins.Goto) {
-                                                exclusive = tmp;
-                                        } else if (tmp instanceof Ins.TStore) {
+                                        if (tmp instanceof Ins.TStore) {
                                                 exclusive = insCatch.get(++cursor);
-                                        } else throw new LtBug("the instruction after should only be Goto or TStore");
+                                        } else {
+                                                exclusive = tmp;
+                                        }
                                         break;
                                 }
                         }
@@ -1788,8 +1921,9 @@ public class SemanticProcessor {
          * aLoad
          * next
          * A
+         * noo --------- also known as continue position
          * goto here
-         * B
+         * B ----------- also known as break position
          * </pre>
          *
          * @param aFor             for
@@ -1830,14 +1964,18 @@ public class SemanticProcessor {
                 subScope.putLeftValue(aFor.name, newLocal);
                 Ins.TStore tStore1 = new Ins.TStore(newLocal, next, subScope, LineCol.SYNTHETIC);
                 instructions.add(tStore1); // name = it.next()
+
+                Ins.Nop nopForContinue = new Ins.Nop();
+
                 for (Statement stmt : aFor.body) {
                         parseStatement(
                                 stmt,
                                 methodReturnType,
                                 subScope,
                                 instructions,
-                                exceptionTable, false);
+                                exceptionTable, nop, nopForContinue, false);
                 }
+                instructions.add(nopForContinue);
                 instructions.add(new Ins.Goto(ifEq));
                 instructions.add(nop);
         }
@@ -1879,6 +2017,9 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         private void parseInstructionFromWhile(AST.While aWhile, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions, List<ExceptionTable> exceptionTable) throws SyntaxException {
+                Ins.Nop nopBreak = new Ins.Nop();
+                Ins.Nop nopContinue = new Ins.Nop();
+
                 List<Instruction> ins = new ArrayList<>();
                 for (Statement stmt : aWhile.statements) {
                         parseStatement(
@@ -1886,7 +2027,7 @@ public class SemanticProcessor {
                                 methodReturnType,
                                 scope,
                                 ins,
-                                exceptionTable, false);
+                                exceptionTable, nopBreak, nopContinue, false);
                 }
 
                 Value condition = parseValueFromExpression(aWhile.condition, BoolTypeDef.get(), scope);
@@ -1901,10 +2042,12 @@ public class SemanticProcessor {
                          * ==>
                          *
                          * A
+                         * nop --------- continue nop
                          * if B goto A
-                         * C
+                         * C ----------- break nop
                          */
                         instructions.addAll(ins); // A
+                        instructions.add(nopContinue);
                         // loop, if B goto A
                         if (ins.isEmpty()) {
                                 // A is empty then goto self
@@ -1916,6 +2059,7 @@ public class SemanticProcessor {
                                 Ins.IfNe ifNe = new Ins.IfNe(condition, ins.get(0), aWhile.line_col());
                                 instructions.add(ifNe);
                         }
+                        instructions.add(nopBreak);
                 } else {
                         /*
                          * while B
@@ -1926,17 +2070,18 @@ public class SemanticProcessor {
                          *
                          * if not B goto C
                          * A
+                         * nop ------------- continue nop
                          * goto while
-                         * C
+                         * C --------------- break nop
                          */
-                        Ins.Nop nop = new Ins.Nop(); // end of loop (C)
                         Ins.IfEq ifEq; // if B == 0 (false) goto C
-                        ifEq = new Ins.IfEq(condition, nop, aWhile.line_col());
+                        ifEq = new Ins.IfEq(condition, nopBreak, aWhile.line_col());
                         instructions.add(ifEq); // if not B goto C
 
                         instructions.addAll(ins); // A
+                        instructions.add(nopContinue);
                         instructions.add(new Ins.Goto(ifEq)); // goto while
-                        instructions.add(nop); // C
+                        instructions.add(nopBreak); // C
                 }
         }
 
@@ -1975,13 +2120,17 @@ public class SemanticProcessor {
          * @param scope            current scope
          * @param instructions     instruction list
          * @param exceptionTable   exception table
+         * @param breakIns         jump to this position when meets break
+         * @param continueIns      to this position when meets continue
          * @throws SyntaxException compile error
          */
         private void parseInstructionFromIf(AST.If anIf,
                                             STypeDef methodReturnType,
                                             SemanticScope scope,
                                             List<Instruction> instructions,
-                                            List<ExceptionTable> exceptionTable) throws SyntaxException {
+                                            List<ExceptionTable> exceptionTable,
+                                            Ins.Nop breakIns,
+                                            Ins.Nop continueIns) throws SyntaxException {
                 Ins.Nop nop = new Ins.Nop();
 
                 for (AST.If.IfPair ifPair : anIf.ifs) {
@@ -1995,7 +2144,7 @@ public class SemanticProcessor {
                                         methodReturnType,
                                         ifScope,
                                         ins,
-                                        exceptionTable, false);
+                                        exceptionTable, breakIns, continueIns, false);
                         }
 
                         if (ifPair.condition == null) {
@@ -2086,7 +2235,7 @@ public class SemanticProcessor {
          * parse assignment<br>
          * the rules are very simple, +=,-=,*=,/=,%= are converted to a=a+b/a-b/a*b/a/b/a%b<br>
          * the parsed result is filled into the given instruction list<br>
-         * it's NOT directly invoked in {@link #parseStatement(Statement, STypeDef, SemanticScope, List, List, boolean)}<br>
+         * it's NOT directly invoked in {@link #parseStatement(Statement, STypeDef, SemanticScope, List, List, lt.compiler.semantic.Ins.Nop, lt.compiler.semantic.Ins.Nop, boolean)}<br>
          * but in {@link #parseValueFromAssignment(AST.Assignment, SemanticScope)}<br>
          * the instructions should be {@link ValuePack} instruction list
          *
@@ -4239,19 +4388,17 @@ public class SemanticProcessor {
 
                                 // get from import static
                                 for (Import im : imports) {
-                                        for (Import.ImportDetail detail : im.importDetails) {
-                                                if (detail.importAll) {
-                                                        if (detail.pkg == null) {
-                                                                // import static
-                                                                f = findFieldFromTypeDef(
-                                                                        access.name,
-                                                                        getTypeWithAccess(detail.access, imports),
-                                                                        scope.type(),
-                                                                        FIND_MODE_STATIC,
-                                                                        true);
-                                                                if (null != f) {
-                                                                        return new Ins.GetStatic(f, access.line_col());
-                                                                }
+                                        if (im.importAll) {
+                                                if (im.pkg == null) {
+                                                        // import static
+                                                        f = findFieldFromTypeDef(
+                                                                access.name,
+                                                                getTypeWithAccess(im.access, imports),
+                                                                scope.type(),
+                                                                FIND_MODE_STATIC,
+                                                                true);
+                                                        if (null != f) {
+                                                                return new Ins.GetStatic(f, access.line_col());
                                                         }
                                                 }
                                         }
@@ -4526,145 +4673,146 @@ public class SemanticProcessor {
                 // undefined
                 if (v.type().fullName().equals("lt.lang.Undefined")) {
                         resultVal = v;
-                }
-                if (requiredType instanceof PrimitiveTypeDef) {
-                        // requiredType is primitive
-                        if (v.type() instanceof PrimitiveTypeDef) {
-                                if (v.type().equals(IntTypeDef.get())
-                                        || v.type().equals(ShortTypeDef.get())
-                                        || v.type().equals(ByteTypeDef.get())
-                                        || v.type().equals(CharTypeDef.get())) {
-
-                                        if (requiredType instanceof LongTypeDef) {
-                                                // int to long
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_LONG, lineCol);
-                                        } else if (requiredType instanceof FloatTypeDef) {
-                                                // int to float
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_FLOAT, lineCol);
-                                        } else if (requiredType instanceof DoubleTypeDef) {
-                                                // int to double
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_DOUBLE, lineCol);
-                                        } else if (requiredType instanceof BoolTypeDef) {
-                                                // throw new SyntaxException(fileName, "cannot cast from int/short/byte/char to boolean", line, column);
-                                                return castObjToPrimitive(
-                                                        BoolTypeDef.get(),
-                                                        boxPrimitive(
-                                                                v,
-                                                                lineCol),
-                                                        lineCol);
-                                        } else throw new LtBug("unknown primitive requiredType " + requiredType);
-                                } else if (v.type().equals(LongTypeDef.get())) {
-                                        if (requiredType instanceof IntTypeDef) {
-                                                // long to int
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
-                                        } else if (requiredType instanceof ShortTypeDef) {
-                                                // long to int and int to short
-                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
-                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
-                                        } else if (requiredType instanceof ByteTypeDef) {
-                                                // long to int and int to byte
-                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
-                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
-                                        } else if (requiredType instanceof CharTypeDef) {
-                                                // long to int and int to char
-                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
-                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
-                                        } else if (requiredType instanceof FloatTypeDef) {
-                                                // long to float
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_FLOAT, lineCol);
-                                        } else if (requiredType instanceof DoubleTypeDef) {
-                                                // long to double
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_DOUBLE, lineCol);
-                                        } else if (requiredType instanceof BoolTypeDef) {
-                                                // throw new SyntaxException(fileName, "cannot cast from long to boolean", line, column);
-                                                return castObjToPrimitive(
-                                                        BoolTypeDef.get(),
-                                                        boxPrimitive(
-                                                                v,
-                                                                lineCol),
-                                                        lineCol);
-                                        } else throw new LtBug("unknown primitive requiredType " + requiredType);
-                                } else if (v.type().equals(FloatTypeDef.get())) {
-                                        if (requiredType instanceof IntTypeDef) {
-                                                // float to int
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
-                                        } else if (requiredType instanceof ShortTypeDef) {
-                                                // float to int and int to short
-                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
-                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
-                                        } else if (requiredType instanceof ByteTypeDef) {
-                                                // float to int and int to byte
-                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
-                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
-                                        } else if (requiredType instanceof CharTypeDef) {
-                                                // float to int and int to char
-                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
-                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
-                                        } else if (requiredType instanceof LongTypeDef) {
-                                                // float to long
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_LONG, lineCol);
-                                        } else if (requiredType instanceof DoubleTypeDef) {
-                                                // float to double
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_DOUBLE, lineCol);
-                                        } else if (requiredType instanceof BoolTypeDef) {
-                                                // throw new SyntaxException(fileName, "cannot cast from float to boolean", line, column);
-                                                return castObjToPrimitive(
-                                                        BoolTypeDef.get(),
-                                                        boxPrimitive(
-                                                                v,
-                                                                lineCol),
-                                                        lineCol);
-                                        } else throw new LtBug("unknown primitive requiredType " + requiredType);
-                                } else if (v.type().equals(DoubleTypeDef.get())) {
-                                        if (requiredType instanceof IntTypeDef) {
-                                                // double to int
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
-                                        } else if (requiredType instanceof ShortTypeDef) {
-                                                // double to int and int to short
-                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
-                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
-                                        } else if (requiredType instanceof ByteTypeDef) {
-                                                // double to int and int to byte
-                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
-                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
-                                        } else if (requiredType instanceof CharTypeDef) {
-                                                // double to int and int to char
-                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
-                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
-                                        } else if (requiredType instanceof FloatTypeDef) {
-                                                // double to float
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_FLOAT, lineCol);
-                                        } else if (requiredType instanceof DoubleTypeDef) {
-                                                // double to long
-                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_LONG, lineCol);
-                                        } else if (requiredType instanceof BoolTypeDef) {
-                                                // throw new SyntaxException(fileName, "cannot cast from double to boolean", line, column);
-                                                return castObjToPrimitive(
-                                                        BoolTypeDef.get(),
-                                                        boxPrimitive(
-                                                                v,
-                                                                lineCol),
-                                                        lineCol);
-                                        } else throw new LtBug("unknown primitive requiredType " + requiredType);
-                                } else if (v.type().equals(BoolTypeDef.get())) {
-                                        throw new SyntaxException("cannot cast from boolean to other primitives", lineCol);
-                                } else throw new LtBug("unknown primitive value " + v);
-                        } else {
-                                // cast obj to primitive
-                                return castObjToPrimitive((PrimitiveTypeDef) requiredType, v, lineCol);
-                        }
                 } else {
-                        // requiredType is not primitive
-                        if (v.type() instanceof PrimitiveTypeDef) {
-                                // v is primitive
-                                v = boxPrimitive(v, lineCol);
-                                // box then check cast
-                                if (requiredType.isAssignableFrom(v.type())) return v;
-                                // invoke cast(Object)
-                                resultVal = castObjToObj(requiredType, v, lineCol);
+                        if (requiredType instanceof PrimitiveTypeDef) {
+                                // requiredType is primitive
+                                if (v.type() instanceof PrimitiveTypeDef) {
+                                        if (v.type().equals(IntTypeDef.get())
+                                                || v.type().equals(ShortTypeDef.get())
+                                                || v.type().equals(ByteTypeDef.get())
+                                                || v.type().equals(CharTypeDef.get())) {
+
+                                                if (requiredType instanceof LongTypeDef) {
+                                                        // int to long
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_LONG, lineCol);
+                                                } else if (requiredType instanceof FloatTypeDef) {
+                                                        // int to float
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_FLOAT, lineCol);
+                                                } else if (requiredType instanceof DoubleTypeDef) {
+                                                        // int to double
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_DOUBLE, lineCol);
+                                                } else if (requiredType instanceof BoolTypeDef) {
+                                                        // throw new SyntaxException(fileName, "cannot cast from int/short/byte/char to boolean", line, column);
+                                                        return castObjToPrimitive(
+                                                                BoolTypeDef.get(),
+                                                                boxPrimitive(
+                                                                        v,
+                                                                        lineCol),
+                                                                lineCol);
+                                                } else throw new LtBug("unknown primitive requiredType " + requiredType);
+                                        } else if (v.type().equals(LongTypeDef.get())) {
+                                                if (requiredType instanceof IntTypeDef) {
+                                                        // long to int
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
+                                                } else if (requiredType instanceof ShortTypeDef) {
+                                                        // long to int and int to short
+                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
+                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
+                                                } else if (requiredType instanceof ByteTypeDef) {
+                                                        // long to int and int to byte
+                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
+                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
+                                                } else if (requiredType instanceof CharTypeDef) {
+                                                        // long to int and int to char
+                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
+                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
+                                                } else if (requiredType instanceof FloatTypeDef) {
+                                                        // long to float
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_FLOAT, lineCol);
+                                                } else if (requiredType instanceof DoubleTypeDef) {
+                                                        // long to double
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_DOUBLE, lineCol);
+                                                } else if (requiredType instanceof BoolTypeDef) {
+                                                        // throw new SyntaxException(fileName, "cannot cast from long to boolean", line, column);
+                                                        return castObjToPrimitive(
+                                                                BoolTypeDef.get(),
+                                                                boxPrimitive(
+                                                                        v,
+                                                                        lineCol),
+                                                                lineCol);
+                                                } else throw new LtBug("unknown primitive requiredType " + requiredType);
+                                        } else if (v.type().equals(FloatTypeDef.get())) {
+                                                if (requiredType instanceof IntTypeDef) {
+                                                        // float to int
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
+                                                } else if (requiredType instanceof ShortTypeDef) {
+                                                        // float to int and int to short
+                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
+                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
+                                                } else if (requiredType instanceof ByteTypeDef) {
+                                                        // float to int and int to byte
+                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
+                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
+                                                } else if (requiredType instanceof CharTypeDef) {
+                                                        // float to int and int to char
+                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
+                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
+                                                } else if (requiredType instanceof LongTypeDef) {
+                                                        // float to long
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_LONG, lineCol);
+                                                } else if (requiredType instanceof DoubleTypeDef) {
+                                                        // float to double
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_DOUBLE, lineCol);
+                                                } else if (requiredType instanceof BoolTypeDef) {
+                                                        // throw new SyntaxException(fileName, "cannot cast from float to boolean", line, column);
+                                                        return castObjToPrimitive(
+                                                                BoolTypeDef.get(),
+                                                                boxPrimitive(
+                                                                        v,
+                                                                        lineCol),
+                                                                lineCol);
+                                                } else throw new LtBug("unknown primitive requiredType " + requiredType);
+                                        } else if (v.type().equals(DoubleTypeDef.get())) {
+                                                if (requiredType instanceof IntTypeDef) {
+                                                        // double to int
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
+                                                } else if (requiredType instanceof ShortTypeDef) {
+                                                        // double to int and int to short
+                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
+                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
+                                                } else if (requiredType instanceof ByteTypeDef) {
+                                                        // double to int and int to byte
+                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
+                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
+                                                } else if (requiredType instanceof CharTypeDef) {
+                                                        // double to int and int to char
+                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
+                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
+                                                } else if (requiredType instanceof FloatTypeDef) {
+                                                        // double to float
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_FLOAT, lineCol);
+                                                } else if (requiredType instanceof DoubleTypeDef) {
+                                                        // double to long
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_LONG, lineCol);
+                                                } else if (requiredType instanceof BoolTypeDef) {
+                                                        // throw new SyntaxException(fileName, "cannot cast from double to boolean", line, column);
+                                                        return castObjToPrimitive(
+                                                                BoolTypeDef.get(),
+                                                                boxPrimitive(
+                                                                        v,
+                                                                        lineCol),
+                                                                lineCol);
+                                                } else throw new LtBug("unknown primitive requiredType " + requiredType);
+                                        } else if (v.type().equals(BoolTypeDef.get())) {
+                                                throw new SyntaxException("cannot cast from boolean to other primitives", lineCol);
+                                        } else throw new LtBug("unknown primitive value " + v);
+                                } else {
+                                        // cast obj to primitive
+                                        return castObjToPrimitive((PrimitiveTypeDef) requiredType, v, lineCol);
+                                }
                         } else {
-                                // cast object to object
-                                resultVal = castObjToObj(requiredType, v, lineCol);
+                                // requiredType is not primitive
+                                if (v.type() instanceof PrimitiveTypeDef) {
+                                        // v is primitive
+                                        v = boxPrimitive(v, lineCol);
+                                        // box then check cast
+                                        if (requiredType.isAssignableFrom(v.type())) return v;
+                                        // invoke cast(Object)
+                                        resultVal = castObjToObj(requiredType, v, lineCol);
+                                } else {
+                                        // cast object to object
+                                        resultVal = castObjToObj(requiredType, v, lineCol);
+                                }
                         }
                 }
                 return new Ins.CheckCast(resultVal, requiredType, lineCol);
@@ -5072,22 +5220,20 @@ public class SemanticProcessor {
                         if (methodsToInvoke.isEmpty()) {
                                 // try to invoke from `import static`
                                 for (Import im : imports) {
-                                        for (Import.ImportDetail detail : im.importDetails) {
-                                                if (!methodsToInvoke.isEmpty()) break;
-                                                if (detail.importAll && detail.pkg == null) {
-                                                        // this import type is import static
+                                        if (!methodsToInvoke.isEmpty()) break;
+                                        if (im.importAll && im.pkg == null) {
+                                                // this import type is import static
 
-                                                        STypeDef type = getTypeWithAccess(detail.access, imports);
-                                                        findMethodFromTypeWithArguments(
-                                                                access.line_col(),
-                                                                access.name,
-                                                                argList,
-                                                                null,
-                                                                type,
-                                                                FIND_MODE_STATIC,
-                                                                methodsToInvoke,
-                                                                true);
-                                                }
+                                                STypeDef type = getTypeWithAccess(im.access, imports);
+                                                findMethodFromTypeWithArguments(
+                                                        access.line_col(),
+                                                        access.name,
+                                                        argList,
+                                                        null,
+                                                        type,
+                                                        FIND_MODE_STATIC,
+                                                        methodsToInvoke,
+                                                        true);
                                         }
                                 }
                         }
@@ -6636,22 +6782,18 @@ public class SemanticProcessor {
                 // first try to find those classes with the same simple name
                 // e.g. import java.util.List
                 for (Import i : imports) {
-                        for (Import.ImportDetail detail : i.importDetails) {
-                                if (!detail.importAll) {
-                                        if (detail.access.name.equals(name)) {
-                                                // use this name
-                                                return getClassNameFromAccess(detail.access);
-                                        }
+                        if (!i.importAll) {
+                                if (i.access.name.equals(name)) {
+                                        // use this name
+                                        return getClassNameFromAccess(i.access);
                                 }
                         }
                 }
                 // try to find `import all`
                 for (Import i : imports) {
-                        for (Import.ImportDetail detail : i.importDetails) {
-                                if (detail.importAll && detail.pkg != null) {
-                                        String possibleClassName = detail.pkg.pkg.replace("::", ".") + "." + name;
-                                        if (typeExists(possibleClassName)) return possibleClassName;
-                                }
+                        if (i.importAll && i.pkg != null) {
+                                String possibleClassName = i.pkg.pkg.replace("::", ".") + "." + name;
+                                if (typeExists(possibleClassName)) return possibleClassName;
                         }
                 }
 

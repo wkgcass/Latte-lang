@@ -1,3 +1,27 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package lt.compiler.semantic;
 
 import lt.compiler.LineCol;
@@ -153,6 +177,9 @@ public class Ins {
                 }
         }
 
+        /**
+         * cast the object to another type
+         */
         public static class CheckCast implements Instruction, Value {
                 private final Value theValueToCheck;
                 private final STypeDef requiredType;
@@ -270,7 +297,7 @@ public class Ins {
         }
 
         /**
-         * get non-static field
+         * get static field
          */
         public static class GetStatic implements Value, Instruction {
                 private final LineCol lineCol;
@@ -317,7 +344,7 @@ public class Ins {
         }
 
         /**
-         * if (i == 0)
+         * ifEq (i == 0)
          */
         public static class IfEq implements Instruction {
                 private final Value condition;
@@ -345,7 +372,7 @@ public class Ins {
         }
 
         /**
-         * ifne (if i != 0)
+         * ifNe (if i != 0)
          */
         public static class IfNe implements Instruction {
                 private final Value condition;
@@ -826,7 +853,7 @@ public class Ins {
         }
 
         /**
-         * put field
+         * put non-static field
          */
         public static class PutField implements Instruction {
                 private final Value value;
@@ -860,7 +887,7 @@ public class Ins {
         }
 
         /**
-         * put field
+         * put static field
          */
         public static class PutStatic implements Instruction {
                 private final Value value;

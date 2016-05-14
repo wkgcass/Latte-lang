@@ -1,3 +1,27 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package lt.compiler;
 
 import lt.compiler.lexical.*;
@@ -10,12 +34,22 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * transform plain <tt>LessTyping</tt> text into Token Tree<br>
- * <tt>LessTyping</tt> forces {@link lt.compiler.Scanner.Properties#_INDENTATION_} indents to differ program blocks<br>
- * so, instead of a stream of Tokens, the Scanner builds a Tree of Tokens to record different layers of the code<br>
- * the parse method returns the root token of the Token Tree<br>
- * the Tree starts with an ElementStartNode. Element represents useful info about the program.<br>
- * EndingNode means the previous node and the next node might be separated
+ * transform plain <tt>LessTyping</tt> text into Tokens<br>
+ * <tt>LessTyping</tt> forces {@link lt.compiler.Scanner.Properties#_INDENTATION_} indentation to differ program blocks<br>
+ * Instead of using <tt>INDENT</tt> and <tt>DEDENT</tt>, the Scanner uses a <b>Tree of Tokens</b> to record the indentation info.
+ * Consistent statements with the same indentation are in the same <b>Layer</b><br>
+ * <pre>
+ * class User
+ *     id : int
+ *     name : String
+ * </pre>
+ * <code>(id : int)</code> and <code>(name : String)</code> are in the same layer<br>
+ * the text would be considered as the following token tree<br>
+ * <pre>
+ * [class]-[User]-[|]-[END]
+ *                 |
+ *                 --[id]-[:]-[int]-[END]-[name]-[:]-[String]
+ * </pre>
  *
  * @see Node
  * @see Element
@@ -23,19 +57,40 @@ import java.util.stream.Collectors;
  * @see EndingNode
  */
 public class Scanner {
+        /**
+         * properties for the scanner
+         */
         public static class Properties {
+                /**
+                 * indentation
+                 */
                 public int _INDENTATION_ = 4;
+                /**
+                 * base of line numbers. all lines += _LINE_BASE_
+                 */
                 public int _LINE_BASE_ = 0;
+                /**
+                 * base of column numbers. all columns += _COLUMN_BASE_
+                 */
                 public int _COLUMN_BASE_ = 0;
         }
 
         /**
-         * create a new layer if it's the first element of a line<br>
-         * and only when indent becomes smaller than when entering the layer, the layer would finish
+         * the scanner creates a new <b>Layer</b> when meets these strings<br>
+         * e.g.<br>
+         * <pre>
+         * lambda = ()-> a+b
+         * </pre>
+         * would be considered as the following token tree<br>
+         * <pre>
+         * [lambda]-[=]-[(]-[)]-[->]-[|]-[END]
+         *                            |
+         *                            --[a]-[+]-[b]
+         * </pre>
          */
-        public final static Set<String> LAYER = new HashSet<>(Arrays.asList("#>", "#", "->"));
+        public final static Set<String> LAYER = new HashSet<>(Collections.singletonList("->"));
         /**
-         * split into 2 tokens (the chars already read when meeting these words would be one token) when meet these words
+         * the input should be split when meets these tokens
          */
         public final static Set<String> SPLIT_X = new HashSet<>(Arrays.asList(
                 ".", // class positioning or method access
@@ -56,35 +111,50 @@ public class Scanner {
                 "..." // pass
         ));
         /**
-         * string start/end
+         * symbols that let the scanner know the following input should be scanned as a string<br>
+         * a string starts with one of these symbols and ends with the same symbol.
          */
         public final static Set<String> STRING = new HashSet<>(Arrays.asList("\"", "'", "`"));
+        /**
+         * the escape character.
+         */
         public static final String ESCAPE = "\\";
         /**
-         * don't record these, just consider as a simple word to split words
+         * these tokens split the input, but them themselves won't be recorded into the token tree. e.g.<br>
+         * <pre>
+         * list add 1
+         * </pre>
+         * the spaces split the input, but they won't be recorded.
          */
         public final static Set<String> NO_RECORD = new HashSet<>(Collections.singletonList(" "));
         /**
-         * the str is considered as ending text, append an EndingNode
+         * the str is considered as ending text. Append an EndingNode to the token tree
          */
         public static final String ENDING = ",";
         /**
-         * comment, strings behind these are ignored
+         * comment, strings after the token are ignored
          */
         public static final String COMMENT = ";";
         /**
-         * create a new layer at 'key' and the layer finishes at 'value'<br>
-         * the pair key and value should be only one key
+         * the scanner creates a new layer when meets a <tt>key</tt> and the layer finishes at corresponding <tt>value</tt><br>
+         * <pre>
+         * map = {'name':'cass'}
+         * </pre>
+         * would be considered as the following token tree<br>
+         * <pre>
+         * [map]-[=]-[{]-[|]-[}]-[END]
+         *                |
+         *                --['name']-[:]-['cass']
+         * </pre>
          */
         public final static Map<String, String> PAIR = new HashMap<>();
         /**
-         * split when meeting these<br>
-         * strings are checked before anything else
+         * the input should be split when meets these tokens
          */
         public final static List<String> SPLIT;
 
         static {
-                PAIR.put("(", ")"); // arguments
+                PAIR.put("(", ")"); // arguments/procedures/expressions
                 PAIR.put("{", "}"); // map
                 PAIR.put("[", "]"); // array[index]
 
@@ -98,6 +168,7 @@ public class Scanner {
                 set.addAll(PAIR.keySet());
                 set.addAll(PAIR.values());
 
+                // the longest string is considered first
                 SPLIT = set.stream().sorted((a, b) -> b.length() - a.length()).collect(Collectors.toList());
                 SPLIT.addAll(0, STRING);
         }
@@ -127,15 +198,17 @@ public class Scanner {
         }
 
         /**
-         * parse the strings from the reader<br>
-         * the method will create an Args object as context of the parsing process.<br>
-         * then create a new ElementStartNode<br>
-         * then invoke {@link Scanner#scan(Args)} to parse text to node of the tree<br>
-         * after the parsing process finishes, a check for useless EndingNodes and number literals will be invoked<br>
-         * finally the root node {@link ElementStartNode} would be returned
+         * scan the inputs from the {@link #reader} and build a <b>token tree</b><br>
+         * <ol>
+         * <li>create an Args object as context of the parsing process.</li>
+         * <li>create a new {@link ElementStartNode} as the root node</li>
+         * <li>then invoke {@link Scanner#scan(Args)} to scan the inputs</li>
+         * <li>after the parsing process finishes, a check for useless {@link EndingNode} and number literals will be invoked ({@link #finalCheck(ElementStartNode)})</li>
+         * <li>finally the root node would be returned</li>
+         * </ol>
          *
-         * @return parsed result
-         * @throws IOException     exceptions during reading chars from reader
+         * @return the root node
+         * @throws IOException     exceptions during reading lines from reader
          * @throws SyntaxException syntax exceptions, including {@link SyntaxException}, {@link UnexpectedTokenException}, {@link IllegalIndentationException}
          * @see Args
          * @see #scan(Args)
@@ -160,8 +233,7 @@ public class Scanner {
         /**
          * get string for pre processing
          *
-         * @param line           the string start with blank and {@link #STRING} character<br>
-         *                       (start with 0, 1 or more spaces and {@link #STRING} char)
+         * @param line           the string starts with 0, 1 or more spaces and followed by a {@link #STRING} character
          * @param args           args
          * @param originalString the original line
          * @param command        command (define|undef)
@@ -222,10 +294,12 @@ public class Scanner {
         /**
          * <ol>
          * <li>read a line from the {@link #reader}</li>
-         * <li>check indent</li>
-         * <li>check layer:indent = lastLayerIndent + {@link lt.compiler.Scanner.Properties#_INDENTATION_} means start a new startNode. indent < lastLayerIndent means it should resume to upper layers</li>
-         * <li>invoke {@link #scan(String, Args)}</li>
-         * <li>append {@link EndingNode}</li>
+         * <li>check indentation</li>
+         * <li>check layer => if indent = lastLayerIndent + {@link lt.compiler.Scanner.Properties#_INDENTATION_}, then start a new layer.
+         * elseif indent < lastLayerIndent then it should go back to upper layers<br>
+         * </li>
+         * <li>invoke {@link #scan(String, Args)} to scan the current line</li>
+         * <li>append an {@link EndingNode}</li>
          * </ol>
          *
          * @param args args context
@@ -472,10 +546,10 @@ public class Scanner {
         }
 
         /**
-         * when the given line is not empty, do parsing.<br>
+         * when the given line is not empty, do scanning.<br>
          * <ol>
          * <li>check whether the line contains tokens in {@link #SPLIT}<br>
-         * get the most front token, if several tokens are at the same position, then choose the string literal, then choose the longest one</li>
+         * get the most front token, if several tokens are at the same position, then choose the longest one</li>
          * <li>if the token not found, consider the whole line as one element and append to previous node</li>
          * <li>else</li>
          * <li>record text before the token as an element and do appending</li>
@@ -489,7 +563,23 @@ public class Scanner {
          * <li>{@link #PAIR}: for keys, it will start a new layer. for values, it will end the layer created by the key</li>
          * </ul>
          * </li>
-         * </ol>
+         * </ol><br>
+         * here's an example of how the method works<br>
+         * given the following input:<br>
+         * <pre>
+         * val map={'name':'cass'}
+         * </pre>
+         * <ol>
+         * <li>the most front and longest token is ' ', and ' ' is in {@link #NO_RECORD} ::: <code>val/map={'name':'cass'}</code></li>
+         * <li>the most front and longest token is '=' ::: <code>val/map/=/{'name':'cass'}</code></li>
+         * <li>the most front and longest token is '{', and '{' is a key of {@link #PAIR} ::: <code>val/map/=/{/(LAYER-START/'name':'cass'})</code></li>
+         * <li>the most front and longest token is "'", and "'" is in {@link #STRING} ::: <code>val/map/=/{/(LAYER-START/'name'/:'cass'})</code></li>
+         * <li>the most front and longest token is ':' ::: <code>val/map/=/{/(LAYER-START/'name'/:/'cass'})</code></li>
+         * <li>the most front and longest token is "'", and "'" is in {@link #STRING} ::: <code>val/map/=/{/(LAYER-START/'name'/:/'cass'/})</code></li>
+         * <li>the most front and longest token is "}", and '}' is a value of {@link #PAIR} ::: <code>val/map/=/{/(LAYER-START/'name'/:/'cass')}</code></li>
+         * </ol><br>
+         * the result is <code>val/map/=/{/(LAYER-START/'name'/:/'cass')}</code><br>
+         * set a breakpoint in the method and focus on variable <tt>line</tt>, you will get exactly the same intermediate results
          *
          * @param line line to parse
          * @param args args context
@@ -600,7 +690,7 @@ public class Scanner {
                                         err.SyntaxException(
                                                 "indentation of " + startNode.next() + " should be " + startNode.getIndent(),
                                                 startNode.next().getLineCol());
-                                        // fill the LinkedNode with all nodes that are next to the startNode
+                                        // fill the LinkedNode with all nodes after the startNode
                                         Node n = startNode.next();
                                         n.setPrevious(null);
                                         startNode.setNext(null);
@@ -637,6 +727,13 @@ public class Scanner {
                 }
         }
 
+        /**
+         * pop one or more nodes from {@link Args#startNodeStack}, the last popped node's indentation should be the same as required indent
+         *
+         * @param args   args context
+         * @param indent required indentation
+         * @throws UnexpectedTokenException compiling error
+         */
         private void redirectToStartNodeByIndent(Args args, int indent) throws UnexpectedTokenException {
                 if (args.startNodeStack.empty()) {
                         throw new LtBug("this should never happen");
@@ -658,6 +755,11 @@ public class Scanner {
                 }
         }
 
+        /**
+         * create an {@link ElementStartNode}
+         *
+         * @param args args context
+         */
         private void createStartNode(Args args) {
                 ElementStartNode elementStartNode = new ElementStartNode(args, args.startNodeStack.lastElement().getIndent() + properties._INDENTATION_);
                 args.previous = null;
@@ -686,8 +788,8 @@ public class Scanner {
 
         /**
          * remove useless EndingNode and useless StartNode <br>
-         * and join double literal<br>
-         * and mark those valid name and remove `` from the names
+         * join double literal<br>
+         * remove `` from the valid names
          *
          * @param root root node
          */

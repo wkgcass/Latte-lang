@@ -24,9 +24,9 @@ function common_navs() {
             link: "syntax.html"
         },
         {
-            name: "文档",
+            name: "示例",
             active: false,
-            link: "javadoc/index.html"
+            link: "example.html"
         },
         {
             name: "开发",
