@@ -7,6 +7,8 @@ $(document).ready(function () {
         $scope.navs = common_navs();
         $scope.navs[5].active = true;
 
+        $scope.git_repo = common_git_repo();
+
         $scope.src_code = {
             title: "源代码结构",
             descr: "LessTyping采用标准的Maven目录结构"

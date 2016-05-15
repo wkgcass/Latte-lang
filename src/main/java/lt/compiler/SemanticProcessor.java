@@ -1465,7 +1465,10 @@ public class SemanticProcessor {
          * @param scope        scope
          * @return the cursor should += this return value
          */
-        private int insertInstructionsBeforeReturn(List<Instruction> instructions, int returnIndex, List<? extends Instruction> toInsert, SemanticScope scope) {
+        private int insertInstructionsBeforeReturn(List<Instruction> instructions,
+                                                   int returnIndex,
+                                                   List<? extends Instruction> toInsert,
+                                                   SemanticScope scope) throws SyntaxException {
                 Ins.TReturn tReturn = (Ins.TReturn) instructions.remove(returnIndex); // get return
                 Value returnValue = tReturn.value();
                 if (returnValue != null) {
@@ -2389,7 +2392,7 @@ public class SemanticProcessor {
                                         assignTo.type(),
                                         assignFrom,
                                         assignment.line_col()),
-                                scope, ((Ins.TLoad) assignTo).line_col()));
+                                scope, assignment.line_col()));
                 } else if (assignTo instanceof Ins.InvokeStatic) {
                         // assignTo should be lt.lang.Lang.getField(o,name)
                         // which means
@@ -2401,7 +2404,7 @@ public class SemanticProcessor {
                                                 // dynamically get field
                                                 // invoke lt.lang.Lang.putField(o,name,value)
                                                 SMethodDef putField = getLang_putField();
-                                                Ins.InvokeStatic invoke = new Ins.InvokeStatic(putField, ((Ins.InvokeStatic) assignTo).line_col());
+                                                Ins.InvokeStatic invoke = new Ins.InvokeStatic(putField, assignment.line_col());
                                                 invoke.arguments().add(invokeStatic.arguments().get(0));
                                                 invoke.arguments().add(invokeStatic.arguments().get(1));
                                                 invoke.arguments().add(assignFrom);
@@ -5930,6 +5933,21 @@ public class SemanticProcessor {
                 } else throw new IllegalArgumentException("cannot parse " + o + " into Value");
         }
 
+        /**
+         * check whether the overridden method is modified with final
+         *
+         * @param method           method in current type
+         * @param overriddenMethod method in super class/interface
+         * @throws SyntaxException compiling error
+         */
+        private void checkFinalAndOverride(SMethodDef method, SMethodDef overriddenMethod) throws SyntaxException {
+                if (overriddenMethod.modifiers().contains(SModifier.FINAL))
+                        throw new SyntaxException(overriddenMethod + " cannot be overridden", method.line_col());
+
+                overriddenMethod.overridden().add(method);
+                method.overRide().add(overriddenMethod);
+        }
+
         private Set<STypeDef> typesAlreadyDoneOverrideCheck = new HashSet<>();
 
         /**
@@ -5972,11 +5990,12 @@ public class SemanticProcessor {
                                                 SInterfaceDef i = interfaceDefs.remove();
                                                 overriddenMethod = findMethodWithSameSignature(method, i.methods());
                                                 if (overriddenMethod != null) {
-                                                        overriddenMethod.overridden().add(method);
-                                                        method.overRide().add(overriddenMethod);
+                                                        checkFinalAndOverride(method, overriddenMethod);
                                                 }
                                                 interfaceDefs.addAll(i.superInterfaces());
                                         }
+                                } else {
+                                        checkFinalAndOverride(method, overriddenMethod);
                                 }
                         }
                 } else if (sTypeDef instanceof SInterfaceDef) {
@@ -5989,14 +6008,13 @@ public class SemanticProcessor {
                                         SInterfaceDef in = q.remove();
                                         SMethodDef m = findMethodWithSameSignature(method, in.methods());
                                         if (m != null) {
-                                                method.overRide().add(m);
-                                                m.overridden().add(method);
+                                                checkFinalAndOverride(method, m);
                                         }
                                         q.addAll(in.superInterfaces());
                                 }
                         }
                 } else {
-                        throw new IllegalArgumentException("wrong STypeDefType " + sTypeDef.getClass());
+                        throw new LtBug("wrong STypeDefType " + sTypeDef.getClass());
                 }
         }
 

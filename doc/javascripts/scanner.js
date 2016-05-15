@@ -155,7 +155,7 @@ var javaKeys = ["abstract", "assert", "boolean", "break", "byte", "case",
     "private", "protected", "public", "return", "short", "static",
     "strictfp", "throw", "try", "while"];
 
-var keys = ["is", "not", "bool", "yes", "no", "type", "as", "undefined", "in", "elseif", "package", "import"];
+var keys = ["is", "not", "bool", "yes", "no", "type", "as", "undefined", "in", "elseif", "package", "import", "break", "continue"];
 
 var modifiers = ["pub", "pro", "pri", "pkg",
     "abs", "val", "native", "sync", "transient", "volatile", "strictfp",

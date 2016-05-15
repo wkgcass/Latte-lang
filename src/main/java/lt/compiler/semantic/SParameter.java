@@ -63,6 +63,15 @@ public class SParameter implements LeftValue, SAnnotationPresentable {
         }
 
         @Override
+        public boolean alreadyAssigned() {
+                return true;
+        }
+
+        @Override
+        public void assign() {
+        }
+
+        @Override
         public List<SAnno> annos() {
                 return annos;
         }

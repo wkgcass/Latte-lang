@@ -26,6 +26,7 @@ package lt.compiler.semantic;
 
 import lt.compiler.LineCol;
 import lt.compiler.SemanticScope;
+import lt.compiler.SyntaxException;
 import lt.compiler.semantic.builtin.*;
 
 import java.util.ArrayList;
@@ -861,11 +862,15 @@ public class Ins {
                 private final Value obj;
                 private final LineCol lineCol;
 
-                public PutField(SFieldDef field, Value obj, Value value, LineCol lineCol) {
+                public PutField(SFieldDef field, Value obj, Value value, LineCol lineCol) throws SyntaxException {
+                        if (field.alreadyAssigned() && !field.canChange()) throw new SyntaxException(field + " cannot be assigned", lineCol);
+
                         this.field = field;
                         this.obj = obj;
                         this.value = value;
                         this.lineCol = lineCol;
+
+                        field.assign();
                 }
 
                 public Value value() {
@@ -894,10 +899,14 @@ public class Ins {
                 private final SFieldDef field;
                 private final LineCol lineCol;
 
-                public PutStatic(SFieldDef field, Value value, LineCol lineCol) {
+                public PutStatic(SFieldDef field, Value value, LineCol lineCol) throws SyntaxException {
+                        if (field.alreadyAssigned() && !field.canChange()) throw new SyntaxException(field + " cannot be assigned", lineCol);
+
                         this.field = field;
                         this.value = value;
                         this.lineCol = lineCol;
+
+                        field.assign();
                 }
 
                 public Value value() {
@@ -1149,7 +1158,9 @@ public class Ins {
                 private final LineCol lineCol;
                 private final int index;
 
-                public TStore(LeftValue leftValue, Value newValue, SemanticScope scope, LineCol lineCol) {
+                public TStore(LeftValue leftValue, Value newValue, SemanticScope scope, LineCol lineCol) throws SyntaxException {
+                        if (leftValue.alreadyAssigned() && !leftValue.canChange()) throw new SyntaxException(leftValue + " cannot be assigned", lineCol);
+
                         this.leftValue = leftValue;
                         this.lineCol = lineCol;
                         this.newValue = newValue;
@@ -1167,6 +1178,8 @@ public class Ins {
                                 mode = Astore;
 
                         index = scope.getIndex(leftValue);
+
+                        leftValue.assign();
                 }
 
                 @Override

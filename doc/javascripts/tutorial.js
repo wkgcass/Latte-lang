@@ -7,6 +7,8 @@ $(document).ready(function () {
         $scope.navs = common_navs();
         $scope.navs[2].active = true;
 
+        $scope.git_repo = common_git_repo();
+
         $scope.descr = "LessTyping是一种JVM语言, 它与Java有许多相似之处. 这里给出LessTyping与Java相同语义的比较";
 
         function getLessTypingHtml(str) {

@@ -32,6 +32,7 @@ import lt.compiler.LineCol;
 public class SFieldDef extends SMember implements LeftValue {
         private String name;
         private STypeDef type;
+        private boolean alreadyAssigned = false;
 
         public SFieldDef(LineCol lineCol) {
                 super(lineCol);
@@ -55,7 +56,27 @@ public class SFieldDef extends SMember implements LeftValue {
         }
 
         @Override
+        public boolean alreadyAssigned() {
+                return alreadyAssigned;
+        }
+
+        @Override
+        public void assign() {
+                alreadyAssigned = true;
+        }
+
+        @Override
         public STypeDef type() {
                 return type;
+        }
+
+        @Override
+        public String toString() {
+                StringBuilder sb = new StringBuilder();
+                for (SModifier mod : modifiers()) {
+                        sb.append(mod.toString().toLowerCase()).append(" ");
+                }
+                sb.append(name()).append(" : ").append(type().fullName());
+                return sb.toString();
         }
 }

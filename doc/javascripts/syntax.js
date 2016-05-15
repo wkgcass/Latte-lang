@@ -7,6 +7,8 @@ $(document).ready(function () {
         $scope.navs = common_navs();
         $scope.navs[3].active = true;
 
+        $scope.git_repo = common_git_repo();
+
         files = {};
         function getLtFile(name) {
             $.ajax({

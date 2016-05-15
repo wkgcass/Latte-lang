@@ -2432,4 +2432,55 @@ public class TestSemantic {
                 assertTrue(v instanceof Ins.GetClass);
                 assertEquals(classDef, ((Ins.GetClass) v).targetType());
         }
+
+        @Test
+        public void testAssignValFieldFail() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    val i=1\n" +
+                        "    i=2");
+                try {
+                        parse(map);
+                        fail();
+                } catch (SyntaxException e) {
+                        assertEquals(4, e.lineCol.line);
+                        assertEquals(5, e.lineCol.column);
+                }
+        }
+
+        @Test
+        public void testAssignValSParamFail() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A(val i)\n" +
+                        "    i=2");
+                try {
+                        parse(map);
+                        fail();
+                } catch (SyntaxException e) {
+                        assertEquals(3, e.lineCol.line);
+                        assertEquals(6, e.lineCol.column);
+                }
+        }
+
+        @Test
+        public void testAssignValLocalFail() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    method()\n" +
+                        "        val i=2\n" +
+                        "        i=1");
+                try {
+                        parse(map);
+                        fail();
+                } catch (SyntaxException e) {
+                        assertEquals(5, e.lineCol.line);
+                        assertEquals(10, e.lineCol.column);
+                }
+        }
 }

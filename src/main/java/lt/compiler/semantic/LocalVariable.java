@@ -31,6 +31,8 @@ public class LocalVariable implements LeftValue {
         private final boolean canChange;
         private final STypeDef type;
 
+        private boolean alreadyAssigned = false;
+
         public LocalVariable(STypeDef type, boolean canChange) {
                 this.type = type;
                 this.canChange = canChange;
@@ -42,7 +44,26 @@ public class LocalVariable implements LeftValue {
         }
 
         @Override
+        public boolean alreadyAssigned() {
+                return alreadyAssigned;
+        }
+
+        @Override
+        public void assign() {
+                alreadyAssigned = true;
+        }
+
+        @Override
         public STypeDef type() {
                 return type;
+        }
+
+        @Override
+        public String toString() {
+                return "LocalVariable{" +
+                        "alreadyAssigned=" + alreadyAssigned +
+                        ", canChange=" + canChange +
+                        ", type=" + type +
+                        '}';
         }
 }

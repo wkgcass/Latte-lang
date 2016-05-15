@@ -28,5 +28,22 @@ package lt.compiler.semantic;
  * left value
  */
 public interface LeftValue extends Value {
+        /**
+         * whether this value is a final value (`val` in LessTyping)
+         *
+         * @return true/false
+         */
         boolean canChange();
+
+        /**
+         * check whether the value is already assigned
+         *
+         * @return true/false
+         */
+        boolean alreadyAssigned();
+
+        /**
+         * assign the value, change <tt>alreadyAssigned</tt> state to true
+         */
+        void assign();
 }

@@ -7,6 +7,8 @@ $(document).ready(function () {
         $scope.navs = common_navs();
         $scope.navs[1].active = true;
 
+        $scope.git_repo = common_git_repo();
+
         $scope.source_code = {
             title: "源代码",
             contents: [
