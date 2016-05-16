@@ -18,7 +18,7 @@ var SPLIT_X = [
     "..." // pass
 ];
 var STRING = ["\"", "'", "`"];
-var ESCAPE = "\"";
+var ESCAPE = "\\";
 var NO_RECORD = [" "];
 var ENDING = ",";
 var COMMENT = ";";
@@ -608,7 +608,7 @@ function Scanner(filename, input, config) {
                 var lastIndex = minIndex;
                 while (true) {
                     index = line.indexOf(token, lastIndex + 1);
-                    if (line.length <= 1 || index == -1)
+                    if (index == -1)
                         throw SyntaxException("end of string not found", args.generateLineCol());
                     var c = line[index - 1];
                     if (ESCAPE != c) {

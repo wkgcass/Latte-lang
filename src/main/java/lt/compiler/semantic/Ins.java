@@ -1060,7 +1060,7 @@ public class Ins {
                 private final int mode;
                 private final int index;
 
-                public TLoad(LeftValue value, SemanticScope scope, LineCol lineCol) {
+                public TLoad(LeftValue value, int index, LineCol lineCol) {
                         this.value = value;
                         this.lineCol = lineCol;
 
@@ -1077,7 +1077,11 @@ public class Ins {
                         } else
                                 mode = Aload;
 
-                        index = scope.getIndex(value);
+                        this.index = index;
+                }
+
+                public TLoad(LeftValue value, SemanticScope scope, LineCol lineCol) {
+                        this(value, scope.getIndex(value), lineCol);
                 }
 
                 @Override
@@ -1118,9 +1122,21 @@ public class Ins {
                 private final int returnIns;
                 private final LineCol lineCol;
 
-                public TReturn(Value value, int returnIns, LineCol lineCol) {
+                public TReturn(Value value, LineCol lineCol) {
                         this.value = value;
-                        this.returnIns = returnIns;
+                        if (value == null) returnIns = Return;
+                        else {
+
+                                STypeDef returnType = value.type();
+                                if (returnType.equals(IntTypeDef.get()) || returnType.equals(ShortTypeDef.get())
+                                        || returnType.equals(ByteTypeDef.get()) || returnType.equals(BoolTypeDef.get())
+                                        || returnType.equals(CharTypeDef.get())) this.returnIns = IReturn;
+                                else if (returnType.equals(LongTypeDef.get())) this.returnIns = LReturn;
+                                else if (returnType.equals(FloatTypeDef.get())) this.returnIns = FReturn;
+                                else if (returnType.equals(DoubleTypeDef.get())) this.returnIns = DReturn;
+                                else this.returnIns = AReturn;
+                        }
+
                         this.lineCol = lineCol;
                 }
 

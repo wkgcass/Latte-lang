@@ -408,8 +408,9 @@ public class SemanticProcessor {
                                         if (lastConstructor != null) {
                                                 // invoke another constructor
                                                 Ins.InvokeSpecial invoke = new Ins.InvokeSpecial(new Ins.This(sClassDef), lastConstructor, LineCol.SYNTHETIC);
+                                                int count = 1;
                                                 for (SParameter p : constructor.getParameters()) {
-                                                        invoke.arguments().add(p);
+                                                        invoke.arguments().add(new Ins.TLoad(p, count++, LineCol.SYNTHETIC));
                                                 }
                                                 List<SParameter> paramsOfLast = lastConstructor.getParameters();
                                                 invoke.arguments().add(parseValueFromExpression(classDef.params.get(i).getInit(), paramsOfLast.get(paramsOfLast.size() - 1).type(), null));
@@ -733,6 +734,14 @@ public class SemanticProcessor {
                                         Ins.PutField putField = new Ins.PutField(f, constructorScope.getThis(),
                                                 new Ins.TLoad(param, constructorScope, LineCol.SYNTHETIC), LineCol.SYNTHETIC);
                                         constructorToFillStatements.statements().add(putField);
+                                }
+
+                                // a new constructor scope
+                                // the parameters are ignored and all variables are fields
+                                constructorScope = new SemanticScope(scope);
+                                constructorScope.setThis(new Ins.This(sTypeDef)); // set `this`
+                                for (SParameter param : constructorToFillStatements.getParameters()) {
+                                        constructorScope.putLeftValue(constructorScope.generateTempName(), param);
                                 }
 
                                 // parse this constructor
@@ -1943,7 +1952,11 @@ public class SemanticProcessor {
                                              List<ExceptionTable> exceptionTable) throws SyntaxException {
                 // LtIterator.get(aFor.exp)
                 Ins.InvokeStatic getIterator = new Ins.InvokeStatic(getLtIterator_Get(), LineCol.SYNTHETIC);
-                getIterator.arguments().add(parseValueFromExpression(aFor.exp, null, scope));
+                Value looper = parseValueFromExpression(aFor.exp, null, scope);
+                if (looper.type() instanceof PrimitiveTypeDef)
+                        looper = boxPrimitive(looper, LineCol.SYNTHETIC);
+                getIterator.arguments().add(looper);
+
                 // aStore
                 LocalVariable localVariable = new LocalVariable(getTypeWithName("lt.lang.LtIterator", LineCol.SYNTHETIC), false);
                 scope.putLeftValue(scope.generateTempName(), localVariable);
@@ -2185,29 +2198,13 @@ public class SemanticProcessor {
         private void parseInstructionFromReturn(AST.Return ret, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions) throws SyntaxException {
                 Ins.TReturn tReturn;
                 if (ret.exp == null) {
-                        tReturn = new Ins.TReturn(null, Ins.TReturn.Return, ret.line_col());
+                        tReturn = new Ins.TReturn(null, ret.line_col());
                 } else {
                         Value v =
                                 parseValueFromExpression(ret.exp, methodReturnType, scope);
                         STypeDef type = v.type();
-                        int ins;
-                        if (type.equals(IntTypeDef.get())
-                                || type.equals(ShortTypeDef.get())
-                                || type.equals(ByteTypeDef.get())
-                                || type.equals(BoolTypeDef.get())
-                                || type.equals(CharTypeDef.get())) {
-                                ins = Ins.TReturn.IReturn;
-                        } else if (type.equals(LongTypeDef.get())) {
-                                ins = Ins.TReturn.LReturn;
-                        } else if (type.equals(FloatTypeDef.get())) {
-                                ins = Ins.TReturn.FReturn;
-                        } else if (type.equals(DoubleTypeDef.get())) {
-                                ins = Ins.TReturn.DReturn;
-                        } else {
-                                ins = Ins.TReturn.AReturn;
-                        }
 
-                        tReturn = new Ins.TReturn(v, ins, ret.line_col());
+                        tReturn = new Ins.TReturn(v, ret.line_col());
                 }
                 instructions.add(tReturn);
         }
@@ -2302,10 +2299,10 @@ public class SemanticProcessor {
                                 ((Ins.GetField) assignTo).field(),
                                 ((Ins.GetField) assignTo).object(),
                                 cast(((Ins.GetField) assignTo).field().type(), assignFrom, ((Ins.GetField) assignTo).line_col()),
-                                ((Ins.GetField) assignTo).line_col()));
+                                assignment.line_col()));
                 } else if (assignTo instanceof Ins.GetStatic) {
                         // static
-                        instructions.add(new Ins.PutStatic(((Ins.GetStatic) assignTo).field(), assignFrom, ((Ins.GetStatic) assignTo).line_col()));
+                        instructions.add(new Ins.PutStatic(((Ins.GetStatic) assignTo).field(), assignFrom, assignment.line_col()));
                 } else if (assignTo instanceof Ins.TALoad) {
                         // arr[?]
                         Ins.TALoad TALoad = (Ins.TALoad) assignTo;
@@ -3253,33 +3250,11 @@ public class SemanticProcessor {
                 if (theMethod.getReturnType().equals(VoidType.get())) {
                         theMethod.statements().add(invokeMethodHandle);
                 } else {
-                        int mode;
-                        if (theMethod.getReturnType().equals(IntTypeDef.get())
-                                ||
-                                theMethod.getReturnType().equals(ByteTypeDef.get())
-                                ||
-                                theMethod.getReturnType().equals(BoolTypeDef.get())
-                                ||
-                                theMethod.getReturnType().equals(ShortTypeDef.get())
-                                ||
-                                theMethod.getReturnType().equals(CharTypeDef.get())
-                                ) {
-                                mode = Ins.TReturn.IReturn;
-                        } else if (theMethod.getReturnType().equals(DoubleTypeDef.get())) {
-                                mode = Ins.TReturn.DReturn;
-                        } else if (theMethod.getReturnType().equals(FloatTypeDef.get())) {
-                                mode = Ins.TReturn.FReturn;
-                        } else if (theMethod.getReturnType().equals(LongTypeDef.get())) {
-                                mode = Ins.TReturn.LReturn;
-                        } else {
-                                mode = Ins.TReturn.AReturn;
-                        }
                         theMethod.statements().add(
                                 new Ins.TReturn(
                                         cast(theMethod.getReturnType(),
                                                 invokeMethodHandle,
                                                 LineCol.SYNTHETIC),
-                                        mode,
                                         LineCol.SYNTHETIC
                                 )
                         );
@@ -3358,6 +3333,10 @@ public class SemanticProcessor {
                 while (scope.getInnerMethod(methodName) != null) {
                         methodName = "procedure$" + i;
                         ++i;
+                }
+
+                if (requiredType == null) {
+                        requiredType = getTypeWithName("java.lang.Object", LineCol.SYNTHETIC);
                 }
 
                 MethodDef methodDef = new MethodDef(
@@ -6397,18 +6376,25 @@ public class SemanticProcessor {
                 }
 
                 if (null != lastMethod) {
-                        Ins.InvokeWithTarget invoke;
+                        Ins.Invoke invoke;
                         if (lastMethod.modifiers().contains(SModifier.PRIVATE)) {
                                 invoke = new Ins.InvokeSpecial(new Ins.This(methodDef.declaringType()), lastMethod, LineCol.SYNTHETIC);
+                        } else if (isStatic) {
+                                invoke = new Ins.InvokeStatic(lastMethod, LineCol.SYNTHETIC);
                         } else {
                                 invoke = new Ins.InvokeVirtual(new Ins.This(methodDef.declaringType()), lastMethod, LineCol.SYNTHETIC);
                         }
                         for (int ii = 0; ii < methodDef.getParameters().size(); ++ii) {
-                                invoke.arguments().add(methodDef.getParameters().get(ii));
+                                // load arguments
+                                invoke.arguments().add(new Ins.TLoad(methodDef.getParameters().get(ii), ii + (isStatic ? 0 : 1), LineCol.SYNTHETIC));
                         }
                         List<SParameter> lastParams = lastMethod.getParameters();
                         invoke.arguments().add(parseValueFromExpression(m.params.get(i).getInit(), lastParams.get(lastParams.size() - 1).type(), null));
-                        methodDef.statements().add(invoke);
+                        if (methodDef.getReturnType().equals(VoidType.get())) {
+                                methodDef.statements().add(invoke);
+                        } else {
+                                methodDef.statements().add(new Ins.TReturn(invoke, LineCol.SYNTHETIC));
+                        }
                 }
 
                 // add into class/interface

@@ -144,9 +144,6 @@ public class Evaluator {
                         while ((s = bufferedReader.readLine()) != null) {
                                 sb.append("    ").append(s).append("\n");
                         }
-                        for (Entry entry : recordedEntries) {
-                                sb.append("    this.").append(entry.name).append("=").append(entry.name).append("\n");
-                        }
 
                         String code = sb.toString(); // the generated code
 
@@ -168,7 +165,7 @@ public class Evaluator {
 
                         ClassDef classDef = (ClassDef) statements.get(3); // it must be class def (class Evaluate)
                         List<Statement> classStatements = classDef.statements;
-                        int lastIndex = classStatements.size() - 1 - recordedEntries.size();
+                        int lastIndex = classStatements.size() - 1;
                         Statement lastStatement = classStatements.get(lastIndex);
 
                         String varName = null;

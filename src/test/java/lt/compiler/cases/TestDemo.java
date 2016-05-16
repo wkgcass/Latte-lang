@@ -794,4 +794,69 @@ public class TestDemo {
                 Class<?> TestStdCout = classLoader.loadClass("TestStdCout");
                 TestStdCout.newInstance();
         }
+
+        @Test
+        public void testRational() throws Exception {
+                InputStream is = TestDemo.class.getResourceAsStream("/lang-demo/examples/rational.lt");
+
+                Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "rational.lt");
+                ClassLoader classLoader = new ClassLoader() {
+                        @Override
+                        protected Class<?> findClass(String name)
+                                throws ClassNotFoundException {
+                                return defineClass(name, map.get(name), 0, map.get(name).length);
+                        }
+                };
+
+                Class<?> Rational = classLoader.loadClass("lt.demo.examples.Rational");
+                Constructor<?> con = Rational.getConstructor(int.class, int.class);
+                Constructor<?> con2 = Rational.getConstructor(int.class);
+
+                Object r_1_2 = con.newInstance(1, 2);
+                assertEquals("1/2", r_1_2.toString());
+
+                Object r_4_2 = con.newInstance(4, 2);
+                assertEquals("2", r_4_2.toString());
+
+                assertEquals("2", con2.newInstance(2).toString());
+
+                Object r_neg1_2 = con.newInstance(-1, 2);
+                assertEquals("-1/2", r_neg1_2.toString());
+
+                Object r_neg4_2 = con.newInstance(-4, 2);
+                assertEquals("-2", r_neg4_2.toString());
+
+                Object r_1_4 = con.newInstance(1, 4);
+
+                assertEquals(r_1_2, con.newInstance(2, 4));
+                assertNotEquals(r_1_2, new Object());
+                assertNotEquals(r_1_2, r_neg1_2);
+                assertNotEquals(r_1_2, r_1_4);
+
+                assertEquals(3, r_1_2.hashCode());
+                assertEquals(3, r_4_2.hashCode());
+                assertEquals(1, r_neg1_2.hashCode());
+                assertEquals(-1, r_neg4_2.hashCode());
+                assertEquals(5, r_1_4.hashCode());
+
+                Method add = Rational.getMethod("add", Rational);
+                assertEquals(con.newInstance(5, 2), add.invoke(r_1_2, r_4_2));
+
+                Method subtract = Rational.getMethod("subtract", Rational);
+                assertEquals(con.newInstance(-3, 2), subtract.invoke(r_1_2, r_4_2));
+
+                Method multiply = Rational.getMethod("multiply", Rational);
+                assertEquals(con.newInstance(1, 1), multiply.invoke(r_1_2, r_4_2));
+
+                Method divide = Rational.getMethod("divide", Rational);
+                assertEquals(con.newInstance(1, 4), divide.invoke(r_1_2, r_4_2));
+
+                Class<?> TestRational = classLoader.loadClass("lt.demo.examples.TestRational");
+                assertEquals(con.newInstance(5, 2), TestRational.getMethod("testAdd", Rational, Rational).invoke(null, r_1_2, r_4_2));
+                assertEquals(con.newInstance(-3, 2), TestRational.getMethod("testSubtract", Rational, Rational).invoke(null, r_1_2, r_4_2));
+                assertEquals(con.newInstance(1, 1), TestRational.getMethod("testMultiply", Rational, Rational).invoke(null, r_1_2, r_4_2));
+                assertEquals(con.newInstance(1, 4), TestRational.getMethod("testDivide", Rational, Rational).invoke(null, r_1_2, r_4_2));
+                assertEquals(false, TestRational.getMethod("testEquals", Rational, Rational).invoke(null, r_1_2, r_neg1_2));
+                assertEquals(true, TestRational.getMethod("testEquals", Rational, Rational).invoke(null, r_1_2, con.newInstance(1, 2)));
+        }
 }

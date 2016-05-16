@@ -23,11 +23,11 @@
         'name':'constant.boolean.lt'
     }
     {
-        'match':'(\\b(class|interface|do|while|if|else|elseif|in|for|this|static|int|bool|char|byte|long|short|float|double|type|data|null|Unit|as|try|catch|undefined|and|or|throw|finally)\\b|\\[|\\]|\\{|\\})'
+        'match':'(\\b(import|package|class|interface|do|while|if|else|elseif|in|for|this|static|int|bool|char|byte|long|short|float|double|type|data|null|Unit|as|try|catch|undefined|and|or|throw|finally|is|not)\\b|\\[|\\]|\\{|\\})'
         'name':'keyword.lt'
     }
     {
-        'match':'(\\>|\\#|\\.\\_|\\:\\:\\_|\\<|\\&|\\^|\\||\\+|\\-|\\*|\\/|\\%|\\~|\\=|\\.\\.\\.)'
+        'match':'(\\>|\\.\\_|\\:\\:\\_|\\<|\\&|\\^|\\||\\+|\\-|\\*|\\/|\\%|\\~|\\=|\\.\\.\\.)'
         'name':'keyword.lt'
     }
     {

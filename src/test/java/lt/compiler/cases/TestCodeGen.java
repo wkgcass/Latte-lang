@@ -1735,4 +1735,38 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals(6, method.invoke(null));
         }
+
+        @Test
+        public void testConsParamUseField() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestConsParamUseField(i)\n" +
+                                "    i=10",
+                        "TestConsParamUseField");
+                Object o = cls.getConstructor(Object.class).newInstance(1);
+                Field i = cls.getDeclaredField("i");
+                i.setAccessible(true);
+
+                assertEquals(10, i.get(o));
+        }
+
+        @Test
+        public void testMethodDefaultParam() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestMethodDefaultParam\n" +
+                                "    methodNonStatic(a,b=1)\n" +
+                                "        <a+b\n" +
+                                "    static\n" +
+                                "        methodStatic(a,b=1)\n" +
+                                "            <a-b",
+                        "TestMethodDefaultParam");
+                Object o = cls.newInstance();
+
+                assertEquals(3, cls.getMethod("methodNonStatic", Object.class).invoke(o, 2));
+                assertEquals(3, cls.getMethod("methodNonStatic", Object.class, Object.class).invoke(o, 2, 1));
+
+                assertEquals(1, cls.getMethod("methodStatic", Object.class).invoke(null, 2));
+                assertEquals(1, cls.getMethod("methodStatic", Object.class, Object.class).invoke(null, 2, 1));
+        }
 }

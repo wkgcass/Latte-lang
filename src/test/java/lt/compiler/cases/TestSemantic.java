@@ -437,12 +437,12 @@ public class TestSemantic {
                                 Ins.InvokeSpecial invokeSpecial = (Ins.InvokeSpecial) con.statements().get(0);
                                 assertEquals(lastConstructor, invokeSpecial.invokable()); // invoke last constructor
                                 assertEquals(invokeSpecial.invokable().getParameters().size(), invokeSpecial.arguments().size()); // param size
-                                assertEquals("a", ((SParameter) invokeSpecial.arguments().get(0)).name());
+                                assertEquals(1, ((Ins.TLoad) invokeSpecial.arguments().get(0)).getIndex());
                                 if (invokeSpecial.arguments().size() == 2) {
                                         assertEquals(new IntValue(1), invokeSpecial.arguments().get(1));
                                 }
                                 if (invokeSpecial.arguments().size() == 3) {
-                                        assertEquals("b", ((SParameter) invokeSpecial.arguments().get(1)).name());
+                                        assertEquals(2, ((Ins.TLoad) invokeSpecial.arguments().get(1)).getIndex());
                                         assertEquals(new IntValue(2), invokeSpecial.arguments().get(2));
                                 }
                         }
@@ -470,17 +470,22 @@ public class TestSemantic {
                         else assertEquals(lastMethod.getParameters().size() - 1, m.getParameters().size());
 
                         if (null != lastMethod) {
-                                Ins.InvokeVirtual invokeVirtual = (Ins.InvokeVirtual) m.statements().get(0);
+                                // it's return
+                                // get the returned value
+                                // the returned value should be invokeVirtual
+                                Ins.InvokeVirtual invokeVirtual = ((Ins.InvokeVirtual) (
+                                        (Ins.TReturn) m.statements().get(0)).value()
+                                );
                                 assertEquals(lastMethod, invokeVirtual.invokable()); // invoke last method
                                 assertEquals(invokeVirtual.invokable().getParameters().size(), invokeVirtual.arguments().size()); // param size
-                                assertEquals("a", ((SParameter) invokeVirtual.arguments().get(0)).name());
+                                assertEquals(1, ((Ins.TLoad) invokeVirtual.arguments().get(0)).getIndex());
 
                                 assertTrue(invokeVirtual.arguments().size() == 2 || invokeVirtual.arguments().size() == 3);
                                 if (invokeVirtual.arguments().size() == 2) {
                                         assertEquals(new IntValue(1), invokeVirtual.arguments().get(1));
                                 }
                                 if (invokeVirtual.arguments().size() == 3) {
-                                        assertEquals("b", ((SParameter) invokeVirtual.arguments().get(1)).name());
+                                        assertEquals(2, ((Ins.TLoad) invokeVirtual.arguments().get(1)).getIndex());
                                         assertEquals(new DoubleValue(2), invokeVirtual.arguments().get(2));
                                 }
                         }
@@ -845,12 +850,9 @@ public class TestSemantic {
                 SClassDef classDef = (SClassDef) set.iterator().next();
 
                 Instruction ins = classDef.constructors().get(0).statements().get(1 + 1);
-                assertTrue(ins instanceof Ins.TLoad);
-                Ins.TLoad tLoad = (Ins.TLoad) ins;
-                assertEquals(1, tLoad.getIndex());
-                assertEquals(Ins.TLoad.Aload, tLoad.mode());
-                assertTrue(tLoad.value() instanceof SParameter);
-                assertEquals("i", ((SParameter) tLoad.value()).name());
+                assertTrue(ins instanceof Ins.GetField);
+                Ins.GetField getField = (Ins.GetField) ins;
+                assertEquals("i", getField.field().name());
         }
 
         @Test
@@ -1667,9 +1669,9 @@ public class TestSemantic {
 
                 Instruction i1 = con.statements().get(1 + 1);
                 assertTrue(i1 instanceof ValuePack);
-                assertTrue(((ValuePack) i1).instructions().get(0) instanceof Ins.TStore);
-                assertTrue(((ValuePack) i1).instructions().get(1) instanceof Ins.TLoad);
-                assertTrue(((Ins.TStore) ((ValuePack) i1).instructions().get(0)).newValue() instanceof Ins.TwoVarOp);
+                assertTrue(((ValuePack) i1).instructions().get(0) instanceof Ins.PutField);
+                assertTrue(((ValuePack) i1).instructions().get(1) instanceof Ins.GetField);
+                assertTrue(((Ins.PutField) ((ValuePack) i1).instructions().get(0)).value() instanceof Ins.TwoVarOp);
         }
 
         @Test
@@ -1691,11 +1693,11 @@ public class TestSemantic {
                 assertTrue(i instanceof ValuePack);
                 ValuePack valuePack = (ValuePack) i;
 
-                Instruction i0 = valuePack.instructions().get(0); // TLoad
+                Instruction i0 = valuePack.instructions().get(0); // GetField
                 Instruction i1 = valuePack.instructions().get(1); // ValuePack
                 Instruction i2 = valuePack.instructions().get(2); // pop
 
-                assertTrue(i0 instanceof Ins.TLoad);
+                assertTrue(i0 instanceof Ins.GetField);
                 assertTrue(i1 instanceof ValuePack);
                 assertTrue(i2 instanceof Ins.Pop);
         }
@@ -1795,7 +1797,7 @@ public class TestSemantic {
                 Ins.InvokeDynamic in0 = (Ins.InvokeDynamic) i0;
                 assertEquals("set", in0.methodName());
                 assertEquals(3, in0.arguments().size());
-                assertTrue(in0.arguments().get(0) instanceof Ins.TLoad);
+                assertTrue(in0.arguments().get(0) instanceof Ins.GetField);
                 assertTrue(in0.arguments().get(1) instanceof IntValue);
                 assertTrue(in0.arguments().get(2) instanceof IntValue);
 
@@ -1961,9 +1963,9 @@ public class TestSemantic {
                 ValuePack p4 = (ValuePack) i4;
 
                 Instruction i30 = p3.instructions().get(0);
-                assertTrue(i30 instanceof Ins.TStore);
+                assertTrue(i30 instanceof Ins.PutField);
                 Instruction i40 = p4.instructions().get(0);
-                assertTrue(i40 instanceof Ins.TStore);
+                assertTrue(i40 instanceof Ins.PutField);
         }
 
         @Test
@@ -2018,9 +2020,9 @@ public class TestSemantic {
                 ValuePack p4 = (ValuePack) i4;
 
                 Instruction i30 = p3.instructions().get(0);
-                assertTrue(i30 instanceof Ins.TStore);
+                assertTrue(i30 instanceof Ins.PutField);
                 Instruction i40 = p4.instructions().get(0);
-                assertTrue(i40 instanceof Ins.TStore);
+                assertTrue(i40 instanceof Ins.PutField);
         }
 
         @Test
@@ -2446,7 +2448,7 @@ public class TestSemantic {
                         fail();
                 } catch (SyntaxException e) {
                         assertEquals(4, e.lineCol.line);
-                        assertEquals(5, e.lineCol.column);
+                        assertEquals(6, e.lineCol.column);
                 }
         }
 
