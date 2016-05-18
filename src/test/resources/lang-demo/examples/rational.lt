@@ -16,17 +16,17 @@ class Rational(n:int, d:int=1)
 
     toString():String = n + (
         if d==1
-            < ""
-        < "/" + d)
+            return ""
+        return "/" + d)
 
     equals(o):bool
         if o is type Rational
-            <o.n==n and o.d==d
+            return o.n==n and o.d==d
         else
-            <false
+            return false
 
     hashCode():int
-        <n+d
+        return n+d
 
     add(o:Rational):Rational = Rational(n*o.d+o.n*d, d*o.d)
     subtract(o:Rational):Rational = Rational(n*o.d-o.n*d, d*o.d)
@@ -36,9 +36,9 @@ class Rational(n:int, d:int=1)
     static
         pri gcd(a:int, b:int)
             if b
-                <gcd(b, a % b)
+                return gcd(b, a % b)
             else
-                <a
+                return a
 
 class TestRational
     static

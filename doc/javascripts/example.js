@@ -69,8 +69,8 @@ $(document).ready(function () {
                     '<pre>' + highlighting('test.lt', "" +
                         "toString():String = n + (\n" +
                         "    if d==1\n" +
-                        "        < \"\"\n" +
-                        "    < \"/\" + d)"
+                        "        return \"\"\n" +
+                        "    return \"/\" + d)"
                         , {}) +
                     '</pre>' +
                     '<p>重载了Object类的toString()方法, 这样就可以直接在控制台打印Rational对象了, 结果类似于 <code>1/2</code></p>' +
@@ -80,9 +80,9 @@ $(document).ready(function () {
                         "static\n" +
                         "    pri gcd(a:int, b:int)\n" +
                         "        if b\n" +
-                        "            <gcd(b, a % b)\n" +
+                        "            return gcd(b, a % b)\n" +
                         "        else\n" +
-                        "            <a"
+                        "            return a"
                         , {}) +
                     '</pre>' +
                     '<p>定义了一个静态gcd(int,int)方法, 用辗转相除法获取最大公约数</p>' +
@@ -107,12 +107,12 @@ $(document).ready(function () {
                     '<pre>' + highlighting('test.lt', "" +
                         "equals(o):bool\n" +
                         "    if o is type Rational\n" +
-                        "        <o.n==n and o.d==d\n" +
+                        "        return o.n==n and o.d==d\n" +
                         "    else\n" +
-                        "        <false\n" +
+                        "        return false\n" +
                         "\n" +
                         "hashCode():int\n" +
-                        "    <n+d"
+                        "    return n+d"
                         , {}) +
                     '</pre>' +
                     '<p>现在可以在 <code>LessTyping</code> 中使用 <code>==</code> 和 <code>!=</code> 运算符比较Rational了</p>' +
@@ -152,17 +152,17 @@ $(document).ready(function () {
                         "\n" +
                         "    toString():String = n + (\n" +
                         "        if d==1\n" +
-                        "            < \"\"\n" +
-                        "        < \"/\" + d)\n" +
+                        "            return  \"\"\n" +
+                        "        return  \"/\" + d)\n" +
                         "\n" +
                         "    equals(o):bool\n" +
                         "        if o is type Rational\n" +
-                        "            <o.n==n and o.d==d\n" +
+                        "            return o.n==n and o.d==d\n" +
                         "        else\n" +
-                        "            <false\n" +
+                        "            return false\n" +
                         "\n" +
                         "    hashCode():int\n" +
-                        "        <n+d\n" +
+                        "        return n+d\n" +
                         "\n" +
                         "    add(o:Rational):Rational = Rational(n*o.d+o.n*d, d*o.d)\n" +
                         "    subtract(o:Rational):Rational = Rational(n*o.d-o.n*d, d*o.d)\n" +
@@ -172,9 +172,9 @@ $(document).ready(function () {
                         "    static\n" +
                         "        pri gcd(a:int, b:int)\n" +
                         "            if b\n" +
-                        "                <gcd(b, a % b)\n" +
+                        "                return gcd(b, a % b)\n" +
                         "            else\n" +
-                        "                <a"
+                        "                return a"
                         , {}) +
                     '</pre>' +
                     '<p>为了测试Rational类,我们可以写一个TestRational</p>' +

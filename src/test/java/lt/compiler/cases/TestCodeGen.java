@@ -196,7 +196,7 @@ public class TestCodeGen {
                                 "class TestInvokeInterface\n" +
                                 "    static\n" +
                                 "        method()\n" +
-                                "            <Collections.singletonList('abc').size()",
+                                "            return Collections.singletonList('abc').size()",
                         "TestInvokeInterface");
 
                 Method method = cls.getMethod("method");
@@ -210,9 +210,9 @@ public class TestCodeGen {
                         "" +
                                 "class TestInvokeSpecial\n" +
                                 "    pri priMethod()\n" +
-                                "        <1\n" +
+                                "        return 1\n" +
                                 "    method()\n" +
-                                "        <priMethod()",
+                                "        return priMethod()",
                         "TestInvokeSpecial");
 
                 Object o = cls.newInstance();
@@ -228,7 +228,7 @@ public class TestCodeGen {
                                 "class TestInvokeDynamic\n" +
                                 "    static\n" +
                                 "        method(o)\n" +
-                                "            <o.size()",
+                                "            return o.size()",
                         "TestInvokeDynamic");
 
                 Method method = cls.getMethod("method", Object.class);
@@ -246,7 +246,7 @@ public class TestCodeGen {
                                 "class TestInvokeDynamic\n" +
                                 "    static\n" +
                                 "        method(o)\n" +
-                                "            <o.add(3)",
+                                "            return o.add(3)",
                         "TestInvokeDynamic");
 
                 Method method = cls.getMethod("method", Object.class);
@@ -264,7 +264,7 @@ public class TestCodeGen {
                                 "class TestInvokeDynamic\n" +
                                 "    static\n" +
                                 "        method(o)\n" +
-                                "            <o.add(0,3)",
+                                "            return o.add(0,3)",
                         "TestInvokeDynamic");
 
                 Method method = cls.getMethod("method", Object.class);
@@ -283,7 +283,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        method()\n" +
                                 "            i=1\n" +
-                                "            <i",
+                                "            return i",
                         "TestInvokeDynamic");
 
                 Method method = cls.getMethod("method");
@@ -298,7 +298,7 @@ public class TestCodeGen {
                                 "class TestNew\n" +
                                 "    static\n" +
                                 "        method()\n" +
-                                "            <ArrayList()",
+                                "            return ArrayList()",
                         "TestNew");
 
                 Method method = cls.getMethod("method");
@@ -314,7 +314,7 @@ public class TestCodeGen {
                                 "class TestTwoVarOp\n" +
                                 "    static\n" +
                                 "        method(a,b)\n" +
-                                "            <a|b",
+                                "            return a|b",
                         "TestTwoVarOp");
 
                 Method method = cls.getMethod("method", Object.class, Object.class);
@@ -332,13 +332,13 @@ public class TestCodeGen {
                                 "class TestRange\n" +
                                 "    static\n" +
                                 "        method1()\n" +
-                                "            <1..10\n" +
+                                "            return 1..10\n" +
                                 "        method2()\n" +
-                                "            <1.:10\n" +
+                                "            return 1.:10\n" +
                                 "        method3()\n" +
-                                "            <10..1\n" +
+                                "            return 10..1\n" +
                                 "        method4()\n" +
-                                "            <10.:1",
+                                "            return 10.:1",
                         "TestRange");
 
                 Method method1 = cls.getMethod("method1");
@@ -365,7 +365,7 @@ public class TestCodeGen {
                                 "class TestPow\n" +
                                 "    static\n" +
                                 "        method()\n" +
-                                "            <2^^4\n",
+                                "            return 2^^4\n",
                         "TestPow");
                 Method method = cls.getMethod("method");
                 assertEquals(16.0, method.invoke(null));
@@ -378,7 +378,7 @@ public class TestCodeGen {
                                 "class TestPowObj\n" +
                                 "    static\n" +
                                 "        method(a,b)\n" +
-                                "            <a^^b\n",
+                                "            return a^^b\n",
                         "TestPowObj");
                 Method method = cls.getMethod("method", Object.class, Object.class);
                 assertEquals(new BigInteger("16"), method.invoke(null, new BigInteger("2"), 4));
@@ -392,7 +392,7 @@ public class TestCodeGen {
                                 "class TestIn\n" +
                                 "    static\n" +
                                 "        method(a,ls)\n" +
-                                "            <a in ls\n",
+                                "            return a in ls\n",
                         "TestIn");
                 Method method = cls.getMethod("method", Object.class, Object.class);
                 assertEquals(true, method.invoke(null, 1, Arrays.asList(1, 2)));
@@ -407,7 +407,7 @@ public class TestCodeGen {
                                 "class TestInRange\n" +
                                 "    static\n" +
                                 "        method()\n" +
-                                "            <2 in 1..2\n",
+                                "            return 2 in 1..2\n",
                         "TestInRange");
                 Method method = cls.getMethod("method");
                 assertEquals(true, method.invoke(null));
@@ -421,9 +421,9 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        method(a)\n" +
                                 "            if a\n" +
-                                "                <1\n" +
+                                "                return 1\n" +
                                 "            else\n" +
-                                "                <2",
+                                "                return 2",
                         "TestIf");
 
                 Method method = cls.getMethod("method", Object.class);
@@ -454,7 +454,7 @@ public class TestCodeGen {
                                 "                i=3\n" +
                                 "            else\n" +
                                 "                i=4\n" +
-                                "            <i",
+                                "            return i",
                         "TestIfComplex");
 
                 Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
@@ -482,7 +482,7 @@ public class TestCodeGen {
                                 "            while a\n" +
                                 "                s.append(a)\n" +
                                 "                a=a-1\n" +
-                                "            <s.toString()",
+                                "            return s.toString()",
                         "TestWhile");
 
                 Method method = cls.getMethod("method", int.class);
@@ -501,7 +501,7 @@ public class TestCodeGen {
                                 "                s.append(a)\n" +
                                 "                a=a-1\n" +
                                 "            while a\n" +
-                                "            <s.toString()",
+                                "            return s.toString()",
                         "TestWhile");
 
                 Method method = cls.getMethod("method", int.class);
@@ -518,7 +518,7 @@ public class TestCodeGen {
                                 "            s=StringBuilder()\n" +
                                 "            for i in 1..3\n" +
                                 "                s.append(i)\n" +
-                                "            <s.toString()",
+                                "            return s.toString()",
                         "TestFor");
 
                 Method method = cls.getMethod("method");
@@ -556,12 +556,12 @@ public class TestCodeGen {
                                 "                func.apply()\n" +
                                 "            catch e\n" +
                                 "                if e is type NullPointerException or e is type ClassCastException\n" +
-                                "                    <1\n" +
+                                "                    return 1\n" +
                                 "                elseif e is type Error\n" +
-                                "                    <e.getMessage()\n" +
+                                "                    return e.getMessage()\n" +
                                 "                elseif e is type Throwable\n" +
-                                "                    <3\n" +
-                                "            <4",
+                                "                    return 3\n" +
+                                "            return 4",
                         "TestTryCatch");
 
                 Method method = cls.getMethod("method", Object.class);
@@ -597,9 +597,9 @@ public class TestCodeGen {
                                 "                func.apply()\n" +
                                 "            catch e\n" +
                                 "                if 1===1\n" +
-                                "                    <1\n" +
+                                "                    return 1\n" +
                                 "            finally\n" +
-                                "            <4",
+                                "            return 4",
                         "TestTryCatch");
 
                 Method method = cls.getMethod("method", Object.class);
@@ -622,7 +622,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        method()\n" +
                                 "            b=a=2\n" +
-                                "            <b",
+                                "            return b",
                         "TestContinualAssign");
 
                 Method method = cls.getMethod("method");
@@ -636,7 +636,7 @@ public class TestCodeGen {
                                 "class TestUndefined\n" +
                                 "    static\n" +
                                 "        method()\n" +
-                                "            <undefined",
+                                "            return undefined",
                         "TestUndefined");
 
                 Method method = cls.getMethod("method");
@@ -650,7 +650,7 @@ public class TestCodeGen {
                                 "class TestStringAdd\n" +
                                 "    static\n" +
                                 "        method()\n" +
-                                "            <'abc'+'d'+1",
+                                "            return 'abc'+'d'+1",
                         "TestStringAdd");
 
                 Method method = cls.getMethod("method");
@@ -664,7 +664,7 @@ public class TestCodeGen {
                                 "class TestLogicAnd\n" +
                                 "    static\n" +
                                 "        method(a,b)\n" +
-                                "            <a&&b",
+                                "            return a&&b",
                         "TestLogicAnd");
 
                 Method method = cls.getMethod("method", Object.class, Object.class);
@@ -702,7 +702,7 @@ public class TestCodeGen {
                                 "class TestLogicAnd\n" +
                                 "    static\n" +
                                 "        method(a,b,c)\n" +
-                                "            <a&&b&&c",
+                                "            return a&&b&&c",
                         "TestLogicAnd");
 
                 Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
@@ -724,7 +724,7 @@ public class TestCodeGen {
                                 "class TestLogicOr\n" +
                                 "    static\n" +
                                 "        method(a,b)\n" +
-                                "            <a||b",
+                                "            return a||b",
                         "TestLogicOr");
 
                 Method method = cls.getMethod("method", Object.class, Object.class);
@@ -762,7 +762,7 @@ public class TestCodeGen {
                                 "class TestLogicOr\n" +
                                 "    static\n" +
                                 "        method(a,b,c)\n" +
-                                "            <a||b||c",
+                                "            return a||b||c",
                         "TestLogicOr");
 
                 Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
@@ -784,7 +784,7 @@ public class TestCodeGen {
                                 "class TestLogicAndOr\n" +
                                 "    static\n" +
                                 "        method(a,b,c)\n" +
-                                "            <a or b and c",
+                                "            return a or b and c",
                         "TestLogicAndOr");
 
                 // && has higher priority than ||
@@ -806,7 +806,7 @@ public class TestCodeGen {
                                 "class TestUnaryInc\n" +
                                 "    static\n" +
                                 "        method(a:int)\n" +
-                                "            <++a",
+                                "            return ++a",
                         "TestUnaryInc");
                 Method method = cls.getMethod("method", int.class);
                 assertEquals(2, method.invoke(null, 1));
@@ -819,7 +819,7 @@ public class TestCodeGen {
                                 "class TestSelfInc\n" +
                                 "    static\n" +
                                 "        method(a:int)\n" +
-                                "            <a++",
+                                "            return a++",
                         "TestSelfInc");
                 Method method = cls.getMethod("method", int.class);
                 assertEquals(1, method.invoke(null, 1));
@@ -833,7 +833,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        pri m():Unit\n" +
                                 "        method()\n" +
-                                "            <m()",
+                                "            return m()",
                         "TestInvokeVoidMethodReturnUndefined");
                 Method method = cls.getMethod("method");
                 assertEquals(Undefined.get(), method.invoke(null));
@@ -849,7 +849,7 @@ public class TestCodeGen {
                                 "        pri m():Unit\n" +
                                 "            i=100\n" +
                                 "        method(a)\n" +
-                                "            <a&&m()\n" +
+                                "            return a&&m()\n" +
                                 "        getI()=i",
                         "TestVoidMethodLogicAnd");
                 Method method = cls.getMethod("method", Object.class);
@@ -869,7 +869,7 @@ public class TestCodeGen {
                                 "class TestTAStore\n" +
                                 "    static\n" +
                                 "        method(a:[]int)\n" +
-                                "            <a[1]=100",
+                                "            return a[1]=100",
                         "TestTAStore");
                 Method method = cls.getMethod("method", int[].class);
 
@@ -885,7 +885,7 @@ public class TestCodeGen {
                                 "class TestIndexAccessObject\n" +
                                 "    static\n" +
                                 "        method(a)\n" +
-                                "            <a[1]=100",
+                                "            return a[1]=100",
                         "TestIndexAccessObject");
                 Method method = cls.getMethod("method", Object.class);
 
@@ -1146,7 +1146,7 @@ public class TestCodeGen {
                                 "                    ...\n" +
                                 "                a.i+=1\n" +
                                 "                b.i+=2\n" +
-                                "                <10",
+                                "                return 10",
                         "TestSynchronizedReturn");
                 class Container {
                         int i = 0;
@@ -1220,19 +1220,19 @@ public class TestCodeGen {
                                 "            i=2\n" +
                                 "            if i==3\n" +
                                 "                i=10\n" +
-                                "                <1\n" +
+                                "                return 1\n" +
                                 "            else\n" +
                                 "                i=11\n" +
-                                "                <2\n" +
+                                "                return 2\n" +
                                 "        catch e\n" +
                                 "            if e is type RuntimeException\n" +
                                 "                i=4\n" +
                                 "                if i==5\n" +
                                 "                    i=12\n" +
-                                "                    <3\n" +
+                                "                    return 3\n" +
                                 "                else\n" +
                                 "                    i=13\n" +
-                                "                    <4\n" +
+                                "                    return 4\n" +
                                 "        finally\n" +
                                 "            i=6",
                         "TestTryCatchCanLoad"
@@ -1246,7 +1246,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        method()\n" +
                                 "            inner():int=1\n" +
-                                "            <inner()",
+                                "            return inner()",
                         "TestInnerMethod");
                 assertEquals(2, cls.getDeclaredMethods().length);
                 Method m = cls.getDeclaredMethod("method");
@@ -1262,7 +1262,7 @@ public class TestCodeGen {
                                 "            i:int=1\n" +
                                 "            j:int=2\n" +
                                 "            inner():int=i+j\n" +
-                                "            <inner()",
+                                "            return inner()",
                         "TestInnerMethod");
                 assertEquals(2, cls.getDeclaredMethods().length);
                 Method m = cls.getDeclaredMethod("method");
@@ -1277,7 +1277,7 @@ public class TestCodeGen {
                                 "        i:int=1\n" +
                                 "        j:int=2\n" +
                                 "        inner():int=i+j\n" +
-                                "        <inner()",
+                                "        return inner()",
                         "TestInnerMethod");
                 assertEquals(2, cls.getDeclaredMethods().length);
                 Method m = cls.getDeclaredMethod("method");
@@ -1293,7 +1293,7 @@ public class TestCodeGen {
                                 "            i:int=1\n" +
                                 "            j:int=2\n" +
                                 "            inner(k:int):int=i+j+k\n" +
-                                "            <inner(3)",
+                                "            return inner(3)",
                         "TestInnerMethod");
                 assertEquals(2, cls.getDeclaredMethods().length);
                 Method m = cls.getDeclaredMethod("method");
@@ -1307,7 +1307,7 @@ public class TestCodeGen {
                                 "class TestLambdaJDK\n" +
                                 "    static\n" +
                                 "        method():Function\n" +
-                                "            <(o)->o+1",
+                                "            return (o)->o+1",
                         "TestLambdaJDK");
                 Method m = cls.getDeclaredMethod("method");
                 @SuppressWarnings("unchecked")
@@ -1323,7 +1323,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        method():Function\n" +
                                 "            i=1\n" +
-                                "            <(o)->o+1+i",
+                                "            return (o)->o+1+i",
                         "TestLambdaJDK");
                 Method m = cls.getDeclaredMethod("method");
                 @SuppressWarnings("unchecked")
@@ -1339,7 +1339,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        method()\n" +
                                 "            i=1\n" +
-                                "            <(o)->o+1+i",
+                                "            return (o)->o+1+i",
                         "TestLambdaJDK");
                 Method m = cls.getDeclaredMethod("method");
                 @SuppressWarnings("unchecked")
@@ -1355,7 +1355,7 @@ public class TestCodeGen {
                         "    static\n" +
                         "        method():TestLambdaFunc\n" +
                         "            i=1\n" +
-                        "            <(o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
+                        "            return (o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -1395,7 +1395,7 @@ public class TestCodeGen {
                         "class TestLambdaLT\n" +
                         "    method():TestLambdaFunc\n" +
                         "        i=1\n" +
-                        "        <(o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
+                        "        return (o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -1435,7 +1435,7 @@ public class TestCodeGen {
                         "class TestLambdaLT\n" +
                         "    method():Function\n" +
                         "        i=1\n" +
-                        "        <(o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
+                        "        return (o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -1579,7 +1579,7 @@ public class TestCodeGen {
                                 "            try\n" +
                                 "                func.apply()\n" +
                                 "            catch e\n" +
-                                "                <e",
+                                "                return e",
                         "TestThrowAnyObject");
                 Method testThrow = cls.getMethod("testThrow");
                 try {
@@ -1611,7 +1611,7 @@ public class TestCodeGen {
                                 "                if i==7\n" +
                                 "                    break\n" +
                                 "                sum+=i\n" +
-                                "            <sum",
+                                "            return sum",
                         "TestForBreak");
                 Method method = cls.getMethod("method");
                 assertEquals(21, method.invoke(null));
@@ -1629,7 +1629,7 @@ public class TestCodeGen {
                                 "                if i==7\n" +
                                 "                    continue\n" +
                                 "                sum+=i\n" +
-                                "            <sum",
+                                "            return sum",
                         "TestForContinue");
                 Method method = cls.getMethod("method");
                 assertEquals(48, method.invoke(null));
@@ -1648,7 +1648,7 @@ public class TestCodeGen {
                                 "                if i==7\n" +
                                 "                    break\n" +
                                 "                sum+=(i++)\n" +
-                                "            <sum",
+                                "            return sum",
                         "TestWhileBreak");
                 Method method = cls.getMethod("method");
                 assertEquals(21, method.invoke(null));
@@ -1668,7 +1668,7 @@ public class TestCodeGen {
                                 "                    ++i\n" +
                                 "                    continue\n" +
                                 "                sum+=(i++)\n" +
-                                "            <sum",
+                                "            return sum",
                         "TestWhileContinue");
                 Method method = cls.getMethod("method");
                 assertEquals(48, method.invoke(null));
@@ -1688,7 +1688,7 @@ public class TestCodeGen {
                                 "                    break\n" +
                                 "                sum+=(i++)\n" +
                                 "            while i<=10\n" +
-                                "            <sum",
+                                "            return sum",
                         "TestWhileBreak");
                 Method method = cls.getMethod("method");
                 assertEquals(21, method.invoke(null));
@@ -1709,7 +1709,7 @@ public class TestCodeGen {
                                 "                    continue\n" +
                                 "                sum+=(i++)\n" +
                                 "            while i<=10\n" +
-                                "            <sum",
+                                "            return sum",
                         "TestWhileContinue");
                 Method method = cls.getMethod("method");
                 assertEquals(48, method.invoke(null));
@@ -1730,7 +1730,7 @@ public class TestCodeGen {
                                 "                    n+=i\n" +
                                 "                finally\n" +
                                 "                    ++n\n" +
-                                "            <n",
+                                "            return n",
                         "TestForTryBreak");
                 Method method = cls.getMethod("method");
                 assertEquals(6, method.invoke(null));
@@ -1756,10 +1756,10 @@ public class TestCodeGen {
                         "" +
                                 "class TestMethodDefaultParam\n" +
                                 "    methodNonStatic(a,b=1)\n" +
-                                "        <a+b\n" +
+                                "        return a+b\n" +
                                 "    static\n" +
                                 "        methodStatic(a,b=1)\n" +
-                                "            <a-b",
+                                "            return a-b",
                         "TestMethodDefaultParam");
                 Object o = cls.newInstance();
 

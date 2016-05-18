@@ -513,10 +513,10 @@ public class AST {
                 public final List<Expression> args;
                 private final LineCol lineCol;
 
-                public Invocation(Access access, Expression[] args, LineCol lineCol) {
+                public Invocation(Access access, List<Expression> args, LineCol lineCol) {
                         this.access = access;
                         this.lineCol = lineCol;
-                        this.args = Arrays.asList(args);
+                        this.args = args;
                 }
 
                 @Override
@@ -845,11 +845,11 @@ public class AST {
          * synchronized
          */
         public static class Synchronized implements Statement {
-                public final List<Access> toSync;
+                public final List<Expression> toSync;
                 public final List<Statement> statements;
                 private final LineCol lineCol;
 
-                public Synchronized(List<Access> toSync, List<Statement> statements, LineCol lineCol) {
+                public Synchronized(List<Expression> toSync, List<Statement> statements, LineCol lineCol) {
                         this.toSync = toSync;
                         this.statements = statements;
                         this.lineCol = lineCol;

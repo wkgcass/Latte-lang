@@ -1340,13 +1340,13 @@ public class TestSemantic {
                         "class A\n" +
                         "    method()\n" +
                         "        if true\n" +
-                        "            <1\n" +
+                        "            return 1\n" +
                         "        elseif false\n" +
-                        "            <2\n" +
+                        "            return 2\n" +
                         "        elseif true\n" +
-                        "            <3\n" +
+                        "            return 3\n" +
                         "        else\n" +
-                        "            <4");
+                        "            return 4");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -1977,7 +1977,7 @@ public class TestSemantic {
                         "    sync(a,b)\n" +
                         "        a=2\n" +
                         "        b=3\n" +
-                        "        <");
+                        "        return ");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -2105,9 +2105,9 @@ public class TestSemantic {
                         "class A\n" +
                         "    method()\n" +
                         "        try\n" +
-                        "            <1\n" +
+                        "            return 1\n" +
                         "        catch e\n" +
-                        "            <2\n" +
+                        "            return 2\n" +
                         "        finally\n" +
                         "            1+1");
                 Set<STypeDef> set = parse(map);
@@ -2254,7 +2254,7 @@ public class TestSemantic {
                         "package test\n" +
                         "class A\n" +
                         "    method():int\n" +
-                        "        <(<1)");
+                        "        return (return 1)");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -2280,7 +2280,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    i:int=(<1)");
+                        "    i:int=(return 1)");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -2307,7 +2307,7 @@ public class TestSemantic {
                         "import java::util::function::_\n" +
                         "class A\n" +
                         "    func:Function=(o)->\n" +
-                        "        <1");
+                        "        return 1");
                 Set<STypeDef> set = parse(map);
                 assertEquals(2, set.size());
 
@@ -2333,7 +2333,7 @@ public class TestSemantic {
                         "import java::util::function::_\n" +
                         "class A(a)\n" +
                         "    func:Function=(o)->\n" +
-                        "        <1");
+                        "        return 1");
                 Set<STypeDef> set = parse(map);
                 assertEquals(2, set.size());
 
@@ -2359,7 +2359,7 @@ public class TestSemantic {
                         "import lt::compiler::_\n" +
                         "class A(a)\n" +
                         "    func:TestLambdaFunc=(o)->\n" +
-                        "        <1");
+                        "        return 1");
                 Set<STypeDef> set = parse(map);
                 assertEquals(2, set.size());
 

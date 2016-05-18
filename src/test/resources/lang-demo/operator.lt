@@ -6,11 +6,11 @@
 class Num(pub i)
     equals(o):bool             ; bind ==
         if o is null
-            <false
+            return false
         elseif o is type Num
-            <this.i==o.i
+            return this.i==o.i
         else
-            <false
+            return false
 
     add(o)=Num(i+o)            ; bind +
     subtract(o)=Num(i-o)       ; bind -

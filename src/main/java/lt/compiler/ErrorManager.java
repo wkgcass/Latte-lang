@@ -106,7 +106,7 @@ public class ErrorManager {
          *
          * @param msg the message to print
          */
-        private void error(String msg) {
+        public void error(String msg) {
                 print("[ ERROR ] " + msg, out.err);
         }
 

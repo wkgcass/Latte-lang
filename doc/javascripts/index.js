@@ -121,7 +121,7 @@ $(document).ready(function () {
                     "    outerMethod(i, j)\n" +
                     "        innerMethod(k)=i+j+k\n" +
                     "        ; 定义了一个\"内部方法\", 可以访问局部变量\n" +
-                    "        <innerMethod(3)\n" +
+                    "        return innerMethod(3)\n" +
                     "        ; 调用该内部方法并返回\n"
                     , {}))
             },
@@ -163,8 +163,8 @@ $(document).ready(function () {
                     "    toString():String=\"User(\"+id+\", \"+name+\")\"\n" +
                     "    equals(o):bool\n" +
                     "        if o is type User\n" +
-                    "            <id==o.id and name==o.name\n" +
-                    "        <false"
+                    "            return id==o.id and name==o.name\n" +
+                    "        return false"
                     , {}))
             }
         ];

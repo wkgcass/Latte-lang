@@ -6,7 +6,7 @@ class std
 class Cout
     shiftLeft(o):Cout
         System.out.print(o)
-        <this
+        return this
 
 class TestStdCout
     std.cout<<"a"<<1<<2<<java::util::Collections.singletonList(1)<<std.endl<<

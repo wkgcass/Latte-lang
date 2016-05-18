@@ -3353,7 +3353,7 @@ public class SemanticProcessor {
                 );
                 parseInnerMethod(methodDef, scope);
                 AST.Invocation invocation = new AST.Invocation(
-                        new AST.Access(null, methodName, procedure.line_col()), new Expression[]{}, procedure.line_col());
+                        new AST.Access(null, methodName, procedure.line_col()), Collections.emptyList(), procedure.line_col());
                 return parseValueFromInvocation(invocation, scope);
         }
 

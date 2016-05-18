@@ -125,8 +125,8 @@ public class Parser {
          *
          * @throws SyntaxException compiling error
          */
-        private void jumpToTheNearestWeakEndingNode() throws SyntaxException {
-                while (current != null && (!(current instanceof EndingNode) || ((EndingNode) current).getType() != EndingNode.WEAK)) {
+        private void jumpToTheNearestEndingNode() throws SyntaxException {
+                while (current != null && (!(current instanceof EndingNode))) {
                         nextNode(true);
                 }
         }
@@ -146,19 +146,47 @@ public class Parser {
 
                                 // specially handled : map literal
                                 if (current == null) break;
+                                LineCol lineCol = current.getLineCol();
 
                                 parse_expression(); // get key (one before ':')
-                                Expression key = parsedExps.pop(); // the key is later pushed into the stack
 
+                                boolean continueParsing = true;
+
+                                if (parsedExps.empty()) {
+                                        err.SyntaxException("key is not set", current == null ? lineCol : current.getLineCol());
+                                        jumpToTheNearestEndingNode();
+                                        nextNode(true);
+                                        continueParsing = false;
+                                } else {
+                                        Expression key = parsedExps.pop(); // the key is later pushed into the stack
+                                        list.add(key);
+                                }
+
+                                if (!continueParsing) continue;
+
+
+                                if (null == current || current.next() instanceof EndingNode || (current.next() instanceof Element && ((Element) current.next()).getContent().equals(","))) {
+                                        err.SyntaxException("value is not set", current == null ? lineCol : current.getLineCol());
+                                        list.remove(list.size() - 1);
+                                        nextNode(true);
+                                        if (current instanceof EndingNode) nextNode(true);
+                                        continue;
+                                }
+                                expecting(":", current.previous(), current);
                                 nextNode(false);
 
                                 parse_expression(); // get value (one after ':')
-                                Expression value = parsedExps.pop();
+                                if (parsedExps.empty()) {
+                                        err.SyntaxException("value is not set", current == null ? lineCol : current.getLineCol());
+                                        jumpToTheNearestEndingNode();
+                                        list.remove(list.size() - 1);
+                                } else {
+                                        Expression value = parsedExps.pop();
+                                        list.add(value);
+                                }
 
                                 // add k,v into list, and return.
                                 // parse_map would take the list[0,2,4,6,8,...] as key, and list[1,3,5,7,9,...] as value
-                                list.add(key);
-                                list.add(value);
 
                                 nextNode(true);
 
@@ -166,7 +194,17 @@ public class Parser {
                                 last2VarOps.clear();
                         } else {
                                 // common handling process
-                                Statement stmt = parse_statement(); // invoke parse_statement to get one statement
+                                Statement stmt;
+                                try {
+                                        stmt = parse_statement(); // invoke parse_statement to get one statement
+                                } catch (ParseFail ignore) {
+                                        jumpToTheNearestEndingNode();
+                                        continue;
+                                } catch (SyntaxException e) {
+                                        err.SyntaxException(e.getMessage(), e.lineCol);
+                                        jumpToTheNearestEndingNode();
+                                        continue;
+                                }
                                 if (current == null && stmt == null)
                                         break; // break when reaching the end of nodes
                                 if (!parsedExps.empty()) {
@@ -214,7 +252,13 @@ public class Parser {
          * @throws SyntaxException compiling error thrown if meets an end but cannot be end
          */
         private void nextNode(boolean canBeEnd) throws SyntaxException {
-                if (current == null) return;
+                if (current == null) {
+                        if (canBeEnd) {
+                                return;
+                        } else {
+                                throw new LtBug("if canBeEnd is false, then current shouldn't be null");
+                        }
+                }
                 Node next = current.next();
                 if (next == null || (next instanceof EndingNode && ((EndingNode) next).getType() == EndingNode.STRONG)) {
                         if (!canBeEnd) {
@@ -374,6 +418,19 @@ public class Parser {
                                                 modifiersIsEmpty();
 
                                                 return new AST.Break(current.getLineCol());
+                                        case "return":
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                // return
+                                                lineCol = current.getLineCol();
+
+                                                if (!(current.next() instanceof Element)) {
+                                                        return new AST.Return(null, lineCol);
+                                                } else {
+                                                        Expression e = next_exp(false);
+                                                        return new AST.Return(e, lineCol);
+                                                }
                                 }
                         } else if (current.getTokenType() == TokenType.SYMBOL) {
                                 switch (content) {
@@ -384,19 +441,6 @@ public class Parser {
 
                                                 parse_anno();
                                                 return null;
-                                        case "<":
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
-
-                                                // return
-                                                LineCol lineCol = current.getLineCol();
-
-                                                if (!(current.next() instanceof Element)) {
-                                                        return new AST.Return(null, lineCol);
-                                                } else {
-                                                        Expression e = next_exp(false);
-                                                        return new AST.Return(e, lineCol);
-                                                }
                                 }
                         }
 
@@ -451,16 +495,16 @@ public class Parser {
                 nextNode(false);
                 expecting("(", current.previous(), current);
 
-                List<AST.Access> expressions = new ArrayList<>();
+                List<Expression> expressions = new ArrayList<>();
                 if (current.next() instanceof ElementStartNode) {
                         nextNode(false);
                         List<Statement> statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
 
                         for (Statement s : statements) {
-                                if (s instanceof AST.Access) {
+                                if (s instanceof Expression) {
                                         expressions.add((AST.Access) s);
                                 } else {
-                                        err.UnexpectedTokenException("object reference", s.toString(), s.line_col());
+                                        err.UnexpectedTokenException("expression", s.toString(), s.line_col());
                                         // ignore this value and continue on
                                         err.debug("ignore this value");
                                 }
@@ -508,7 +552,7 @@ public class Parser {
          * parse while<br>
          * <code>
          * while boolean<br>
-         * ...
+         * &nbsp;&nbsp;&nbsp;&nbsp;...
          * </code>
          *
          * @return While
@@ -524,11 +568,11 @@ public class Parser {
                         // parse while body
                         body = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                 } else {
-                        err.UnexpectedTokenException("while body", current.toString(), current.getLineCol());
+                        err.UnexpectedTokenException("while body", current == null ? "LineEnd" : current.toString(), current == null ? lineCol : current.getLineCol());
                         err.debug("assume that the body is empty");
                         // assume that the body is empty
                         body = Collections.emptyList();
-                        jumpToTheNearestWeakEndingNode();
+                        jumpToTheNearestEndingNode();
                 }
                 return new AST.While(condition, body, false, lineCol);
         }
@@ -537,7 +581,7 @@ public class Parser {
          * parse do_while<br>
          * <code>
          * do<br>
-         * ...<br>
+         * &nbsp;&nbsp;&nbsp;&nbsp;...<br>
          * while boolean
          * </code>
          *
@@ -547,26 +591,31 @@ public class Parser {
         private AST.While parse_do_while() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
 
-                nextNode(true); // current node should be ElementStartNode
+                nextNode(false); // then current node should be ElementStartNode
 
                 List<Statement> statements;
 
                 if (current instanceof ElementStartNode) {
                         statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                 } else {
-                        err.UnexpectedTokenException("while body", current.toString(), current.getLineCol());
+                        err.UnexpectedTokenException("while body", current == null ? "LineEnd" : current.toString(), current == null ? lineCol : current.getLineCol());
                         err.debug("assume that the body is empty");
                         // assume that the body is empty
                         statements = Collections.emptyList();
-                        jumpToTheNearestWeakEndingNode();
+                        jumpToTheNearestEndingNode();
                 }
 
-                nextNode(false);
-                expecting("while", current.previous(), current);
+                if (current == null) {
+                        err.UnexpectedEndException(lineCol);
+                        return null;
+                } else {
+                        nextNode(false);
+                        expecting("while", current.previous(), current);
 
-                Expression condition = next_exp(true); // the boolean expression
+                        Expression condition = next_exp(true); // the boolean expression
 
-                return new AST.While(condition, statements, true, lineCol);
+                        return new AST.While(condition, statements, true, lineCol);
+                }
         }
 
         /**
@@ -643,9 +692,7 @@ public class Parser {
                         StringBuilder sb = new StringBuilder();
                         boolean isName = true;
 
-                        while (current != null && (current instanceof Element) && (((Element) current).getContent().equals("::")
-                                ||
-                                current.getTokenType() == TokenType.VALID_NAME)) {
+                        while (current != null && (current instanceof Element)) {
                                 Element elem = (Element) current;
                                 String s = elem.getContent();
                                 if (!isName && !s.equals("::")) {
@@ -656,6 +703,14 @@ public class Parser {
                                 isName = !isName;
                                 sb.append(s);
                                 nextNode(true);
+                        }
+
+                        // isName should be false
+                        if (isName) {
+                                sb.delete(sb.length() - 2, sb.length());
+
+                                err.SyntaxException("package name should end with a valid name", lineCol);
+                                return new PackageDeclare(new AST.PackageRef(sb.toString(), LineCol.SYNTHETIC), lineCol);
                         }
 
                         AST.PackageRef pkg = new AST.PackageRef(sb.toString(), lineCol);
@@ -682,9 +737,16 @@ public class Parser {
          */
         private void parse_anno() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
+
+                Set<AST.Anno> storeCurrentAnnos = new HashSet<>(annos);
+                annos.clear();
+
                 Expression e = next_exp(false); // annotation
                 // might be Invocation
                 // might be Access
+
+                // restore the stored annos
+                annos.addAll(storeCurrentAnnos);
 
                 AST.Anno anno;
                 if (e instanceof AST.Invocation) {
@@ -724,7 +786,7 @@ public class Parser {
 
                         anno = new AST.Anno((AST.Access) e, Collections.emptyList(), e.line_col());
                 } else {
-                        err.UnexpectedTokenException("annotation definition", e.toString(), e.line_col());
+                        err.UnexpectedTokenException("annotation instance", e.toString(), e.line_col());
                         err.debug("ignore this annotation");
                         return;
                 }
@@ -770,16 +832,23 @@ public class Parser {
                 LineCol lineCol = current.getLineCol();
 
                 if (!(current.next() instanceof ElementStartNode)) {
-                        err.SyntaxException("invalid try statement", current.next().getLineCol());
+                        err.SyntaxException("invalid try statement without statements", lineCol);
                         err.debug("ignore the try statement");
                         return null;
                 }
 
-                nextNode(true); // try[|] catch <var> [|] / finally [|]
+                nextNode(false); // element start node
+                // try[|] catch <var> [|] / finally [|]
 
                 List<Statement> statements = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
 
                 nextNode(true); // catch <var> [|] finally [|]
+
+                if (current == null) {
+                        err.SyntaxException("invalid try statement without catch or finally", lineCol);
+                        err.debug("assume no catch and finally");
+                        return new AST.Try(statements, null, Collections.emptyList(), Collections.emptyList(), lineCol);
+                }
 
                 if (current instanceof EndingNode
                         && current.next() instanceof Element
@@ -827,7 +896,6 @@ public class Parser {
 
                                                 nextNode(true); // finally [|]
                                                 // if it's finally then go next
-                                                // else just return, let invoker (parse_statement()) to invoke nextNode()
                                                 if (current instanceof EndingNode
                                                         && current.next() instanceof Element
                                                         && ((Element) current.next()).getContent().equals("finally")) {
@@ -837,7 +905,7 @@ public class Parser {
                                                 // element
                                                 err.UnexpectedTokenException(current.toString(), current.getLineCol());
                                                 err.debug("ignore this token");
-                                                jumpToTheNearestWeakEndingNode();
+                                                jumpToTheNearestEndingNode();
                                         }
                                 }
                         }
@@ -848,9 +916,16 @@ public class Parser {
                         String f = ((Element) current).getContent();
                         // finally
                         if (f.equals("finally")) {
+                                LineCol finallyLineCol = current.getLineCol();
                                 nextNode(true);
                                 if (current instanceof ElementStartNode) {
                                         fin = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
+                                } else if (current != null && !(current instanceof EndingNode)) {
+                                        err.UnexpectedTokenException(
+                                                current == null ? "NewLine" : current.toString(),
+                                                current == null ? finallyLineCol : current.getLineCol());
+                                        err.debug("ignore this token");
+                                        jumpToTheNearestEndingNode();
                                 }
                         }
                 }
@@ -921,9 +996,9 @@ public class Parser {
                                 }
                         } else {
                                 err.UnexpectedTokenException("valid interface name", name, current.getLineCol());
-                                err.debug("ignore the super interfaces");
+                                err.debug("ignore the interface");
 
-                                accesses = Collections.emptyList();
+                                throw new ParseFail();
                         }
 
                         List<Statement> statements = null;
@@ -973,7 +1048,7 @@ public class Parser {
                         String name = ((Element) current).getContent();
                         if (current.getTokenType() != TokenType.VALID_NAME) {
                                 err.UnexpectedTokenException("valid class name", name, current.getLineCol());
-                                err.debug("continue");
+                                err.debug("assume the token is a valid name");
                         }
                         List<VariableDef> params = null;
 
@@ -996,13 +1071,13 @@ public class Parser {
                                                         for (Statement stmt : list) {
                                                                 if (stmt instanceof AST.Access) {
                                                                         if (MustHaveInit) {
-                                                                                err.SyntaxException("parameter with init", stmt.line_col());
-                                                                                err.debug("continue");
+                                                                                err.SyntaxException("expecting parameter with init value", stmt.line_col());
+                                                                                err.debug("assume it has init value");
                                                                         }
                                                                         AST.Access access = (AST.Access) stmt;
                                                                         if (access.exp != null) {
-                                                                                err.UnexpectedTokenException("param def", access.toString(), access.line_col());
-                                                                                err.debug("ignore the exp");
+                                                                                err.SyntaxException("parameter cannot be " + access.toString(), access.line_col());
+                                                                                err.debug("ignore access.exp");
                                                                         }
                                                                         VariableDef v = new VariableDef(access.name, Collections.emptySet(), annos, current.getLineCol());
                                                                         annos.clear();
@@ -1012,8 +1087,8 @@ public class Parser {
                                                                 } else if (stmt instanceof VariableDef) {
                                                                         if (((VariableDef) stmt).getInit() == null) {
                                                                                 if (MustHaveInit) {
-                                                                                        err.SyntaxException("parameter with init", stmt.line_col());
-                                                                                        err.debug("continue");
+                                                                                        err.SyntaxException("expecting parameter with init value", stmt.line_col());
+                                                                                        err.debug("assume it has init value");
                                                                                 }
                                                                         } else {
                                                                                 MustHaveInit = true;
@@ -1023,7 +1098,7 @@ public class Parser {
 
                                                                         newParamNames.add(((VariableDef) stmt).getName());
                                                                 } else {
-                                                                        err.UnexpectedTokenException("param def", stmt.toString(), stmt.line_col());
+                                                                        err.SyntaxException("parameter cannot be " + stmt.toString(), stmt.line_col());
                                                                         err.debug("ignore this parameter def");
                                                                 }
                                                         }
@@ -1073,12 +1148,11 @@ public class Parser {
                                                         } else {
                                                                 err.SyntaxException("Multiple Inheritance is not allowed", e.line_col());
                                                                 err.debug("ignore the arguments and only record the name");
-                                                                accesses.add(invocation.access);
+                                                                accesses.add(((AST.Invocation) e).access);
                                                         }
                                                 } else {
-                                                        err.UnexpectedTokenException("super class or super interfaces", e.toString(), e.line_col());
+                                                        err.SyntaxException("super class or super interfaces cannot be " + e.toString(), e.line_col());
                                                         err.debug("ignore this inheritance");
-                                                        nextNode(true);
                                                 }
                                                 if (current instanceof EndingNode && ((EndingNode) current).getType() == EndingNode.STRONG) {
                                                         nextNode(true);
@@ -1108,7 +1182,7 @@ public class Parser {
                 } else {
                         err.UnexpectedTokenException("class name", current.toString(), current.getLineCol());
                         err.debug("ignore this class definition");
-                        return null;
+                        throw new ParseFail();
                 }
         }
 
@@ -1125,6 +1199,11 @@ public class Parser {
         private AST.For parse_for() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
                 nextNode(false); // variable
+                if (!(current instanceof Element)) {
+                        err.SyntaxException("invalid for statement", current == null ? lineCol : current.getLineCol());
+                        err.debug("ignore the statement");
+                        throw new ParseFail();
+                }
                 Element varElem = (Element) current;
                 String varName = varElem.getContent();
                 if (varElem.getTokenType() != TokenType.VALID_NAME) {
@@ -1197,15 +1276,20 @@ public class Parser {
 
                         // nodes next to else might be Ending or ElemStart
                         if (((Element) current).getContent().equals("else")) {
-                                nextNode(true);
+                                if (isLast) {
+                                        err.SyntaxException("if-else statement had already reached 'else' but got " + content + " instead", current.getLineCol());
+                                        err.debug("ignore this if branch");
+                                } else {
+                                        nextNode(true);
+                                }
                         } else {
                                 nextNode(false);
                         }
                         if (content.equals("if") || content.equals("elseif")) {
 
                                 if (isLast) {
-                                        err.SyntaxException("if-else had already reached else but got " + content + " instead", current.getLineCol());
-                                        err.debug("ignore the " + content);
+                                        err.SyntaxException("if-else statement had already reached 'else' but got " + content + " instead", current.getLineCol());
+                                        err.debug("ignore this if branch");
                                 } else {
                                         condition = get_exp(true);
                                 }
@@ -1262,8 +1346,8 @@ public class Parser {
                         for (Statement s : statements) {
                                 if (s instanceof AST.Access && ((AST.Access) s).exp == null) {
                                         if (MustHaveInit) {
-                                                err.SyntaxException("parameter with init value", s.line_col());
-                                                err.debug("continue");
+                                                err.SyntaxException("expecting parameter with init value", s.line_col());
+                                                err.debug("assume it has init value");
                                         }
 
                                         AST.Access access = (AST.Access) s;
@@ -1274,8 +1358,8 @@ public class Parser {
                                 } else if (s instanceof VariableDef) {
                                         if (((VariableDef) s).getInit() == null) {
                                                 if (MustHaveInit) {
-                                                        err.SyntaxException("parameter with init value", s.line_col());
-                                                        err.debug("continue");
+                                                        err.SyntaxException("expecting parameter with init value", s.line_col());
+                                                        err.debug("assume it has init value");
                                                 }
                                         } else {
                                                 MustHaveInit = true;
@@ -1283,7 +1367,7 @@ public class Parser {
                                         variableList.add((VariableDef) s);
                                         names.add(((VariableDef) s).getName());
                                 } else {
-                                        err.UnexpectedTokenException("parameter", s.toString(), s.line_col());
+                                        err.SyntaxException("parameter cannot be " + s.toString(), s.line_col());
                                         err.debug("ignore this parameter");
                                 }
                         }
@@ -1411,16 +1495,8 @@ public class Parser {
 
                 if (current instanceof Element && ((Element) current).getContent().equals("=")) {
                         // check "="
-                        nextNode(false); // value
-                        parse_expression();
-                        Expression exp = parsedExps.pop();
-                        if (!(current instanceof EndingNode || current == null)) {
-                                err.UnexpectedTokenException("Ending", current.toString(), current.getLineCol());
-                                err.debug("jump to the nearest ending");
-                                while (!(current instanceof EndingNode || current == null)) {
-                                        nextNode(true);
-                                }
-                        }
+                        Expression exp = next_exp(false);
+
                         MethodDef def = new MethodDef(methodName, modifiers, returnType, variableList, annos,
                                 Collections.singletonList(
                                         new AST.Return(exp, exp.line_col())
@@ -1544,9 +1620,12 @@ public class Parser {
                                                         case "as":
 
                                                                 annosIsEmpty();
+                                                                modifiersIsEmpty();
+
                                                                 if (parsedExps.isEmpty()) {
                                                                         err.UnexpectedTokenException("expression", "as", current.getLineCol());
-                                                                        err.debug("ignore the 'as'");
+                                                                        err.debug("ignore the statement");
+                                                                        throw new ParseFail();
                                                                 } else {
                                                                         lineCol = current.getLineCol();
                                                                         Expression exp = parsedExps.pop();
@@ -1640,10 +1719,10 @@ public class Parser {
                                                                         if (!parsedExps.empty() && (parsedExps.peek() instanceof AST.Access)) {
                                                                                 // method() invocation
                                                                                 AST.Access access = (AST.Access) parsedExps.pop();
-                                                                                AST.Invocation invocation = new AST.Invocation(access, new Expression[0], access.line_col());
+                                                                                AST.Invocation invocation = new AST.Invocation(access, Collections.emptyList(), access.line_col());
                                                                                 parsedExps.push(invocation);
                                                                         } else {
-                                                                                err.SyntaxException("it should be the method to invoke", parsedExps.empty() ? current.getLineCol() : parsedExps.pop().line_col());
+                                                                                err.SyntaxException("it should be the method to invoke", parsedExps.empty() ? current.getLineCol() : parsedExps.peek().line_col());
                                                                         }
 
                                                                         nextNode(true);
@@ -1651,45 +1730,38 @@ public class Parser {
                                                                 } else if (current instanceof ElementStartNode) {
                                                                         // element start node : ...(口)...
                                                                         ElementStartNode startNode = (ElementStartNode) current;
-                                                                        List<Statement> statements = parseElemStart(startNode, false, Collections.emptySet(), false);
+                                                                        List<Statement> statements = parseElemStart(startNode, true, Collections.emptySet(), false);
 
-                                                                        if (!statements.isEmpty()) {
-                                                                                if (!parsedExps.empty() && (parsedExps.peek() instanceof AST.Access)) {
-                                                                                        // method(...)
-                                                                                        AST.Access access = (AST.Access) parsedExps.pop();
-                                                                                        Expression[] args = new Expression[statements.size()];
-                                                                                        for (int i = 0; i < statements.size(); ++i) {
-                                                                                                Statement stmt = statements.get(i);
-                                                                                                if ((stmt instanceof Expression)) {
-                                                                                                        args[i] = (Expression) stmt;
-                                                                                                } else {
-                                                                                                        err.UnexpectedTokenException("expression", stmt.toString(), stmt.line_col());
-                                                                                                        err.debug("ignore the argument");
-                                                                                                }
-                                                                                        }
-
-                                                                                        AST.Invocation invocation = new AST.Invocation(access, args, current.getLineCol());
-                                                                                        parsedExps.push(invocation);
-                                                                                } else {
-                                                                                        if (statements.size() == 1) {
-                                                                                                Statement stmt = statements.get(0);
-                                                                                                if (stmt instanceof Expression) {
-                                                                                                        // something like 3*(1+2)
-                                                                                                        parsedExps.push((Expression) stmt);
-                                                                                                } else {
-                                                                                                        // statement
-                                                                                                        AST.Procedure procedure = new AST.Procedure(statements, startNode.getLineCol());
-                                                                                                        parsedExps.push(procedure);
-                                                                                                }
+                                                                        if (!parsedExps.empty() && (parsedExps.peek() instanceof AST.Access)) {
+                                                                                // method(...)
+                                                                                AST.Access access = (AST.Access) parsedExps.pop();
+                                                                                List<Expression> args = new ArrayList<>();
+                                                                                for (Statement stmt : statements) {
+                                                                                        if ((stmt instanceof Expression)) {
+                                                                                                args.add((Expression) stmt);
                                                                                         } else {
+                                                                                                err.UnexpectedTokenException("expression", stmt.toString(), stmt.line_col());
+                                                                                                err.debug("ignore the argument");
+                                                                                        }
+                                                                                }
+
+                                                                                AST.Invocation invocation = new AST.Invocation(access, args, current.getLineCol());
+                                                                                parsedExps.push(invocation);
+                                                                        } else {
+                                                                                if (statements.size() == 1) {
+                                                                                        Statement stmt = statements.get(0);
+                                                                                        if (stmt instanceof Expression) {
+                                                                                                // something like 3*(1+2)
+                                                                                                parsedExps.push((Expression) stmt);
+                                                                                        } else {
+                                                                                                // statement
                                                                                                 AST.Procedure procedure = new AST.Procedure(statements, startNode.getLineCol());
                                                                                                 parsedExps.push(procedure);
                                                                                         }
+                                                                                } else {
+                                                                                        AST.Procedure procedure = new AST.Procedure(statements, startNode.getLineCol());
+                                                                                        parsedExps.push(procedure);
                                                                                 }
-                                                                        } else {
-                                                                                err.SyntaxException("statements between () should not be empty", startNode.getLineCol());
-                                                                                // ignore the ()
-                                                                                err.debug("ignore the ()");
                                                                         }
 
                                                                         nextNode(false); // should be ')'
@@ -1734,8 +1806,8 @@ public class Parser {
                 } else if (current instanceof ElementStartNode) {
                         if (!expectingStartNode) {
                                 err.UnexpectedNewLayerException(current.getLineCol());
-                                err.debug("ignore the startNode");
-                                nextNode(true);
+                                err.debug("ignore the statement");
+                                throw new ParseFail();
                         }
                 }
                 // else
@@ -1791,7 +1863,7 @@ public class Parser {
                         }
                         AST.Invocation invocation = new AST.Invocation(
                                 new AST.Access(a, op, opLineCol),
-                                opArgs.toArray(new Expression[opArgs.size()]),
+                                opArgs,
                                 opLineCol);
                         parsedExps.push(invocation);
                 } else {
@@ -1802,7 +1874,7 @@ public class Parser {
                                 return;
                         }
                         nextNode(true);
-                        AST.Invocation invocation = new AST.Invocation(new AST.Access(a, op, opLineCol), new Expression[0], opLineCol);
+                        AST.Invocation invocation = new AST.Invocation(new AST.Access(a, op, opLineCol), Collections.emptyList(), opLineCol);
                         parsedExps.push(invocation);
                 }
 
@@ -1852,8 +1924,7 @@ public class Parser {
         private AST.MapExp parseExpMap(ElementStartNode startNode) throws SyntaxException {
                 List<Statement> stmts = parseElemStart(startNode, true, Collections.emptySet(), true);
                 if (stmts.size() % 2 != 0) {
-                        err.SyntaxException("invalid map contents", startNode.getLineCol());
-                        return new AST.MapExp(new LinkedHashMap<>(), startNode.getLineCol());
+                        throw new LtBug("the list should contain key-value entries");
                 }
 
                 boolean isKey = true;
@@ -2138,7 +2209,7 @@ public class Parser {
         }
 
         /**
-         * parse a package, which will may fill the stack with {@link AST.PackageRef} or {@link AST.Access} containing one
+         * parse a package, which will may fill the stack with {@link AST.PackageRef} or {@link AST.Access}
          *
          * @param parse_exp call {@link #parse_expression()} after finished
          * @throws SyntaxException compiling error
@@ -2205,10 +2276,7 @@ public class Parser {
                 } else {
                         err.UnexpectedTokenException("valid name", current.toString(), current.getLineCol());
                         err.debug("ignore the statement");
-                        nextNode(true);
-                        if (parse_exp) {
-                                parse_expression();
-                        }
+                        throw new ParseFail();
                 }
         }
 

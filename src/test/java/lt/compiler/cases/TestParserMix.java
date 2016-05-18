@@ -56,30 +56,6 @@ public class TestParserMix {
                 return syntacticProcessor.parse();
         }
 
-        /*
-        @Test
-        public void test1() throws Exception {
-                System.out.println(parse("" +
-                        "# jes::lang\n" +
-                        "#> java::util::List\n" +
-                        "class JESList(list:List)\n" +
-                        "    arr:Array\n" +
-                        "    for i @ 0.:list.size\n" +
-                        "        arr[i]=list[i]\n" +
-                        "" +
-                        "    get(index)\n" +
-                        "        <arr[index]\n" +
-                        "" +
-                        "    set(index,obj)\n" +
-                        "        tmp=arr[index]\n" +
-                        "        arr[index]=obj\n" +
-                        "        <tmp\n" +
-                        "" +
-                        "    length()\n" +
-                        "        <arr.length"));
-        }
-        */
-
         @Test
         public void test2VarOperatorAndAccessAndPar() throws Exception {
                 List<Statement> statements = parse("list * (1+2)");
@@ -147,7 +123,8 @@ public class TestParserMix {
                         new TwoVariableOperation(
                                 "+",
                                 new NumberLiteral("1", LineCol.SYNTHETIC),
-                                new AST.Invocation(new AST.Access(new AST.Access(null, "list", LineCol.SYNTHETIC), "get", LineCol.SYNTHETIC), new Expression[]{new NumberLiteral("0", LineCol.SYNTHETIC)}, LineCol.SYNTHETIC),
+                                new AST.Invocation(new AST.Access(new AST.Access(null, "list", LineCol.SYNTHETIC), "get", LineCol.SYNTHETIC),
+                                        Collections.singletonList(new NumberLiteral("0", LineCol.SYNTHETIC)), LineCol.SYNTHETIC),
                                 LineCol.SYNTHETIC),
                         new NumberLiteral("2", LineCol.SYNTHETIC),
                         LineCol.SYNTHETIC);
@@ -159,8 +136,8 @@ public class TestParserMix {
                 List<Statement> statements = parse("" +
                         "1+(\n" +
                         "    if i==1\n" +
-                        "        <5\n" +
-                        "    <2\n" +
+                        "        return 5\n" +
+                        "    return 2\n" +
                         ")+2");
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
@@ -259,22 +236,6 @@ public class TestParserMix {
                 } catch (SyntaxException ignore) {
                         fail();
                 }
-        }
-
-        @Test
-        public void testReturnLittlerThan() throws Exception {
-                List<Statement> statements = parse("<3<2");
-                assertEquals(1, statements.size());
-                Statement statement = statements.get(0);
-
-                AST.Return r = new AST.Return(
-                        new TwoVariableOperation(
-                                "<",
-                                new NumberLiteral("3", LineCol.SYNTHETIC),
-                                new NumberLiteral("2", LineCol.SYNTHETIC),
-                                LineCol.SYNTHETIC),
-                        LineCol.SYNTHETIC);
-                assertEquals(r, statement);
         }
 
         @Test
@@ -492,22 +453,22 @@ public class TestParserMix {
                         {
                                 put(new StringLiteral("'a'", null), new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
-                                        new Expression[]{new AST.Access(null, "b", null)},
+                                        Collections.singletonList(new AST.Access(null, "b", null)),
                                         null
                                 ));
                                 put(new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
-                                        new Expression[]{new AST.Access(null, "b", null)},
+                                        Collections.singletonList(new AST.Access(null, "b", null)),
                                         null
                                 ), new StringLiteral("'b'", null));
                                 put(new StringLiteral("'a'", null), new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
-                                        new Expression[0],
+                                        Collections.emptyList(),
                                         null
                                 ));
                                 put(new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
-                                        new Expression[0],
+                                        Collections.emptyList(),
                                         null
                                 ), new StringLiteral("'b'", null));
                         }
@@ -531,7 +492,7 @@ public class TestParserMix {
                                                                 "op",
                                                                 null
                                                         ),
-                                                        new Expression[]{
+                                                        Collections.singletonList(
                                                                 new TwoVariableOperation(
                                                                         "+",
                                                                         new AST.Access(
@@ -542,19 +503,19 @@ public class TestParserMix {
                                                                         new NumberLiteral("1", null),
                                                                         null
                                                                 )
-                                                        },
+                                                        ),
                                                         null
                                                 ),
                                                 "op",
                                                 null
                                         ),
-                                        new Expression[]{new NumberLiteral("2", null)},
+                                        Collections.singletonList(new NumberLiteral("2", null)),
                                         null
                                 ),
                                 "op",
                                 null
                         ),
-                        new Expression[0],
+                        Collections.emptyList(),
                         null
                 );
 

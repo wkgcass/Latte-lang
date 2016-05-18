@@ -97,7 +97,7 @@ interface Interface_Have_Methods
     i_am_an_abstract_method()=...
     ; method with return value are "default methods" (java 8)
     i_am_a_default_method()
-        <"default method"
+        return "default method"
 
 class TesterForInterface_Have_Methods : Interface_Have_Methods
     i_am_an_abstract_method()="abs method impl"

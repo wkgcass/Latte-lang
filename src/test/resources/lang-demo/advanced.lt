@@ -5,8 +5,8 @@
 class TestInnerMethod
     outer()
         inner()  ; a method defined inside another is `inner method`
-            <1
-        <inner() ; invoke inner method
+            return 1
+        return inner() ; invoke inner method
 ; inner methods are private and can only be accessed in the current scope
 ; the inner method generates a new private method inside the class,
 ; the method name is automatically generated and there's rare chance you would
@@ -26,16 +26,16 @@ class TestInnerMethod
 ; =========
 class TestProcedure
     method()
-        <(<1) ; the procedure is surrounded by (),
+        return (return 1) ; the procedure is surrounded by (),
               ; and there should be at least one statement
               ; or more than one expression in the procedure
 ; the procedure allow you to write code anywhere
 ; e.g.
 ; in java, you use boolValue?exp1:exp2, in LessTyping, you can use
 ; (   if boolValue
-;         <exp1
+;         return exp1
 ;     else
-;         <exp2)
+;         return exp2)
 ; the procedure itself is considered as a Value
 ; so it can be filled into any position that requires a value
 

@@ -51,7 +51,7 @@ class I_Am_A_Class
         ; variables in method block are local variables
         list=emptyList()      ; invoke java::util::Collections.emptyList()
         ; and assign to field `list`
-        <list
+        return list
 
 interface I_Am_An_Interface
 

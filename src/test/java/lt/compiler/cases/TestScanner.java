@@ -151,7 +151,7 @@ public class TestScanner {
                 //    <input.trim()
                 Scanner processor = new Scanner("test", new StringReader("" +
                         "val trim(input)\n" +
-                        "    <input.trim()"), new Scanner.Properties(), new ErrorManager(true));
+                        "    return input.trim()"), new Scanner.Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -171,7 +171,7 @@ public class TestScanner {
                 startNode.setLinkedNode(args.previous);
 
                 args.previous = null;
-                args.previous = new Element(args, "<", TokenType.SYMBOL);
+                args.previous = new Element(args, "return", TokenType.KEY);
                 startNode1.setLinkedNode(args.previous);
                 args.previous = new Element(args, "input", TokenType.VALID_NAME);
                 args.previous = new Element(args, ".", TokenType.SYMBOL);
@@ -236,11 +236,11 @@ public class TestScanner {
                 Scanner processor = new Scanner("test", new StringReader(
                         "" +
                                 "if true\n" +
-                                "    <\"hello world\"\n" +
+                                "    return \"hello world\"\n" +
                                 "elseif false\n" +
-                                "    <\"hello\"\n" +
+                                "    return \"hello\"\n" +
                                 "else\n" +
-                                "    <\"world\""), new Scanner.Properties(), new ErrorManager(true));
+                                "    return \"world\""), new Scanner.Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -260,17 +260,17 @@ public class TestScanner {
                 ElementStartNode startNode3 = new ElementStartNode(args, 4);
 
                 args.previous = null;
-                args.previous = new Element(args, "<", TokenType.SYMBOL);
+                args.previous = new Element(args, "return", TokenType.KEY);
                 startNode1.setLinkedNode(args.previous);
                 args.previous = new Element(args, "\"hello world\"", TokenType.STRING);
 
                 args.previous = null;
-                args.previous = new Element(args, "<", TokenType.SYMBOL);
+                args.previous = new Element(args, "return", TokenType.KEY);
                 startNode2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "\"hello\"", TokenType.STRING);
 
                 args.previous = null;
-                args.previous = new Element(args, "<", TokenType.SYMBOL);
+                args.previous = new Element(args, "return", TokenType.KEY);
                 startNode3.setLinkedNode(args.previous);
                 args.previous = new Element(args, "\"world\"", TokenType.STRING);
 
@@ -378,7 +378,7 @@ public class TestScanner {
                                 "        throw RuntimeException(e)\n" +
                                 "    OtherException\n" +
                                 "finally\n" +
-                                "    <ret"), new Scanner.Properties(), new ErrorManager(true));
+                                "    return ret"), new Scanner.Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -426,7 +426,7 @@ public class TestScanner {
                 startNode1_1_1.setLinkedNode(args.previous);
 
                 args.previous = null;
-                args.previous = new Element(args, "<", TokenType.SYMBOL);
+                args.previous = new Element(args, "return", TokenType.KEY);
                 startNode3.setLinkedNode(args.previous);
                 args.previous = new Element(args, "ret", TokenType.VALID_NAME);
 
@@ -480,72 +480,6 @@ public class TestScanner {
 
                 assertEquals(root2, root);
         }
-
-        /*
-        @Test
-        public void testAnonymousClass() throws Exception {
-                //list.stream().filter(
-                //    Predicate()
-                //        @Override
-                //        test(x) : bool
-                //            < x > 10
-                //)
-                Scanner processor = new Scanner(new StringReader(
-                        "" +
-                                "list.stream().filter(\n" +
-                                "    Predicate()\n" +
-                                "        test(x)\n" +
-                                "            < x > 10\n" +
-                                ")"), 4);
-                ElementStartNode root = processor.parse();
-
-                Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
-                args.previous = new Element(args, "list");
-                root2.setLinkedNode(args.previous);
-                args.previous = new Element(args, ".");
-                args.previous = new Element(args, "stream");
-                args.previous = new Element(args, "(");
-                args.previous = new Element(args, ")");
-                args.previous = new Element(args, ".");
-                args.previous = new Element(args, "filter");
-                args.previous = new Element(args, "(");
-                ElementStartNode startNode1 = new ElementStartNode(args, 4);
-                args.previous = startNode1;
-                args.previous = new EndingNode(args, EndingNode.WEAK);
-                args.previous = new Element(args, ")");
-
-                args.previous = null;
-                args.previous = new Element(args, "Predicate");
-                startNode1.setLinkedNode(args.previous);
-                args.previous = new Element(args, "(");
-                args.previous = new Element(args, ")");
-                ElementStartNode startNode2 = new ElementStartNode(args, 8);
-
-                args.previous = null;
-                args.previous = new Element(args, "test");
-                startNode2.setLinkedNode(args.previous);
-                args.previous = new Element(args, "(");
-                ElementStartNode startNode3 = new ElementStartNode(args, 12);
-                args.previous = startNode3;
-                args.previous = new EndingNode(args, EndingNode.WEAK);
-                args.previous = new Element(args, ")");
-                ElementStartNode startNode4 = new ElementStartNode(args, 12);
-
-                args.previous = null;
-                args.previous = new Element(args, "x");
-                startNode3.setLinkedNode(args.previous);
-
-                args.previous = null;
-                args.previous = new Element(args, "<");
-                startNode4.setLinkedNode(args.previous);
-                args.previous = new Element(args, "x");
-                args.previous = new Element(args, ">");
-                args.previous = new Element(args, "10");
-
-                assertEquals(root2, root);
-        }
-        */
 
         @Test
         public void testOperators() throws Exception {
@@ -688,11 +622,11 @@ public class TestScanner {
                         // but changed indentation to 2
                         "" +
                                 "if true\n" +
-                                "  <\"hello world\"\n" +
+                                "  return \"hello world\"\n" +
                                 "elseif false\n" +
-                                "  <\"hello\"\n" +
+                                "  return \"hello\"\n" +
                                 "else\n" +
-                                "  <\"world\""), properties, new ErrorManager(true));
+                                "  return \"world\""), properties, new ErrorManager(true));
                 processor.scan();
         }
 
