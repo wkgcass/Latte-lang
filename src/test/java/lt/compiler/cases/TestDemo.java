@@ -563,6 +563,7 @@ public class TestDemo {
                         fail();
                 } catch (InvocationTargetException e) {
                         assertTrue(e.getCause() instanceof UnsupportedOperationException);
+                        assertEquals("contains", e.getCause().getMessage());
                 }
 
                 Method testGt = TestNum.getMethod("testGt");
@@ -592,6 +593,7 @@ public class TestDemo {
                         fail();
                 } catch (InvocationTargetException e) {
                         assertTrue(e.getCause() instanceof UnsupportedOperationException);
+                        assertEquals("logicNot", e.getCause().getMessage());
                 }
 
                 Method testNot = TestNum.getMethod("testNot");
@@ -599,6 +601,16 @@ public class TestDemo {
 
                 Method testNegate = TestNum.getMethod("testNegate");
                 assertEquals(con.newInstance(-1), testNegate.invoke(null));
+
+
+                try {
+                        Method testConcat = TestNum.getMethod("testConcat");
+                        testConcat.invoke(null);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getCause() instanceof UnsupportedOperationException);
+                        assertEquals("concat", e.getCause().getMessage());
+                }
         }
 
         @Test

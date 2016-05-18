@@ -550,18 +550,18 @@ public class CodeGenerator {
          */
         private void buildNewList(MethodVisitor methodVisitor, CodeInfo info, Ins.NewList newList) {
                 // newList is LinkedList
-                methodVisitor.visitTypeInsn(Opcodes.NEW, "java/util/LinkedList");
+                methodVisitor.visitTypeInsn(Opcodes.NEW, typeToInternalName(newList.type()));
                 info.push(CodeInfo.Size._1);
                 methodVisitor.visitInsn(Opcodes.DUP);
                 info.push(CodeInfo.Size._1);
-                methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/LinkedList", "<init>", "()V", false);
+                methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, typeToInternalName(newList.type()), "<init>", "()V", false);
                 info.pop(1);
 
                 for (Value v : newList.initValues()) {
                         methodVisitor.visitInsn(Opcodes.DUP); // list ref
                         info.push(CodeInfo.Size._1);
                         buildValueAccess(methodVisitor, info, v); // arg
-                        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/LinkedList", "add", "(Ljava/lang/Object;)Z", false);
+                        methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
                         info.pop(2);
                         info.push(CodeInfo.Size._1); // the add result (boolean add(Object))
                         methodVisitor.visitInsn(Opcodes.POP);

@@ -108,7 +108,8 @@ public class Scanner {
                 "@", // @Annotation
                 "=:=", "!:=", // equal or not$equal
                 "..", ".:", // list generator
-                "..." // pass
+                "...", // pass
+                ":::" // concat
         ));
         /**
          * symbols that let the scanner know the following input should be scanned as a string<br>

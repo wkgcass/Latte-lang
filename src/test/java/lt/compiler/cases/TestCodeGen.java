@@ -28,9 +28,7 @@ import lt.compiler.*;
 import lt.compiler.Scanner;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
-import lt.lang.RangeList;
-import lt.lang.Undefined;
-import lt.lang.Wrapper;
+import lt.lang.*;
 import lt.lang.function.Function1;
 import org.junit.Test;
 
@@ -39,6 +37,7 @@ import java.io.StringReader;
 import java.lang.reflect.*;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.List;
 import java.util.function.Function;
 
 import static org.junit.Assert.*;
@@ -1021,7 +1020,7 @@ public class TestCodeGen {
                 @SuppressWarnings("unchecked")
                 List<Integer> list = (List<Integer>) method.invoke(null);
 
-                assertTrue(list.getClass().equals(LinkedList.class));
+                assertTrue(list.getClass().equals(lt.lang.List.class));
 
                 assertEquals(10, list.get(0).intValue());
                 assertEquals(20, list.get(1).intValue());
@@ -1768,5 +1767,39 @@ public class TestCodeGen {
 
                 assertEquals(1, cls.getMethod("methodStatic", Object.class).invoke(null, 2));
                 assertEquals(1, cls.getMethod("methodStatic", Object.class, Object.class).invoke(null, 2, 1));
+        }
+
+        @Test
+        public void testConcatOp() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestConcatOp\n" +
+                                "    static\n" +
+                                "        method(a,b)\n" +
+                                "            return a:::b\n" +
+                                "        method2()\n" +
+                                "            return [\"a\",\"b\"]:::[\"c\"]",
+                        "TestConcatOp");
+
+                Method method = cls.getMethod("method", Object.class, Object.class);
+                assertEquals("ab", method.invoke(null, "a", "b"));
+                assertEquals(
+                        Arrays.asList(1, 2, 3),
+                        method.invoke(null, new lt.lang.List(Arrays.asList(1, 2)), Collections.singletonList(3))
+                );
+        }
+
+        @Test
+        public void testInvokeMethodWithoutPar() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestInvokeMethodWithoutPar\n" +
+                                "    static\n" +
+                                "        method(o)\n" +
+                                "            return o.toString",
+                        "TestInvokeMethodWithoutPar");
+
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals("[]", method.invoke(null, Collections.emptyList()));
         }
 }

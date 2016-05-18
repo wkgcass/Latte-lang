@@ -1871,7 +1871,7 @@ public class TestSemantic {
 
                 Ins.PutField putField = (Ins.PutField) ((ValuePack) con.statements().get(1)).instructions().get(0);
                 Ins.NewList newList = (Ins.NewList) putField.value();
-                assertEquals("java.util.LinkedList", newList.type().fullName());
+                assertEquals("lt.lang.List", newList.type().fullName());
 
                 assertTrue(newList.initValues().get(0) instanceof Ins.InvokeStatic);
                 assertTrue(newList.initValues().get(1) instanceof Ins.InvokeStatic);

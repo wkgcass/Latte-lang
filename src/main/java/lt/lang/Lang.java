@@ -170,6 +170,11 @@ public class Lang {
                         return Dynamic.invoke(o, callerClass, "get", new boolean[]{false}, new Object[]{fieldName});
                 } catch (Throwable ignore) {
                 }
+                // try to find `fieldName()`
+                try {
+                        return Dynamic.invoke(o, callerClass, fieldName, new boolean[0], new Object[0]);
+                } catch (Throwable ignore) {
+                }
                 return Undefined.get();
         }
 

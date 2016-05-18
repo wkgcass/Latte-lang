@@ -32,6 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.List;
 
 /**
  * invoke dynamic
@@ -188,13 +189,15 @@ public class Dynamic {
                 if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
                 List<Method> methodList = new ArrayList<>();
 
+                Queue<Class<?>> interfaces = new ArrayDeque<>();
                 Class<?> c = o.getClass();
                 while (c != null) {
+                        Collections.addAll(interfaces, c.getInterfaces());
                         fillMethodCandidates(c, invoker, method, args, methodList);
                         c = c.getSuperclass();
                 }
                 c = o.getClass();
-                Queue<Class<?>> interfaces = new ArrayDeque<>();
+
                 Collections.addAll(interfaces, c.getInterfaces());
                 while (!interfaces.isEmpty()) {
                         Class<?> i = interfaces.remove();

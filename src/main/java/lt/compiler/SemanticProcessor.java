@@ -2558,7 +2558,7 @@ public class SemanticProcessor {
          * <li>{@link lt.compiler.syntactic.AST.Assignment}</li>
          * <li>{@link lt.compiler.syntactic.AST.UndefinedExp}</li>
          * <li>{@link lt.compiler.syntactic.AST.Null}</li>
-         * <li>{@link lt.compiler.syntactic.AST.ArrayExp} =&gt; array/java.util.LinkedList</li>
+         * <li>{@link lt.compiler.syntactic.AST.ArrayExp} =&gt; array/lt.lang.List</li>
          * <li>{@link lt.compiler.syntactic.AST.MapExp} =&gt; java.util.LinkedHashMap</li>
          * <li>{@link lt.compiler.syntactic.AST.Procedure}</li>
          * <li>{@link lt.compiler.syntactic.AST.Lambda}</li>
@@ -3471,7 +3471,7 @@ public class SemanticProcessor {
                 } else {
                         // construct an ArrayList
                         Ins.NewList newList = new Ins.NewList(
-                                getTypeWithName("java.util.LinkedList", arrayExp.line_col())
+                                getTypeWithName("lt.lang.List", arrayExp.line_col())
                         );
                         SClassDef Object_type = (SClassDef) getTypeWithName("java.lang.Object", arrayExp.line_col());
                         // init values
@@ -3845,7 +3845,7 @@ public class SemanticProcessor {
          */
         private Value parseValueFromTwoVarOp(Value left, String op, Value right, SemanticScope scope, LineCol lineCol) throws SyntaxException {
                 switch (op) {
-                        case "..": {
+                        case "..":
                                 Value intLeft = cast(IntTypeDef.get(), left, lineCol);
                                 Value intRight = cast(IntTypeDef.get(), right, lineCol);
 
@@ -3854,17 +3854,19 @@ public class SemanticProcessor {
                                 n.args().add(intRight);
                                 n.args().add(new BoolValue(true)); // end_inclusive
                                 return n;
-                        }
-                        case ".:": {
-                                Value intLeft = cast(IntTypeDef.get(), left, lineCol);
-                                Value intRight = cast(IntTypeDef.get(), right, lineCol);
+                        case ".:":
+                                intLeft = cast(IntTypeDef.get(), left, lineCol);
+                                intRight = cast(IntTypeDef.get(), right, lineCol);
 
-                                Ins.New n = new Ins.New(getRangeListCons(), lineCol);
+                                n = new Ins.New(getRangeListCons(), lineCol);
                                 n.args().add(intLeft);
                                 n.args().add(intRight);
                                 n.args().add(new BoolValue(false)); // end_exclusive
                                 return n;
-                        }
+                        case ":::":
+                                List<Value> arg = new ArrayList<>();
+                                arg.add(right);
+                                return invokeMethodWithArgs(lineCol, left, "concat", arg, scope);
                         case "^^":
                                 if (left.type() instanceof PrimitiveTypeDef ||
                                         getTypeWithName("java.lang.Number", LineCol.SYNTHETIC)
