@@ -57,11 +57,11 @@ public class TestCodeGen {
                 CodeGenerator codeGenerator = new CodeGenerator(types);
                 Map<String, byte[]> list = codeGenerator.generate();
 
-                byte[] bs = list.get(clsName);
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
                                 throws ClassNotFoundException {
+                                byte[] bs = list.get(name);
                                 return defineClass(name, bs, 0, bs.length);
                         }
                 };
@@ -1801,5 +1801,48 @@ public class TestCodeGen {
 
                 Method method = cls.getMethod("method", Object.class);
                 assertEquals("[]", method.invoke(null, Collections.emptyList()));
+        }
+
+        @Test
+        public void testFunctionalInterfaces() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestFunctionalInterfaces\n" +
+                                "    static\n" +
+                                "        method(list)\n" +
+                                "            return list.stream().map((e)->e.toString).collect(java::util::stream::Collectors.toList())",
+                        "TestFunctionalInterfaces");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(Arrays.asList("1", "2", "3"), method.invoke(null, Arrays.asList(1, 2, 3)));
+        }
+
+        @Test
+        public void testImplicitArray() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestImplicitArray\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            return (type TestImplicitArray).getMethod('method', [])",
+                        "TestImplicitArray");
+                Method method = cls.getMethod("method");
+                assertEquals(method, method.invoke(null));
+        }
+
+        @Test
+        public void testFunctionalAbstractClass() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestFunctionalAbstractClass\n" +
+                                "    m(c:lt::compiler::F)=c\n" +
+                                "    method()\n" +
+                                "        return m((e)->e)",
+                        "TestFunctionalAbstractClass");
+                Object TestFunctionalAbstractClass_inst = cls.newInstance();
+                Method method = cls.getMethod("method");
+                Object o = method.invoke(TestFunctionalAbstractClass_inst);
+                assertTrue(o instanceof F);
+                F f = (F) o;
+                assertEquals("test", f.func("test"));
         }
 }

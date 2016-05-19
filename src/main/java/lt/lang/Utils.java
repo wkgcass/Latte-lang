@@ -24,7 +24,6 @@
 
 package lt.lang;
 
-import lt.lang.function.Function0;
 import lt.repl.Evaluator;
 import lt.compiler.JarLoader;
 
@@ -40,10 +39,12 @@ public class Utils {
         private Utils() {
         }
 
-        public static Implicitly implicitly = Implicitly.get();
-
         public static void println(Object o) {
                 System.out.println(o);
+        }
+
+        public static void println() {
+                System.out.println();
         }
 
         public static Object eval(String e) throws Exception {

@@ -25,12 +25,10 @@
 package lt.lang;
 
 import lt.compiler.LtBug;
+import lt.lang.function.Function;
 
 import java.lang.invoke.*;
-import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.List;
 
@@ -90,6 +88,7 @@ public class Dynamic {
                         if (!m.getName().equals(method)) continue;
                         if (m.getParameterCount() != args.length) continue;
 
+                        // access check
                         if (Modifier.isPrivate(m.getModifiers())) {
                                 // private
                                 if (!invoker.equals(c)) continue;
@@ -106,7 +105,7 @@ public class Dynamic {
                         for (int i = 0; i < args.length; ++i) {
                                 if (!m.getParameterTypes()[i].isInstance(args[i]) &&
                                         (
-                                                // null can be assigned to reference type
+                                                // null can be assigned to any reference type
                                                 m.getParameterTypes()[i].isPrimitive()
                                                         ||
                                                         args[i] != null
@@ -119,22 +118,33 @@ public class Dynamic {
                                         if (null == obj) continue;
 
                                         if (cls.equals(int.class)) {
-                                                if (!obj.getClass().equals(Integer.class)) continue out;
+                                                if (!(obj instanceof Integer)) continue out;
                                         } else if (cls.equals(short.class)) {
-                                                if (!obj.getClass().equals(Short.class)) continue out;
+                                                if (!(obj instanceof Short)) continue out;
                                         } else if (cls.equals(byte.class)) {
-                                                if (!obj.getClass().equals(Byte.class)) continue out;
+                                                if (!(obj instanceof Byte)) continue out;
                                         } else if (cls.equals(boolean.class)) {
-                                                if (!obj.getClass().equals(Boolean.class)) continue out;
+                                                if (!(obj instanceof Boolean)) continue out;
                                         } else if (cls.equals(char.class)) {
-                                                if (!obj.getClass().equals(Character.class)) continue out;
+                                                if (!(obj instanceof Character)) continue out;
                                         } else if (cls.equals(long.class)) {
-                                                if (!obj.getClass().equals(Long.class)) continue out;
+                                                if (!(obj instanceof Long)) continue out;
                                         } else if (cls.equals(double.class)) {
-                                                if (!obj.getClass().equals(Double.class)) continue out;
+                                                if (!(obj instanceof Double)) continue out;
                                         } else if (cls.equals(float.class)) {
-                                                if (!obj.getClass().equals(Float.class)) continue out;
+                                                if (!(obj instanceof Float)) continue out;
+                                        } else if (cls.isArray()) {
+                                                if (!(obj instanceof java.util.List)) continue out;
+                                        } else if (cls.isInterface() && isFunctionalInterface(cls)) {
+                                                if (!(obj instanceof Function)) continue out;
+                                        } else if (!cls.isAnnotation() && !cls.isAnonymousClass() && !cls.isArray() &&
+                                                !cls.isEnum() && !cls.isLocalClass() && !cls.isMemberClass()
+                                                && !cls.isPrimitive() && !cls.isSynthetic() &&
+                                                isFunctionalAbstractClass(cls)) {
+                                                if (!(obj instanceof Function)) continue out;
                                         } else {
+                                                notFunctionalAbstractClass.put(cls, null);
+                                                notFunctionalInterfaces.put(cls, null);
                                                 continue out;
                                         }
                                 }
@@ -142,6 +152,283 @@ public class Dynamic {
 
                         methodList.add(m);
                 }
+        }
+
+        /**
+         * overridden methods
+         * (superClass method) => (subClass method)
+         */
+        private static Map<Method, Set<Method>> overriddenMethods = new WeakHashMap<>();
+        /**
+         * classes already done override analysis
+         */
+        private static Map<Class<?>, Object> classesDoneOverrideAnalysis = new WeakHashMap<>();
+        /**
+         * functional abstract classes
+         */
+        private static Map<Class<?>, Object> functionalAbstractClasses = new WeakHashMap<>();
+        /**
+         * not functional abstract classes
+         */
+        private static Map<Class<?>, Object> notFunctionalAbstractClass = new WeakHashMap<>();
+        /**
+         * functional interfaces
+         */
+        private static Map<Class<?>, Object> functionalInterfaces = new WeakHashMap<>();
+        /**
+         * not functional interfaces
+         */
+        private static Map<Class<?>, Object> notFunctionalInterfaces = new WeakHashMap<>();
+        /**
+         * abstract method of a functional interface/abstract class
+         */
+        private static Map<Class<?>, Method> abstractMethod = new WeakHashMap<>();
+
+        private static boolean signaturesAreTheSame(Method subM, Method parentM) {
+                String name = parentM.getName();
+
+                if (subM.getName().equals(name)) {
+                        if (subM.getParameterCount() == parentM.getParameterCount()) {
+                                for (int i = 0; i < subM.getParameterCount(); ++i) {
+                                        Class<?> subP = subM.getParameterTypes()[i];
+                                        Class<?> parentP = parentM.getParameterTypes()[i];
+                                        if (!subP.equals(parentP)) return false;
+                                }
+                        }
+                        // parentM is overridden by subM
+                        Set<Method> set;
+                        if (overriddenMethods.containsKey(parentM)) {
+                                set = overriddenMethods.get(parentM);
+                        } else {
+                                set = new HashSet<>();
+                                overriddenMethods.put(parentM, set);
+                        }
+                        set.add(subM);
+                        return true;
+                }
+
+                return false;
+        }
+
+        private static void analyseClassOverride(Class<?> c) {
+                if (classesDoneOverrideAnalysis.containsKey(c)) return;
+
+                classesDoneOverrideAnalysis.put(c, null);
+
+                if (!c.isInterface()) {
+                        // classes should check super classes
+                        // interfaces don't have super classes (except java.lang.Object)
+
+                        // find overridden abstract methods
+                        Class<?> parent = c.getSuperclass();
+
+                        if (parent != null) {
+
+                                for (Method parentM : parent.getDeclaredMethods()) {
+                                        for (Method subM : c.getDeclaredMethods()) {
+                                                if (signaturesAreTheSame(subM, parentM)) break;
+                                        }
+                                }
+
+                                analyseClassOverride(parent);
+                        }
+                }
+
+                // check interfaces
+                for (Class<?> i : c.getInterfaces()) {
+                        for (Method iM : i.getDeclaredMethods()) {
+                                for (Method cM : c.getDeclaredMethods()) {
+                                        if (signaturesAreTheSame(cM, iM)) break;
+                                }
+                        }
+
+                        analyseClassOverride(i);
+                }
+        }
+
+        private static boolean isOverriddenInClass(Method parentM, Class<?> sub) {
+                Set<Method> methods = overriddenMethods.get(parentM);
+                if (methods == null) return false;
+                for (Method m : methods) {
+                        if (m.getDeclaringClass().equals(sub)) return true;
+                        if (isOverriddenInClass(m, sub)) return true;
+                }
+                return false;
+        }
+
+        /**
+         * find one abstract method in the class
+         *
+         * @param c the class to retrieve method from
+         * @return the retrieved abstract method
+         * @throws RuntimeException no abstract method found
+         */
+        public static Method findAbstractMethod(Class<?> c) {
+                if (abstractMethod.containsKey(c)) return abstractMethod.get(c);
+
+                // find in current class
+                for (Method m : c.getDeclaredMethods()) {
+                        if (Modifier.isAbstract(m.getModifiers())) {
+                                abstractMethod.put(c, m);
+                                return m;
+                        }
+                }
+
+                if (!c.isInterface()) {
+                        // check super class
+                        Class<?> tmp = c.getSuperclass();
+                        while (tmp != null) {
+                                if (!Modifier.isAbstract(tmp.getModifiers())) break;
+
+                                for (Method method : tmp.getDeclaredMethods()) {
+                                        if (Modifier.isAbstract(method.getModifiers())) {
+                                                if (isOverriddenInClass(method, c)) continue;
+
+                                                abstractMethod.put(c, method);
+                                                return method;
+                                        }
+                                }
+                                tmp = tmp.getSuperclass();
+                        }
+                }
+
+                // check interfaces
+
+                Set<Class<?>> visited = new HashSet<>();
+                Queue<Class<?>> interfaces = new ArrayDeque<>();
+
+                Collections.addAll(interfaces);
+
+                while (!interfaces.isEmpty()) {
+                        Class<?> ii = interfaces.remove();
+                        if (visited.contains(ii)) continue;
+                        for (Method m : ii.getDeclaredMethods()) {
+                                if (Modifier.isAbstract(m.getModifiers())) {
+                                        if (isOverriddenInClass(m, c)) continue;
+
+                                        abstractMethod.put(c, m);
+                                        return m;
+                                }
+                        }
+
+                        visited.add(ii);
+                        Collections.addAll(interfaces, ii.getInterfaces());
+                }
+
+                throw new RuntimeException("cannot find abstract method in " + c);
+        }
+
+        /**
+         * check whether the interface is a <tt>functional interface</tt>
+         *
+         * @param i the interface to be checked
+         * @return true/false
+         */
+        public static boolean isFunctionalInterface(Class<?> i) {
+                if (i.isAnnotationPresent(FunctionalInterface.class)) return true;
+
+                if (functionalInterfaces.containsKey(i)) return true;
+                if (notFunctionalInterfaces.containsKey(i)) return false;
+
+                analyseClassOverride(i);
+
+                Set<Class<?>> visited = new HashSet<>();
+
+                boolean found = false;
+                Queue<Class<?>> interfaces = new ArrayDeque<>();
+                interfaces.add(i);
+
+                while (!interfaces.isEmpty()) {
+                        Class<?> ii = interfaces.remove();
+                        if (visited.contains(ii)) continue;
+                        for (Method m : ii.getDeclaredMethods()) {
+                                if (Modifier.isAbstract(m.getModifiers())) {
+                                        if (isOverriddenInClass(m, i)) continue;
+
+                                        if (found) return false;
+                                        found = true;
+                                }
+                        }
+
+                        visited.add(ii);
+                        Collections.addAll(interfaces, ii.getInterfaces());
+                }
+
+                if (found)
+                        functionalInterfaces.put(i, null);
+                return found;
+        }
+
+        /**
+         * check whether the class is a <tt>functional abstract class</tt>
+         *
+         * @param c the class to be checked
+         * @return true/false
+         */
+        public static boolean isFunctionalAbstractClass(Class<?> c) {
+                if (!Modifier.isAbstract(c.getModifiers())) return false;
+
+                if (c.isAnnotationPresent(FunctionalAbstractClass.class)) return true;
+
+                if (functionalAbstractClasses.containsKey(c)) return true;
+                if (notFunctionalAbstractClass.containsKey(c)) return false;
+
+                Constructor<?>[] cons = c.getDeclaredConstructors();
+                boolean containsPublicZeroParamConstructor = false;
+                for (Constructor<?> con : cons) {
+                        if (Modifier.isPublic(con.getModifiers())) {
+                                if (con.getParameterCount() == 0) {
+                                        containsPublicZeroParamConstructor = true;
+                                        break;
+                                }
+                        }
+                }
+
+                if (!containsPublicZeroParamConstructor) return false;
+
+                analyseClassOverride(c);
+
+                Set<Class<?>> visited = new HashSet<>();
+
+                boolean found = false;
+
+                Class<?> tmpCls = c;
+                while (tmpCls != null) {
+                        for (Method m : tmpCls.getDeclaredMethods()) {
+                                if (Modifier.isAbstract(m.getModifiers())) {
+                                        if (isOverriddenInClass(m, c)) continue;
+
+                                        if (found) return false;
+                                        found = true;
+                                }
+                        }
+
+                        visited.add(tmpCls);
+                        tmpCls = tmpCls.getSuperclass();
+                }
+
+                Queue<Class<?>> interfaces = new ArrayDeque<>();
+                Collections.addAll(interfaces);
+
+                while (!interfaces.isEmpty()) {
+                        Class<?> ii = interfaces.remove();
+                        if (visited.contains(ii)) continue;
+                        for (Method m : ii.getDeclaredMethods()) {
+                                if (Modifier.isAbstract(m.getModifiers())) {
+                                        if (isOverriddenInClass(m, c)) continue;
+
+                                        if (found) return false;
+                                        found = true;
+                                }
+                        }
+
+                        visited.add(ii);
+                        Collections.addAll(interfaces, ii.getInterfaces());
+                }
+
+                if (found)
+                        functionalAbstractClasses.put(c, null);
+                return found;
         }
 
         /**
@@ -183,6 +470,19 @@ public class Dynamic {
                         }
                 }
                 throw new LtBug(required + " is not assignable from " + current);
+        }
+
+
+        private static void transToRequiredType(Object[] args, Class<?>[] params) throws Exception {
+                for (int i = 0; i < params.length; ++i) {
+                        Class<?> c = params[i];
+                        if (c.isPrimitive()) continue;
+                        Object o = args[i];
+
+                        if (o == null || c.isInstance(o)) continue;
+
+                        args[i] = Lang.cast(o, c);
+                }
         }
 
         public static Object invoke(Object o, Class<?> invoker, String method, boolean[] primitives, Object[] args) throws Throwable {
@@ -251,7 +551,17 @@ public class Dynamic {
                                         // both not primitive
                                         // check null
                                         if (args[i] == null) step[i] = 0;
-                                        else step[i] = bfsSearch(args[i].getClass(), type);
+                                        else {
+                                                if (type.isAssignableFrom(args[i].getClass()))
+                                                        step[i] = bfsSearch(args[i].getClass(), type);
+                                                else {
+                                                        if (type.isArray()
+                                                                || isFunctionalAbstractClass(type)
+                                                                || isFunctionalInterface(type)) {
+                                                                step[i] = 1;
+                                                        } else throw new LtBug("unsupported type cast");
+                                                }
+                                        }
                                 }
                         }
                         steps.put(m, step);
@@ -288,6 +598,9 @@ public class Dynamic {
                 }
 
                 assert methodToInvoke != null;
+
+                transToRequiredType(args, methodToInvoke.getParameterTypes());
+
                 methodToInvoke.setAccessible(true);
 
                 try {

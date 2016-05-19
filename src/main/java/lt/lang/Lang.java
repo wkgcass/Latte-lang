@@ -24,8 +24,11 @@
 
 package lt.lang;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
+import lt.compiler.LtBug;
+import lt.lang.function.Function;
+
+import java.lang.reflect.*;
+import java.util.*;
 
 /**
  * lang
@@ -60,7 +63,7 @@ public class Lang {
                 return new Wrapper(o);
         }
 
-        public static Object cast(Object o, Class<?> targetType) {
+        public static Object cast(Object o, Class<?> targetType) throws Exception {
                 if (targetType.isInstance(o)) return o;
                 if (isBoxType(targetType)) {
                         if (targetType.equals(Integer.class)) {
@@ -89,6 +92,84 @@ public class Lang {
                 if (targetType.equals(boolean.class)) return castToBool(o);
                 if (targetType.equals(float.class)) return castToFloat(o);
                 if (targetType.equals(double.class)) return castToDouble(o);
+                if (targetType.isArray()) {
+                        if (o instanceof java.util.List) {
+                                Class<?> component = targetType.getComponentType();
+                                java.util.List<?> list = (java.util.List<?>) o;
+                                Object arr = Array.newInstance(component, list.size());
+
+                                for (int cursor = 0; cursor < list.size(); ++cursor) {
+                                        Object elem = list.get(cursor);
+                                        Array.set(arr, cursor, cast(elem, component));
+                                }
+
+                                return arr;
+                        }
+                } else if (Dynamic.isFunctionalAbstractClass(targetType)) {
+                        if (o instanceof Function) {
+                                Method method = Dynamic.findAbstractMethod(targetType);
+                                Method funcMethod = o.getClass().getDeclaredMethods()[0];
+                                if (method.getParameterCount() == funcMethod.getParameterCount()) {
+                                        int i = 0;
+                                        while (true) {
+                                                try {
+                                                        Class.forName(targetType.getSimpleName() + "$LessTyping$lambda$" + i);
+                                                } catch (ClassNotFoundException e) {
+                                                        break;
+                                                }
+                                        }
+                                        StringBuilder sb = new StringBuilder();
+                                        sb.append("class ").append(targetType.getSimpleName()).append("$LessTyping$lambda$").append(i)
+                                                .append("(func:").append(funcMethod.getDeclaringClass().getInterfaces()[0].getName().replace(".", "::"))
+                                                .append("):").append(targetType.getName().replace(".", "::")).append("\n")
+                                                .append("    ").append(method.getName()).append("(");
+                                        boolean isFirst = true;
+                                        int index = 0;
+                                        for (Class<?> param : method.getParameterTypes()) {
+                                                if (isFirst) isFirst = false;
+                                                else sb.append(",");
+                                                sb.append("p").append(index++).append(":").append(param.getName().replace(".", "::"));
+                                        }
+                                        sb.append("):").append(method.getReturnType().getName().replace(".", "::")).append("\n")
+                                                .append("        ");
+                                        if (method.getReturnType() != void.class) sb.append("return ");
+                                        sb.append("func.apply(");
+                                        isFirst = true;
+                                        for (int j = 0; j < index; ++j) {
+                                                if (isFirst) isFirst = false;
+                                                else sb.append(",");
+                                                sb.append("p").append(j);
+                                        }
+                                        sb.append(")\n");
+
+                                        @SuppressWarnings("unchecked")
+                                        Class<?> cls = ((java.util.List<Class<?>>) Utils.eval(sb.toString())).get(0);
+                                        Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
+                                        return con.newInstance(o);
+                                }
+                        }
+                } else if (Dynamic.isFunctionalInterface(targetType)) {
+                        if (o instanceof Function) {
+                                Method method = Dynamic.findAbstractMethod(targetType);
+                                Method funcMethod = o.getClass().getDeclaredMethods()[0];
+                                if (method.getParameterCount() == funcMethod.getParameterCount()) {
+                                        return Proxy.newProxyInstance(o.getClass().getClassLoader(), new Class[]{method.getDeclaringClass()},
+                                                (proxy, method1, args) -> {
+                                                        if (method1.equals(method)) {
+                                                                funcMethod.setAccessible(true);
+                                                                Object res = funcMethod.invoke(o, args);
+                                                                if (method1.getReturnType() == void.class) {
+                                                                        return null;
+                                                                } else {
+                                                                        return res;
+                                                                }
+                                                        } else {
+                                                                return method1.invoke(proxy, args);
+                                                        }
+                                                });
+                                }
+                        }
+                } else throw new LtBug("unsupported type cast");
                 throw new ClassCastException("cannot cast " + o + " (" + o.getClass().getName() + ") to " + targetType.getName());
         }
 
