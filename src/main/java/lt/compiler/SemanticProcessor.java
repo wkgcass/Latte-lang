@@ -629,6 +629,27 @@ public class SemanticProcessor {
                         }
                 }
 
+                // check annotation (@FunctionalInterface @FunctionalAbstractClass)
+                for (STypeDef typeDef : typeDefSet) {
+                        for (SAnno anno : typeDef.annos()) {
+                                if (anno.type().fullName().equals("java.lang.FunctionalInterface")) {
+                                        final String msg = typeDef + " is not a functional interface";
+                                        if (typeDef instanceof SInterfaceDef) {
+                                                if (!getMethodForLambda(typeDef, new SConstructorDef[1], new SMethodDef[1])) {
+                                                        throw new SyntaxException(msg, typeDef.line_col());
+                                                }
+                                        } else throw new SyntaxException(msg, typeDef.line_col());
+                                } else if (anno.type().fullName().equals("lt.lang.FunctionalAbstractClass")) {
+                                        final String msg = typeDef + " is not a functional abstract class";
+                                        if (typeDef instanceof SClassDef) {
+                                                if (!getMethodForLambda(typeDef, new SConstructorDef[1], new SMethodDef[1])) {
+                                                        throw new SyntaxException(msg, typeDef.line_col());
+                                                }
+                                        } else throw new SyntaxException(msg, typeDef.line_col());
+                                }
+                        }
+                }
+
                 // ========step 4========
                 // first parse anno types
                 // the annotations presented on these anno types will also be parsed
@@ -2427,12 +2448,14 @@ public class SemanticProcessor {
                                 // the method to invoke should be set
                                 List<Value> list = new ArrayList<>();
                                 Iterator<Value> it = invokeDynamic.arguments().iterator();
+                                Ins.GetClass cls = (Ins.GetClass) it.next(); // class
                                 Value target = it.next();
                                 while (it.hasNext()) list.add(it.next());
                                 list.add(assignFrom);
 
                                 instructions.add(invokeMethodWithArgs(
                                         assignment.line_col(),
+                                        cls.targetType(),
                                         target,
                                         "set",
                                         list,
@@ -2452,6 +2475,7 @@ public class SemanticProcessor {
                                         list.add(assignFrom);
                                         instructions.add(invokeMethodWithArgs(
                                                 assignment.line_col(),
+                                                invoke.target().type(),
                                                 invoke.target(),
                                                 "set",
                                                 list,
@@ -2742,6 +2766,144 @@ public class SemanticProcessor {
         }
 
         /**
+         * retrieve abstract method and possible constructor for the lambda
+         *
+         * @param requiredType                         required type
+         * @param scope                                scope
+         * @param constructorWithZeroParamAndCanAccess the constructor, use array[0] to store the constructor, maybe null
+         * @param methodToOverride                     the method to override, use array[0] to store the method, not null
+         * @return true if lambda can be used on the required type. false otherwise
+         */
+        private boolean getMethodForLambda(STypeDef requiredType,
+                                           SConstructorDef[] constructorWithZeroParamAndCanAccess,
+                                           SMethodDef[] methodToOverride) {
+                if (requiredType instanceof SClassDef) {
+                        if (((SClassDef) requiredType).modifiers().contains(SModifier.ABSTRACT)) {
+                                SClassDef c = (SClassDef) requiredType;
+                                // check constructors
+                                for (SConstructorDef con : c.constructors()) {
+                                        if (con.getParameters().size() == 0) {
+                                                // 0 param
+                                                if (con.modifiers().contains(SModifier.PUBLIC)) {
+                                                        // constructor can access
+                                                        constructorWithZeroParamAndCanAccess[0] = con;
+                                                        break;
+                                                }
+                                        }
+                                }
+                                if (constructorWithZeroParamAndCanAccess[0] != null) {
+
+                                        // check unimplemented methods
+                                        int count = 0;
+                                        // record all abstract classes
+                                        List<SClassDef> classes = new ArrayList<>();
+                                        while (c.modifiers().contains(SModifier.ABSTRACT)) {
+                                                classes.add(c);
+                                                c = c.parent();
+                                        }
+                                        // check class abstract methods
+                                        out:
+                                        for (SClassDef cls : classes) {
+                                                for (SMethodDef m : cls.methods()) {
+                                                        if (m.modifiers().contains(SModifier.ABSTRACT)) {
+                                                                boolean isOverridden = false;
+                                                                for (SMethodDef o : m.overridden()) {
+                                                                        if (classes.contains(o.declaringType())) {
+                                                                                isOverridden = true;
+                                                                                break;
+                                                                        }
+                                                                }
+                                                                if (!isOverridden) {
+                                                                        ++count;
+                                                                        if (count > 1) break out;
+                                                                        methodToOverride[0] = m;
+                                                                }
+                                                        }
+                                                }
+                                        }
+                                        if (count <= 1) {
+                                                // record all interfaces
+                                                Set<SInterfaceDef> interfaces = new HashSet<>();
+                                                Queue<SInterfaceDef> q = new ArrayDeque<>();
+                                                for (SInterfaceDef i : ((SClassDef) requiredType).superInterfaces()) {
+                                                        q.add(i);
+                                                        interfaces.add(i);
+                                                }
+                                                while (!q.isEmpty()) {
+                                                        SInterfaceDef i = q.remove();
+                                                        for (SInterfaceDef ii : i.superInterfaces()) {
+                                                                interfaces.add(ii);
+                                                                q.add(ii);
+                                                        }
+                                                }
+                                                // check interfaces
+                                                out:
+                                                for (SInterfaceDef i : interfaces) {
+                                                        for (SMethodDef m : i.methods()) {
+                                                                if (m.modifiers().contains(SModifier.ABSTRACT)) {
+                                                                        boolean isOverridden = false;
+                                                                        for (SMethodDef o : m.overridden()) {
+                                                                                if (interfaces.contains(o.declaringType())
+                                                                                        ||
+                                                                                        classes.contains(o.declaringType())) {
+                                                                                        isOverridden = true;
+                                                                                        break;
+                                                                                }
+                                                                        }
+                                                                        if (!isOverridden) {
+                                                                                ++count;
+                                                                                if (count > 1) break out;
+                                                                                methodToOverride[0] = m;
+                                                                        }
+                                                                }
+                                                        }
+                                                }
+                                        }
+                                        if (count == 1) return true;
+                                }
+                        }
+                } else if (requiredType instanceof SInterfaceDef) {
+                        int count = 0;
+                        // record all super interfaces
+                        Set<SInterfaceDef> interfaces = new HashSet<>();
+                        Queue<SInterfaceDef> q = new ArrayDeque<>();
+                        q.add((SInterfaceDef) requiredType);
+                        interfaces.add((SInterfaceDef) requiredType);
+                        while (!q.isEmpty()) {
+                                SInterfaceDef i = q.remove();
+                                for (SInterfaceDef ii : i.superInterfaces()) {
+                                        interfaces.add(ii);
+                                        q.add(ii);
+                                }
+                        }
+                        // check interfaces
+                        out:
+                        for (SInterfaceDef i : interfaces) {
+                                for (SMethodDef m : i.methods()) {
+                                        if (m.modifiers().contains(SModifier.ABSTRACT)) {
+                                                // check whether it's overridden
+                                                boolean isOverridden = false;
+                                                for (SMethodDef o : m.overridden()) {
+                                                        if (interfaces.contains(o.declaringType())) {
+                                                                // overridden
+                                                                isOverridden = true;
+                                                        }
+                                                }
+                                                if (!isOverridden) {
+                                                        ++count;
+                                                        if (count > 1) break out;
+                                                        methodToOverride[0] = m;
+                                                }
+                                        }
+                                }
+                        }
+                        if (count == 1) return true;
+                }
+
+                return false;
+        }
+
+        /**
          * parse lambda<br>
          * <ol>
          * <li>the function is Functional Interface, and current method is static: use JDK {@link java.lang.invoke.LambdaMetafactory}</li>
@@ -2787,7 +2949,7 @@ public class SemanticProcessor {
          * @see #buildAClassForLambda(STypeDef, boolean, SMethodDef, SConstructorDef, SInterfaceDef, boolean)
          */
         private Value parseValueFromLambda(AST.Lambda lambda, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
-                SMethodDef methodToOverride = null;
+                SMethodDef methodToOverride;
                 SConstructorDef constructorWithZeroParamAndCanAccess = null;
                 if (requiredType == null || requiredType.fullName().equals("java.lang.Object")) {
                         SInterfaceDef interfaceDef = getDefaultLambdaFunction(lambda.params.size(), lambda.line_col());
@@ -2796,135 +2958,12 @@ public class SemanticProcessor {
                 } else {
                         // examine whether it's a functional interface
                         // or it's an abstract class with only one unimplemented method and accessible constructor with no params
-                        boolean valid = false;
-                        if (requiredType instanceof SClassDef) {
-                                if (((SClassDef) requiredType).modifiers().contains(SModifier.ABSTRACT)) {
-                                        SClassDef c = (SClassDef) requiredType;
-                                        // check constructors
-                                        for (SConstructorDef con : c.constructors()) {
-                                                if (con.getParameters().size() == 0) {
-                                                        // 0 param
-                                                        if (con.modifiers().contains(SModifier.PROTECTED)
-                                                                || con.modifiers().contains(SModifier.PUBLIC)
-                                                                ||
-                                                                (!con.modifiers().contains(SModifier.PRIVATE)
-                                                                        && // is package access
-                                                                        con.declaringType().pkg().equals(scope.type().pkg()))) {
+                        SConstructorDef[] cons_arr = new SConstructorDef[1];
+                        SMethodDef[] method_arr = new SMethodDef[1];
+                        boolean valid = getMethodForLambda(requiredType, cons_arr, method_arr);
+                        methodToOverride = method_arr[0];
+                        constructorWithZeroParamAndCanAccess = cons_arr[0];
 
-                                                                // constructor can access
-                                                                constructorWithZeroParamAndCanAccess = con;
-                                                                break;
-                                                        }
-                                                }
-                                        }
-                                        if (constructorWithZeroParamAndCanAccess != null) {
-
-                                                // check unimplemented methods
-                                                int count = 0;
-                                                // record all abstract classes
-                                                List<SClassDef> classes = new ArrayList<>();
-                                                while (c.modifiers().contains(SModifier.ABSTRACT)) {
-                                                        classes.add(c);
-                                                        c = c.parent();
-                                                }
-                                                // check class abstract methods
-                                                out:
-                                                for (SClassDef cls : classes) {
-                                                        for (SMethodDef m : cls.methods()) {
-                                                                if (m.modifiers().contains(SModifier.ABSTRACT)) {
-                                                                        boolean isOverridden = false;
-                                                                        for (SMethodDef o : m.overridden()) {
-                                                                                if (classes.contains(o.declaringType())) {
-                                                                                        isOverridden = true;
-                                                                                        break;
-                                                                                }
-                                                                        }
-                                                                        if (!isOverridden) {
-                                                                                ++count;
-                                                                                if (count > 1) break out;
-                                                                                methodToOverride = m;
-                                                                        }
-                                                                }
-                                                        }
-                                                }
-                                                if (count <= 1) {
-                                                        // record all interfaces
-                                                        Set<SInterfaceDef> interfaces = new HashSet<>();
-                                                        Queue<SInterfaceDef> q = new ArrayDeque<>();
-                                                        for (SInterfaceDef i : ((SClassDef) requiredType).superInterfaces()) {
-                                                                q.add(i);
-                                                                interfaces.add(i);
-                                                        }
-                                                        while (!q.isEmpty()) {
-                                                                SInterfaceDef i = q.remove();
-                                                                for (SInterfaceDef ii : i.superInterfaces()) {
-                                                                        interfaces.add(ii);
-                                                                        q.add(ii);
-                                                                }
-                                                        }
-                                                        // check interfaces
-                                                        out:
-                                                        for (SInterfaceDef i : interfaces) {
-                                                                for (SMethodDef m : i.methods()) {
-                                                                        if (m.modifiers().contains(SModifier.ABSTRACT)) {
-                                                                                boolean isOverridden = false;
-                                                                                for (SMethodDef o : m.overridden()) {
-                                                                                        if (interfaces.contains(o.declaringType())
-                                                                                                ||
-                                                                                                classes.contains(o.declaringType())) {
-                                                                                                isOverridden = true;
-                                                                                                break;
-                                                                                        }
-                                                                                }
-                                                                                if (!isOverridden) {
-                                                                                        ++count;
-                                                                                        if (count > 1) break out;
-                                                                                        methodToOverride = m;
-                                                                                }
-                                                                        }
-                                                                }
-                                                        }
-                                                }
-                                                if (count == 1) valid = true;
-                                        }
-                                }
-                        } else if (requiredType instanceof SInterfaceDef) {
-                                int count = 0;
-                                // record all super interfaces
-                                Set<SInterfaceDef> interfaces = new HashSet<>();
-                                Queue<SInterfaceDef> q = new ArrayDeque<>();
-                                q.add((SInterfaceDef) requiredType);
-                                interfaces.add((SInterfaceDef) requiredType);
-                                while (!q.isEmpty()) {
-                                        SInterfaceDef i = q.remove();
-                                        for (SInterfaceDef ii : i.superInterfaces()) {
-                                                interfaces.add(ii);
-                                                q.add(ii);
-                                        }
-                                }
-                                // check interfaces
-                                out:
-                                for (SInterfaceDef i : interfaces) {
-                                        for (SMethodDef m : i.methods()) {
-                                                if (m.modifiers().contains(SModifier.ABSTRACT)) {
-                                                        // check whether it's overridden
-                                                        boolean isOverridden = false;
-                                                        for (SMethodDef o : m.overridden()) {
-                                                                if (interfaces.contains(o.declaringType())) {
-                                                                        // overridden
-                                                                        isOverridden = true;
-                                                                }
-                                                        }
-                                                        if (!isOverridden) {
-                                                                ++count;
-                                                                if (count > 1) break out;
-                                                                methodToOverride = m;
-                                                        }
-                                                }
-                                        }
-                                }
-                                if (count == 1) valid = true;
-                        }
                         if (!valid)
                                 throw new SyntaxException("lambda should be subtype of functional interface or abstract class with only one unimplemented method and a constructor with no params, but got " + requiredType, lambda.line_col());
                 }
@@ -3597,6 +3636,7 @@ public class SemanticProcessor {
          * if found, then select the best match to invoke
          *
          * @param lineCol    line column info
+         * @param targetType the type to invoke methods on (if the method is static, target type is this parameter. else the target type is invokeOn.getClass())
          * @param invokeOn   invokeOn (a)
          * @param methodName name of the method
          * @param args       arguments
@@ -3604,12 +3644,19 @@ public class SemanticProcessor {
          * @return a subclass of {@link lt.compiler.semantic.Ins.Invoke}
          * @throws SyntaxException compile error
          */
-        private Ins.Invoke invokeMethodWithArgs(LineCol lineCol, Value invokeOn, String methodName, List<Value> args, SemanticScope scope) throws SyntaxException {
+        private Ins.Invoke invokeMethodWithArgs(LineCol lineCol, STypeDef targetType, Value invokeOn, String methodName, List<Value> args, SemanticScope scope) throws SyntaxException {
                 List<SMethodDef> methods = new ArrayList<>();
-                findMethodFromTypeWithArguments(lineCol, methodName, args, scope.type(), invokeOn.type(), FIND_MODE_NON_STATIC, methods, true);
+                int FIND_MODE;
+                if (invokeOn.equals(NullValue.get())) {
+                        FIND_MODE = FIND_MODE_STATIC;
+                } else {
+                        FIND_MODE = FIND_MODE_NON_STATIC;
+                }
+                findMethodFromTypeWithArguments(lineCol, methodName, args, scope.type(), invokeOn.type(), FIND_MODE, methods, true);
                 if (methods.isEmpty()) {
                         // invoke dynamic
-                        args.add(0, invokeOn);
+                        args.add(0, new Ins.GetClass(targetType, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                        args.add(1, invokeOn);
                         return new Ins.InvokeDynamic(
                                 getInvokeDynamicBootstrapMethod(),
                                 methodName,
@@ -3619,7 +3666,12 @@ public class SemanticProcessor {
                 } else {
                         SMethodDef method = findBestMatch(args, methods, lineCol);
                         args = castArgsForMethodInvoke(args, method.getParameters(), lineCol);
-                        if (method.modifiers().contains(SModifier.PRIVATE)) {
+                        if (method.modifiers().contains(SModifier.STATIC)) {
+                                // invoke static
+                                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
+                                invokeStatic.arguments().addAll(args);
+                                return invokeStatic;
+                        } else if (method.modifiers().contains(SModifier.PRIVATE)) {
                                 // invoke special
                                 Ins.InvokeSpecial invokeSpecial = new Ins.InvokeSpecial(invokeOn, method, lineCol);
                                 invokeSpecial.arguments().addAll(args);
@@ -3688,7 +3740,7 @@ public class SemanticProcessor {
                 } else {
                         List<Value> args = new ArrayList<>();
                         args.add(right);
-                        return invokeMethodWithArgs(lineCol, left, methodName, args, scope);
+                        return invokeMethodWithArgs(lineCol, left.type(), left, methodName, args, scope);
                 }
         }
 
@@ -3800,7 +3852,7 @@ public class SemanticProcessor {
                         } else {
                                 List<Value> args = new ArrayList<>();
                                 args.add(right);
-                                return invokeMethodWithArgs(lineCol, left, methodName, args, scope);
+                                return invokeMethodWithArgs(lineCol, left.type(), left, methodName, args, scope);
                         }
                 }
         }
@@ -3866,7 +3918,7 @@ public class SemanticProcessor {
                         case ":::":
                                 List<Value> arg = new ArrayList<>();
                                 arg.add(right);
-                                return invokeMethodWithArgs(lineCol, left, "concat", arg, scope);
+                                return invokeMethodWithArgs(lineCol, left.type(), left, "concat", arg, scope);
                         case "^^":
                                 if (left.type() instanceof PrimitiveTypeDef ||
                                         getTypeWithName("java.lang.Number", LineCol.SYNTHETIC)
@@ -3883,7 +3935,7 @@ public class SemanticProcessor {
                                 } else {
                                         List<Value> args = new ArrayList<>();
                                         args.add(right);
-                                        return invokeMethodWithArgs(lineCol, left, "pow", args, scope);
+                                        return invokeMethodWithArgs(lineCol, left.type(), left, "pow", args, scope);
                                 }
                         case "*":
                                 return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Imul, Lang.multiply, right, scope, lineCol);
@@ -3992,7 +4044,7 @@ public class SemanticProcessor {
                         case "in":
                                 List<Value> args = new ArrayList<>();
                                 args.add(left);
-                                return invokeMethodWithArgs(lineCol, right, "contains", args, scope);
+                                return invokeMethodWithArgs(lineCol, right.type(), right, "contains", args, scope);
                         case "&":
                                 return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iand, Lang.and, right, scope, lineCol);
                         case "^":
@@ -4190,7 +4242,7 @@ public class SemanticProcessor {
                                 }
                                 // v is object
                                 // invoke `logicNot`
-                                return invokeMethodWithArgs(exp.line_col(), v, "logicNot", new ArrayList<>(), scope);
+                                return invokeMethodWithArgs(exp.line_col(), v.type(), v, "logicNot", new ArrayList<>(), scope);
                         }
 
                 } else if (op.equals("~") && unary) {
@@ -4224,7 +4276,7 @@ public class SemanticProcessor {
                                 }
                                 // v is object
                                 // invoke `bitwiseNot`
-                                return invokeMethodWithArgs(exp.line_col(), v, "not", new ArrayList<>(), scope);
+                                return invokeMethodWithArgs(exp.line_col(), v.type(), v, "not", new ArrayList<>(), scope);
                         }
                 } else if (op.equals("+") && unary) {
                         // +i (do nothing)
@@ -4272,7 +4324,7 @@ public class SemanticProcessor {
                                 }
                                 // v is object
                                 // invoke `negate`
-                                return invokeMethodWithArgs(exp.line_col(), v, "negate", new ArrayList<>(), scope);
+                                return invokeMethodWithArgs(exp.line_col(), v.type(), v, "negate", new ArrayList<>(), scope);
                         }
                 } else throw new SyntaxException("unknown one variable operator " + (unary ? (op + "v") : ("v" + op)), exp.line_col());
         }
@@ -4309,7 +4361,8 @@ public class SemanticProcessor {
                 findMethodFromTypeWithArguments(index.line_col(), "get", list, scope.type(), v.type(), FIND_MODE_NON_STATIC, methods, true);
                 if (methods.isEmpty()) {
                         // invoke dynamic
-                        list.add(0, v); // add invoke target into list
+                        list.add(0, new Ins.GetClass(v.type(), (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                        list.add(1, v); // add invoke target into list
 
                         return new Ins.InvokeDynamic(
                                 getInvokeDynamicBootstrapMethod(),
@@ -5308,7 +5361,7 @@ public class SemanticProcessor {
                                                                 access.line_col(),
                                                                 access.name,
                                                                 argList,
-                                                                target.type(),
+                                                                scope.type(),
                                                                 target.type(),
                                                                 FIND_MODE_NON_STATIC,
                                                                 methodsToInvoke,
@@ -5320,7 +5373,7 @@ public class SemanticProcessor {
                                                                 access.exp.line_col(),
                                                                 access.name,
                                                                 argList,
-                                                                target.type(),
+                                                                scope.type(),
                                                                 target.type(),
                                                                 FIND_MODE_NON_STATIC,
                                                                 methodsToInvoke,
@@ -5336,7 +5389,7 @@ public class SemanticProcessor {
                                                                 access.line_col(),
                                                                 access.name,
                                                                 argList,
-                                                                target.type(),
+                                                                scope.type(),
                                                                 target.type(),
                                                                 FIND_MODE_NON_STATIC,
                                                                 methodsToInvoke,
@@ -5354,8 +5407,22 @@ public class SemanticProcessor {
                                                         FIND_MODE_STATIC,
                                                         methodsToInvoke,
                                                         true);
-                                                if (methodsToInvoke.isEmpty())
-                                                        throw new SyntaxException("cannot find static method " + invocation, invocation.line_col());
+                                                if (methodsToInvoke.isEmpty()) {
+                                                        List<Value> args = new ArrayList<>();
+                                                        args.add(new Ins.GetClass(scope.type(), (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                                                        args.add(NullValue.get());
+                                                        args.addAll(argList);
+
+                                                        // invoke dynamic
+                                                        return new Ins.InvokeDynamic(
+                                                                getInvokeDynamicBootstrapMethod(),
+                                                                access.name,
+                                                                args,
+                                                                getTypeWithName("java.lang.Object", LineCol.SYNTHETIC),
+                                                                Dynamic.INVOKE_STATIC,
+                                                                LineCol.SYNTHETIC
+                                                        );
+                                                }
                                         } else {
                                                 if (throwableWhenTryValue == null) {
                                                         throw new SyntaxException(
@@ -5418,14 +5485,14 @@ public class SemanticProcessor {
 
                 if (methodsToInvoke.isEmpty() && innerMethod == null) {
                         // invoke dynamic
+                        argList.add(0, new Ins.GetClass(scope.type(), (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                         if (target == null) {
-                                if (scope.getThis() == null) {
-                                        throw new SyntaxException("invoke dynamic only perform on instances", invocation.line_col());
-                                } else
-                                        argList.add(0, scope.getThis());
-                        } else {
-                                argList.add(0, target);
-                        }
+                                if (scope.getThis() == null)
+                                        argList.add(1, NullValue.get());
+                                else
+                                        argList.add(1, scope.getThis());
+                        } else
+                                argList.add(1, target);
 
                         return new Ins.InvokeDynamic(
                                 getInvokeDynamicBootstrapMethod(),

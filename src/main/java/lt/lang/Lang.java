@@ -28,7 +28,6 @@ import lt.compiler.LtBug;
 import lt.lang.function.Function;
 
 import java.lang.reflect.*;
-import java.util.*;
 
 /**
  * lang
@@ -248,12 +247,23 @@ public class Lang {
                 }
                 // try to find `get(fieldName)`
                 try {
-                        return Dynamic.invoke(o, callerClass, "get", new boolean[]{false}, new Object[]{fieldName});
+                        return Dynamic.invoke(o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{fieldName});
                 } catch (Throwable ignore) {
+                }
+                // try _number
+                if (fieldName.startsWith("_")) {
+                        try {
+                                Integer i = Integer.parseInt(fieldName.substring(1));
+                                try {
+                                        return Dynamic.invoke(o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{i});
+                                } catch (Throwable ignore) {
+                                }
+                        } catch (NumberFormatException ignore) {
+                        }
                 }
                 // try to find `fieldName()`
                 try {
-                        return Dynamic.invoke(o, callerClass, fieldName, new boolean[0], new Object[0]);
+                        return Dynamic.invoke(o.getClass(), o, callerClass, fieldName, new boolean[0], new Object[0]);
                 } catch (Throwable ignore) {
                 }
                 return Undefined.get();
@@ -262,7 +272,7 @@ public class Lang {
         /**
          * put field.<br>
          * if field not found , then the method would try to invoke set(fieldName, value)<br>
-         * the method calls {@link Dynamic#invoke(Object, Class, String, boolean[], Object[])}, and <code>set(fieldName,value)</code> may be changed to <code>put(fieldName, value)</code>
+         * the method calls {@link Dynamic#invoke(Class, Object, Class, String, boolean[], Object[])}, and <code>set(fieldName,value)</code> may be changed to <code>put(fieldName, value)</code>
          *
          * @param o           object
          * @param fieldName   field name
@@ -281,7 +291,7 @@ public class Lang {
                 }
                 // try to find `set(fieldName,value)`
                 // invoke dynamic would try to find set then try to find put
-                Dynamic.invoke(o, callerClass, "set", new boolean[]{false, false}, new Object[]{fieldName, value});
+                Dynamic.invoke(o.getClass(), o, callerClass, "set", new boolean[]{false, false}, new Object[]{fieldName, value});
         }
 
         public static final int COMPARE_MODE_GT = 0b001;
@@ -337,7 +347,7 @@ public class Lang {
                 if (b instanceof Class) if (((Class) b).isInstance(a)) return true;
                 // b is not class or (b is class and a not instanceof b)
                 try {
-                        return castToBool(Dynamic.invoke(a, callerClass, "is", new boolean[]{false}, new Object[]{b}));
+                        return castToBool(Dynamic.invoke(a.getClass(), a, callerClass, "is", new boolean[]{false}, new Object[]{b}));
                 } catch (Throwable ignore) {
                 }
                 return false;
@@ -361,7 +371,7 @@ public class Lang {
                 if (b instanceof Class) if (((Class) b).isInstance(a)) return false;
                 // b is not class or (b is class and a not instanceof b)
                 try {
-                        return castToBool(Dynamic.invoke(a, callerClass, "not", new boolean[]{false}, new Object[]{b}));
+                        return castToBool(Dynamic.invoke(a.getClass(), a, callerClass, "not", new boolean[]{false}, new Object[]{b}));
                 } catch (Throwable ignore) {
                 }
                 return true;

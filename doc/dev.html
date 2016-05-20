@@ -33,9 +33,15 @@
 
         <p>若发现任何BUG, 有更好的建议或是希望拥有的特性, 都可以在<a href="https://github.com/wkgcass/LessTyping/issues">issue</a>中提出</p>
 
-        <h2>License</h2>
+        <h1>License</h1>
 
         <p>LessTyping 采用 MIT LICENSE 发布.</p>
+
+        <div>
+            <h1>{{compiler.title}}</h1>
+
+            <p ng-bind-html="compiler.content"></p>
+        </div>
 
         <h1>{{src_code.title}}</h1>
         <span>{{src_code.descr}}</span>
@@ -185,8 +191,24 @@
                                                                             <i class="file icon"></i>
 
                                                                             <div class="content">
+                                                                                <div class="header">FunctionalAbstractClass</div>
+                                                                                <div class="description">注解,标记函数式抽象类</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="item">
+                                                                            <i class="file icon"></i>
+
+                                                                            <div class="content">
                                                                                 <div class="header">Lang</div>
                                                                                 <div class="description">lang基础</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="item">
+                                                                            <i class="folder icon"></i>
+
+                                                                            <div class="content">
+                                                                                <div class="header">List</div>
+                                                                                <div class="description"><code>[]</code>语义构造的列表</div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">

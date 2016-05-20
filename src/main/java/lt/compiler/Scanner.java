@@ -79,11 +79,11 @@ public class Scanner {
          * the scanner creates a new <b>Layer</b> when meets these strings<br>
          * e.g.<br>
          * <pre>
-         * lambda = ()-> a+b
+         * lambda = ()-&gt; a+b
          * </pre>
          * would be considered as the following token tree<br>
          * <pre>
-         * [lambda]-[=]-[(]-[)]-[->]-[|]-[END]
+         * [lambda]-[=]-[(]-[)]-[-&gt;]-[|]-[END]
          *                            |
          *                            --[a]-[+]-[b]
          * </pre>

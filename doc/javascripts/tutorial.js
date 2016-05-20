@@ -196,11 +196,12 @@ $(document).ready(function () {
                     "    elseif e is type RuntimeException\n" +
                     "        LOGGER.debug(e.getMessage())\n" +
                     "    else\n" +
-                    "        throw e" +
+                    "        throw e\n" +
                     "finally\n" +
                     "    stream close\n" +
                     "\n" +
-                    "throw 'a string' ; LessTyping允许throw与catch任何类型, 例如 throw \"error message\", 所以并不直接提供java的catch Type")
+                    "throw 'a string'"),
+                note: $sce.trustAsHtml("LessTyping允许throw与catch任何类型, 例如 throw \"error message\", 所以并不直接提供java的catch Type")
             },
             {
                 title: "Synchronized",
@@ -213,11 +214,34 @@ $(document).ready(function () {
                 lesstyping: getLessTypingHtml("" +
                     "sync(a,b)\n" +
                     "    ...")
+            },
+            {
+                title: "Lambda",
+                java: "" +
+                "list.stream().map(e->e.toString())\n" +
+                ".collect(Collectors.toList());\n" +
+                "\n" +
+                "list.forEach(e->{\n" +
+                "    if(e<10){\n" +
+                "        System.out.println(e);\n" +
+                "    }\n" +
+                "});",
+                lesstyping: getLessTypingHtml("" +
+                    "list.stream().map(\n" +
+                    "    (e)->e.toString\n" +
+                    ").collect(Collectors.toList())\n" +
+                    "\n" +
+                    "list.forEach(\n" +
+                    "    (e)->\n" +
+                    "        if e < 10\n" +
+                    "            println(e)\n" +
+                    ")"),
+                note: $sce.trustAsHtml("LessTyping的<code>lambda</code>与java的几乎一样. 区别在于 1.LessTyping不需要大括号,而是以缩进来代替. 2.对于单参数不能省略括号")
             }
         ];
         $scope.printScriptForJava = function (index, java) {
             var lineCount = java.split(/\n|\r/g).length;
-            return "var editor = CodeMirror.fromTextArea(document.getElementById('java_" + index + "'));editor.setSize('auto', '" + (lineCount * 20 + 25) + "');";
+            return "var editor = CodeMirror.fromTextArea(document.getElementById('java_" + index + "'));editor.setSize('auto', '" + (lineCount * 20 + 30) + "');";
         }
     }]);
 });

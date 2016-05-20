@@ -1056,9 +1056,9 @@ public class TestSemantic {
                 assertTrue(ins instanceof Ins.InvokeDynamic);
                 Ins.InvokeDynamic invokeDynamic = (Ins.InvokeDynamic) ins;
                 assertEquals("get", invokeDynamic.methodName());
-                assertTrue(invokeDynamic.arguments().get(0) instanceof Ins.GetField); // i
+                assertTrue(invokeDynamic.arguments().get(1) instanceof Ins.GetField); // i
                 // Integer.valueOf(0)
-                assertEquals(new IntValue(0), invokeDynamic.arguments().get(1)); // [0]
+                assertEquals(new IntValue(0), invokeDynamic.arguments().get(2)); // [0]
         }
 
         @Test
@@ -1796,14 +1796,15 @@ public class TestSemantic {
 
                 Ins.InvokeDynamic in0 = (Ins.InvokeDynamic) i0;
                 assertEquals("set", in0.methodName());
-                assertEquals(3, in0.arguments().size());
-                assertTrue(in0.arguments().get(0) instanceof Ins.GetField);
-                assertTrue(in0.arguments().get(1) instanceof IntValue);
+                assertEquals(4, in0.arguments().size());
+                assertTrue(in0.arguments().get(0) instanceof Ins.GetClass);
+                assertTrue(in0.arguments().get(1) instanceof Ins.GetField);
                 assertTrue(in0.arguments().get(2) instanceof IntValue);
+                assertTrue(in0.arguments().get(3) instanceof IntValue);
 
                 Ins.InvokeDynamic in1 = (Ins.InvokeDynamic) i1;
                 assertEquals("get", in1.methodName());
-                assertEquals(2, in1.arguments().size());
+                assertEquals(3, in1.arguments().size());
         }
 
         @Test
@@ -2483,6 +2484,51 @@ public class TestSemantic {
                 } catch (SyntaxException e) {
                         assertEquals(5, e.lineCol.line);
                         assertEquals(10, e.lineCol.column);
+                }
+        }
+
+        @Test
+        public void testTestFunctionalCheck() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "@FunctionalAbstractClass\n" +
+                        "abs class A\n" +
+                        "    abs method()=...");
+                parse(map);
+
+                map.clear();
+                map.put("test", "" +
+                        "package test\n" +
+                        "@FunctionalInterface\n" +
+                        "interface A\n" +
+                        "    method()=...");
+                parse(map);
+
+                map.clear();
+                map.put("test", "" +
+                        "package test\n" +
+                        "@FunctionalAbstractClass\n" +
+                        "abs class A");
+                try {
+                        parse(map);
+                        fail();
+                } catch (SyntaxException e) {
+                        assertEquals(3, e.lineCol.line);
+                        assertEquals(5, e.lineCol.column);
+                }
+
+                map.clear();
+                map.put("test", "" +
+                        "package test\n" +
+                        "@FunctionalInterface\n" +
+                        "interface A");
+                try {
+                        parse(map);
+                        fail();
+                } catch (SyntaxException e) {
+                        assertEquals(3, e.lineCol.line);
+                        assertEquals(1, e.lineCol.column);
                 }
         }
 }

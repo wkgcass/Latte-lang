@@ -62,27 +62,38 @@ public class Dynamic {
 
         static {
                 try {
-                        methodHandle = MethodHandles.lookup().findStatic(Dynamic.class, "invoke", MethodType.methodType(Object.class, Object.class, Class.class, String.class, boolean[].class, Object[].class));
+                        methodHandle = MethodHandles.lookup().findStatic(Dynamic.class, "invoke", MethodType.methodType(
+                                Object.class, Class.class, Object.class, Class.class, String.class, boolean[].class, Object[].class));
                 } catch (NoSuchMethodException | IllegalAccessException e) {
                         throw new RuntimeException(e);
                 }
         }
 
+        /**
+         * the bootstrap method for LessTyping Dynamic
+         *
+         * @param lookup     lookup
+         * @param methodName method name
+         * @param methodType methodType (class, object, arguments)
+         * @return generated call site
+         * @throws NoSuchMethodException  exception
+         * @throws IllegalAccessException exception
+         */
         @SuppressWarnings("unused")
         public static CallSite bootstrap(MethodHandles.Lookup lookup, String methodName, MethodType methodType) throws NoSuchMethodException, IllegalAccessException {
-                boolean[] primitives = new boolean[methodType.parameterCount() - 1];
+                boolean[] primitives = new boolean[methodType.parameterCount() - 2];
                 for (int i = 0; i < primitives.length; ++i) {
-                        primitives[i] = methodType.parameterType(i + 1).isPrimitive();
+                        primitives[i] = methodType.parameterType(i + 2).isPrimitive();
                 }
-                MethodHandle mh = MethodHandles.insertArguments(methodHandle, 1, lookup.lookupClass(), methodName, primitives);
-                mh = mh.asCollector(Object[].class, methodType.parameterCount() - 1).asType(methodType);
+                MethodHandle mh = MethodHandles.insertArguments(methodHandle, 2, lookup.lookupClass(), methodName, primitives);
+                mh = mh.asCollector(Object[].class, methodType.parameterCount() - 2).asType(methodType);
 
                 MutableCallSite mCallSite = new MutableCallSite(mh);
                 mCallSite.setTarget(mh);
                 return mCallSite;
         }
 
-        private static void fillMethodCandidates(Class<?> c, Class<?> invoker, String method, Object[] args, List<Method> methodList) {
+        private static void fillMethodCandidates(Class<?> c, Class<?> invoker, String method, Object[] args, List<Method> methodList, boolean onlyStatic) {
                 out:
                 for (Method m : c.getDeclaredMethods()) {
                         if (!m.getName().equals(method)) continue;
@@ -99,6 +110,11 @@ public class Dynamic {
                                 // package access
                                 if (!c.getPackage().equals(invoker.getPackage())) continue;
                         }
+
+                        if (onlyStatic) {
+                                if (!Modifier.isStatic(m.getModifiers())) continue;
+                        }
+
                         // else public
                         // do nothing
 
@@ -485,28 +501,28 @@ public class Dynamic {
                 }
         }
 
-        public static Object invoke(Object o, Class<?> invoker, String method, boolean[] primitives, Object[] args) throws Throwable {
+        public static Object invoke(Class<?> targetClass, Object o, Class<?> invoker, String method, boolean[] primitives, Object[] args) throws Throwable {
                 if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
                 List<Method> methodList = new ArrayList<>();
 
                 Queue<Class<?>> interfaces = new ArrayDeque<>();
-                Class<?> c = o.getClass();
+                Class<?> c = o == null ? targetClass : o.getClass();
                 while (c != null) {
                         Collections.addAll(interfaces, c.getInterfaces());
-                        fillMethodCandidates(c, invoker, method, args, methodList);
+                        fillMethodCandidates(c, invoker, method, args, methodList, o == null);
                         c = c.getSuperclass();
                 }
-                c = o.getClass();
+                c = o == null ? targetClass : o.getClass();
 
                 Collections.addAll(interfaces, c.getInterfaces());
                 while (!interfaces.isEmpty()) {
                         Class<?> i = interfaces.remove();
-                        fillMethodCandidates(i, invoker, method, args, methodList);
+                        fillMethodCandidates(i, invoker, method, args, methodList, o == null);
                         Collections.addAll(interfaces, i.getInterfaces());
                 }
 
                 if (methodList.isEmpty()) {
-                        if (o.getClass().isArray()) {
+                        if (c.isArray()) {
                                 if (method.equals("get") && args.length == 1 && args[0] instanceof Integer) {
                                         return Array.get(o, (Integer) args[0]);
                                 } else if (method.equals("set") && args.length == 2 && args[0] instanceof Integer) {
@@ -514,9 +530,9 @@ public class Dynamic {
                                         return args[1];
                                 }
                         } else {
-                                if (args.length == 1 && isBoxType(o.getClass()) && isBoxType(args[0].getClass())) {
+                                if (args.length == 1 && isBoxType(c) && isBoxType(args[0].getClass())) {
                                         return invokePrimitive(o, method, args[0]);
-                                } else if (args.length == 0 && isBoxType(o.getClass())) {
+                                } else if (args.length == 0 && isBoxType(c)) {
                                         return invokePrimitive(o, method);
                                 } else if (method.equals("add")
                                         && args.length == 1
@@ -526,7 +542,7 @@ public class Dynamic {
                                         // string add
                                         return String.valueOf(o) + String.valueOf(args[0]);
                                 } else if (method.equals("set")) {
-                                        return invoke(o, invoker, "put", primitives, args);
+                                        return invoke(targetClass, o, invoker, "put", primitives, args);
                                 }
                         }
                         throw new RuntimeException("cannot find method to invoke " + o + "." + method + Arrays.toString(args));

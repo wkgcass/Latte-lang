@@ -50,6 +50,7 @@ class TestProcedure
 ; a FunctionalAbstractClass means An abstract class with only one unimplemented
 ; method and it has an accessible constructor with no parameters
 ; e.g.
+@FunctionalAbstractClass
 abs class Func
     abs apply(o)=...
 ; Func is a FunctionalAbstractClass
@@ -66,7 +67,7 @@ class TestLambda
     ; taking parameters whose sizes range from 0 to 26
     pub list=[1,2,3]
     list=list.stream().map(
-        ((v)->v.toString()) as java::util::function::Function
+        (v)->v.toString()
     ).collect(java::util::stream::Collectors.toList())
 ; lambda is based on inner method
 ; it creates an inner method and retreive MethodHandle of the method

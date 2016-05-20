@@ -11,17 +11,17 @@ LessTyping supports
 * Lambda
 * JSON Literal
 * Read Eval Print Loop
-* scripts
+* many other features
 
 [LessTyping WebSite](http://lesstyping.cassite.net/)
 
-`LessTyping` is based on java 8. it's a hybrid of strong and weak typing. It's compiled to JVM byte code, and can collaborate with any java libraries.
+`LessTyping` is based on java 8. it's a hybrid of strong and weak type language. It's compiled to JVM byte code, and can collaborate with any java library.
 
 最下面有中文 ：）
 
 ##How to build
 
-`JRE 8` and `maven 3` are required.
+`JRE 8` is required. And use `Maven 3` to build automatically
 
 clone the repository, and run
 
@@ -113,7 +113,7 @@ e.g.
 
 ##DSL
 
-`LessTyping` supports a syntax that makes method invocation looks like operators. It's useful for DSL programming.
+`LessTyping` supports a syntax that makes method invocation looks like using operators. It's useful for DSL programming.
 
 e.g.
 
@@ -160,7 +160,7 @@ e.g.
 		i=1
 		j=2
 		inner()
-			< i + j + 3
+			return i + j + 3
 		; the inner method returns i + j + 3
 		res = inner()
 		; res should be 6
@@ -180,12 +180,12 @@ e.g.
 
 	res = (
 		if a is null
-			< null
+			return null
 		else
-			< a+b
+			return a+b
 	)
 
-if a is null, then the precedure's result would be null, otherwise, the result would be `a+b`. and the result would be assigned to variable `res`
+if a is null, then the procedure's result would be null, otherwise, the result would be `a+b`. and the result would be assigned to variable `res`
 
 --
 
@@ -193,7 +193,7 @@ if a is null, then the precedure's result would be null, otherwise, the result w
 
 in `LessTyping`, lambda can not only perform on `Functional Interfaces`, but also on `Functional Abstract Classes`.
 
-a `Functional Abstract Class` means an abstract class with accessible constructor whose parameter count is 0, and the class have 1 and only 1 unimplemented method.
+a `Functional Abstract Class` means an abstract class with public constructor whose parameter count is 0, and the class have 1 and only 1 unimplemented method.
 
 e.g.
 
@@ -203,10 +203,12 @@ e.g.
 	func1 : Func = (x) -> x+x
 	func2 : java::util::function::Function = (o) -> o+1
 	func3 = (o) -> o + 1
+	
+	list.stream().map((e)->e.toString).collect(Collectors.toList())
 
-	func1 is type Func  
-	func2 is type java.util.function.Function  
-	func3 is type lt.lang.function.Function1
+>func1 is type Func    
+>func2 is type java.util.function.Function    
+>func3 is type lt.lang.function.Function1
 
 there are 27 Functions defined in `lt.lang.function`, ranges from Function0 to Function26. if no type is required, the lambda expression generates these functional interfaces' implementations.
 
@@ -216,7 +218,7 @@ there are 27 Functions defined in `lt.lang.function`, ranges from Function0 to F
 
 ##Types
 
-`LessTyping` is a hibrid of strong and weak typing.
+`LessTyping` is a hybrid of strong and weak type language.
 
 	variable : Type
 	method() : ReturnType
@@ -225,6 +227,8 @@ there are 27 Functions defined in `lt.lang.function`, ranges from Function0 to F
 	
 	obj = 1
 	method()=2
+	
+--
 
 ##JSON Literal
 
@@ -273,17 +277,6 @@ run `lt.repl.REPL`, or start `jar` file generated via `maven package`, you will 
    
 Type expressions and double `Enter`, you will get the result
 
---
-
-##Scripts (still developing)
-
-`LessTyping` supports scripts. the suffix is usually `lt`, but for scripts, it should be `lts`
-
-the scripts would be compiled to classes as well
-
-the class name is the same as `lts` file name, and a `main` method would be added into the class  
-the scripts would be filled into `class constructing block`
-
 ---------
 
 ##中文版 
@@ -300,7 +293,7 @@ LessTyping 支持如下功能
 * Lambda
 * JSON 字面量
 * Read Eval Print Loop
-* 脚本
+* 许多其它特性
 
 [LessTyping 网站](http://lesstyping.cassite.net/)
 
@@ -445,7 +438,7 @@ e.g.
 		i=1
 		j=2
 		inner()
-			< i + j + 3
+			return i + j + 3
 		; 内部方法返回值是 i + j + 3
 		res = inner()
 		; res 的值应当为 6
@@ -465,9 +458,9 @@ e.g.
 
 	res = (
 		if a is null
-			< null
+			return null
 		else
-			< a+b
+			return a+b
 	)
 
 如果a是`null`，那么这个过程的结果为`null`。否则，结果将为`a+b`。最终结果将被赋值给`res`
@@ -557,13 +550,3 @@ e.g.
     lt>
    
 输入表达式,然后按两次`Enter`就可以获得结果
-
---
-
-##脚本（仍在开发）
-
-`LessTyping`支持脚本. 通常来说后缀为`lt`, 不过对于脚本，后缀名为`lts`
-
-脚本也会被编译到类，  
-该类的名称是`lts`文件的文件名， 并且会自动添加一个`main`方法到该类中  
-脚本内容讲被写入到`类构造块`中

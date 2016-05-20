@@ -1845,4 +1845,42 @@ public class TestCodeGen {
                 F f = (F) o;
                 assertEquals("test", f.func("test"));
         }
+
+        @Test
+        public void testInvokeDynamicThisAndStatic() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestInvokeDynamicThisAndStatic\n" +
+                                "    m(list:java::util::List)\n" +
+                                "        list add 1\n" +
+                                "        return list\n" +
+                                "    indyThis(ls)=m(ls)\n" +
+                                "    static\n" +
+                                "        mm(list:java::util::List)\n" +
+                                "            list add 0\n" +
+                                "            return list\n" +
+                                "        indyStatic(ls)=mm(ls)",
+                        "TestInvokeDynamicThisAndStatic");
+                Object TestInvokeDynamicThisAndStatic_inst = cls.newInstance();
+                Method indyThis = cls.getMethod("indyThis", Object.class);
+                List<Integer> list = new ArrayList<>();
+                list.add(3);
+                list.add(2);
+                assertEquals(Arrays.asList(3, 2, 1), indyThis.invoke(TestInvokeDynamicThisAndStatic_inst, list));
+
+                Method indyStatic = cls.getMethod("indyStatic", Object.class);
+                assertEquals(Arrays.asList(3, 2, 1, 0), indyStatic.invoke(null, list));
+        }
+
+        @Test
+        public void testAccessElementVia$_$() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestAccessElementVia$_$\n" +
+                                "    static\n" +
+                                "        method(list)=list._1",
+                        "TestAccessElementVia$_$");
+
+                assertEquals(2, cls.getMethod("method", Object.class).invoke(null, Arrays.asList(1, 2, 3)));
+        }
 }
