@@ -133,7 +133,7 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "static pri"
+                        "static private"
                 /*              ^not a statement */
                         , err);
 
@@ -151,14 +151,14 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "sync(a, method():Unit)\n" +
-                /*               ^not an expression */
+                        "synchronized(a, method():Unit)\n" +
+                /*                       ^not an expression */
                         "    ..."
                         , err);
 
                 assertEquals(1, err.errorList.size());
                 assertEquals(1, err.errorList.get(0).lineCol.line);
-                assertEquals(9, err.errorList.get(0).lineCol.column);
+                assertEquals(17, err.errorList.get(0).lineCol.column);
                 assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(0).type);
 
                 assertEquals(1, statements.size());

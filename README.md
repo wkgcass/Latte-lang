@@ -197,8 +197,8 @@ a `Functional Abstract Class` means an abstract class with public constructor wh
 
 e.g.
 
-	abs class Func
-		abs apply(o)=...  ; defines an abstract method
+	abstract class Func
+		abstract apply(o)=...  ; defines an abstract method
 		
 	func1 : Func = (x) -> x+x
 	func2 : java::util::function::Function = (o) -> o+1
@@ -475,8 +475,8 @@ e.g.
 
 e.g.
 
-	abs class Func
-		abs apply(o)=...  ; defines an abstract method
+	abstract class Func
+		abstract apply(o)=...  ; defines an abstract method
 		
 	func1 : Func = (x) -> x+x
 	func2 : java::util::function::Function = (o) -> o+1

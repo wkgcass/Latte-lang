@@ -170,7 +170,7 @@ public class TestParserMix {
         public void testMethodMultipleAnnotation() throws Exception {
                 List<Statement> statements = parse("" +
                         "@Anno\n" +
-                        "pub method(\n" +
+                        "public method(\n" +
                         "    @Anno1\n" +
                         "    arg0\n" +
                         "    @Anno2\n" +
@@ -182,7 +182,7 @@ public class TestParserMix {
                 MethodDef m = new MethodDef(
                         "method",
                         new HashSet<>(Collections.singletonList(
-                                new Modifier("pub", LineCol.SYNTHETIC)
+                                new Modifier(Modifier.Available.PUBLIC, LineCol.SYNTHETIC)
                         )),
                         new AST.Access(null, "Unit", LineCol.SYNTHETIC),
                         Arrays.asList(

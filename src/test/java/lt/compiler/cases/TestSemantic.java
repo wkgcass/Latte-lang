@@ -94,7 +94,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "import java::util::_\n" +
-                        "abs class A:List");
+                        "abstract class A:List");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -920,9 +920,9 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    pro i:int\n" +
+                        "    protected i:int\n" +
                         "class B:A\n" +
-                        "    pro i:String\n" +
+                        "    protected i:String\n" +
                         "    i");
                 Set<STypeDef> set = parse(map);
                 assertEquals(2, set.size());
@@ -948,9 +948,9 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    pro i:int\n" +
+                        "    protected i:int\n" +
                         "class B:A\n" +
-                        "    pro i:String\n" +
+                        "    protected i:String\n" +
                         "    A.this.i");
                 Set<STypeDef> set = parse(map);
                 assertEquals(2, set.size());
@@ -1925,7 +1925,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a,b)\n" +
-                        "    sync(a,b)\n" +
+                        "    synchronized(a,b)\n" +
                         "        a=2\n" +
                         "        b=3");
                 Set<STypeDef> set = parse(map);
@@ -1975,7 +1975,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a,b)\n" +
-                        "    sync(a,b)\n" +
+                        "    synchronized(a,b)\n" +
                         "        a=2\n" +
                         "        b=3\n" +
                         "        return ");
@@ -2493,8 +2493,8 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "@FunctionalAbstractClass\n" +
-                        "abs class A\n" +
-                        "    abs method()=...");
+                        "abstract class A\n" +
+                        "    abstract method()=...");
                 parse(map);
 
                 map.clear();

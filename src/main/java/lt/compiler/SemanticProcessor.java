@@ -225,20 +225,20 @@ public class SemanticProcessor {
 
                                 for (Modifier m : c.modifiers) {
                                         switch (m.modifier) {
-                                                case "abs":
+                                                case ABSTRACT:
                                                         sClassDef.modifiers().add(SModifier.ABSTRACT);
                                                         break;
-                                                case "val":
+                                                case VAL:
                                                         sClassDef.modifiers().add(SModifier.FINAL);
                                                         break;
-                                                case "pub":
-                                                case "pri":
-                                                case "pro":
-                                                case "pkg":
+                                                case PUBLIC:
+                                                case PRIVATE:
+                                                case PROTECTED:
+                                                case PKG:
                                                         // pub|pri|pro|pkg are for constructors
                                                         break;
                                                 default:
-                                                        throw new UnexpectedTokenException("valid modifier for class (val|abs)", m.toString(), m.line_col());
+                                                        throw new UnexpectedTokenException("valid modifier for class (val|abstract|public|private|protected|pkg)", m.toString(), m.line_col());
                                         }
                                 }
 
@@ -261,7 +261,7 @@ public class SemanticProcessor {
 
                                 for (Modifier m : i.modifiers) {
                                         switch (m.modifier) {
-                                                case "abs":
+                                                case ABSTRACT:
                                                         // can only be abstract
                                                         break;
                                                 default:
@@ -371,7 +371,10 @@ public class SemanticProcessor {
 
                                         boolean hasAccessModifier = false;
                                         for (Modifier m : classDef.modifiers) {
-                                                if (m.modifier.equals("pub") || m.modifier.equals("pri") || m.modifier.equals("pro") || m.modifier.equals("pkg")) {
+                                                if (m.modifier.equals(Modifier.Available.PUBLIC)
+                                                        || m.modifier.equals(Modifier.Available.PRIVATE)
+                                                        || m.modifier.equals(Modifier.Available.PROTECTED)
+                                                        || m.modifier.equals(Modifier.Available.PKG)) {
                                                         hasAccessModifier = true;
                                                 }
                                         }
@@ -380,22 +383,22 @@ public class SemanticProcessor {
                                         }
                                         for (Modifier m : classDef.modifiers) {
                                                 switch (m.modifier) {
-                                                        case "pub":
+                                                        case PUBLIC:
                                                                 constructor.modifiers().add(SModifier.PUBLIC);
                                                                 break;
-                                                        case "pri":
+                                                        case PRIVATE:
                                                                 constructor.modifiers().add(SModifier.PRIVATE);
                                                                 break;
-                                                        case "pro":
+                                                        case PROTECTED:
                                                                 constructor.modifiers().add(SModifier.PROTECTED);
                                                                 break;
-                                                        case "val":
-                                                        case "pkg":
-                                                        case "abs":
+                                                        case VAL:
+                                                        case PKG:
+                                                        case ABSTRACT:
                                                                 // val and abs are presented on class
                                                                 break; // pkg don't need to sign modifier
                                                         default:
-                                                                throw new UnexpectedTokenException("valid constructor modifier (pub|pri|pro|pkg)", m.toString(), m.line_col());
+                                                                throw new UnexpectedTokenException("valid constructor modifier (public|private|protected|pkg)", m.toString(), m.line_col());
                                                 }
                                         }
 
@@ -2221,9 +2224,7 @@ public class SemanticProcessor {
                 if (ret.exp == null) {
                         tReturn = new Ins.TReturn(null, ret.line_col());
                 } else {
-                        Value v =
-                                parseValueFromExpression(ret.exp, methodReturnType, scope);
-                        STypeDef type = v.type();
+                        Value v = parseValueFromExpression(ret.exp, methodReturnType, scope);
 
                         tReturn = new Ins.TReturn(v, ret.line_col());
                 }
@@ -2520,7 +2521,7 @@ public class SemanticProcessor {
                         if (scope.getLeftValue(variableDef.getName()) == null) {
                                 boolean canChange = true;
                                 for (Modifier m : variableDef.getModifiers()) {
-                                        if (m.modifier.equals("val")) {
+                                        if (m.modifier.equals(Modifier.Available.VAL)) {
                                                 canChange = false;
                                         }
                                 }
@@ -2769,7 +2770,6 @@ public class SemanticProcessor {
          * retrieve abstract method and possible constructor for the lambda
          *
          * @param requiredType                         required type
-         * @param scope                                scope
          * @param constructorWithZeroParamAndCanAccess the constructor, use array[0] to store the constructor, maybe null
          * @param methodToOverride                     the method to override, use array[0] to store the method, not null
          * @return true if lambda can be used on the required type. false otherwise
@@ -2808,6 +2808,7 @@ public class SemanticProcessor {
                                                         if (m.modifiers().contains(SModifier.ABSTRACT)) {
                                                                 boolean isOverridden = false;
                                                                 for (SMethodDef o : m.overridden()) {
+                                                                        //noinspection SuspiciousMethodCalls
                                                                         if (classes.contains(o.declaringType())) {
                                                                                 isOverridden = true;
                                                                                 break;
@@ -2843,6 +2844,7 @@ public class SemanticProcessor {
                                                                 if (m.modifiers().contains(SModifier.ABSTRACT)) {
                                                                         boolean isOverridden = false;
                                                                         for (SMethodDef o : m.overridden()) {
+                                                                                //noinspection SuspiciousMethodCalls
                                                                                 if (interfaces.contains(o.declaringType())
                                                                                         ||
                                                                                         classes.contains(o.declaringType())) {
@@ -2884,6 +2886,7 @@ public class SemanticProcessor {
                                                 // check whether it's overridden
                                                 boolean isOverridden = false;
                                                 for (SMethodDef o : m.overridden()) {
+                                                        //noinspection SuspiciousMethodCalls
                                                         if (interfaces.contains(o.declaringType())) {
                                                                 // overridden
                                                                 isOverridden = true;
@@ -6210,13 +6213,13 @@ public class SemanticProcessor {
 
                         for (Modifier m : v.getModifiers()) {
                                 switch (m.modifier) {
-                                        case "val":
+                                        case VAL:
                                                 param.setCanChange(false);
                                                 break;
-                                        case "pub":
-                                        case "pri":
-                                        case "pro":
-                                        case "pkg":
+                                        case PUBLIC:
+                                        case PRIVATE:
+                                        case PROTECTED:
+                                        case PKG:
                                                 if (!allowAccessModifier)
                                                         throw new SyntaxException("access modifiers for parameters are only allowed on class constructing parameters",
                                                                 m.line_col());
@@ -6259,7 +6262,10 @@ public class SemanticProcessor {
                 // try to get access flags
                 boolean hasAccessModifier = false;
                 for (Modifier m : v.getModifiers()) {
-                        if (m.modifier.equals("pub") || m.modifier.equals("pri") || m.modifier.equals("pro") || m.modifier.equals("pkg")) {
+                        if (m.modifier.equals(Modifier.Available.PUBLIC)
+                                || m.modifier.equals(Modifier.Available.PRIVATE)
+                                || m.modifier.equals(Modifier.Available.PROTECTED)
+                                || m.modifier.equals(Modifier.Available.PKG)) {
                                 hasAccessModifier = true;
                         }
                 }
@@ -6278,28 +6284,28 @@ public class SemanticProcessor {
                 // modifiers
                 for (Modifier m : v.getModifiers()) {
                         switch (m.modifier) {
-                                case "pub":
+                                case PUBLIC:
                                         fieldDef.modifiers().add(SModifier.PUBLIC);
                                         break;
-                                case "pri":
+                                case PRIVATE:
                                         if (mode == PARSING_INTERFACE)
-                                                throw new UnexpectedTokenException("valid modifier for interface fields (pub|val)", m.toString(), m.line_col());
+                                                throw new UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString(), m.line_col());
                                         fieldDef.modifiers().add(SModifier.PRIVATE);
                                         break;
-                                case "pro":
+                                case PROTECTED:
                                         if (mode == PARSING_INTERFACE)
-                                                throw new UnexpectedTokenException("valid modifier for interface fields (pub|val)", m.toString(), m.line_col());
+                                                throw new UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString(), m.line_col());
                                         fieldDef.modifiers().add(SModifier.PROTECTED);
                                         break;
-                                case "pkg": // no need to assign modifier
+                                case PKG: // no need to assign modifier
                                         if (mode == PARSING_INTERFACE)
-                                                throw new UnexpectedTokenException("valid modifier for interface fields (pub|val)", m.toString(), m.line_col());
+                                                throw new UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString(), m.line_col());
                                         break;
-                                case "val":
+                                case VAL:
                                         fieldDef.modifiers().add(SModifier.FINAL);
                                         break;
                                 default:
-                                        throw new UnexpectedTokenException("valid modifier for fields (class:(pub|pri|pro|pkg|val)|interface:(pub|val))", m.toString(), m.line_col());
+                                        throw new UnexpectedTokenException("valid modifier for fields (class:(public|private|protected|pkg|val)|interface:(pub|val))", m.toString(), m.line_col());
                         }
                 }
                 if (mode == PARSING_INTERFACE && !fieldDef.modifiers().contains(SModifier.FINAL)) {
@@ -6366,7 +6372,10 @@ public class SemanticProcessor {
                 // try to get access flags
                 boolean hasAccessModifier = false;
                 for (Modifier mod : m.modifiers) {
-                        if (mod.modifier.equals("pub") || mod.modifier.equals("pri") || mod.modifier.equals("pro") || mod.modifier.equals("pkg")) {
+                        if (mod.modifier.equals(Modifier.Available.PUBLIC)
+                                || mod.modifier.equals(Modifier.Available.PRIVATE)
+                                || mod.modifier.equals(Modifier.Available.PROTECTED)
+                                || mod.modifier.equals(Modifier.Available.PKG)) {
                                 hasAccessModifier = true;
                         }
                 }
@@ -6375,33 +6384,33 @@ public class SemanticProcessor {
                 }
                 for (Modifier mod : m.modifiers) {
                         switch (mod.modifier) {
-                                case "pub":
+                                case PUBLIC:
                                         methodDef.modifiers().add(SModifier.PUBLIC);
                                         break;
-                                case "pri":
+                                case PRIVATE:
                                         if (mode == PARSING_INTERFACE)
-                                                throw new UnexpectedTokenException("valid modifier for interface fields (pub|val)", m.toString(), m.line_col());
+                                                throw new UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString(), m.line_col());
                                         methodDef.modifiers().add(SModifier.PRIVATE);
                                         break;
-                                case "pro":
+                                case PROTECTED:
                                         if (mode == PARSING_INTERFACE)
-                                                throw new UnexpectedTokenException("valid modifier for interface fields (pub|val)", m.toString(), m.line_col());
+                                                throw new UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString(), m.line_col());
                                         methodDef.modifiers().add(SModifier.PROTECTED);
                                         break;
-                                case "pkg": // no need to assign modifier
+                                case PKG: // no need to assign modifier
                                         if (mode == PARSING_INTERFACE)
-                                                throw new UnexpectedTokenException("valid modifier for interface fields (pub|val)", m.toString(), m.line_col());
+                                                throw new UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString(), m.line_col());
                                         break;
-                                case "val":
+                                case VAL:
                                         methodDef.modifiers().add(SModifier.FINAL);
                                         break;
-                                case "abs":
+                                case ABSTRACT:
                                         methodDef.modifiers().add(SModifier.ABSTRACT);
                                         // check method body. it should no have body
                                         if (!m.body.isEmpty()) throw new SyntaxException("abstract methods cannot have body", m.line_col());
                                         break;
                                 default:
-                                        throw new UnexpectedTokenException("valid modifier for fields (class:(pub|pri|pro|pkg|val)|interface:(pub|val))", m.toString(), m.line_col());
+                                        throw new UnexpectedTokenException("valid modifier for fields (class:(public|private|protected|pkg|val)|interface:(pub|val))", m.toString(), m.line_col());
                         }
                 }
                 if (isStatic) {

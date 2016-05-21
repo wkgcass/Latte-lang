@@ -31,10 +31,14 @@ import lt.compiler.syntactic.Pre;
  * modifier
  */
 public class Modifier implements Pre {
-        public final String modifier;
+        public enum Available {
+                PRIVATE, PUBLIC, PROTECTED, PKG, SYNCHRONIZED, VAL, NATIVE, ABSTRACT, TRANSIENT, VOLATILE, STRICTFP
+        }
+
+        public final Available modifier;
         private final LineCol lineCol;
 
-        public Modifier(String modifier, LineCol lineCol) {
+        public Modifier(Available modifier, LineCol lineCol) {
                 this.modifier = modifier;
                 this.lineCol = lineCol;
         }

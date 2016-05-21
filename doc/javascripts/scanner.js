@@ -159,11 +159,8 @@ var keys = ["is", "not", "bool", "yes", "no",
     "type", "as", "undefined", "in", "elseif",
     "package", "import", "break", "continue", "return"];
 
-var modifiers = ["pub", "pro", "pri", "pkg",
-    "abs", "val", "native", "sync", "transient", "volatile", "strictfp",
-    "data"];
-
-var accessModifiers = ["pub", "pro", "pri", "pkg"];
+var modifiers = ["public", "protected", "private", "pkg",
+    "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp"];
 
 var oneVarOperatorsPost = ["++", "--"];
 

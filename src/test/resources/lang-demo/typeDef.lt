@@ -20,10 +20,10 @@ class I_Have_Parent : I_Am_A_Class
 class I_Have_Parent_And_Parent_Have_Args : I_Have_Params(1, "2")
 
 ; a class can have 0 or 1 or more super interfaces
-abs class I_Have_Interfaces : java::util::List, java::io::Serializable
+abstract class I_Have_Interfaces : java::util::List, java::io::Serializable
 
 ; a class can have both parent class and super interfaces
-abs class I_Have_Both_Class_And_Interface : I_Am_A_Class, java::util::List
+abstract class I_Have_Both_Class_And_Interface : I_Am_A_Class, java::util::List
 
 ; you can notice that, I_Have_Interfaces and I_Have_Both_Class_And_Interface
 ; are modified with "abs" modifier
@@ -32,7 +32,7 @@ abs class I_Have_Both_Class_And_Interface : I_Am_A_Class, java::util::List
 ; the avaliable modifiers are the same as java language
 ; hoever, all types defined in LessTyping are "public"
 ; the access level modifiers on class is considered as constructor modifier
-pri class My_Constructor_Is_Private_But_Type_Is_Still_Public
+private class My_Constructor_Is_Private_But_Type_Is_Still_Public
 
 ; a class can have fields
 class I_Have_Fields

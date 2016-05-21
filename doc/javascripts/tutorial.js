@@ -212,7 +212,7 @@ $(document).ready(function () {
                 "    }\n" +
                 "}",
                 lesstyping: getLessTypingHtml("" +
-                    "sync(a,b)\n" +
+                    "synchronized(a,b)\n" +
                     "    ...")
             },
             {

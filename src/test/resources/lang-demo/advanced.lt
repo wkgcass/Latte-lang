@@ -51,21 +51,21 @@ class TestProcedure
 ; method and it has an accessible constructor with no parameters
 ; e.g.
 @FunctionalAbstractClass
-abs class Func
-    abs apply(o)=...
+abstract class Func
+    abstract apply(o)=...
 ; Func is a FunctionalAbstractClass
 ; (o)->... creates a subclass
 ; and overrides `apply(o)`
 
 ; here's how to use
 class TestLambda
-    pub func1:Func=(o)->o+1 ; creates an instance of Func and it adds o with 1
-    pub func2:java::util::function::Function=(o)->o+1 ; uses jdk LambdaMetaFactory
-    pub func3=(o)->o+1      ; lt::lang::function::Function1
+    public func1:Func=(o)->o+1 ; creates an instance of Func and it adds o with 1
+    public func2:java::util::function::Function=(o)->o+1 ; uses jdk LambdaMetaFactory
+    public func3=(o)->o+1      ; lt::lang::function::Function1
     ; the type of the lambda is lt::lang::function::Function1
     ; there are 27 functions from Function0 to Function26
     ; taking parameters whose sizes range from 0 to 26
-    pub list=[1,2,3]
+    public list=[1,2,3]
     list=list.stream().map(
         (v)->v.toString()
     ).collect(java::util::stream::Collectors.toList())

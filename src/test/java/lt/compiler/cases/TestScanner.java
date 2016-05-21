@@ -210,15 +210,15 @@ public class TestScanner {
         @Test
         public void testModifiers() throws Exception {
                 //pub val abs class X
-                Scanner processor = new Scanner("test", new StringReader("pub val abs class X"), new Scanner.Properties(), new ErrorManager(true));
+                Scanner processor = new Scanner("test", new StringReader("public val abstract class X"), new Scanner.Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
                 ElementStartNode root2 = new ElementStartNode(args, 0);
-                args.previous = new Element(args, "pub", TokenType.MODIFIER);
+                args.previous = new Element(args, "public", TokenType.MODIFIER);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "val", TokenType.MODIFIER);
-                args.previous = new Element(args, "abs", TokenType.MODIFIER);
+                args.previous = new Element(args, "abstract", TokenType.MODIFIER);
                 args.previous = new Element(args, "class", TokenType.KEY);
                 args.previous = new Element(args, "X", TokenType.VALID_NAME);
 

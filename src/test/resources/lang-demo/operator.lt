@@ -3,7 +3,7 @@
 ; a + b can be considered as a.add(b)
 
 ; here's all operators supported in LessTyping
-class Num(pub i)
+class Num(public i)
     equals(o):bool             ; bind ==
         if o is null
             return false

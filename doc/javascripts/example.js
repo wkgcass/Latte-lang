@@ -78,7 +78,7 @@ $(document).ready(function () {
                     '<p>输入有可能可以约分, 我们需要增加一个gcd(int,int)函数来获取最大公约数</p>' +
                     '<pre>' + highlighting('test.lt', "" +
                         "static\n" +
-                        "    pri gcd(a:int, b:int)\n" +
+                        "    private gcd(a:int, b:int)\n" +
                         "        if b\n" +
                         "            return gcd(b, a % b)\n" +
                         "        else\n" +
@@ -89,8 +89,8 @@ $(document).ready(function () {
                     '<p>在构造块中对传入的数进行约分</p>' +
                     '<pre>' + highlighting('test.lt', "" +
                         "neg= n * d < 0\n" +
-                        "n=Math.`abs`(n)\n" +
-                        "d=Math.`abs`(d)\n" +
+                        "n=Math.abs(n)\n" +
+                        "d=Math.abs(d)\n" +
                         "g=gcd(n,d)\n" +
                         "n/=g\n" +
                         "d/=g\n" +
@@ -99,8 +99,6 @@ $(document).ready(function () {
                         "    n=-n"
                         , {}) +
                     '</pre>' +
-                    '<p>Math.`abs`使用了<code>``</code>符号,因为abs是<code>LessTyping</code>的一个关键字,用于表示<code>abstract</code></p>' +
-                    '<p>但abs是合法的java名称, 所以使用<code>`abs`</code>符号来使用这个名称</p>' +
                     '<p>现在, 所有Rational都是最简形式</p>' +
                     '<br>' +
                     '<p>我们还需要对Rational进行比较, 所以需要重写Object类的equals方法. equals方法和hashCode方法通常一起重写,以便<code>java::lang::HashMap</code>之类的类使用</p>' +
@@ -141,8 +139,8 @@ $(document).ready(function () {
                         "        throw IllegalArgumentException(\"divider cannot be 0\")\n" +
                         "\n" +
                         "    neg= n * d < 0\n" +
-                        "    n=Math.`abs`(n)\n" +
-                        "    d=Math.`abs`(d)\n" +
+                        "    n=Math.abs(n)\n" +
+                        "    d=Math.abs(d)\n" +
                         "    g=gcd(n,d)\n" +
                         "    n/=g\n" +
                         "    d/=g\n" +
@@ -170,7 +168,7 @@ $(document).ready(function () {
                         "    divide(o:Rational):Rational = Rational(n*o.d, d*o.n)\n" +
                         "\n" +
                         "    static\n" +
-                        "        pri gcd(a:int, b:int)\n" +
+                        "        private gcd(a:int, b:int)\n" +
                         "            if b\n" +
                         "                return gcd(b, a % b)\n" +
                         "            else\n" +

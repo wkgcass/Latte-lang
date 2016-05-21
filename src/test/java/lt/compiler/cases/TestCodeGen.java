@@ -131,9 +131,9 @@ public class TestCodeGen {
         public void testModifier() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "pri class TestModifier\n" +
-                                "    pub field\n" +
-                                "    pro method():Unit",
+                                "private class TestModifier\n" +
+                                "    public field\n" +
+                                "    protected method():Unit",
                         "TestModifier");
                 assertEquals(Modifier.PUBLIC, cls.getModifiers());
 
@@ -208,7 +208,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass(
                         "" +
                                 "class TestInvokeSpecial\n" +
-                                "    pri priMethod()\n" +
+                                "    private priMethod()\n" +
                                 "        return 1\n" +
                                 "    method()\n" +
                                 "        return priMethod()",
@@ -830,7 +830,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestInvokeVoidMethodReturnUndefined\n" +
                                 "    static\n" +
-                                "        pri m():Unit\n" +
+                                "        private m():Unit\n" +
                                 "        method()\n" +
                                 "            return m()",
                         "TestInvokeVoidMethodReturnUndefined");
@@ -845,7 +845,7 @@ public class TestCodeGen {
                                 "class TestVoidMethodLogicAnd\n" +
                                 "    static\n" +
                                 "        i:int\n" +
-                                "        pri m():Unit\n" +
+                                "        private m():Unit\n" +
                                 "            i=100\n" +
                                 "        method(a)\n" +
                                 "            return a&&m()\n" +
@@ -1085,7 +1085,7 @@ public class TestCodeGen {
                                 "class TestAnnotation\n" +
                                 "    static\n" +
                                 "        method(a,b):Unit\n" +
-                                "            sync(a,b)\n" +
+                                "            synchronized(a,b)\n" +
                                 "                t=System.currentTimeMillis()\n" +
                                 "                while(System.currentTimeMillis()+100<t)\n" +
                                 "                    ...\n" +
@@ -1139,7 +1139,7 @@ public class TestCodeGen {
                                 "class TestSynchronizedReturn\n" +
                                 "    static\n" +
                                 "        method(a,b)\n" +
-                                "            sync(a,b)\n" +
+                                "            synchronized(a,b)\n" +
                                 "                t=System.currentTimeMillis()\n" +
                                 "                while(System.currentTimeMillis()+100<t)\n" +
                                 "                    ...\n" +

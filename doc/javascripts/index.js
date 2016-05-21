@@ -135,8 +135,8 @@ $(document).ready(function () {
                     "func2 : java::util::function::Function = (x)->x+3\n" +
                     "\n" +
                     "; Lambda不光可以用在函数式接口上,还可以用在函数式抽象类上\n" +
-                    "abs class Func\n" +
-                    "    abs apply()=...     ; ...是一个有效的符号,不是指省略\n" +
+                    "abstract class Func\n" +
+                    "    abstract apply()=...     ; ...是一个有效的符号,不是指省略\n" +
                     "func3 : Func = (x)->x+4"
                     , {}))
             },

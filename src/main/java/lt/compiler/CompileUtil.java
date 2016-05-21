@@ -168,13 +168,12 @@ public class CompileUtil {
         }
 
         private static Set<String> modifiers = new HashSet<>(Arrays.asList(
-                "pub", "pro", "pri", "pkg",
-                "abs", "val", "native", "sync", "transient", "volatile", "strictfp",
-                "data"
+                "public", "protected", "private", "pkg",
+                "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp"
         ));
 
         private static Set<String> accessModifiers = new HashSet<>(Arrays.asList(
-                "pub", "pro", "pri", "pkg"
+                "public", "protected", "private", "pkg"
         ));
 
         public static boolean isModifier(String str) {
@@ -190,14 +189,50 @@ public class CompileUtil {
          */
         public static boolean modifierIsCompatible(String str, Set<Modifier> modifiers) {
                 boolean isAccessMod = accessModifiers.contains(str);
+                Modifier.Available mod = getModifierFromString(str);
                 for (Modifier m : modifiers) {
-                        if (m.modifier.equals(str)
-                                || (isAccessMod && accessModifiers.contains(m.modifier))
-                                || (str.equals("val") && m.modifier.equals("abs"))
-                                || (str.equals("abs") && m.modifier.equals("val")))
+                        if (m.modifier.equals(mod)
+                                ||
+                                (isAccessMod &&
+                                        (m.modifier.equals(Modifier.Available.PUBLIC)
+                                                || m.modifier.equals(Modifier.Available.PRIVATE)
+                                                || m.modifier.equals(Modifier.Available.PROTECTED)
+                                                || m.modifier.equals(Modifier.Available.PKG))
+                                )
+                                || (mod.equals(Modifier.Available.VAL) && m.modifier.equals(Modifier.Available.ABSTRACT))
+                                || (mod.equals(Modifier.Available.ABSTRACT) && m.modifier.equals(Modifier.Available.VAL)))
                                 return false;
                 }
                 return true;
+        }
+
+        public static Modifier.Available getModifierFromString(String str) {
+                switch (str) {
+                        case "public":
+                                return Modifier.Available.PUBLIC;
+                        case "private":
+                                return Modifier.Available.PRIVATE;
+                        case "protected":
+                                return Modifier.Available.PROTECTED;
+                        case "pkg":
+                                return Modifier.Available.PKG;
+                        case "abstract":
+                                return Modifier.Available.ABSTRACT;
+                        case "val":
+                                return Modifier.Available.VAL;
+                        case "native":
+                                return Modifier.Available.NATIVE;
+                        case "synchronized":
+                                return Modifier.Available.SYNCHRONIZED;
+                        case "transient":
+                                return Modifier.Available.TRANSIENT;
+                        case "volatile":
+                                return Modifier.Available.VOLATILE;
+                        case "strictfp":
+                                return Modifier.Available.STRICTFP;
+                        default:
+                                throw new LtBug("invalid modifier " + str);
+                }
         }
 
         public static final int NOT_METHOD_DEF = 0;
@@ -380,7 +415,7 @@ public class CompileUtil {
 
         public static boolean isSync(Element elem) {
                 String content = elem.getContent();
-                if (content.equals("sync")) {
+                if (content.equals("synchronized")) {
                         Node n = get_next_node(elem);
                         if (n instanceof Element) {
                                 String s = ((Element) n).getContent();

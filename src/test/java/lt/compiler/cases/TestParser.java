@@ -504,7 +504,7 @@ public class TestParser {
 
                 Statement s = statements.get(0);
 
-                VariableDef v = new VariableDef("i", new HashSet<>(Collections.singletonList(new Modifier("val", LineCol.SYNTHETIC))), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef v = new VariableDef("i", new HashSet<>(Collections.singletonList(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC))), Collections.emptySet(), LineCol.SYNTHETIC);
                 AST.Access access1 = new AST.Access(null, "ClassName", LineCol.SYNTHETIC);
                 AST.Access access2 = new AST.Access(access1, "Inner", LineCol.SYNTHETIC);
                 v.setType(access2);
@@ -636,7 +636,7 @@ public class TestParser {
         public void testMethodGeneral() throws Exception {
                 List<Statement> list = parse(
                         "" +
-                                "abs method(a,b:Character):Integer\n" +
+                                "abstract method(a,b:Character):Integer\n" +
                                 "    a=false"
                 );
 
@@ -651,7 +651,7 @@ public class TestParser {
 
                 MethodDef methodDef = new MethodDef(
                         "method",
-                        new HashSet<>(Collections.singletonList(new Modifier("abs", LineCol.SYNTHETIC))),
+                        new HashSet<>(Collections.singletonList(new Modifier(Modifier.Available.ABSTRACT, LineCol.SYNTHETIC))),
                         new AST.Access(null, "Integer", LineCol.SYNTHETIC),
                         vars,
                         Collections.emptySet(),
@@ -687,16 +687,16 @@ public class TestParser {
         @Test
         public void testJavaName() throws Exception {
                 try {
-                        parse("sync=1");
+                        parse("val=1");
                         fail();
                 } catch (Exception ignore) {
                 }
-                List<Statement> list = parse("`sync`=1");
+                List<Statement> list = parse("`val`=1");
 
                 assertEquals(1, list.size());
                 Statement stmt = list.get(0);
 
-                VariableDef v = new VariableDef("sync", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef v = new VariableDef("val", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
                 v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
 
                 assertEquals(v, stmt);
@@ -1083,7 +1083,7 @@ public class TestParser {
 
         @Test
         public void testClass_Arg_SuperInvocation_Modifiers() throws Exception {
-                List<Statement> list = parse("abs class C(arg):Type(arg),Type2\n    a=2");
+                List<Statement> list = parse("abstract class C(arg):Type(arg),Type2\n    a=2");
 
                 assertEquals(1, list.size());
 
@@ -1091,7 +1091,7 @@ public class TestParser {
                 VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
                 v.setInit(new NumberLiteral("2", LineCol.SYNTHETIC));
                 ClassDef def = new ClassDef("C", new HashSet<>(Collections.singletonList(
-                        new Modifier("abs", LineCol.SYNTHETIC)
+                        new Modifier(Modifier.Available.ABSTRACT, LineCol.SYNTHETIC)
                 )), Collections.singletonList(
                         new VariableDef("arg", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
                 ), new AST.Invocation(new AST.Access(null, "Type", LineCol.SYNTHETIC), Collections.singletonList(new AST.Access(null, "arg", LineCol.SYNTHETIC)), LineCol.SYNTHETIC), Collections.singletonList(new AST.Access(null, "Type2", LineCol.SYNTHETIC)), Collections.emptySet(), Collections.singletonList(v), LineCol.SYNTHETIC);
@@ -1146,14 +1146,14 @@ public class TestParser {
 
         @Test
         public void testInterface_super_interfaces_stmt_modifiers() throws Exception {
-                List<Statement> list = parse("pro interface A:B,C\n    method()=...");
+                List<Statement> list = parse("protected interface A:B,C\n    method()=...");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
 
                 InterfaceDef def = new InterfaceDef("A", new HashSet<>(Collections.singletonList(
-                        new Modifier("pro", LineCol.SYNTHETIC)
+                        new Modifier(Modifier.Available.PROTECTED, LineCol.SYNTHETIC)
                 )), Arrays.asList(
                         new AST.Access(null, "B", LineCol.SYNTHETIC),
                         new AST.Access(null, "C", LineCol.SYNTHETIC)
@@ -1781,7 +1781,7 @@ public class TestParser {
 
         @Test
         public void testSync() throws Exception {
-                List<Statement> list = parse("sync(lock)\n    i=1");
+                List<Statement> list = parse("synchronized(lock)\n    i=1");
 
                 assertEquals(1, list.size());
 
@@ -1850,15 +1850,15 @@ public class TestParser {
         }
 
         @Test
-        public void testDataClass() throws Exception {
-                List<Statement> list = parse("data class Data(id,name)");
+        public void testAbstractClass() throws Exception {
+                List<Statement> list = parse("abstract class AbsCls(id,name)");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
                 ClassDef c = new ClassDef(
-                        "Data",
-                        new HashSet<>(Collections.singletonList(new Modifier("data", LineCol.SYNTHETIC))),
+                        "AbsCls",
+                        new HashSet<>(Collections.singletonList(new Modifier(Modifier.Available.ABSTRACT, LineCol.SYNTHETIC))),
                         Arrays.asList(
                                 new VariableDef("id", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC),
                                 new VariableDef("name", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)

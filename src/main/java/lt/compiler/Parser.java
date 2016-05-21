@@ -2420,7 +2420,7 @@ public class Parser {
                 Element elem = (Element) current;
                 String modifier = elem.getContent();
                 if (modifierIsCompatible(modifier, modifiers)) {
-                        modifiers.add(new Modifier(modifier, current.getLineCol()));
+                        modifiers.add(new Modifier(getModifierFromString(modifier), current.getLineCol()));
                 } else {
                         err.UnexpectedTokenException("valid modifier", modifier, elem.getLineCol());
                         err.debug("ignore this modifier");

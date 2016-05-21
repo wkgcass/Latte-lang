@@ -5,8 +5,8 @@ class Rational(n:int, d:int=1)
         throw IllegalArgumentException("divider cannot be 0")
 
     neg= n * d < 0
-    n=Math.`abs`(n)
-    d=Math.`abs`(d)
+    n=Math.abs(n)
+    d=Math.abs(d)
     g=gcd(n,d)
     n/=g
     d/=g
@@ -34,7 +34,7 @@ class Rational(n:int, d:int=1)
     divide(o:Rational):Rational = Rational(n*o.d, d*o.n)
 
     static
-        pri gcd(a:int, b:int)
+        private gcd(a:int, b:int)
             if b
                 return gcd(b, a % b)
             else
