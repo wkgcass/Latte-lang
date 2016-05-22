@@ -137,6 +137,14 @@ public class Scanner {
          */
         public static final String COMMENT = ";";
         /**
+         * multiple line comment start symbol
+         */
+        public static final String MultipleLineCommentStart = "/*";
+        /**
+         * multiple line comment end symbol
+         */
+        public static final String MultipleLineCommentEnd = "*/";
+        /**
          * the scanner creates a new layer when meets a <tt>key</tt> and the layer finishes at corresponding <tt>value</tt><br>
          * <pre>
          * map = {'name':'cass'}
@@ -166,6 +174,8 @@ public class Scanner {
                 set.addAll(SPLIT_X);
                 set.add(ENDING);
                 set.add(COMMENT);
+                set.add(MultipleLineCommentStart);
+                set.add(MultipleLineCommentEnd);
                 set.addAll(PAIR.keySet());
                 set.addAll(PAIR.values());
 
@@ -316,136 +326,148 @@ public class Scanner {
                         args.currentCol = properties._COLUMN_BASE_;
                         args.useDefine.clear();
 
-                        // pre processing
-                        if (line.startsWith("define")) {
-                                if (!line.equals("define") &&
-                                        SPLIT.contains(line.substring("define".length(), "define".length() + 1))) {
-                                        ++args.currentCol;
-
-                                        String originalString = line;
-
-                                        line = line.substring("define".length());
-                                        args.currentCol += "define".length();
-                                        LineAndString las1 = getStringForPreProcessing(line, args, originalString, "define");
-
-                                        if (las1 == null) {
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-
-                                        line = las1.line;
-                                        String target = las1.str.substring(1, las1.str.length() - 1);
-                                        if (target.length() == 0) {
-                                                err.SyntaxException("define <target> length cannot be 0", las1.lineCol);
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-                                        if (target.contains(ESCAPE)) {
-                                                err.SyntaxException("define <target> cannot contain escape char", las1.lineCol);
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-
-                                        if (!line.trim().startsWith("as")) {
-                                                err.SyntaxException("illegal define command " +
-                                                                "(there should be an `as` between <target> and <replacement>)",
-                                                        args.generateLineCol());
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-
-                                        int asPos = line.indexOf("as");
-                                        line = line.substring(asPos + 2);
-
-                                        if (line.isEmpty()) {
-                                                err.SyntaxException("illegal define command " + originalString,
-                                                        args.generateLineCol());
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-                                        if (!SPLIT.contains(String.valueOf(line.charAt(0)))) {
-                                                err.SyntaxException("illegal define command " +
-                                                                "(there should be an `as` between <target> and <replacement>)",
-                                                        args.generateLineCol());
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-
-                                        args.currentCol += (asPos + 2);
-
-                                        LineAndString las2 = getStringForPreProcessing(line, args, originalString, "define");
-
-                                        if (las2 == null) {
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-
-                                        line = las2.line;
-                                        String replacement = las2.str.substring(1, las2.str.length() - 1); // defined replacement
-                                        if (replacement.contains(ESCAPE)) {
-                                                err.SyntaxException("define <replacement> cannot contain escape char", las2.lineCol);
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-                                        if (line.trim().length() != 0) {
-                                                err.SyntaxException("illegal define command " +
-                                                        "(there should not be characters after <replacement>)", args.generateLineCol());
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-
-                                        args.defined.put(target, replacement);
-
+                        if (args.multipleLineComment) {
+                                if (!line.contains(MultipleLineCommentEnd)) {
                                         line = reader.readLine();
                                         continue;
+                                } else {
+                                        int subCol = line.indexOf(MultipleLineCommentEnd) + MultipleLineCommentEnd.length();
+                                        line = line.substring(subCol);
+                                        args.currentCol += (subCol + 1);
+                                        args.multipleLineComment = false;
                                 }
-                        } else if (line.startsWith("undef")) {
-                                if (!line.equals("undef") &&
-                                        SPLIT.contains(line.substring("undef".length(), "undef".length() + 1))) {
-                                        ++args.currentCol;
+                        } else {
+                                // pre processing
+                                if (line.startsWith("define")) {
+                                        if (!line.equals("define") &&
+                                                SPLIT.contains(line.substring("define".length(), "define".length() + 1))) {
+                                                ++args.currentCol;
 
-                                        LineCol lineStart = args.generateLineCol();
-                                        String originalString = line;
+                                                String originalString = line;
 
-                                        line = line.substring("undef".length());
-                                        args.currentCol += "undef".length();
-                                        LineAndString las1 = getStringForPreProcessing(line, args, originalString, "undef");
+                                                line = line.substring("define".length());
+                                                args.currentCol += "define".length();
+                                                LineAndString las1 = getStringForPreProcessing(line, args, originalString, "define");
 
-                                        if (las1 == null) {
+                                                if (las1 == null) {
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                line = las1.line;
+                                                String target = las1.str.substring(1, las1.str.length() - 1);
+                                                if (target.length() == 0) {
+                                                        err.SyntaxException("define <target> length cannot be 0", las1.lineCol);
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+                                                if (target.contains(ESCAPE)) {
+                                                        err.SyntaxException("define <target> cannot contain escape char", las1.lineCol);
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                if (!line.trim().startsWith("as")) {
+                                                        err.SyntaxException("illegal define command " +
+                                                                        "(there should be an `as` between <target> and <replacement>)",
+                                                                args.generateLineCol());
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                int asPos = line.indexOf("as");
+                                                line = line.substring(asPos + 2);
+
+                                                if (line.isEmpty()) {
+                                                        err.SyntaxException("illegal define command " + originalString,
+                                                                args.generateLineCol());
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+                                                if (!SPLIT.contains(String.valueOf(line.charAt(0)))) {
+                                                        err.SyntaxException("illegal define command " +
+                                                                        "(there should be an `as` between <target> and <replacement>)",
+                                                                args.generateLineCol());
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                args.currentCol += (asPos + 2);
+
+                                                LineAndString las2 = getStringForPreProcessing(line, args, originalString, "define");
+
+                                                if (las2 == null) {
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                line = las2.line;
+                                                String replacement = las2.str.substring(1, las2.str.length() - 1); // defined replacement
+                                                if (replacement.contains(ESCAPE)) {
+                                                        err.SyntaxException("define <replacement> cannot contain escape char", las2.lineCol);
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+                                                if (line.trim().length() != 0) {
+                                                        err.SyntaxException("illegal define command " +
+                                                                "(there should not be characters after <replacement>)", args.generateLineCol());
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                args.defined.put(target, replacement);
+
                                                 line = reader.readLine();
                                                 continue;
                                         }
+                                } else if (line.startsWith("undef")) {
+                                        if (!line.equals("undef") &&
+                                                SPLIT.contains(line.substring("undef".length(), "undef".length() + 1))) {
+                                                ++args.currentCol;
 
-                                        line = las1.line;
-                                        String target = las1.str.substring(1, las1.str.length() - 1);
-                                        if (target.length() == 0) {
-                                                err.SyntaxException("undef <target> length cannot be 0", las1.lineCol);
+                                                LineCol lineStart = args.generateLineCol();
+                                                String originalString = line;
+
+                                                line = line.substring("undef".length());
+                                                args.currentCol += "undef".length();
+                                                LineAndString las1 = getStringForPreProcessing(line, args, originalString, "undef");
+
+                                                if (las1 == null) {
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                line = las1.line;
+                                                String target = las1.str.substring(1, las1.str.length() - 1);
+                                                if (target.length() == 0) {
+                                                        err.SyntaxException("undef <target> length cannot be 0", las1.lineCol);
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+                                                if (target.contains(ESCAPE)) {
+                                                        err.SyntaxException("undef <target> cannot contain escape char", las1.lineCol);
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                if (line.trim().length() != 0) {
+                                                        err.SyntaxException("illegal undef command " +
+                                                                "(there should not be characters after <target>)", args.generateLineCol());
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                if (!args.defined.containsKey(target)) {
+                                                        err.SyntaxException("\"" + target + "\" is not defined", lineStart);
+                                                        line = reader.readLine();
+                                                        continue;
+                                                }
+
+                                                args.defined.remove(target);
+
                                                 line = reader.readLine();
                                                 continue;
                                         }
-                                        if (target.contains(ESCAPE)) {
-                                                err.SyntaxException("undef <target> cannot contain escape char", las1.lineCol);
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-
-                                        if (line.trim().length() != 0) {
-                                                err.SyntaxException("illegal undef command " +
-                                                        "(there should not be characters after <target>)", args.generateLineCol());
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-
-                                        if (!args.defined.containsKey(target)) {
-                                                err.SyntaxException("\"" + target + "\" is not defined", lineStart);
-                                                line = reader.readLine();
-                                                continue;
-                                        }
-
-                                        args.defined.remove(target);
-
-                                        line = reader.readLine();
-                                        continue;
                                 }
                         }
 
@@ -494,7 +516,9 @@ public class Scanner {
                                 spaces -= rootIndent;
                         }
 
-                        args.currentCol = spaces + 1 + rootIndent + properties._COLUMN_BASE_;
+                        if (args.currentCol == properties._COLUMN_BASE_) {
+                                args.currentCol += spaces + 1 + rootIndent;
+                        }
 
                         // check space indent
                         int indentation;
@@ -538,8 +562,11 @@ public class Scanner {
                         // start parsing
                         scan(line, args);
 
-                        if (args.previous instanceof Element) {
-                                args.previous = new EndingNode(args, EndingNode.WEAK);
+                        if (!args.multipleLineComment) {
+
+                                if (args.previous instanceof Element) {
+                                        args.previous = new EndingNode(args, EndingNode.WEAK);
+                                }
                         }
 
                         line = reader.readLine();
@@ -588,6 +615,17 @@ public class Scanner {
          */
         private void scan(String line, Args args) throws SyntaxException {
                 if (line.isEmpty()) return;
+
+                // check multiple line comment
+                if (args.multipleLineComment) {
+                        if (line.contains(MultipleLineCommentEnd)) {
+                                int subCol = line.indexOf(MultipleLineCommentEnd) + MultipleLineCommentEnd.length();
+                                args.currentCol += subCol;
+                                line = line.substring(subCol);
+                                args.multipleLineComment = false;
+                        }
+                }
+
                 // check SPLIT
                 // find the pattern at minimum location index and with longest words
                 int minIndex = line.length();
@@ -603,11 +641,14 @@ public class Scanner {
                 }
 
                 if (token == null) {
-                        // not found, simply append whole input to previous
-                        TokenType type = getTokenType(line, args.generateLineCol());
-                        if (type != null) {
-                                // unknown token, ignore this token
-                                args.previous = new Element(args, line, type);
+                        if (!line.isEmpty()) {
+                                // not found, simply append whole input to previous
+                                TokenType type = getTokenType(line, args.generateLineCol());
+                                if (type != null) {
+                                        // unknown token, ignore this token
+                                        args.previous = new Element(args, line, type);
+                                        args.currentCol += line.length();
+                                }
                         }
                 } else {
                         String copyOfLine = line;
@@ -711,6 +752,10 @@ public class Scanner {
                                         args.previous = startNode;
                                 }
                                 args.previous = new Element(args, PAIR.get(start), getTokenType(token, args.generateLineCol()));
+                        } else if (token.equals(MultipleLineCommentStart)) {
+                                if (!args.multipleLineComment) {
+                                        args.multipleLineComment = true;
+                                }
                         } else {
                                 err.UnknownTokenException(token, args.generateLineCol());
                                 // unknown token

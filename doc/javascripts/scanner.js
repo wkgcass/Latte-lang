@@ -22,6 +22,12 @@ var ESCAPE = "\\";
 var NO_RECORD = [" "];
 var ENDING = ",";
 var COMMENT = ";";
+
+var MultipleLineCommentStart = "/*";
+/**
+ * multiple line comment end symbol
+ */
+var MultipleLineCommentEnd = "*/";
 var PAIR = {
     "{": "}",
     "[": "]",
@@ -36,6 +42,8 @@ SPLIT.addAll(SPLIT_X);
 SPLIT.addAll(STRING);
 SPLIT.push(ENDING);
 SPLIT.push(COMMENT);
+SPLIT.push(MultipleLineCommentStart);
+SPLIT.push(MultipleLineCommentEnd);
 for (var k in PAIR) {
     SPLIT.push(k);
     SPLIT.push(PAIR[k]);
@@ -312,7 +320,8 @@ function Scanner(filename, input, config) {
                     useDefine: this.useDefine
                 }
             },
-            defined: {}
+            defined: {},
+            multipleLineComment: false
         };
 
         var elementStartNode = new Node(args, TYPE_ElementStartNode, 0);
@@ -369,81 +378,92 @@ function Scanner(filename, input, config) {
         while (line != null) {
             ++args.currentLine;
             args.useDefine = {};
+            args.currentCol = properties._COLUMN_BASE_;
 
-            // pre processing
-            if (line.startsWith("define")) {
-                if (line != "define" &&
-                    SPLIT.contains(line.substring("define".length, "define".length + 1))) {
-                    ++args.currentCol;
-
-                    var originalString = line;
-
-                    line = line.substring("define".length);
-                    args.currentCol += "define".length;
-                    var las1 = getStringForPreProcessing(line, args, originalString, "define");
-                    line = las1.line;
-                    target = las1.str.substring(1, las1.str.length - 1);
-                    if (target.length == 0) throw SyntaxException("define <target> length cannot be 0", las1.lineCol);
-                    if (target.contains(ESCAPE)) throw SyntaxException("define <target> cannot contain escape char", las1.lineCol);
-
-                    if (!line.trim().startsWith("as")) {
-                        throw SyntaxException("illegal define command " +
-                            "(there should be an `as` between <target> and <replacement>)",
-                            args.generateLineCol());
-                    }
-
-                    var asPos = line.indexOf("as");
-                    line = line.substring(asPos + 2);
-
-                    if (line.length == 0) throw SyntaxException("illegal define command " + originalString,
-                        args.generateLineCol());
-                    if (!SPLIT.contains(line[0]))
-                        throw SyntaxException("illegal define command " +
-                            "(there should be an `as` between <target> and <replacement>)",
-                            args.generateLineCol());
-
-                    args.currentCol += (asPos + 2);
-
-                    var las2 = getStringForPreProcessing(line, args, originalString, "define");
-                    line = las2.line;
-                    var replacement = las2.str.substring(1, las2.str.length - 1); // defined replacement
-                    if (replacement.contains(ESCAPE))
-                        throw SyntaxException("define <replacement> cannot contain escape char", las2.lineCol);
-                    if (line.trim().length != 0) throw SyntaxException("illegal define command " +
-                        "(there should not be characters after <replacement>)", args.generateLineCol());
-
-                    args.defined[target] = replacement;
-
+            if (args.multipleLineComment) {
+                if (!line.contains(MultipleLineCommentEnd)) {
                     line = lines.length == cursor ? null : lines[cursor++];
-                    args.currentCol = properties._COLUMN_BASE_;
                     continue;
+                } else {
+                    subCol = line.indexOf(MultipleLineCommentEnd) + MultipleLineCommentEnd.length;
+                    line = line.substring(subCol);
+                    args.currentCol += subCol + 1;
+                    args.multipleLineComment = false;
                 }
-            } else if (line.startsWith("undef")) {
-                if (line != "undef" &&
-                    SPLIT.contains(line.substring("undef".length, "undef".length + 1))) {
-                    ++args.currentCol;
+            } else {
+                // pre processing
+                if (line.startsWith("define")) {
+                    if (line != "define" &&
+                        SPLIT.contains(line.substring("define".length, "define".length + 1))) {
+                        ++args.currentCol;
 
-                    var lineStart = args.generateLineCol();
-                    originalString = line;
+                        var originalString = line;
 
-                    line = line.substring("undef".length);
-                    args.currentCol += "undef".length;
-                    las1 = getStringForPreProcessing(line, args, originalString, "undef");
-                    line = las1.line;
-                    var target = las1.str.substring(1, las1.str.length - 1);
-                    if (target.length == 0) throw SyntaxException("undef <target> length cannot be 0", las1.lineCol);
-                    if (target.contains(ESCAPE)) throw SyntaxException("undef <target> cannot contain escape char", las1.lineCol);
+                        line = line.substring("define".length);
+                        args.currentCol += "define".length;
+                        var las1 = getStringForPreProcessing(line, args, originalString, "define");
+                        line = las1.line;
+                        target = las1.str.substring(1, las1.str.length - 1);
+                        if (target.length == 0) throw SyntaxException("define <target> length cannot be 0", las1.lineCol);
+                        if (target.contains(ESCAPE)) throw SyntaxException("define <target> cannot contain escape char", las1.lineCol);
 
-                    if (line.trim().length != 0) throw SyntaxException("illegal undef command " +
-                        "(there should not be characters after <target>)", args.generateLineCol());
+                        if (!line.trim().startsWith("as")) {
+                            throw SyntaxException("illegal define command " +
+                                "(there should be an `as` between <target> and <replacement>)",
+                                args.generateLineCol());
+                        }
 
-                    if (!args.defined[target]) throw SyntaxException("\"" + target + "\" is not defined", lineStart);
+                        var asPos = line.indexOf("as");
+                        line = line.substring(asPos + 2);
 
-                    args.defined[target] = undefined;
+                        if (line.length == 0) throw SyntaxException("illegal define command " + originalString,
+                            args.generateLineCol());
+                        if (!SPLIT.contains(line[0]))
+                            throw SyntaxException("illegal define command " +
+                                "(there should be an `as` between <target> and <replacement>)",
+                                args.generateLineCol());
 
-                    line = lines.length == cursor ? null : lines[cursor++];
-                    args.currentCol = properties._COLUMN_BASE_;
-                    continue;
+                        args.currentCol += (asPos + 2);
+
+                        var las2 = getStringForPreProcessing(line, args, originalString, "define");
+                        line = las2.line;
+                        var replacement = las2.str.substring(1, las2.str.length - 1); // defined replacement
+                        if (replacement.contains(ESCAPE))
+                            throw SyntaxException("define <replacement> cannot contain escape char", las2.lineCol);
+                        if (line.trim().length != 0) throw SyntaxException("illegal define command " +
+                            "(there should not be characters after <replacement>)", args.generateLineCol());
+
+                        args.defined[target] = replacement;
+
+                        line = lines.length == cursor ? null : lines[cursor++];
+                        continue;
+                    }
+                } else if (line.startsWith("undef")) {
+                    if (line != "undef" &&
+                        SPLIT.contains(line.substring("undef".length, "undef".length + 1))) {
+                        ++args.currentCol;
+
+                        var lineStart = args.generateLineCol();
+                        originalString = line;
+
+                        line = line.substring("undef".length);
+                        args.currentCol += "undef".length;
+                        las1 = getStringForPreProcessing(line, args, originalString, "undef");
+                        line = las1.line;
+                        var target = las1.str.substring(1, las1.str.length - 1);
+                        if (target.length == 0) throw SyntaxException("undef <target> length cannot be 0", las1.lineCol);
+                        if (target.contains(ESCAPE)) throw SyntaxException("undef <target> cannot contain escape char", las1.lineCol);
+
+                        if (line.trim().length != 0) throw SyntaxException("illegal undef command " +
+                            "(there should not be characters after <target>)", args.generateLineCol());
+
+                        if (!args.defined[target]) throw SyntaxException("\"" + target + "\" is not defined", lineStart);
+
+                        args.defined[target] = undefined;
+
+                        line = lines.length == cursor ? null : lines[cursor++];
+                        continue;
+                    }
                 }
             }
 
@@ -495,7 +515,9 @@ function Scanner(filename, input, config) {
             // remove spaces
             line = line.trim();
 
-            args.currentCol = spaces + 1 + rootIndent + properties._COLUMN_BASE_;
+            if (args.currentCol == properties._COLUMN_BASE_) {
+                args.currentCol += spaces + 1 + rootIndent;
+            }
 
             // check it's an empty line
             if (line.length == 0) {
@@ -519,8 +541,12 @@ function Scanner(filename, input, config) {
             // start parsing
             parse1(line, args);
 
-            if (args.previous instanceof Element) {
-                args.previous = new Node(args, TYPE_EndingNode);
+            if (!args.multipleLineComment) {
+                if (args.previous != null && args.previous.type != TYPE_ElementStartNode
+                    && args.previous.type != TYPE_EndingNode
+                    && args.previous.type != TYPE_EndingNodeStrong) {
+                    args.previous = new Node(args, TYPE_EndingNode);
+                }
             }
 
             line = lines.length == cursor ? null : lines[cursor++];
@@ -565,6 +591,17 @@ function Scanner(filename, input, config) {
 
     function parse1(line, args) {
         if (line.length == 0) return;
+
+        // check multiple line comment
+        if (args.multipleLineComment) {
+            if (line.contains(MultipleLineCommentEnd)) {
+                var subCol = line.indexOf(MultipleLineCommentEnd) + MultipleLineCommentEnd.length;
+                args.currentCol += subCol;
+                line = line.substring(subCol);
+                args.multipleLineComment = false;
+            }
+        }
+
         // check SPLIT
         // find the pattern at minimum location index and with longest words
         var minIndex = line.length;
@@ -581,8 +618,11 @@ function Scanner(filename, input, config) {
         }
 
         if (token == null) {
-            // not found, append to previous
-            args.previous = new Node(args, getTokenType(line, args.generateLineCol()), undefined, line);
+            if (line.length != 0) {
+                // not found, append to previous
+                args.previous = new Node(args, getTokenType(line, args.generateLineCol()), undefined, line);
+                args.currentCol += line.length;
+            }
         } else {
             var copyOfLine = line;
             var str = line.substring(0, minIndex);
@@ -661,6 +701,10 @@ function Scanner(filename, input, config) {
                         args.generateLineCol());
                 }
                 args.previous = new Node(args, getTokenType(token, args.generateLineCol()), undefined, token);
+            } else if (token == MultipleLineCommentStart) {
+                if (!args.multipleLineComment) {
+                    args.multipleLineComment = true;
+                }
             } else {
                 throw UnexpectedTokenException(token, args.generateLineCol());
             }

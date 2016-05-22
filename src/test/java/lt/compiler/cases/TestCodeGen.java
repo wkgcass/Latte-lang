@@ -1883,4 +1883,24 @@ public class TestCodeGen {
 
                 assertEquals(2, cls.getMethod("method", Object.class).invoke(null, Arrays.asList(1, 2, 3)));
         }
+
+        @Test
+        public void testInnerMethodRecursive() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestInnerMethodRecursive\n" +
+                                "    static\n" +
+                                "        method(a:int,b:int)\n" +
+                                "            gcd(i:int, j:int)\n" +
+                                "                if j\n" +
+                                "                    return gcd(j, i % j)\n" +
+                                "                else\n" +
+                                "                    return i\n" +
+                                "            return gcd(a,b)",
+                        "TestInnerMethodRecursive");
+
+                Method method = cls.getMethod("method", int.class, int.class);
+                assertEquals(2, method.invoke(null, 8, 2));
+                assertEquals(1, method.invoke(null, 1, 2));
+        }
 }

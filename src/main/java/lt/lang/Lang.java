@@ -208,7 +208,7 @@ public class Lang {
                 // check Boolean object
                 if (o instanceof Boolean) return (Boolean) o;
                 // check number not 0
-                if (o instanceof Number) return ((Number) o).intValue() != 0 && ((Number) o).doubleValue() != 0;
+                if (o instanceof Number) return ((Number) o).doubleValue() != 0;
                 // otherwise return true
                 return true;
         }

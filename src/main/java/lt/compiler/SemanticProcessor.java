@@ -651,6 +651,18 @@ public class SemanticProcessor {
                                         } else throw new SyntaxException(msg, typeDef.line_col());
                                 }
                         }
+                        List<SMethodDef> methods;
+                        if (typeDef instanceof SClassDef) methods = ((SClassDef) typeDef).methods();
+                        else methods = ((SInterfaceDef) typeDef).methods();
+
+                        for (SMethodDef method : methods) {
+                                for (SAnno anno : method.annos()) {
+                                        if (anno.type().fullName().equals("java.lang.Override")) {
+                                                if (method.overRide().isEmpty())
+                                                        throw new SyntaxException(method + " doesn't override any method", method.line_col());
+                                        }
+                                }
+                        }
                 }
 
                 // ========step 4========
@@ -1321,9 +1333,15 @@ public class SemanticProcessor {
                 m.modifiers().add(0, SModifier.PRIVATE);
 
                 // add into scope
-                scope.addMethodDef(name, new SemanticScope.MethodRecorder(m, paramCount));
+                SemanticScope.MethodRecorder rec = new SemanticScope.MethodRecorder(m, paramCount);
+                scope.addMethodDef(name, rec);
 
-                parseMethod(m, newMethodDef.body, scope.parent);
+                // generate a scope for the inner method
+                // the scope contains the inner method itself
+                SemanticScope innerMethodScope = new SemanticScope(scope.parent);
+                innerMethodScope.addMethodDef(name, rec);
+
+                parseMethod(m, newMethodDef.body, innerMethodScope);
 
                 return m;
         }

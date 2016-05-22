@@ -545,7 +545,15 @@ public class Dynamic {
                                         return invoke(targetClass, o, invoker, "put", primitives, args);
                                 }
                         }
-                        throw new RuntimeException("cannot find method to invoke " + o + "." + method + Arrays.toString(args));
+                        StringBuilder sb = new StringBuilder().append(o == null ? targetClass : o).append(".").append(method).append("(");
+                        boolean isFirst = true;
+                        for (Object arg : args) {
+                                if (isFirst) isFirst = false;
+                                else sb.append(", ");
+                                sb.append(arg);
+                        }
+                        sb.append(")");
+                        throw new RuntimeException("cannot find method to invoke " + sb.toString());
                 }
 
                 // calculate every method's cast steps

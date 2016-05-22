@@ -26,15 +26,12 @@ package lt.lang;
 
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * iterable
  */
 public abstract class LtIterator implements Iterator {
-        private Object[] array;
-        private Iterator it;
-        private Enumeration en;
-
         static class ArrayIt extends LtIterator {
                 final Object[] array;
                 int index = 0;
@@ -99,6 +96,8 @@ public abstract class LtIterator implements Iterator {
                         return new It((Iterator) o);
                 } else if (o instanceof Enumeration) {
                         return new EnIt((Enumeration) o);
+                } else if (o instanceof Map) {
+                        return new It(((Map) o).entrySet().iterator());
                 } else throw new RuntimeException("cannot iterate on " + o);
         }
 

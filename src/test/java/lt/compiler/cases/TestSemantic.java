@@ -2531,4 +2531,29 @@ public class TestSemantic {
                         assertEquals(1, e.lineCol.column);
                 }
         }
+
+        @Test
+        public void testOverrideCheck() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    @Override\n" +
+                        "    toString():String='abc'");
+                parse(map);
+
+                map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    @Override\n" +
+                        "    toStringX():String='abc'");
+                try {
+                        parse(map);
+                        fail();
+                } catch (SyntaxException e) {
+                        assertEquals(4, e.lineCol.line);
+                        assertEquals(5, e.lineCol.column);
+                }
+        }
 }

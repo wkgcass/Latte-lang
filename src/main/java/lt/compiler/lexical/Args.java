@@ -70,4 +70,8 @@ public class Args {
          * whether this line uses define
          */
         public Map<String, String> useDefine = new LinkedHashMap<>();
+        /**
+         * is parsing multiple line comment
+         */
+        public boolean multipleLineComment = false;
 }

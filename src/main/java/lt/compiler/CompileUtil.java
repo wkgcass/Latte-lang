@@ -131,7 +131,6 @@ public class CompileUtil {
          * @return true/false (packageName::name)
          */
         public static boolean isPackage(Element element) {
-                String content = element.getContent();
                 if (element.getTokenType() == TokenType.VALID_NAME && element.hasNext()) {
                         Node next = element.next();
                         if (next instanceof Element) {
@@ -139,7 +138,7 @@ public class CompileUtil {
                                 if (nextContent.equals("::") && next.hasNext()) {
                                         Node nextNext = next.next();
                                         if (nextNext instanceof Element) {
-                                                return ((Element) nextNext).getTokenType() == TokenType.VALID_NAME;
+                                                return nextNext.getTokenType() == TokenType.VALID_NAME;
                                         }
                                 }
                         }

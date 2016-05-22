@@ -23,6 +23,19 @@ $(document).ready(function () {
                 note: $sce.trustAsHtml("LessTyping隐式导入 <code>lt.lang.Utils</code> 下的所有static方法.")
             },
             {
+                title: "注释",
+                java: "" +
+                "// comment\n" +
+                "/*\n" +
+                "multiple line comment\n" +
+                "*/",
+                lesstyping: getLessTypingHtml("" +
+                    "; comment\n" +
+                    "/*\n" +
+                    "multiple line comment\n" +
+                    "*/")
+            },
+            {
                 title: "值",
                 java: "" +
                 "int i = 1;\n" +

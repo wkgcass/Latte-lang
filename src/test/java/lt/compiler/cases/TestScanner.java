@@ -677,4 +677,41 @@ public class TestScanner {
                         assertEquals(1, e.lineCol.column);
                 }
         }
+
+        @Test
+        public void testMultipleLineComment() throws Exception {
+                Scanner processor = new Scanner("test", new StringReader(
+                        "" +
+                                "a=1/**/\n" + // inline comment 1
+                                "a/**/=2\n" + // inline comment 2
+                                "a/* a */=3\n" + // inline comment 3
+                                "a=4/* a */\n" + // inline comment 4
+                                "a/*\n" +
+                                "*/=5\n" +// multiple line 1
+                                "/*\n" +
+                                "*/a=6\n" + // multiple line 2
+                                "/*\n" +
+                                "a\n" +
+                                "*/a=7" + // multiple line 3
+                                ""),
+                        new Scanner.Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
+
+                Args args = new Args();
+                ElementStartNode root2 = new ElementStartNode(args, 0);
+                Element e = new Element(args, "a", TokenType.VALID_NAME);
+                root2.setLinkedNode(e);
+                args.previous = e;
+
+                args.previous = new Element(args, "=", TokenType.SYMBOL);
+                args.previous = new Element(args, "1", TokenType.NUMBER);
+                for (int i = 2; i <= 7; ++i) {
+                        args.previous = new EndingNode(args, EndingNode.WEAK);
+                        args.previous = new Element(args, "a", TokenType.VALID_NAME);
+                        args.previous = new Element(args, "=", TokenType.SYMBOL);
+                        args.previous = new Element(args, "" + i, TokenType.NUMBER);
+                }
+
+                assertEquals(root2, root);
+        }
 }
