@@ -1903,4 +1903,71 @@ public class TestCodeGen {
                 assertEquals(2, method.invoke(null, 8, 2));
                 assertEquals(1, method.invoke(null, 1, 2));
         }
+
+        @Test
+        public void testDataClass() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "data class TestDataClass(a:int,b=1,c=2)",
+                        "TestDataClass");
+
+                Constructor<?> con = cls.getConstructor(int.class, Object.class, Object.class);
+                Object instance = con.newInstance(3, 4, 5);
+                Constructor<?> con2 = cls.getConstructor(int.class);
+                Object instance2 = con2.newInstance(6);
+
+                Method toStringMethod = cls.getMethod("toString");
+                assertEquals("TestDataClass(a=3, b=4, c=5)", toStringMethod.invoke(instance));
+
+                Method hashCodeMethod = cls.getMethod("hashCode");
+                assertEquals(12, hashCodeMethod.invoke(instance));
+
+                assertNotEquals(instance, instance2);
+                assertEquals(con.newInstance(3, 4, 5), instance);
+                assertEquals(con.newInstance(6, 1, 2), instance2);
+
+                Constructor<?> con3 = cls.getConstructor();
+                Object instance3 = con3.newInstance();
+                assertEquals(con.newInstance(0, 1, 2), instance3);
+
+                Method getA = cls.getMethod("getA");
+                Method getB = cls.getMethod("getB");
+                Method getC = cls.getMethod("getC");
+                Method setA = cls.getMethod("setA", int.class);
+                Method setB = cls.getMethod("setB", Object.class);
+                Method setC = cls.getMethod("setC", Object.class);
+
+                assertEquals(3, getA.invoke(instance));
+                assertEquals(4, getB.invoke(instance));
+                assertEquals(5, getC.invoke(instance));
+
+                setA.invoke(instance, 6);
+                setB.invoke(instance, 7);
+                setC.invoke(instance, 8);
+
+                assertEquals(6, getA.invoke(instance));
+                assertEquals(7, getB.invoke(instance));
+                assertEquals(8, getC.invoke(instance));
+        }
+
+        @Test
+        public void testConstructingDataClass() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "data class User(id:int, name)\n" +
+                                "class TestConstructingDataClass\n" +
+                                "    static\n" +
+                                "        method()=User(id=1, name='cass')",
+                        "TestConstructingDataClass");
+                Method method = cls.getMethod("method");
+                Object o = method.invoke(null);
+                Class<?> User = o.getClass();
+                assertEquals("User", User.getName());
+
+                Method getId = User.getMethod("getId");
+                assertEquals(1, getId.invoke(o));
+
+                Method getName = User.getMethod("getName");
+                assertEquals("cass", getName.invoke(o));
+        }
 }

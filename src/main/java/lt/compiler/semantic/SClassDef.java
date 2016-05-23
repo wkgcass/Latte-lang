@@ -41,6 +41,7 @@ public class SClassDef extends STypeDef {
         private final List<SInterfaceDef> superInterfaces = new ArrayList<>();
         private final List<Instruction> staticStatements = new ArrayList<>();
         private final List<ExceptionTable> staticExceptionTable = new ArrayList<>();
+        private boolean isDataClass;
 
         public SClassDef(LineCol lineCol) {
                 super(lineCol);
@@ -80,6 +81,14 @@ public class SClassDef extends STypeDef {
 
         public List<ExceptionTable> staticExceptionTable() {
                 return staticExceptionTable;
+        }
+
+        public boolean isDataClass() {
+                return isDataClass;
+        }
+
+        public void setIsDataClass(boolean isDataClass) {
+                this.isDataClass = isDataClass;
         }
 
         @Override

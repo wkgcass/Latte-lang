@@ -124,7 +124,7 @@ public class TestParserMix {
                                 "+",
                                 new NumberLiteral("1", LineCol.SYNTHETIC),
                                 new AST.Invocation(new AST.Access(new AST.Access(null, "list", LineCol.SYNTHETIC), "get", LineCol.SYNTHETIC),
-                                        Collections.singletonList(new NumberLiteral("0", LineCol.SYNTHETIC)), LineCol.SYNTHETIC),
+                                        Collections.singletonList(new NumberLiteral("0", LineCol.SYNTHETIC)), false, LineCol.SYNTHETIC),
                                 LineCol.SYNTHETIC),
                         new NumberLiteral("2", LineCol.SYNTHETIC),
                         LineCol.SYNTHETIC);
@@ -454,22 +454,22 @@ public class TestParserMix {
                                 put(new StringLiteral("'a'", null), new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
                                         Collections.singletonList(new AST.Access(null, "b", null)),
-                                        null
+                                        false, null
                                 ));
                                 put(new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
                                         Collections.singletonList(new AST.Access(null, "b", null)),
-                                        null
+                                        false, null
                                 ), new StringLiteral("'b'", null));
                                 put(new StringLiteral("'a'", null), new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
                                         Collections.emptyList(),
-                                        null
+                                        false, null
                                 ));
                                 put(new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
                                         Collections.emptyList(),
-                                        null
+                                        false, null
                                 ), new StringLiteral("'b'", null));
                         }
                 }, null);
@@ -504,19 +504,19 @@ public class TestParserMix {
                                                                         null
                                                                 )
                                                         ),
-                                                        null
+                                                        false, null
                                                 ),
                                                 "op",
                                                 null
                                         ),
                                         Collections.singletonList(new NumberLiteral("2", null)),
-                                        null
+                                        false, null
                                 ),
                                 "op",
                                 null
                         ),
                         Collections.emptyList(),
-                        null
+                        false, null
                 );
 
                 assertEquals(invocation, list.get(0));

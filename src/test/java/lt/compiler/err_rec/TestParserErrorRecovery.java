@@ -509,7 +509,7 @@ public class TestParserErrorRecovery {
                                 new AST.Invocation(
                                         new AST.Access(null, "P1", LineCol.SYNTHETIC),
                                         Collections.emptyList(),
-                                        LineCol.SYNTHETIC
+                                        false, LineCol.SYNTHETIC
                                 ),
                                 Collections.singletonList(
                                         new AST.Access(null, "P2", LineCol.SYNTHETIC)
@@ -679,17 +679,17 @@ public class TestParserErrorRecovery {
                                 new AST.Invocation(
                                         new AST.Access(null, "method", LineCol.SYNTHETIC),
                                         Collections.emptyList(),
-                                        LineCol.SYNTHETIC
+                                        false, LineCol.SYNTHETIC
                                 ),
                                 new AST.Invocation(
                                         new AST.Access(null, "method", LineCol.SYNTHETIC),
                                         Collections.emptyList(),
-                                        LineCol.SYNTHETIC
+                                        false, LineCol.SYNTHETIC
                                 ),
                                 new AST.Invocation(
                                         new AST.Access(null, "method", LineCol.SYNTHETIC),
                                         Collections.singletonList(new AST.Access(null, "a", LineCol.SYNTHETIC)),
-                                        LineCol.SYNTHETIC
+                                        false, LineCol.SYNTHETIC
                                 )
                         ),
                         statements

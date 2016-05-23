@@ -25,9 +25,9 @@ $(document).ready(function () {
                     "<ul class='ui list'>" +
                     "<li>依赖于 <code>JRE 8</code></li>" +
                     "<li>自动Build还需 <code>Maven 3</code></li>" +
-                    "<li>如果手动编译需要引入 <code>asm 5.1</code></li>" +
                     "</ul>"),
-                $sce.trustAsHtml("直接下载 Master 分支, 然后执行<code>mvn clean package</code>, 在生成的target目录下可以找到打包的 jar 文件."),
+                $sce.trustAsHtml("如果手动编译请编译 <code>/src/main/java</code> 目录"),
+                $sce.trustAsHtml("若需自动编译, 下载 Master 分支, 然后执行<code>mvn clean package</code>, 在生成的target目录下可以找到打包的 jar 文件."),
                 $sce.trustAsHtml("执行 <code>java -jar *.jar</code> 即可启动 REPL, 当然也可引入到项目中使用")
             ]
         };
@@ -68,7 +68,7 @@ $(document).ready(function () {
                     "<script>var editor = CodeMirror.fromTextArea(document.getElementById('highlighting_html'));editor.setSize('auto', '220px');</script>"),
                 $sce.trustAsHtml("<h3>Atom</h3>"),
                 $sce.trustAsHtml("将下载文档的 <code>/language-lesstyping</code> , 直接放置在<code> ~/.atom/packages/ </code>目录下即可"),
-                $sce.trustAsHtml("<img src='images/highlight.png'></img>")
+                $sce.trustAsHtml("<img src='images/highlight.png'>")
             ]
         }
     }

@@ -1719,7 +1719,7 @@ public class Parser {
                                                                         if (!parsedExps.empty() && (parsedExps.peek() instanceof AST.Access)) {
                                                                                 // method() invocation
                                                                                 AST.Access access = (AST.Access) parsedExps.pop();
-                                                                                AST.Invocation invocation = new AST.Invocation(access, Collections.emptyList(), access.line_col());
+                                                                                AST.Invocation invocation = new AST.Invocation(access, Collections.emptyList(), false, access.line_col());
                                                                                 parsedExps.push(invocation);
                                                                         } else {
                                                                                 err.SyntaxException("it should be the method to invoke", parsedExps.empty() ? current.getLineCol() : parsedExps.peek().line_col());
@@ -1736,16 +1736,32 @@ public class Parser {
                                                                                 // method(...)
                                                                                 AST.Access access = (AST.Access) parsedExps.pop();
                                                                                 List<Expression> args = new ArrayList<>();
+
+                                                                                boolean allVarDef = !statements.isEmpty();
                                                                                 for (Statement stmt : statements) {
                                                                                         if ((stmt instanceof Expression)) {
                                                                                                 args.add((Expression) stmt);
+
+                                                                                                if (stmt instanceof VariableDef) {
+                                                                                                        if (((VariableDef) stmt).getInit() == null
+                                                                                                                ||
+                                                                                                                !((VariableDef) stmt).getAnnos().isEmpty()
+                                                                                                                ||
+                                                                                                                !((VariableDef) stmt).getModifiers().isEmpty()) {
+                                                                                                                allVarDef = false;
+                                                                                                        }
+                                                                                                } else {
+                                                                                                        allVarDef = false;
+                                                                                                }
                                                                                         } else {
                                                                                                 err.UnexpectedTokenException("expression", stmt.toString(), stmt.line_col());
                                                                                                 err.debug("ignore the argument");
+
+                                                                                                allVarDef = false;
                                                                                         }
                                                                                 }
 
-                                                                                AST.Invocation invocation = new AST.Invocation(access, args, current.getLineCol());
+                                                                                AST.Invocation invocation = new AST.Invocation(access, args, allVarDef, current.getLineCol());
                                                                                 parsedExps.push(invocation);
                                                                         } else {
                                                                                 if (statements.size() == 1) {
@@ -1864,7 +1880,7 @@ public class Parser {
                         AST.Invocation invocation = new AST.Invocation(
                                 new AST.Access(a, op, opLineCol),
                                 opArgs,
-                                opLineCol);
+                                false, opLineCol);
                         parsedExps.push(invocation);
                 } else {
                         // a.op()
@@ -1874,7 +1890,7 @@ public class Parser {
                                 return;
                         }
                         nextNode(true);
-                        AST.Invocation invocation = new AST.Invocation(new AST.Access(a, op, opLineCol), Collections.emptyList(), opLineCol);
+                        AST.Invocation invocation = new AST.Invocation(new AST.Access(a, op, opLineCol), Collections.emptyList(), false, opLineCol);
                         parsedExps.push(invocation);
                 }
 

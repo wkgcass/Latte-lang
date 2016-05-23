@@ -27,7 +27,6 @@ package lt.compiler.syntactic;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.def.VariableDef;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -511,10 +510,12 @@ public class AST {
         public static class Invocation implements Expression {
                 public final Access access;
                 public final List<Expression> args;
+                public final boolean invokeWithNames;
                 private final LineCol lineCol;
 
-                public Invocation(Access access, List<Expression> args, LineCol lineCol) {
+                public Invocation(Access access, List<Expression> args, boolean invokeWithNames, LineCol lineCol) {
                         this.access = access;
+                        this.invokeWithNames = invokeWithNames;
                         this.lineCol = lineCol;
                         this.args = args;
                 }
@@ -545,13 +546,17 @@ public class AST {
 
                         Invocation that = (Invocation) o;
 
-                        return !(access != null ? !access.equals(that.access) : that.access != null) && args.equals(that.args);
+                        if (invokeWithNames != that.invokeWithNames) return false;
+                        if (access != null ? !access.equals(that.access) : that.access != null) return false;
+                        //
+                        return !(args != null ? !args.equals(that.args) : that.args != null);
                 }
 
                 @Override
                 public int hashCode() {
                         int result = access != null ? access.hashCode() : 0;
-                        result = 31 * result + args.hashCode();
+                        result = 31 * result + (args != null ? args.hashCode() : 0);
+                        result = 31 * result + (invokeWithNames ? 1 : 0);
                         return result;
                 }
 

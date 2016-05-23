@@ -126,7 +126,11 @@ public class SemanticProcessor {
          * <ol>
          * <li><b>recording</b> : scan all classes and record them</li>
          * <li><b>signatures</b> : parse parents/superInterfaces, members, annotations, but don't parse statements or annotation values</li>
-         * <li><b>validate</b> : check circular inheritance and override, check overload with super classes/interfaces and check whether the class overrides all methods from super interfaces/super abstract classes.</li>
+         * <li><b>validate</b> :
+         * check circular inheritance and override,
+         * check overload with super classes/interfaces and check whether the class overrides all methods from super interfaces/super abstract classes,
+         * check @Override @FunctionalInterface @FunctionalAbstractClass,
+         * check whether the class is a `data class` and do some modifications</li>
          * <li><b>parse</b> : parse annotation values and statements</li>
          * </ol>
          *
@@ -237,6 +241,9 @@ public class SemanticProcessor {
                                                 case PKG:
                                                         // pub|pri|pro|pkg are for constructors
                                                         break;
+                                                case DATA:
+                                                        sClassDef.setIsDataClass(true);
+                                                        break;
                                                 default:
                                                         throw new UnexpectedTokenException("valid modifier for class (val|abstract|public|private|protected|pkg)", m.toString(), m.line_col());
                                         }
@@ -261,8 +268,9 @@ public class SemanticProcessor {
 
                                 for (Modifier m : i.modifiers) {
                                         switch (m.modifier) {
+                                                case PUBLIC:
                                                 case ABSTRACT:
-                                                        // can only be abstract
+                                                        // can only be abstract or public
                                                         break;
                                                 default:
                                                         throw new UnexpectedTokenException("valid modifier for interface (abs)", m.toString(), m.line_col());
@@ -394,8 +402,9 @@ public class SemanticProcessor {
                                                                 break;
                                                         case VAL:
                                                         case PKG:
+                                                        case DATA:
                                                         case ABSTRACT:
-                                                                // val and abs are presented on class
+                                                                // data, val and abs are presented on class
                                                                 break; // pkg don't need to sign modifier
                                                         default:
                                                                 throw new UnexpectedTokenException("valid constructor modifier (public|private|protected|pkg)", m.toString(), m.line_col());
@@ -665,6 +674,16 @@ public class SemanticProcessor {
                         }
                 }
 
+                // data class
+                for (STypeDef typeDef : typeDefSet) {
+                        if (typeDef instanceof SClassDef) {
+                                SClassDef cls = (SClassDef) typeDef;
+                                if (cls.isDataClass()) {
+                                        fillMethodsIntoDataClass(cls);
+                                }
+                        }
+                }
+
                 // ========step 4========
                 // first parse anno types
                 // the annotations presented on these anno types will also be parsed
@@ -845,6 +864,365 @@ public class SemanticProcessor {
                         } else throw new IllegalArgumentException("wrong STypeDefType " + sTypeDef.getClass());
                 }
                 return typeDefSet;
+        }
+
+        /**
+         * override {@link Object#toString()} {@link Object#hashCode()} {@link Object#equals(Object)}
+         * and generate g/setters for the data class
+         *
+         * @param cls the class should be data class
+         * @throws SyntaxException compiling error
+         */
+        private void fillMethodsIntoDataClass(SClassDef cls) throws SyntaxException {
+                // check parameter modifiers
+                // cannot be `val`
+                for (SParameter p : cls.constructors().get(0).getParameters()) {
+                        if (!p.canChange()) throw new SyntaxException("data class cannot have `val` parameters", cls.line_col());
+                }
+
+                Map<SFieldDef, SMethodDef> setters = new HashMap<>();
+                Map<SFieldDef, SMethodDef> getters = new HashMap<>();
+                SMethodDef toStringOverride = null;
+                SMethodDef equalsOverride = null;
+                SMethodDef hashCodeOverride = null;
+                SConstructorDef zeroParamCons = null;
+
+                // get existing setters
+                for (SFieldDef f : cls.fields()) {
+                        if (f.modifiers().contains(SModifier.STATIC)) continue;
+                        String name = f.name();
+                        String setterName = "set" + name.substring(0, 1).toUpperCase() + name.substring(1);
+                        String getterName = "get" + name.substring(0, 1).toUpperCase() + name.substring(1);
+                        for (SMethodDef m : cls.methods()) {
+                                if (m.name().equals(setterName)
+                                        &&
+                                        m.getParameters().size() == 1
+                                        &&
+                                        m.getParameters().get(0).type().equals(f.type())) {
+                                        setters.put(f, m);
+                                }
+                                if (m.name().equals(getterName)
+                                        &&
+                                        m.getParameters().size() == 0) {
+                                        getters.put(f, m);
+                                }
+                        }
+                }
+
+                // get existing equals(o)/toString()/hashCode()
+                for (SMethodDef m : cls.methods()) {
+                        if (m.name().equals("toString") && m.getParameters().size() == 0) toStringOverride = m;
+                        if (m.name().equals("equals")
+                                && m.getParameters().size() == 1
+                                && m.getParameters().get(0).type().fullName().equals("java.lang.Object"))
+                                equalsOverride = m;
+                        if (m.name().equals("hashCode") && m.getParameters().size() == 0) hashCodeOverride = m;
+                }
+
+                // get existing zero param constructor
+                for (SConstructorDef con : cls.constructors()) {
+                        if (con.getParameters().isEmpty()) {
+                                zeroParamCons = con;
+                                break;
+                        }
+                }
+
+                SemanticScope scope = new SemanticScope(cls);
+                scope.setThis(new Ins.This(cls));
+
+                String className = cls.fullName();
+                String simpleName = className.contains(".") ? className.substring(className.lastIndexOf(".") + 1) : className;
+
+                LineCol lineCol = new LineCol(cls.line_col().fileName, 0, 0);
+
+                if (toStringOverride == null) {
+                        // toString():String
+                        //     return "SimpleName("+
+                        //     "field="+field+
+                        //     ", field2="+field2+
+                        //     ...+
+                        //     ")"
+                        toStringOverride = new SMethodDef(lineCol);
+                        toStringOverride.setName("toString");
+                        toStringOverride.setDeclaringType(cls);
+                        cls.methods().add(toStringOverride);
+                        toStringOverride.setReturnType(getTypeWithName("java.lang.String", lineCol));
+                        toStringOverride.modifiers().add(SModifier.PUBLIC);
+
+                        // SimpleName(
+                        Expression lastExp = new StringLiteral("\"" + simpleName + "(\"", lineCol);
+                        // fields
+                        boolean isFirst = true;
+                        for (SFieldDef f : cls.fields()) {
+                                if (f.modifiers().contains(SModifier.STATIC)) continue;
+                                String literal = "";
+                                if (isFirst) {
+                                        isFirst = false;
+                                } else {
+                                        literal = ", ";
+                                }
+                                literal += (f.name() + "=");
+
+                                StringLiteral s = new StringLiteral("\"" + literal + "\"", lineCol);
+                                lastExp = new TwoVariableOperation(
+                                        "+", lastExp, s, lineCol
+                                );
+                                lastExp = new TwoVariableOperation(
+                                        "+", lastExp, new AST.Access(
+                                        new AST.Access(null, "this", lineCol),
+                                        f.name(), lineCol),
+                                        lineCol
+                                );
+                        }
+                        // )
+                        StringLiteral s2 = new StringLiteral("\")\"", lineCol);
+                        lastExp = new TwoVariableOperation(
+                                "+", lastExp, s2, lineCol
+                        );
+
+
+                        Statement stmt = new AST.Return(lastExp, lineCol);
+
+                        parseStatement(stmt, toStringOverride.getReturnType(),
+                                new SemanticScope(scope),
+                                toStringOverride.statements(), toStringOverride.exceptionTables(),
+                                null, null, false);
+                }
+
+                if (hashCodeOverride == null) {
+                        // hashCode():int
+                        //     return field1 as int +
+                        //     field2 as int +
+                        //     ...
+                        hashCodeOverride = new SMethodDef(lineCol);
+                        hashCodeOverride.setName("hashCode");
+                        hashCodeOverride.setDeclaringType(cls);
+                        cls.methods().add(hashCodeOverride);
+                        hashCodeOverride.setReturnType(IntTypeDef.get());
+                        hashCodeOverride.modifiers().add(SModifier.PUBLIC);
+
+                        Expression lastExp;
+                        if (cls.fields().isEmpty()) {
+                                lastExp = new NumberLiteral("0", lineCol);
+                        } else {
+                                Iterator<SFieldDef> it = cls.fields().iterator();
+                                // Lang.getHashCode(this.field)
+                                lastExp = null;
+                                while (it.hasNext()) {
+                                        SFieldDef f = it.next();
+                                        if (f.modifiers().contains(SModifier.STATIC)) continue;
+
+                                        Expression exp = new AST.Invocation(
+                                                new AST.Access(
+                                                        new AST.Access(
+                                                                new AST.PackageRef("lt::lang", lineCol),
+                                                                "Lang",
+                                                                lineCol
+                                                        ),
+                                                        "getHashCode",
+                                                        lineCol
+                                                ),
+                                                Collections.singletonList(
+                                                        new AST.Access(
+                                                                new AST.Access(
+                                                                        null, "this", lineCol
+                                                                ),
+                                                                f.name(),
+                                                                lineCol
+                                                        )
+                                                ),
+                                                false,
+                                                lineCol
+                                        );
+
+                                        if (lastExp == null) {
+                                                lastExp = exp;
+                                        } else {
+                                                lastExp =
+                                                        new TwoVariableOperation(
+                                                                "+",
+                                                                lastExp,
+                                                                exp, lineCol
+                                                        );
+                                        }
+                                }
+                        }
+
+                        if (lastExp == null) {
+                                lastExp = new NumberLiteral("0", lineCol);
+                        }
+
+                        Statement stmt = new AST.Return(lastExp, lineCol);
+
+                        parseStatement(stmt, hashCodeOverride.getReturnType(),
+                                new SemanticScope(scope),
+                                hashCodeOverride.statements(), hashCodeOverride.exceptionTables(),
+                                null, null, false);
+                }
+
+                if (equalsOverride == null) {
+                        // equals(o):bool
+                        //     return o is type CurrentType and
+                        //     o.field1 is this.field1 and
+                        //     o.field2 is this.field2
+                        //     ...
+                        equalsOverride = new SMethodDef(lineCol);
+                        equalsOverride.setName("equals");
+                        equalsOverride.setDeclaringType(cls);
+                        cls.methods().add(equalsOverride);
+                        equalsOverride.setReturnType(BoolTypeDef.get());
+                        SParameter o = new SParameter();
+                        o.setTarget(equalsOverride);
+                        equalsOverride.getParameters().add(o);
+                        o.setName("o");
+                        o.setType(getTypeWithName("java.lang.Object", lineCol));
+                        equalsOverride.modifiers().add(SModifier.PUBLIC);
+
+                        // o is type CurrentType
+                        Expression lastExp = new TwoVariableOperation(
+                                "is",
+                                new AST.Access(null, "o", lineCol),
+                                new AST.TypeOf(
+                                        new AST.Access(null, simpleName, lineCol),
+                                        lineCol
+                                ),
+                                lineCol
+                        );
+                        for (SFieldDef f : cls.fields()) {
+                                if (f.modifiers().contains(SModifier.STATIC)) continue;
+                                lastExp = new TwoVariableOperation(
+                                        "and",
+                                        lastExp,
+                                        // o.field is this.field
+                                        new TwoVariableOperation(
+                                                "is",
+                                                new AST.Access(
+                                                        new AST.Access(
+                                                                null, "o", lineCol
+                                                        ),
+                                                        f.name(),
+                                                        lineCol
+                                                ),
+                                                new AST.Access(
+                                                        new AST.Access(
+                                                                null, "this", lineCol
+                                                        ),
+                                                        f.name(),
+                                                        lineCol
+                                                ),
+                                                lineCol
+                                        ),
+                                        lineCol
+                                );
+                        }
+
+                        Statement stmt = new AST.Return(lastExp, lineCol);
+                        SemanticScope equalsScope = new SemanticScope(scope);
+                        equalsScope.putLeftValue("o", o);
+                        parseStatement(stmt, equalsOverride.getReturnType(),
+                                equalsScope,
+                                equalsOverride.statements(), equalsOverride.exceptionTables(),
+                                null, null, false);
+                }
+                if (zeroParamCons == null) {
+                        zeroParamCons = new SConstructorDef(lineCol);
+                        zeroParamCons.setDeclaringType(cls);
+                        cls.constructors().add(zeroParamCons);
+                        zeroParamCons.modifiers().add(SModifier.PUBLIC);
+
+                        SConstructorDef con = cls.constructors().get(cls.constructors().size() - 2);
+                        List<Value> initValues = new ArrayList<>();
+                        for (SParameter p : con.getParameters()) {
+                                if (p.type().equals(IntTypeDef.get())) {
+                                        initValues.add(new IntValue(0));
+                                } else if (p.type().equals(ShortTypeDef.get())) {
+                                        initValues.add(new ShortValue((short) 0));
+                                } else if (p.type().equals(ByteTypeDef.get())) {
+                                        initValues.add(new ByteValue((byte) 0));
+                                } else if (p.type().equals(BoolTypeDef.get())) {
+                                        initValues.add(new BoolValue(false));
+                                } else if (p.type().equals(CharTypeDef.get())) {
+                                        initValues.add(new CharValue((char) 0));
+                                } else if (p.type().equals(LongTypeDef.get())) {
+                                        initValues.add(new LongValue(0));
+                                } else if (p.type().equals(FloatTypeDef.get())) {
+                                        initValues.add(new FloatValue(0));
+                                } else if (p.type().equals(DoubleTypeDef.get())) {
+                                        initValues.add(new DoubleValue(0));
+                                } else {
+                                        initValues.add(NullValue.get());
+                                }
+                        }
+
+                        Ins.InvokeSpecial is = new Ins.InvokeSpecial(
+                                new Ins.This(cls),
+                                con,
+                                LineCol.SYNTHETIC
+                        );
+                        is.arguments().addAll(initValues);
+                        zeroParamCons.statements().add(is);
+                }
+                for (SFieldDef f : cls.fields()) {
+                        if (f.modifiers().contains(SModifier.STATIC)) continue;
+                        SMethodDef getter = getters.get(f);
+                        SMethodDef setter = setters.get(f);
+
+                        String name = f.name();
+                        name = name.substring(0, 1).toUpperCase() + name.substring(1);
+
+                        if (getter == null) {
+                                // getField():Type
+                                //     return this.field
+                                getter = new SMethodDef(lineCol);
+                                getter.setName("get" + name);
+                                getter.setDeclaringType(cls);
+                                cls.methods().add(getter);
+                                getter.setReturnType(f.type());
+                                getter.modifiers().add(SModifier.PUBLIC);
+
+                                Statement stmt = new AST.Return(
+                                        new AST.Access(
+                                                new AST.Access(null, "this", lineCol),
+                                                f.name(),
+                                                lineCol
+                                        ),
+                                        lineCol
+                                );
+                                parseStatement(stmt, getter.getReturnType(), new SemanticScope(scope), getter.statements(),
+                                        getter.exceptionTables(), null, null, false);
+                        }
+                        if (setter == null) {
+                                // setField(field:Type)
+                                //     this.field=field
+                                setter = new SMethodDef(lineCol);
+                                setter.setName("set" + name);
+                                setter.setDeclaringType(cls);
+                                cls.methods().add(setter);
+                                setter.setReturnType(VoidType.get());
+                                SParameter p = new SParameter();
+                                p.setName(f.name());
+                                setter.getParameters().add(p);
+                                p.setTarget(setter);
+                                p.setType(f.type());
+                                setter.modifiers().add(SModifier.PUBLIC);
+
+                                SemanticScope setterScope = new SemanticScope(scope);
+                                setterScope.putLeftValue(f.name(), p);
+
+                                Statement stmt = new AST.Assignment(
+                                        new AST.Access(
+                                                new AST.Access(null, "this", lineCol),
+                                                f.name(),
+                                                lineCol
+                                        ),
+                                        "=",
+                                        new AST.Access(null, f.name(), lineCol),
+                                        lineCol
+                                );
+                                parseStatement(stmt, setter.getReturnType(), setterScope, setter.statements(),
+                                        setter.exceptionTables(), null, null, false);
+                        }
+                }
         }
 
         /**
@@ -2720,7 +3098,11 @@ public class SemanticProcessor {
                 } else if (exp instanceof AST.Invocation) {
                         // parse invocation
                         // the result can be invokeXXX or new
-                        v = parseValueFromInvocation((AST.Invocation) exp, scope);
+                        if (((AST.Invocation) exp).invokeWithNames) {
+                                v = parseValueFromInvocationWithNames((AST.Invocation) exp, scope);
+                        } else {
+                                v = parseValueFromInvocation((AST.Invocation) exp, scope);
+                        }
                 } else if (exp instanceof AST.AsType) {
                         AST.AsType asType = (AST.AsType) exp;
                         v = parseValueFromExpression(asType.exp, getTypeWithAccess(asType.type, imports), scope);
@@ -2768,6 +3150,71 @@ public class SemanticProcessor {
                         throw new LtBug("unknown expression " + exp);
                 }
                 return cast(requiredType, v, exp.line_col());
+        }
+
+        /**
+         * parse expressions like this:<br>
+         * <pre>
+         * User(id=1, name='n')
+         * </pre>
+         *
+         * @param invocation the invocation
+         * @param scope      current scope
+         * @return ValuePack, the pack result is the constructed variable
+         * @throws SyntaxException compiling error
+         */
+        private ValuePack parseValueFromInvocationWithNames(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
+                STypeDef theType = getTypeWithAccess(invocation.access, fileNameToImport.get(invocation.line_col().fileName));
+                if (theType instanceof SInterfaceDef) throw new SyntaxException("cannot instantiate interfaces", invocation.line_col());
+                SClassDef classType = (SClassDef) theType;
+
+                SConstructorDef con = null;
+                for (SConstructorDef c : classType.constructors()) {
+                        if (c.getParameters().isEmpty()) {
+                                con = c;
+                                break;
+                        }
+                }
+
+                if (con == null) throw new SyntaxException("cannot find constructor with 0 parameters", invocation.line_col());
+
+                ValuePack valuePack = new ValuePack(true);
+                valuePack.setType(theType);
+
+                LocalVariable local = new LocalVariable(theType, false);
+                String name = scope.generateTempName();
+                scope.putLeftValue(name, local);
+
+                Ins.New aNew = new Ins.New(con, invocation.line_col());
+                Ins.TStore store = new Ins.TStore(local, aNew, scope, invocation.line_col());
+                valuePack.instructions().add(store);
+
+                for (Expression exp : invocation.args) {
+                        VariableDef v = (VariableDef) exp;
+                        Expression initValue = v.getInit();
+
+                        String n = v.getName();
+                        String setterName = "set" + n.substring(0, 1).toUpperCase() + n.substring(1);
+
+                        // ?.setX(initValue)
+                        AST.Invocation i = new AST.Invocation(
+                                new AST.Access(
+                                        new AST.Access(null, name, invocation.line_col()),
+                                        setterName,
+                                        invocation.line_col()
+                                ),
+                                Collections.singletonList(initValue),
+                                false,
+                                invocation.line_col()
+                        );
+
+                        parseStatement(
+                                i, null, scope, valuePack.instructions(), null, null, null, false
+                        );
+                }
+
+                valuePack.instructions().add(new Ins.TLoad(local, scope, invocation.line_col()));
+                return valuePack;
         }
 
         /**
@@ -3413,7 +3860,7 @@ public class SemanticProcessor {
                 );
                 parseInnerMethod(methodDef, scope);
                 AST.Invocation invocation = new AST.Invocation(
-                        new AST.Access(null, methodName, procedure.line_col()), Collections.emptyList(), procedure.line_col());
+                        new AST.Access(null, methodName, procedure.line_col()), Collections.emptyList(), false, procedure.line_col());
                 return parseValueFromInvocation(invocation, scope);
         }
 
@@ -5218,7 +5665,6 @@ public class SemanticProcessor {
          * @throws SyntaxException exceptions
          */
         private Value parseValueFromInvocation(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
-                assert scope.type() instanceof SClassDef;
                 // parse args
                 List<Value> argList = new ArrayList<>();
                 for (Expression arg : invocation.args) {

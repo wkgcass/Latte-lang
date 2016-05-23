@@ -1,3 +1,5 @@
+var cursor = 0;
+
 $(document).ready(function () {
 
     // fix menu when passed
@@ -53,9 +55,6 @@ $(document).ready(function () {
                 },
                 {
                     name: "REPL"
-                },
-                {
-                    name: "脚本"
                 }
             ],
             content: $sce.trustAsHtml("更多特性请查看 <a href='#'>语法</a>")
@@ -80,6 +79,19 @@ $(document).ready(function () {
                     "; 相当于 a.subtract(b)\n" +
                     "a << 1\n" +
                     "; 相当于 a.shiftLeft(1)"
+                    , {}))
+            },
+            {
+                code: $sce.trustAsHtml(highlighting("example_8.lts", "" +
+                    "; Data Class\n" +
+                    "data class User(id:int, name)\n" +
+                    "/*\n" +
+                    "将会自动定义 一个无参构造函数\n" +
+                    "getId():int, getName(),\n" +
+                    "toString():String, equals(o), hashCode():int\n" +
+                    "*/\n" +
+                    "; 可以使用如下方式实例化\n" +
+                    "User(id=1, name='cass')"
                     , {}))
             },
             {
@@ -172,12 +184,12 @@ $(document).ready(function () {
         $scope.build = {
             title: "如何Build",
             contents: [
-                $sce.trustAsHtml("自动Build需要 <code>JRE 8</code> 以及 <code>Maven 3</code>."),
+                $sce.trustAsHtml("LessTyping需要 <code>JRE 8</code>"),
+                $sce.trustAsHtml("建议以<code>lt.repl.REPL</code>为主类打包为jar"),
+                $sce.trustAsHtml("本工程通过Maven管理, 所以您也可以使用 <code>Maven 3</code> 进行自动Build"),
                 $sce.trustAsHtml("clone<a href='" + $scope.git_repo + "'>该仓库</a>, 然后执行 <code>mvn clean package</code> , 在 <code>target</code> 目录下将生成一个可执行的jar文件."),
-                $sce.trustAsHtml("切换到 <code>target</code> 目录, 并在终端执行 <code>java -jar *.jar</code> , REPL将启动"),
-                $sce.trustAsHtml("当然,您也可以下载代码并导入唯一的一个依赖项(<code>asm 5.1</code>), 然后以<code>lt.repl.REPL</code>为主类打包为jar")
+                $sce.trustAsHtml("切换到 <code>target</code> 目录, 并在终端执行 <code>java -jar *.jar</code> , REPL将启动")
             ]
-
         };
         $scope.compile = {
             title: "REPL 与 编译",
@@ -198,8 +210,6 @@ $(document).ready(function () {
         }
     }]);
 
-    var cursor = 0;
-
     function sw() {
         var codes = $(".code.play");
         var timeout = 300;
@@ -219,3 +229,37 @@ $(document).ready(function () {
 
     setInterval(sw, 18000);
 });
+
+function next() {
+    var codes = $(".code.play");
+    var timeout = 300;
+    if (cursor == codes.length - 1) {
+        $(".code.play:eq(" + cursor + ")").fadeOut(timeout);
+        setTimeout(function () {
+            $(".code.play:eq(0)").fadeIn(timeout);
+        }, timeout + 100);
+        cursor = 0;
+    } else {
+        $(".code.play:eq(" + cursor + ")").fadeOut(timeout);
+        setTimeout(function () {
+            $(".code.play:eq(" + ++cursor + ")").fadeIn(timeout);
+        }, timeout + 100);
+    }
+}
+
+function previous() {
+    var codes = $(".code.play");
+    var timeout = 300;
+    if (cursor == 0) {
+        $(".code.play:eq(0)").fadeOut(timeout);
+        setTimeout(function () {
+            $(".code.play:eq(" + (codes.length - 1) + ")").fadeIn(timeout);
+        }, timeout + 100);
+        cursor = codes.length - 1;
+    } else {
+        $(".code.play:eq(" + cursor + ")").fadeOut(timeout);
+        setTimeout(function () {
+            $(".code.play:eq(" + --cursor + ")").fadeIn(timeout);
+        }, timeout + 100);
+    }
+}

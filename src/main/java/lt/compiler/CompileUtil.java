@@ -168,7 +168,8 @@ public class CompileUtil {
 
         private static Set<String> modifiers = new HashSet<>(Arrays.asList(
                 "public", "protected", "private", "pkg",
-                "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp"
+                "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp",
+                "data"
         ));
 
         private static Set<String> accessModifiers = new HashSet<>(Arrays.asList(
@@ -229,6 +230,8 @@ public class CompileUtil {
                                 return Modifier.Available.VOLATILE;
                         case "strictfp":
                                 return Modifier.Available.STRICTFP;
+                        case "data":
+                                return Modifier.Available.DATA;
                         default:
                                 throw new LtBug("invalid modifier " + str);
                 }

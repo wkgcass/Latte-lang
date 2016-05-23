@@ -377,8 +377,25 @@ public class Lang {
                 return true;
         }
 
+        /**
+         * get wrapped object in {@link Wrapper#object} or simply return the throwable object
+         *
+         * @param t the wrapper object or other throwable
+         * @return the retrieved object
+         */
         public static Object throwableWrapperObject(Throwable t) {
                 if (t instanceof Wrapper) return ((Wrapper) t).object;
                 return t;
+        }
+
+        /**
+         * get hash code of a object
+         *
+         * @param o the object
+         * @return hash code of the object (or 0 if it's null)
+         */
+        public static int getHashCode(Object o) {
+                if (o == null) return 0;
+                return o.hashCode();
         }
 }

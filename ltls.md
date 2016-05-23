@@ -28,6 +28,7 @@
 	6. Cast
 	7. Pre Defined
 4. Keywords
+	1. Modifiers
 5. Statements
 	1. (...)
 	2. for
@@ -551,7 +552,7 @@ all java keywords are `LessTyping` keywords :
 there're a few more keywords defined in `LessTyping` :
 
 	"is", "not", "bool", "yes", "no", "type", "as",
-	"undefined", "in", "elseif", "Unit"
+	"undefined", "in", "elseif", "Unit", "data", "val"
 	
 note that `define` and `undef` are not keywords, they only enables if the first characters of the line is `define` or `undef`.
 
@@ -566,6 +567,45 @@ to use those names defined in java but happend to be `LessTyping` keywords.
 e.g.
 
 	System.`in`
+	
+##4.1 Modifiers
+`LessTyping` modifiers are almost the same `Java` modifiers, but `val` represents `final`, `pkg` and `data` are new modifiers.
+
+`pkg` is a access modifier, it's the same with "no access modifiers" in java
+
+`data` only modifies `class`, generates some methods to build a java bean.
+
+	"public", "protected", "private", "pkg", "data",
+	"abstract", "val", "native", "synchronized", "transient", 
+	"volatile", "strictfp"
+	
+###access modifiers
+`public` `private` `protected` `pkg` are access modifiers
+
+At most one access modifier can exist on one object
+
+* `public` means any member can visit this object
+* `private` means only the type itself can have access to the object
+* `protected` means only the type itself or it's sub-classes or types in the same package can have access to the object
+* `pkg` means only types in the same package can have access to the object
+
+###class
+`abstract` `val` `data` and all access modifiers
+
+###class parameter
+`val` and all access modifiers
+
+###interface
+`abstract` and `public`
+
+###method
+`abstract` `val` and all access modifiers
+
+###method parameter
+`val`
+
+###local variable
+`val`
 
 #§5 Statements
 `LessTyping` support the following statements
@@ -720,9 +760,27 @@ When catching exceptions in `LessTyping`, the wrapped object is automatically re
 ##5.10 try
 
 	try
-	    ...
+	    ... ; A
 	catch exceptionVariable
-	    ...
+	    ... ; B
 	finally
-	    ...
+	    ... ; C
 	    
+Execute code `A`, if any exceptions thrown, goto code `B`
+
+and `C` will always execute
+
+the `catch` or `finally` can be omitted.
+
+NOTE THAT the caught variable can be __ANY__ type. 
+
+e.g.
+
+	try
+	    throw "an exception"
+	catch e
+	    println(e)
+
+the variable `e` is `java::lang::String`
+
+##5.11 annotation

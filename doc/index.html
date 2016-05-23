@@ -62,8 +62,12 @@
                     <p ng-bind-html="feature.content"></p>
                 </div>
                 <div class="nine wide right floated column">
-                    <div style="height:405px;width:100%;background-color:RGB(240,240,240);overflow:hidden;padding:20px">
+                    <div style="height:485px;width:100%;background-color:RGB(240,240,240);overflow:hidden;padding:20px">
                         <pre>; {{codes_head}}</pre>
+                        <div class="ui buttons">
+                            <button class="ui labeled icon button" onclick="previous()"><i class="left chevron icon"></i>previous</button>
+                            <button class="ui right labeled icon button" onclick="next()"><i class="right chevron icon"></i>next</button>
+                        </div>
                         <pre ng-repeat="code in codes" ng-style="{'display':(($index==0)?'block':'none')}" ng-bind-html="code.code" class="code play"></pre>
                     </div>
                 </div>
