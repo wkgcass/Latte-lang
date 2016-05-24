@@ -45,6 +45,25 @@
 	13. class definition
 	14. interface defintion
 	15. modifiers
+6. Expressions
+	1. number literals
+	2. bool literals
+	3. string literals
+	4. variable definition
+	5. invocation
+	6. as
+	7. access
+	8. index
+	9. one variable operation
+	10. two variable operation
+	11. assignment
+	12. undefined
+	13. null
+	14. array expression
+	15. map expression
+	16. procedure
+	17. lambda
+	18. type
 
 #§1 File Structure
 ##1.1 indentation
@@ -624,7 +643,6 @@ At most one access modifier can exist on one object
 12. method definition
 13. class definition
 14. interface defintion
-15. modifiers
 
 ##5.1 (...)
 The symbol `...` means "do nothing".
@@ -784,3 +802,153 @@ e.g.
 the variable `e` is `java::lang::String`
 
 ##5.11 annotation
+
+	@Annotation ; same as @Annotation()
+	@Annotation(v) ; same as @Annotation(value=v)
+	@Annotation(k1=v1, k2=v2, ...)
+	
+define an annotation instance and present on the target below
+
+	@Override
+	toString():String=''
+	
+	@FunctionalAbstractClass
+	abstract class Func
+	    abstract apply()=...
+	    
+##5.12 method invocation
+There're multiple ways of defining a method
+
+1. noraml
+
+		method(params)
+		    ...
+
+	the method's return type is `java::lang::Object`
+
+2. type spec
+
+		method(params):Type
+		    ...
+
+3. type spec one statement
+
+		method(params):Type=expression
+		
+	the method returns the expression
+	
+4. one statement
+
+		method(params)=expression
+		
+	the method's return type is `java::lang::Object` and returns the expression
+	
+NOTE THAT `abstract` method should be defined as :
+
+	abstract method(params)=...
+	; or
+	abstract method(params):Type=...
+	
+if the `one statement` method's expression is `...`, it means the method body is empty
+
+##5.13 class definition
+The class definitions can be found in chapter 3.5
+
+	class ClassName
+	class ClassName(params)
+	class ClassName(params):ParentClass
+	class ClassName(params):ParentClass(args)
+	class ClassName(params):ParentClass(args),Interface1,Interface2
+
+##5.14 interface defintion
+The interface definitions can be found in chapter 3.5
+
+	class InterfaceName
+	class InterfaceName:SuperInterface1,SuperInterface2
+
+#§6 Expressions
+`LessTyping` supports the following expressions
+
+1. number literals
+2. bool literals
+3. string literals
+4. variable definition
+5. invocation
+6. as
+7. access
+8. index
+9. one variable operation
+10. two variable operation
+11. assignment
+12. undefined
+13. null
+14. array expression
+15. map expression
+16. procedure
+17. lambda
+18. type
+
+##6.1 number literals
+chapter 3.2.1
+
+##6.2 bool literals
+chapter 3.2.3
+
+##6.3 string literals
+chapter 3.2.2
+
+##6.4 variable definition
+
+* `variableName:Type`
+	
+	defines a variable with type specified
+	
+* `variableName=initValue`
+	
+	defines a variable with initial value
+	
+* `variableName:Type=initValue`
+	
+	defines a variable with type specified and with initial value
+
+If the variable is defined in direct sub layer of a class or an interface, it's considered as a `Field`
+
+	class User
+	    id : int
+
+defines a class `User` with one Field `id`, and the field type is `int`
+
+If the variable is defined in a method, it's considered as a local variable. The variable must have a initial value.
+
+##6.5 invocation
+Invoke a method or an inner method.
+
+* `method(args)`
+	
+	invoke a method of the current object (non-static)  
+	invoke a method of the current Type (static)  
+	invoke a method from `import static`
+	
+* `this.method(args)`
+
+	invoke a method of the current object (non-static)
+
+* `SuperType.this.method(args)`
+
+	invoke a method of the current object from SuperType (non-static)
+
+* `Type.method(args)`
+
+	invoke a method of the Type (static)
+	
+##6.6 as
+
+	expression as Type
+	
+cast the expression result to the given `Type`
+
+For literals, the cast may produce an error when compiling. Check chapter 3.2 for avaliable types for different kinds of literals.
+
+In other circumstances, the cast may be done when compiling or at runtime. However, `bool` can never be cast to other __primitive__ types. Check chapter 3.3 for avaliable type conversions.
+
+##6.7 access

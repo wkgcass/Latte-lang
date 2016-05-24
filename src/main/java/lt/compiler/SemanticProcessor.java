@@ -5187,7 +5187,19 @@ public class SemanticProcessor {
                                                 || v.type().equals(ByteTypeDef.get())
                                                 || v.type().equals(CharTypeDef.get())) {
 
-                                                if (requiredType instanceof LongTypeDef) {
+                                                if (requiredType.equals(IntTypeDef.get())) {
+                                                        // int
+                                                        return new ValueAnotherType(requiredType, v);
+                                                } else if (requiredType.equals(ShortTypeDef.get())) {
+                                                        // to short
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
+                                                } else if (requiredType.equals(ByteTypeDef.get())) {
+                                                        // to byte
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
+                                                } else if (requiredType.equals(CharTypeDef.get())) {
+                                                        // to char
+                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
+                                                } else if (requiredType instanceof LongTypeDef) {
                                                         // int to long
                                                         return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_LONG, lineCol);
                                                 } else if (requiredType instanceof FloatTypeDef) {
@@ -5286,7 +5298,7 @@ public class SemanticProcessor {
                                                 } else if (requiredType instanceof FloatTypeDef) {
                                                         // double to float
                                                         return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_FLOAT, lineCol);
-                                                } else if (requiredType instanceof DoubleTypeDef) {
+                                                } else if (requiredType instanceof LongTypeDef) {
                                                         // double to long
                                                         return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_LONG, lineCol);
                                                 } else if (requiredType instanceof BoolTypeDef) {

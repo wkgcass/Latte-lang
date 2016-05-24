@@ -785,6 +785,8 @@ public class CodeGenerator {
                         methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, typeToInternalName(value.type()));
                         info.pop(1);
                         info.push(CodeInfo.Size._1);
+                } else if (value instanceof ValueAnotherType) {
+                        buildValueAccess(methodVisitor, info, ((ValueAnotherType) value).value());
                 } else {
                         throw new LtBug("unknown value " + value);
                 }
