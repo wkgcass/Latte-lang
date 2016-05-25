@@ -1,9 +1,12 @@
 import lt.compiler.*;
 import lt.compiler.syntactic.Statement;
+import lt.repl.ClassPathLoader;
+import lt.repl.Evaluator;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.StringReader;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +16,7 @@ import java.util.Map;
  */
 public class SimpleTest {
         public static void main(String[] args) throws Exception {
+                /*
                 Scanner scanner = new Scanner("test.lt", new StringReader("" +
                         "class TestForTryBreak\n" +
                         "    static\n" +
@@ -37,6 +41,11 @@ public class SimpleTest {
                 FileOutputStream fos = new FileOutputStream(f);
                 fos.write(bs);
                 fos.close();
+                */
+                ClassPathLoader cpl = new ClassPathLoader(ClassLoader.getSystemClassLoader());
+                Evaluator evaluator = new Evaluator(cpl);
+                cpl.load(new URL(new File("/Volumes/PROJECTS/test/LessTypingOut").toURI().toString()));
+                System.out.println(evaluator.eval("lt::demo::test::User(1,'cass')").result);
         }
 
         public void test() {

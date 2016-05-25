@@ -24,14 +24,14 @@
 
 package lt.repl;
 
-import lt.compiler.JarLoader;
 import lt.compiler.SyntaxException;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.Scanner;
-import java.util.jar.JarFile;
 
 /**
  * repl
@@ -51,9 +51,9 @@ public class REPL {
                 System.out.println();
                 System.out.print(lineStarter);
 
-                JarLoader jarLoader = new JarLoader();
+                ClassPathLoader classPathLoader = new ClassPathLoader();
 
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(classPathLoader);
                 Scanner scanner = new Scanner(System.in);
                 StringBuilder sb = new StringBuilder();
                 while (true) {
@@ -66,26 +66,27 @@ public class REPL {
                                         System.out.println(":reset                      reset the repl to its initial state, forgetting all session entries");
                                         System.out.println(":restart                    restart the repl environment, drop all loaded jars");
                                         System.out.println(":                           set current input to empty string");
-                                        System.out.println(":jar <jar-file-name>        load a jar file");
+                                        System.out.println(":cp <class-path>            load classes");
                                         System.out.println("-------------------------------------------");
                                         System.out.println("Compiler()                  instantiate a new Compiler");
-                                        System.out.println("compiler << '<directory>'   add the <directory> to compiling list");
                                         System.out.println("compiler >> '<directory>'   set compiler output directory");
-                                        System.out.println("compiler compile            start compiling and generate class files");
+                                        System.out.println("compiler compile filesInDirectory '<directory>'");
+                                        System.out.println("                            start compiling and generate class files");
+                                        System.out.println("-------------------------------------------");
                                 } else if (cmd.equals(":q")) {
                                         break;
                                 } else if (cmd.equals(":reset")) {
                                         sb.delete(0, sb.length());
-                                        evaluator = new Evaluator(jarLoader);
+                                        evaluator = new Evaluator(classPathLoader);
                                 } else if (cmd.equals(":restart")) {
                                         sb.delete(0, sb.length());
-                                        jarLoader = new JarLoader();
-                                        evaluator = new Evaluator(jarLoader);
-                                } else if (cmd.startsWith(":jar ")) {
-                                        String jarFileName = cmd.substring(":jar ".length()).trim();
+                                        classPathLoader = new ClassPathLoader();
+                                        evaluator = new Evaluator(classPathLoader);
+                                } else if (cmd.startsWith(":cp ")) {
+                                        String cp = cmd.substring(":cp ".length()).trim();
                                         try {
-                                                JarFile jarFile = new JarFile(jarFileName);
-                                                jarLoader.loadAll(jarFile);
+                                                URL url = new URL(new File(cp).toURI().toString());
+                                                classPathLoader.load(url);
                                         } catch (Throwable t) {
                                                 t.printStackTrace();
                                                 sleep(10);
@@ -125,11 +126,7 @@ public class REPL {
                                                                         System.err.print(" ");
                                                                 }
                                                                 System.err.print("^ ");
-                                                                System.err.println(
-                                                                        t.getClass().getSimpleName() +
-                                                                                " : " +
-                                                                                t.getMessage()
-                                                                );
+                                                                System.err.println(t.getMessage());
                                                         } else {
                                                                 t.printStackTrace();
                                                         }

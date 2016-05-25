@@ -24,7 +24,6 @@
 
 package lt.repl;
 
-import lt.compiler.JarLoader;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -36,23 +35,23 @@ import static org.junit.Assert.*;
  * test evaluator
  */
 public class TestEvaluator {
-        private static final JarLoader jarLoader = new JarLoader();
+        private static final ClassPathLoader CLASS_PATH_LOADER = new ClassPathLoader();
 
         @Test
         public void testSimpleCode() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(1, evaluator.eval("1").result);
         }
 
         @Test
         public void testSimpleExpression() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(2, evaluator.eval("1+1").result);
         }
 
         @Test
         public void testMultipleLineExpression() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(
                         new LinkedHashMap<Object, Object>() {{
                                 put("id", 1);
@@ -68,14 +67,14 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateTwice() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(1, evaluator.eval("1").result);
                 assertEquals(2, evaluator.eval("1+1").result);
         }
 
         @Test
         public void testEvaluateTwiceWithMultipleLineExp() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(
                         new LinkedHashMap<Object, Object>() {{
                                 put("id", 1);
@@ -92,7 +91,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateThreeTimes() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(1, evaluator.eval("1").result);
                 assertEquals(2, evaluator.eval("1+1").result);
                 assertEquals(100, evaluator.eval("10*10").result);
@@ -100,7 +99,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateThreeTimesWithMultipleLineExp() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(
                         new LinkedHashMap<Object, Object>() {{
                                 put("id", 1);
@@ -118,7 +117,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateVariableDef() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 Evaluator.Entry entry = evaluator.eval("i=10*10");
                 assertEquals("i", entry.name);
                 assertEquals(100, entry.result);
@@ -126,7 +125,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateFieldSet() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 Evaluator.Entry entry = evaluator.eval("i=10*10");
                 assertEquals("i", entry.name);
                 assertEquals(100, entry.result);
@@ -136,7 +135,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateStmt() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 Evaluator.Entry entry = evaluator.eval("method()=1");
                 assertNull(entry.name);
                 Object o = entry.result;
@@ -146,14 +145,14 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateMethod() throws Exception {
-                Evaluator evaluator = new Evaluator(jarLoader);
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 evaluator.eval("method()=1");
                 assertEquals(1, evaluator.eval("method()").result);
         }
 
         @Test
         public void testPrimitiveCast() throws Exception {
-                Evaluator e = new Evaluator(jarLoader);
+                Evaluator e = new Evaluator(CLASS_PATH_LOADER);
                 // int to short
                 assertEquals((short) 1, e.eval("int_short:int=1\nint_short as short").result);
                 // int to byte

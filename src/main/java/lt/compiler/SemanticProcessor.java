@@ -5960,6 +5960,12 @@ public class SemanticProcessor {
                         }
                 }
 
+                if (access.exp instanceof AST.PackageRef) {
+                        // should be constructor
+                        // but not found
+                        throw new SyntaxException("cannot find constructor " + invocation, invocation.line_col());
+                }
+
                 if (target == null) target = scope.getThis();
 
                 if (methodsToInvoke.isEmpty() && innerMethod == null) {

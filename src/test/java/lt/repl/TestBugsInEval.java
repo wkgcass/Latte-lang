@@ -94,7 +94,7 @@ public class TestBugsInEval {
          */
         @Test
         public void test1() throws Exception {
-                Evaluator evaluator = new Evaluator(new JarLoader());
+                Evaluator evaluator = new Evaluator(new ClassPathLoader());
                 evaluator.eval("arr:[]String=[null]");
                 Evaluator.Entry entry = evaluator.eval("arr[0]='abc'");
                 assertEquals("$res_0", entry.name);
@@ -147,7 +147,7 @@ public class TestBugsInEval {
          */
         @Test
         public void test2() throws Exception {
-                Evaluator evaluator = new Evaluator(new JarLoader());
+                Evaluator evaluator = new Evaluator(new ClassPathLoader());
                 evaluator.eval("" +
                         "class Test\n" +
                         "    m(a):Unit");

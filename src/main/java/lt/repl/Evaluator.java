@@ -76,13 +76,13 @@ public class Evaluator {
         private int generatedVariableIndex = 0;
         private final String varNameBase;
 
-        public Evaluator(JarLoader jarLoader) {
-                this("$res_", jarLoader);
+        public Evaluator(ClassPathLoader classPathLoader) {
+                this("$res_", classPathLoader);
         }
 
-        public Evaluator(String varNameBase, JarLoader jarLoader) {
+        public Evaluator(String varNameBase, ClassPathLoader classPathLoader) {
                 this.varNameBase = varNameBase;
-                cl = new CL(jarLoader);
+                cl = new CL(classPathLoader);
         }
 
         public static class Entry {

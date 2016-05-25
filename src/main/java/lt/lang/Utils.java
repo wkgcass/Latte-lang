@@ -25,7 +25,7 @@
 package lt.lang;
 
 import lt.repl.Evaluator;
-import lt.compiler.JarLoader;
+import lt.repl.ClassPathLoader;
 
 import java.io.File;
 import java.util.LinkedHashMap;
@@ -48,7 +48,7 @@ public class Utils {
         }
 
         public static Object eval(String e) throws Exception {
-                Evaluator evaluator = new Evaluator(new JarLoader());
+                Evaluator evaluator = new Evaluator(new ClassPathLoader());
                 return evaluator.eval(e).result;
         }
 

@@ -3,6 +3,17 @@
 'fileTypes':['lt','lts']
 'patterns':[
     {
+        'begin': '/\\*'
+        'beginCaptures':
+            '0':
+                'name': 'punctuation.definition.comment.begin.lt'
+        'end': '\\*/'
+        'endCaptures':
+            '0':
+                'name': 'punctuation.definition.comment.end.lt'
+        'name': 'comment.block.lt'
+    }
+    {
         'match':'(\\b[0-9]+\\.[0-9]+\\b|\\b[0-9]+\\b)'
         'name':'constant.numeric.lt'
     }
