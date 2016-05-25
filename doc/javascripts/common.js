@@ -39,10 +39,12 @@ function common_compile_highlighting() {
     return "<pre class='code'>" +
         highlighting("compile.lt",
             "compiler = Compiler()\n" +
-            "compiler << 'source file directory'\n" +
+            "compiler + 'class-path'\n" +
             "compiler >> 'output directory'\n" +
-            "compiler compile\n" +
+            "compiler compile filesInDirectory('source file directory')\n" +
+            "\n" +
             "; or you can chain these invocations up\n" +
-            "Compiler() << 'source file dir' >> 'output dir' compile", {}) +
+            "\n" +
+            "Compiler() + 'class-path' >> 'output dir' compile filesInDirectory('source file directory')", {}) +
         "</pre>";
 }

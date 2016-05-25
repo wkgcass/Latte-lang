@@ -42,9 +42,9 @@ $(document).ready(function () {
                 $sce.trustAsHtml("" +
                     "<textarea id='compile_java'>\n" +
                     "Compiler compiler=new Compiler();\n" +
-                    "compiler.shiftLeft(\"source file directory\")\n" +
+                    "compiler.add(\"class-path\")\n" +
                     "    .shiftRight(\"output directory\")\n" +
-                    "    .compile()" +
+                    "    .compile(lt.lang.Utils.filesInDirectory(\"source file directory\"))" +
                     "</textarea>" +
                     "<script>var editor = CodeMirror.fromTextArea(document.getElementById('compile_java'));editor.setSize('auto', '100px');</script>")
             ]

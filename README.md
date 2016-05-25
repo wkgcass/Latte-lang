@@ -52,25 +52,27 @@ start the `REPL` interpreter, and construct a `Compiler`
 
 	compiler = Compiler()
 
-use `<<` operator to add source code directory
-
-	compiler << '...'
-	// or
-	compiler << File('...')
-
 use `>>` operator to specify output directory
 
 	compiler >> '...'
 	// or
 	compiler >> File('...')
 
-use `compile` to start compiling
+use `compile MAP` to specify source codes to be compiled and start compiling
 
-	compiler compile
+	compiler compile {'fileName':FileObject}
+	
+usually `filesInDirectory('...')` is used, e.g.
+
+	compiler compile filesInDirectory('...')
+	
+use `+` operator to add class-path
+
+	compiler + '...'
 	
 these method invocations can be chained up
 
-	Compiler() << '...' >> '...' compile
+	Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...')
 
 ##README
 
@@ -88,6 +90,8 @@ here's what every file explains
 Generally the syntax looks like `Python`,  4 spaces indentation is forced , and it doesn't require `;` at the end of a statement/expression
 
 comments are started by `;` , so it's ok if you like writing a `;` at the end of a line
+
+multiple line comments are started with `/*` and end with `*/`
 
 ##Syntax Hightlighting
 the `language-lesstyping` directory contains a syntax-highlighting for `Atom`.
@@ -332,25 +336,21 @@ clone这个仓库,然后执行
 
 	compiler = Compiler()
 
-使用 `<<` 运算符来添加源代码目录
+使用 `compile MAP` 来确定源代码并立即开始编译
 
-	compiler << '...'
-	// or
-	compiler << File('...')
-
-使用 `>>` 运算符来设定编译输出目录
-
-	compiler >> '...'
-	// or
-	compiler >> File('...')
-
-使用 `compile` 来开启编译
-
-	compiler compile
+	compiler compile {'fileName':FileObject}
 	
-这些方法调用可以串联起来
+通常来说会使用 `filesInDirectory('...')`, e.g.
 
-	Compiler() << '...' >> '...' compile
+	compiler compile filesInDirectory('/Users/me/src')
+	
+使用 `+` 运算符来添加 class-path
+
+	compiler + '...'
+	
+这些方法调用可以被串联起来
+
+	Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...')
 
 ##README
 
@@ -366,6 +366,8 @@ clone这个仓库,然后执行
 大体而言语法看起来很像 `Python`, 强制4空格缩进 , 它不需要行末的`;`
 
 注释由`;`开始 , 所以如果你喜欢在每行的最后加上一个`;`也完全没问题
+
+多行注释由 `/*` 开始, 以 `*/` 结束.
 
 ##语法高亮
 `language-lesstyping`目录包含了一个针对`Atom`的语法高亮.
