@@ -187,8 +187,8 @@ $(document).ready(function () {
                 $sce.trustAsHtml("LessTyping需要 <code>JRE 8</code>"),
                 $sce.trustAsHtml("建议以<code>lt.repl.REPL</code>为主类打包为jar"),
                 $sce.trustAsHtml("本工程通过Maven管理, 所以您也可以使用 <code>Maven 3</code> 进行自动Build"),
-                $sce.trustAsHtml("clone<a href='" + $scope.git_repo + "'>该仓库</a>, 然后执行 <code>mvn clean package</code> , 在 <code>target</code> 目录下将生成一个可执行的jar文件."),
-                $sce.trustAsHtml("切换到 <code>target</code> 目录, 并在终端执行 <code>java -jar *.jar</code> , REPL将启动")
+                $sce.trustAsHtml("clone<a href='" + $scope.git_repo + "'>该仓库</a>, 然后执行 <code>mvn clean package</code> , 在 <code>target</code> 目录下将生成一个可执行的jar文件, 并且在跟目录生成批处理文件."),
+                $sce.trustAsHtml("直接执行 <code>.&#47;lesstyping</code> , REPL将启动")
             ]
         };
         $scope.compile = {

@@ -27,8 +27,8 @@ $(document).ready(function () {
                     "<li>自动Build还需 <code>Maven 3</code></li>" +
                     "</ul>"),
                 $sce.trustAsHtml("如果手动编译请编译 <code>/src/main/java</code> 目录"),
-                $sce.trustAsHtml("若需自动编译, 下载 Master 分支, 然后执行<code>mvn clean package</code>, 在生成的target目录下可以找到打包的 jar 文件."),
-                $sce.trustAsHtml("执行 <code>java -jar *.jar</code> 即可启动 REPL, 当然也可引入到项目中使用")
+                $sce.trustAsHtml("若需自动编译, 下载 Master 分支, 然后执行<code>mvn clean package</code>, 在生成的target目录下可以找到打包的 jar 文件, 并且在跟目录会生成批处理文件."),
+                $sce.trustAsHtml("执行 <code>.&#47;lesstyping</code> 即可启动 REPL, 当然也可将jar文件引入到项目中使用")
             ]
         };
         $scope.compile = {
@@ -47,6 +47,15 @@ $(document).ready(function () {
                     "    .compile(lt.lang.Utils.filesInDirectory(\"source file directory\"))" +
                     "</textarea>" +
                     "<script>var editor = CodeMirror.fromTextArea(document.getElementById('compile_java'));editor.setSize('auto', '100px');</script>")
+            ]
+        };
+        $scope.compile = {
+            title: "脚本 与 编译",
+            contents: [
+                $sce.trustAsHtml("LessTyping支持Script, 所以编译更加建议通过脚本完成"),
+                $sce.trustAsHtml(highlighting('build.lts', "" +
+                    "",
+                    {}))
             ]
         };
         $scope.highlight = {

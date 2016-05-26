@@ -1970,4 +1970,41 @@ public class TestCodeGen {
                 Method getName = User.getMethod("getName");
                 assertEquals("cass", getName.invoke(o));
         }
+
+        @Test
+        public void testGetterSetter() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class User\n" +
+                                "    a=1\n" +
+                                "    b='cass'\n" +
+                                "    getId()=a\n" +
+                                "    setId(id)=a=id\n" +
+                                "    getName()=b\n" +
+                                "    setName(name)=b=name\n" +
+                                "class TestGetterSetter\n" +
+                                "    static\n" +
+                                "        getUser()=User()\n" +
+                                "        testIdGetter(u)=u.id\n" +
+                                "        testNameGetter(u)=u.name\n" +
+                                "        testIdSetter(u)=u.id=2\n" +
+                                "        testNameSetter(u)=u.name='abc'",
+                        "TestGetterSetter");
+                Method testIdGetter = cls.getMethod("testIdGetter", Object.class);
+                Method testNameGetter = cls.getMethod("testNameGetter", Object.class);
+
+                Method getUser = cls.getMethod("getUser");
+                Object u = getUser.invoke(null);
+
+                assertEquals(1, testIdGetter.invoke(null, u));
+                assertEquals("cass", testNameGetter.invoke(null, u));
+
+                Method testIdSetter = cls.getMethod("testIdSetter", Object.class);
+                testIdSetter.invoke(null, u);
+                assertEquals(2, testIdGetter.invoke(null, u));
+
+                Method testNameSetter = cls.getMethod("testNameSetter", Object.class);
+                testNameSetter.invoke(null, u);
+                assertEquals("abc", testNameGetter.invoke(null, u));
+        }
 }

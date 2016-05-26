@@ -22,34 +22,29 @@
  * SOFTWARE.
  */
 
-package lt;
+package lt.repl;
 
-import junit.framework.TestSuite;
-import lt.compiler.cases.*;
-import lt.compiler.err_rec.TestParserErrorRecovery;
-import lt.compiler.err_rec.TestScannerErrorRecovery;
-import lt.repl.TestBugsInEval;
-import lt.repl.TestEvaluator;
-import lt.repl.TestScript;
-import org.junit.runner.RunWith;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
- * test suite
+ * script
  */
-@RunWith(org.junit.runners.Suite.class)
-@org.junit.runners.Suite.SuiteClasses({
-        TestScanner.class,
-        TestParser.class,
-        TestParserMix.class,
-        TestSemantic.class,
-        TestCodeGen.class,
-        TestLang.class,
-        TestDemo.class,
-        TestEvaluator.class,
-        TestBugsInEval.class,
-        TestScannerErrorRecovery.class,
-        TestParserErrorRecovery.class,
-        TestScript.class
-})
-public class Suite extends TestSuite {
+public class TestScript {
+        @Test
+        public void testSimpleScript() throws Exception {
+                ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                ScriptCompiler.Script script = scriptCompiler.compile("return 1");
+                assertEquals(1, script.run().getResult());
+        }
+
+        @Test
+        public void testScriptArgs() throws Exception {
+                ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                ScriptCompiler.Script script = scriptCompiler.compile("return args");
+                assertArrayEquals(new String[0], (Object[]) script.run().getResult());
+                String[] args = new String[]{"a", "b", "c"};
+                assertArrayEquals(args, (Object[]) script.run(args).getResult());
+        }
 }

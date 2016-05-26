@@ -266,6 +266,12 @@ public class Lang {
                         return Dynamic.invoke(o.getClass(), o, callerClass, fieldName, new boolean[0], new Object[0]);
                 } catch (Throwable ignore) {
                 }
+                // try to find `getFieldName()`
+                try {
+                        String getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+                        return Dynamic.invoke(o.getClass(), o, callerClass, getter, new boolean[0], new Object[0]);
+                } catch (Throwable ignore) {
+                }
                 return Undefined.get();
         }
 
@@ -289,9 +295,18 @@ public class Lang {
                         return;
                 } catch (Throwable ignore) {
                 }
-                // try to find `set(fieldName,value)`
-                // invoke dynamic would try to find set then try to find put
-                Dynamic.invoke(o.getClass(), o, callerClass, "set", new boolean[]{false, false}, new Object[]{fieldName, value});
+                // try `setFieldName(value)`
+                try {
+                        String setter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+                        Dynamic.invoke(o.getClass(), o, callerClass, setter, new boolean[]{false}, new Object[]{value});
+                } catch (Throwable ignore) {
+                        // try to find `set(fieldName,value)`
+                        // invoke dynamic would try to find set then try to find put
+                        Dynamic.invoke(o.getClass(), o, callerClass,
+                                "set",
+                                new boolean[]{false, false},
+                                new Object[]{fieldName, value});
+                }
         }
 
         public static final int COMPARE_MODE_GT = 0b001;

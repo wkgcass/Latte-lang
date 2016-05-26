@@ -56,7 +56,7 @@ public class ClassPathLoader extends ClassLoader {
         }
 
         /**
-         * load a class, invoking {@link #urlClassLoader#loadClass(String, boolean)}
+         * load a class, invoking {@link URLClassLoader#loadClass(String, boolean)}
          *
          * @param name    name
          * @param resolve whether to resolve

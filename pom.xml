@@ -60,7 +60,7 @@
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
-                    <appendAssemblyId>true</appendAssemblyId>
+                    <appendAssemblyId>false</appendAssemblyId>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
@@ -81,6 +81,27 @@
                 </executions>
             </plugin>
             <!-- runnable jar end -->
+            <!-- sh and bat start -->
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <copy file="${project.basedir}/src/main/resources/lesstyping.sh"
+                                      tofile="${project.basedir}/lesstyping"/>
+                                <copy file="${project.basedir}/src/main/resources/lesstyping.bat"
+                                      tofile="${project.basedir}/lesstyping.bat"/>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- sh and bat end -->
         </plugins>
     </build>
     <dependencies>

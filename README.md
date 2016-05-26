@@ -27,11 +27,11 @@ clone the repository, and run
 
 	mvn clean package
 	
-you will get a runnable jar in target directory.
+you will get a runnable jar in target directory and a `lesstyping` and a `lesstyping.bat` in the root directory.
 
 run:
 
-	java -jar *.jar
+	./lesstyping
 	
 then the [REPL](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) starts
     
@@ -42,7 +42,7 @@ then the [REPL](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/
     
     >1+1
     |
-    $res_0 : java.lang.Integer = 2
+    res0 : java.lang.Integer = 2
     
     >
 
@@ -73,6 +73,13 @@ use `+` operator to add class-path
 these method invocations can be chained up
 
 	Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...')
+	
+##Scripts
+
+start the `REPL` interpreter  
+type `:script <script file>` and Enter
+
+then use `script run` or `script run ['string array']` to run the script
 
 ##README
 
@@ -311,11 +318,11 @@ clone这个仓库,然后执行
 
 	mvn clean package
 	
-你将会在target目录下获取一个可执行jar
-
-执行
-
-	java -jar *.jar
+你将会在target目录下获取一个可执行jar. 在根目录下会得到一个 `lesstyping` 和一个 `lesstyping.bat`.
+                       
+执行:
+                       
+	./lesstyping
 	
 接着, [REPL](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) 将开始运行
     
@@ -326,7 +333,7 @@ clone这个仓库,然后执行
         
     >1+1
     |
-    $res_0 : java.lang.Integer = 2
+    res0 : java.lang.Integer = 2
     
     >
 
@@ -351,6 +358,13 @@ clone这个仓库,然后执行
 这些方法调用可以被串联起来
 
 	Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...')
+	
+##Scripts
+
+开启 `REPL` 解释器  
+输入 `:script <script file>` 并回车
+
+然后使用 `script run` 或者 `script run ['string array']` 来运行这个脚本
 
 ##README
 

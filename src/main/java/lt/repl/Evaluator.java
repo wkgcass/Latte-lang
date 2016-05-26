@@ -67,17 +67,18 @@ public class Evaluator {
         private final CL cl;
 
         private static final String EVALUATE_BASIC_FORMAT = "" +
-                "import  java::util::_\n" +
+                "import java::util::_\n" +
                 "import java::math::_\n" +
                 "import lt::repl::_\n" +
+                "import java::io::_\n" +
                 "class Evaluate";
-        private static final int EVALUATE_BASIC_LINES = 4;
+        private static final int EVALUATE_BASIC_LINES = 5;
 
         private int generatedVariableIndex = 0;
         private final String varNameBase;
 
         public Evaluator(ClassPathLoader classPathLoader) {
-                this("$res_", classPathLoader);
+                this("res", classPathLoader);
         }
 
         public Evaluator(String varNameBase, ClassPathLoader classPathLoader) {
@@ -93,6 +94,15 @@ public class Evaluator {
                         this.name = name;
                         this.result = result;
                 }
+        }
+
+        public void put(String name, Object var) {
+                Iterator<Entry> entryIterator = recordedEntries.iterator();
+                while (entryIterator.hasNext()) {
+                        Entry e = entryIterator.next();
+                        if (e.name.equals(name)) entryIterator.remove();
+                }
+                recordedEntries.add(new Entry(name, var));
         }
 
         public Entry eval(String stmt) throws Exception {
@@ -163,7 +173,7 @@ public class Evaluator {
                         Parser parser = new Parser(root, errorManager);
                         List<Statement> statements = parser.parse();
 
-                        ClassDef classDef = (ClassDef) statements.get(3); // it must be class def (class Evaluate)
+                        ClassDef classDef = (ClassDef) statements.get(4); // it must be class def (class Evaluate)
                         List<Statement> classStatements = classDef.statements;
                         int lastIndex = classStatements.size() - 1;
                         Statement lastStatement = classStatements.get(lastIndex);

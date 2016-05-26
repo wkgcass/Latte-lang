@@ -2,6 +2,7 @@ import lt.compiler.*;
 import lt.compiler.syntactic.Statement;
 import lt.repl.ClassPathLoader;
 import lt.repl.Evaluator;
+import lt.repl.REPL;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,10 +43,15 @@ public class SimpleTest {
                 fos.write(bs);
                 fos.close();
                 */
+                /*
                 ClassPathLoader cpl = new ClassPathLoader(ClassLoader.getSystemClassLoader());
                 Evaluator evaluator = new Evaluator(cpl);
                 cpl.load(new URL(new File("/Volumes/PROJECTS/test/LessTypingOut").toURI().toString()));
                 System.out.println(evaluator.eval("lt::demo::test::User(1,'cass')").result);
+                */
+                REPL.main(new String[]{
+                        "/Volumes/PROJECTS/Test/LessTyping/hehe.lts"
+                });
         }
 
         public void test() {

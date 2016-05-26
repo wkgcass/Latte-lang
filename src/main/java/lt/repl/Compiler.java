@@ -467,7 +467,7 @@ public class Compiler {
                                                 root = f.get();
                                         } catch (ExecutionException e) {
                                                 if (config.out.err != null)
-                                                        e.printStackTrace(config.out.err);
+                                                        e.getCause().printStackTrace(config.out.err);
                                                 caughtException[0] = (Exception) e.getCause();
                                                 return;
                                         }
@@ -478,16 +478,17 @@ public class Compiler {
                         }).start();
                 }
 
-                // check whether occurred any exceptions
-                if (caughtException[0] != null) {
-                        scannerPool.shutdown();
-                        parserPool.shutdown();
-
-                        throw caughtException[0];
-                }
-
                 // wait until all all Parse objects are added into the list
-                while (parseState.size() != input.size()) Thread.sleep(1);
+                while (parseState.size() != input.size()) {
+                        // check whether occurred any exceptions
+                        if (caughtException[0] != null) {
+                                scannerPool.shutdown();
+                                parserPool.shutdown();
+
+                                throw caughtException[0];
+                        }
+                        Thread.sleep(1);
+                }
 
                 // wait until all parse process finishes
                 for (Future<?> f : parseState) {

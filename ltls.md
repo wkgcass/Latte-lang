@@ -952,3 +952,178 @@ For literals, the cast may produce an error when compiling. Check chapter 3.2 fo
 In other circumstances, the cast may be done when compiling or at runtime. However, `bool` can never be cast to other __primitive__ types. Check chapter 3.3 for avaliable type conversions.
 
 ##6.7 access
+accesses a variable.
+
+	variable
+	Type.field
+	object.field
+
+get value of the variable or field.
+
+if the variable is not found, the runtime tries:
+
+1. get field via reflection
+2. invoke `o.get(name)`
+3. invoke `o.name()`
+4. invoke `o.getName()`
+
+if the variable is still not found, an `undefined` would be returned.
+
+For arrays, `arr.length` result is the length of the array.
+
+##6.8 index
+
+	arr[i]
+	
+get array element value at index `i`
+
+if `arr` is not an array __OR__ `i` is not integer, then invoke `get(i)` on `arr`.
+
+NOTE THAT in `LessTyping`, the `i` might not be integer when compiling, but might be integer at runtime. So, when meets `get(int/Integer)` invocation, if the `arr` is array, the expression is still considered as getting array element value.
+
+##6.9 one variable operation
+`LessTyping` supports the following one variable operators
+
+	"++", "--", "!", "~", "+", "-"
+	
+`++` and `--` can be put before or after the _Left Value_
+
+`++a` means 
+
+	(
+	    a=a+1
+	    return a
+	)
+	
+`a++` means
+
+	(
+	    tmp=a
+	    a=a+1
+	    return tmp
+	)
+	
+it's the same for `--` operator
+
+`!`, `~`, `+` and `-` can only be put before the variable
+
+`+` does NOT do anything. the compiler simply ignore the operator and parse the expression after the operator.
+
+`!`, `~` and `-` supports `Operator Binding`
+
+* `-` :  
+	numbers : makes the number negative  
+	other : invokes `negative()`
+	
+* `~` :  
+	numbers : bitwise not  
+	other : invokes `not`
+	
+* `!` :
+	bools : returns the opposite logic value  
+	other : invokes `logicNot()`
+	
+##6.10 two variable operation
+`LessTyping` supports the following two variable operations, and their priorities are listed as below: (top to bottom, the priority reduces)
+
+	{"..", ".:"},
+	{":::"},
+	{"^^"},
+	{"*", "/", "%"},
+	{"+", "-"},
+	{"<<", ">>", ">>>"},
+	{">", "<", ">=", "<="},
+	{"==", "!=", "===", "!==", "=:=", "!:=", "is", "not", "in"},
+	{"&"},
+	{"^"},
+	{"|"},
+	{"&&", "and"},
+	{"||", "or"}
+	
+A higher priority operator would reduce to a value faster than a low priority one.
+
+	1 + 2 * 3
+	
+means `(1 + (2 * 3))`
+
+	[]:::1..5
+	
+means `[]:::(1..5)`
+	
+###range list
+`..` and `.:` are range list operators. They only takes integers as parameter.
+
+`..` creates a list with end inclusive, and `.:` creates a list with end exclusive.
+
+###concat
+`:::` is bond to `concat(?)`. e.g.
+
+	"abc":::"def"
+	
+the result would be `"abcdef"`
+
+	[1,2,3]:::[4,5]
+	
+the result would be `[1,2,3,4,5]`
+
+###pow
+`^^` first cast the left and right expressions to `double`, and invoke `Math.pow(?,?)`
+
+###math
+all these operators do the same thing as in Java
+
+* `*` is bond to `multiply(?)`
+* `/` is bond to `divide(?)`
+* `%` is bond to `remainder(?)`
+* `+` is bond to `add(?)`
+* `-` is bond to `subtract(?)`
+
+###bitwise
+all these operators does the same as in Java
+
+* `<<` is bond to `shiftLeft(?)`
+* `>>` is bond to `shiftRight(?)`
+* `>>>` is bond to `unsignedShiftRight(?)`
+
+###compare
+all these operators do the same thing as in Java
+
+* `>` is bond to `gt(?)`
+* `<` is bond to `lt(?)`
+* `>=` is bond to `ge(?)`
+* `<=` is bond to `le(?)`
+* `==` is bond to `equals(?)`
+* `!=` means `!(a==b)`
+* `===` checks references, same as `==` in java
+* `!==` checks references, same as `!=` in java
+
+the following operators are simply bond to methods
+
+* `=:=` is bond to `equal(?)`
+* `!:=` is bond to `notEqual(?)`
+* `is` means `lt::lang::Lang.is(a,b)`
+* `not` means `lt::lang::Lang.not(a,b)`
+* `in` is bond to `contains(?)` and it's invoked on the right expression instead of left
+
+###logic and bitwise
+all these operators do the same thing as in Java
+
+* `&` is bond to `and(?)`
+* `^` is bond to `xor`
+* `|` is bond to `or`
+
+###and and or
+`&&` is the same as `and`  
+`||` is the same as `or`
+
+they do the same thing as in Java.
+
+	e1 && e2
+	
+e1 is firstly evaluated. if e1 is `false`, then the expression result would be `false`, e2 would not be evaluated.
+
+	e1 || e2
+	
+e1 is firstly evaluated. if e1 is `true`, then the expression result would be `true`, e2 would not be evaluated.
+
+##6.11 assignment

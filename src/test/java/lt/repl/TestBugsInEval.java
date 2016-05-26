@@ -97,7 +97,7 @@ public class TestBugsInEval {
                 Evaluator evaluator = new Evaluator(new ClassPathLoader());
                 evaluator.eval("arr:[]String=[null]");
                 Evaluator.Entry entry = evaluator.eval("arr[0]='abc'");
-                assertEquals("$res_0", entry.name);
+                assertEquals("res0", entry.name);
                 assertEquals("abc", entry.result);
         }
 
@@ -105,13 +105,13 @@ public class TestBugsInEval {
         public void test1_same() throws Exception {
                 Class<?> cls = retrieveClass("" +
                         "class Test1(arr)\n" +
-                        "    $res_0=(arr[0]='abc')\n" +
+                        "    res0=(arr[0]='abc')\n" +
                         "    this.arr=arr"
                         , "Test1");
                 Constructor<?> cons = cls.getConstructor(Object.class);
                 String[] arr = new String[]{null};
                 Object o = cons.newInstance((Object) arr);
-                Field f = cls.getDeclaredField("$res_0");
+                Field f = cls.getDeclaredField("res0");
                 f.setAccessible(true);
                 assertEquals("abc", f.get(o));
         }

@@ -26,10 +26,7 @@ package lt.compiler.semantic;
 
 import lt.compiler.LineCol;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -97,9 +94,15 @@ public class SInterfaceDef extends STypeDef {
         public boolean isAssignableFrom(STypeDef cls) {
                 if (super.isAssignableFrom(cls)) return true;
                 Queue<SInterfaceDef> q = new ArrayDeque<>();
+                Set<SInterfaceDef> used = new HashSet<>();
                 if (cls instanceof SClassDef) {
                         SClassDef tmp = (SClassDef) cls;
-                        q.addAll(tmp.superInterfaces().stream().collect(Collectors.toList()));
+                        while (tmp != null) {
+                                for (SInterfaceDef i : tmp.superInterfaces()) {
+                                        if (used.add(i)) q.add(i);
+                                }
+                                tmp = tmp.parent();
+                        }
                 } else if (cls instanceof SInterfaceDef) {
                         SInterfaceDef tmp = (SInterfaceDef) cls;
                         q.addAll(tmp.superInterfaces().stream().collect(Collectors.toList()));

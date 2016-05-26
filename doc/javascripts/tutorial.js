@@ -43,7 +43,7 @@ $(document).ready(function () {
                 "Object o = new Object()\n" +
                 "int[] arr = {1,2,3}\n" +
                 "\n" +
-                "List list = new LinkedList()\n" +
+                "List list = new LinkedList();\n" +
                 "list.add(1);  list.add(2);  list.add(3)\n" +
                 "\n" +
                 "Map map = new LinkedHashMap()\n" +
@@ -94,6 +94,45 @@ $(document).ready(function () {
                     "    name : String\n" +
                     ")"),
                 note: $sce.trustAsHtml("构造块中的参数与变量都将视为类的字段")
+            },
+            {
+                title: "Data Class",
+                java: "" +
+                "public class User {\n" +
+                "    private int id;\n" +
+                "    private String name;\n" +
+                "    public User() {\n" +
+                "    }\n" +
+                "    public User(int id, String name) {\n" +
+                "        this.id=id;\n" +
+                "        this.name=name;\n" +
+                "    }\n" +
+                "    public boolean equals(Object o) {\n" +
+                "        return o instanceof User\n" +
+                "            && ((User)o).id==this.id\n" +
+                "            && ((User)o).name.equals(this.name);\n" +
+                "    }\n" +
+                "    public int hashCode() {\n" +
+                "        return id+name.hashCode();\n" +
+                "    }\n" +
+                "    public String toString() {\n" +
+                "        return \"User(id=\"+id+\",name=\"+name+\")\";\n" +
+                "    }\n" +
+                "    public int getId() {\n" +
+                "        return id;\n" +
+                "    }\n" +
+                "    public String getName() {\n" +
+                "        return name;\n" +
+                "    }\n" +
+                "    public void setId(int id) {\n" +
+                "        this.id=id;\n" +
+                "    }\n" +
+                "    public void setName(String name) {\n" +
+                "        this.name=name;\n" +
+                "    }\n" +
+                "}",
+                lesstyping: getLessTypingHtml("" +
+                    "data class User(id:int, name:String)")
             },
             {
                 title: "运算符重载",

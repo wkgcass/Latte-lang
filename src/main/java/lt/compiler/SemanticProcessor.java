@@ -2822,6 +2822,11 @@ public class SemanticProcessor {
                                                 Ins.InvokeStatic invoke = new Ins.InvokeStatic(putField, assignment.line_col());
                                                 invoke.arguments().add(invokeStatic.arguments().get(0));
                                                 invoke.arguments().add(invokeStatic.arguments().get(1));
+
+                                                if (assignFrom.type() instanceof PrimitiveTypeDef) {
+                                                        assignFrom = boxPrimitive(assignFrom, LineCol.SYNTHETIC);
+                                                }
+
                                                 invoke.arguments().add(assignFrom);
                                                 invoke.arguments().add(
                                                         new Ins.GetClass(scope.type(),

@@ -36,7 +36,7 @@ function common_navs() {
     ]
 }
 function common_compile_highlighting() {
-    return "<pre class='code'>" +
+    return "<pre class='code' style='height:200px'>" +
         highlighting("compile.lt",
             "compiler = Compiler()\n" +
             "compiler + 'class-path'\n" +
