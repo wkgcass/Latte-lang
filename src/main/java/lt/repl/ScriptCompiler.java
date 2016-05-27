@@ -225,6 +225,10 @@ public class ScriptCompiler {
                 //         method(args:String[])
                 //             ...
                 //
+                sb.append("" +
+                        "import java::util::_\n" +
+                        "import java::math::_\n" +
+                        "import lt::repl::_\n");
                 sb.append("class ").append(nameForTheScript)
                         .append("\n    static")
                         .append("\n        method(args:[]String)\n");

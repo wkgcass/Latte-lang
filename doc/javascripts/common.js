@@ -48,3 +48,16 @@ function common_compile_highlighting() {
             "Compiler() + 'class-path' >> 'output dir' compile filesInDirectory('source file directory')", {}) +
         "</pre>";
 }
+
+function common_script_highlighting() {
+    var txt;
+    $.ajax({
+        url: 'https://raw.githubusercontent.com/wkgcass/LessTyping/master/src/main/resources/build.lts',
+        async: false,
+        dataType: 'text',
+        success: function (res) {
+            txt = highlighting('build.lts', res, {});
+        }
+    });
+    return "<pre>\n" + txt + "\n</pre>";
+}

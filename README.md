@@ -15,7 +15,7 @@ LessTyping supports
 
 [LessTyping WebSite](http://lesstyping.cassite.net/)
 
-`LessTyping` is based on java 8. it's a hybrid of strong and weak type language. It's compiled to JVM byte code, and can collaborate with any java library.
+`LessTyping` is based on java 8. it's a hybrid of strong and weak typing language. It's compiled to JVM byte code, and can collaborate with any java library.
 
 最下面有中文 ：）
 
@@ -57,6 +57,10 @@ use `>>` operator to specify output directory
 	compiler >> '...'
 	// or
 	compiler >> File('...')
+	
+use `+` operator to add class-path
+
+	compiler + '...'
 
 use `compile MAP` to specify source codes to be compiled and start compiling
 
@@ -65,10 +69,6 @@ use `compile MAP` to specify source codes to be compiled and start compiling
 usually `filesInDirectory('...')` is used, e.g.
 
 	compiler compile filesInDirectory('...')
-	
-use `+` operator to add class-path
-
-	compiler + '...'
 	
 these method invocations can be chained up
 
@@ -80,6 +80,10 @@ start the `REPL` interpreter
 type `:script <script file>` and Enter
 
 then use `script run` or `script run ['string array']` to run the script
+
+or, you can run a script when running the jar
+
+	java -jar the_jar.jar script-file-path script-arguments...
 
 ##README
 
@@ -342,6 +346,16 @@ clone这个仓库,然后执行
 开启`REPL`, 然后构造一个`Compiler`
 
 	compiler = Compiler()
+	
+使用 `>>` 运算符来指定编译输出目录
+
+	compiler >> '...'
+	// or
+	compiler >> File('...')
+	
+使用 `+` 运算符来添加 class-path
+
+	compiler + '...'
 
 使用 `compile MAP` 来确定源代码并立即开始编译
 
@@ -350,10 +364,6 @@ clone这个仓库,然后执行
 通常来说会使用 `filesInDirectory('...')`, e.g.
 
 	compiler compile filesInDirectory('/Users/me/src')
-	
-使用 `+` 运算符来添加 class-path
-
-	compiler + '...'
 	
 这些方法调用可以被串联起来
 
@@ -365,6 +375,10 @@ clone这个仓库,然后执行
 输入 `:script <script file>` 并回车
 
 然后使用 `script run` 或者 `script run ['string array']` 来运行这个脚本
+
+或者, 你可以在jar启动时运行脚本
+
+	java -jar the_jar.jar script-file-path script-arguments...
 
 ##README
 

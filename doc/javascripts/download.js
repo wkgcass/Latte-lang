@@ -50,12 +50,17 @@ $(document).ready(function () {
             ]
         };
         $scope.compile = {
-            title: "脚本 与 编译",
+            title: "Script 与 编译",
             contents: [
-                $sce.trustAsHtml("LessTyping支持Script, 所以编译更加建议通过脚本完成"),
-                $sce.trustAsHtml(highlighting('build.lts', "" +
-                    "",
-                    {}))
+                $sce.trustAsHtml("LessTyping支持Script, 所以编译建议通过脚本完成"),
+                $sce.trustAsHtml(common_script_highlighting()),
+                $sce.trustAsHtml("可以使用如下方法运行脚本"),
+                $sce.trustAsHtml("<code>.&#47;lesstyping script-file-path script-arguments</code>"),
+                $sce.trustAsHtml("或者进入REPL后, 输入"),
+                $sce.trustAsHtml("<code>:script script-path<br>" +
+                    "script run<br>" +
+                    "script run ['string-array-as-arguments']" +
+                    "</code>")
             ]
         };
         $scope.highlight = {

@@ -30,6 +30,7 @@ import lt.compiler.SyntaxException;
 import lt.compiler.lexical.*;
 import org.junit.Test;
 
+import java.io.InputStreamReader;
 import java.io.StringReader;
 
 import static org.junit.Assert.*;
@@ -713,5 +714,13 @@ public class TestScanner {
                 }
 
                 assertEquals(root2, root);
+        }
+
+        @Test
+        public void testBuildLtsPass() throws Exception {
+                new Scanner("build.lts",
+                        new InputStreamReader(TestScanner.class.getResourceAsStream("/build.lts")),
+                        new Scanner.Properties(),
+                        new ErrorManager(true)).scan();
         }
 }

@@ -57,7 +57,7 @@ $(document).ready(function () {
                     name: "REPL"
                 }
             ],
-            content: $sce.trustAsHtml("更多特性请查看 <a href='#'>语法</a>")
+            content: $sce.trustAsHtml("更多特性请查看 <a href='syntax.html'>语法</a>")
         };
         $scope.codes_head = "您可以在REPL中尝试大部分语句";
         $scope.codes = [
