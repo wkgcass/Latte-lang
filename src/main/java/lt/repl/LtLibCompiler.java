@@ -372,7 +372,7 @@ public class LtLibCompiler {
 
         public static void scanPath(String scanPath, String outputFile) throws Exception {
                 StringBuilder sb = new StringBuilder();
-                scanPathRecursive(new File(scanPath), sb, scanPath.length());
+                scanPathRecursive(new File(scanPath), sb, scanPath.length() + 1);
                 File f = new File(outputFile);
                 if (!f.exists()) f.createNewFile();
                 FileOutputStream fos = new FileOutputStream(f);

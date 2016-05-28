@@ -575,6 +575,7 @@ public class Compiler {
                 if (config.result.outputDir != null) {
                         // the jar file
                         ZipOutputStream zipOutputStream = null;
+                        Set<String> dirs = new HashSet<>();
                         if (config.result.pkg != null) {
                                 String name = config.result.pkg;
                                 if (!name.endsWith(".jar")) {
@@ -609,9 +610,7 @@ public class Compiler {
 
                                 // classes in jar file
                                 if (zipOutputStream != null) {
-                                        zipOutputStream.putNextEntry(new ZipEntry(theDir + "/" + simpleName));
-                                        zipOutputStream.write(bytes);
-                                        zipOutputStream.closeEntry();
+                                        putZipEntry(zipOutputStream, theDir + "/" + simpleName, bytes, dirs);
                                 }
 
                                 fos.close();
@@ -643,17 +642,16 @@ public class Compiler {
                                         }
 
                                         CLASSES.sort(null);
-                                        Collections.reverse(CLASSES);
 
                                         for (String C : CLASSES) {
-                                                System.out.println(C);
-                                                zipOutputStream.putNextEntry(new ZipEntry(C));
-                                                int b;
-                                                InputStream is = Compiler.class.getResourceAsStream(C);
-                                                while ((b = is.read()) != -1) {
-                                                        zipOutputStream.write(b);
+                                                InputStream is = Compiler.class.getResourceAsStream("/" + C);
+                                                ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+                                                byte[] bs = new byte[1024];
+                                                int n;
+                                                while ((n = is.read(bs)) != -1) {
+                                                        baos.write(bs, 0, n);
                                                 }
-                                                zipOutputStream.closeEntry();
+                                                putZipEntry(zipOutputStream, C, baos.toByteArray(), dirs);
                                         }
                                 }
                                 zipOutputStream.close();
@@ -661,6 +659,12 @@ public class Compiler {
                 }
 
                 return loader;
+        }
+
+        private void putZipEntry(ZipOutputStream zos, String file, byte[] bytes, Set<String> dirs) throws IOException {
+                zos.putNextEntry(new ZipEntry(file));
+                zos.write(bytes);
+                zos.closeEntry();
         }
 
         private class FileRoot {
