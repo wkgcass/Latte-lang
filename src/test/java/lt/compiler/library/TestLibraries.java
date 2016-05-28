@@ -45,7 +45,11 @@ public class TestLibraries {
         @Test
         public void testHtml() throws Exception {
                 ClassLoader loader = load(new HashMap<String, Object>() {{
-                        put("html.lt", TestLibraries.class.getResourceAsStream("/lt/html.lt"));
+                        try {
+                                ClassLoader.getSystemClassLoader().loadClass("lt.html.HTMLElement");
+                        } catch (ClassNotFoundException ignore) {
+                                put("html.lt", TestLibraries.class.getResourceAsStream("/lt/html.lt"));
+                        }
                         put("test_html.lt", TestLibraries.class.getResourceAsStream("/test_libraries/test_html.lt"));
                 }});
                 Class<?> TestHtml = loader.loadClass("lt.html.test.TestHtml");

@@ -96,7 +96,7 @@
                                       tofile="${project.basedir}/lesstyping"/>
                                 <copy file="${project.basedir}/src/main/resources/lesstyping.bat"
                                       tofile="${project.basedir}/lesstyping.bat"/>
-                                <copy file="${project.basedir}/target/${artifactId}-${version}.jar"
+                                <copy file="${project.basedir}/target/${project.artifactId}-${project.version}.jar"
                                       tofile="${project.basedir}/repl.jar"/>
                             </tasks>
                         </configuration>
@@ -104,6 +104,32 @@
                 </executions>
             </plugin>
             <!-- sh and bat end -->
+            <!-- compile -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.1.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>lt.repl.LtLibCompiler</mainClass>
+                            <arguments>
+                                <!-- the classes to load -->
+                                <argument>${project.basedir}/target/classes</argument>
+                                <!-- the resource directory -->
+                                <argument>${project.basedir}/src/main/resources</argument>
+                                <!-- the output directory -->
+                                <argument>${project.basedir}/target/classes</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- compile -->
         </plugins>
     </build>
     <dependencies>

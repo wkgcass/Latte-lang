@@ -71,8 +71,12 @@ public class SimpleTest {
                 InputStream is = SimpleTest.class.getResourceAsStream("/lt/lang/LtRuntime.class");
                 System.out.println(is);
                 */
+                /*
                 File dir = new File("/Volumes/PROJECTS/openSource/LessTyping/target/classes/");
                 hehe(dir);
+                */
+                ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                scriptCompiler.compile(new File("/Users/wkgcass/Desktop/build.lts")).run();
         }
 
         private static int l = "/Volumes/PROJECTS/openSource/LessTyping/target/classes/".length();
