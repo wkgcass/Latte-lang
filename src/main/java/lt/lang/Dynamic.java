@@ -497,7 +497,7 @@ public class Dynamic {
 
                         if (o == null || c.isInstance(o)) continue;
 
-                        args[i] = Lang.cast(o, c);
+                        args[i] = LtRuntime.cast(o, c);
                 }
         }
 
@@ -545,12 +545,12 @@ public class Dynamic {
                                         return invoke(targetClass, o, invoker, "put", primitives, args);
                                 }
                         }
-                        StringBuilder sb = new StringBuilder().append(o == null ? targetClass : o).append(".").append(method).append("(");
+                        StringBuilder sb = new StringBuilder().append(targetClass.getName()).append(".").append(method).append("(");
                         boolean isFirst = true;
                         for (Object arg : args) {
                                 if (isFirst) isFirst = false;
                                 else sb.append(", ");
-                                sb.append(arg);
+                                sb.append(arg.getClass().getName());
                         }
                         sb.append(")");
                         throw new RuntimeException("cannot find method to invoke " + sb.toString());
@@ -705,7 +705,7 @@ public class Dynamic {
 
         private static Object invokePrimitive(Object a, String op, Object b) {
                 switch (op) {
-                        case Lang.add:
+                        case LtRuntime.add:
                                 a = prepareNumber(a);
                                 if (a == null) break;
                                 b = prepareNumber(b);
@@ -715,7 +715,7 @@ public class Dynamic {
                                 if (topType == 2) return ((Number) a).floatValue() + ((Number) b).floatValue();
                                 if (topType == 3) return ((Number) a).longValue() + ((Number) b).longValue();
                                 return ((Number) a).doubleValue() + ((Number) b).doubleValue();
-                        case Lang.and:
+                        case LtRuntime.and:
                                 if (a instanceof Boolean && b instanceof Boolean)
                                         return (Boolean) a & (Boolean) b;
                                 a = prepareNumber(a);
@@ -727,7 +727,7 @@ public class Dynamic {
                                 if (topType == 2) break;
                                 if (topType == 3) return ((Number) a).longValue() & ((Number) b).longValue();
                                 break;
-                        case Lang.or:
+                        case LtRuntime.or:
                                 if (a instanceof Boolean && b instanceof Boolean)
                                         return (Boolean) a | (Boolean) b;
                                 a = prepareNumber(a);
@@ -739,7 +739,7 @@ public class Dynamic {
                                 if (topType == 2) break;
                                 if (topType == 3) return ((Number) a).longValue() | ((Number) b).longValue();
                                 break;
-                        case Lang.divide:
+                        case LtRuntime.divide:
                                 a = prepareNumber(a);
                                 if (a == null) break;
                                 b = prepareNumber(b);
@@ -749,7 +749,7 @@ public class Dynamic {
                                 if (topType == 2) return ((Number) a).floatValue() / ((Number) b).floatValue();
                                 if (topType == 3) return ((Number) a).longValue() / ((Number) b).longValue();
                                 return ((Number) a).doubleValue() / ((Number) b).doubleValue();
-                        case Lang.ge:
+                        case LtRuntime.ge:
                                 double x;
                                 double y;
                                 if (a instanceof Number) x = ((Number) a).doubleValue();
@@ -761,7 +761,7 @@ public class Dynamic {
                                 else break;
 
                                 return x >= y;
-                        case Lang.gt:
+                        case LtRuntime.gt:
                                 if (a instanceof Number) x = ((Number) a).doubleValue();
                                 else if (a instanceof Character) x = (Character) a;
                                 else break;
@@ -771,7 +771,7 @@ public class Dynamic {
                                 else break;
 
                                 return x > y;
-                        case Lang.le:
+                        case LtRuntime.le:
                                 if (a instanceof Number) x = ((Number) a).doubleValue();
                                 else if (a instanceof Character) x = (Character) a;
                                 else break;
@@ -781,7 +781,7 @@ public class Dynamic {
                                 else break;
 
                                 return x <= y;
-                        case Lang.lt:
+                        case LtRuntime.lt:
                                 if (a instanceof Number) x = ((Number) a).doubleValue();
                                 else if (a instanceof Character) x = (Character) a;
                                 else break;
@@ -791,7 +791,7 @@ public class Dynamic {
                                 else break;
 
                                 return x < y;
-                        case Lang.multiply:
+                        case LtRuntime.multiply:
                                 a = prepareNumber(a);
                                 if (a == null) break;
                                 b = prepareNumber(b);
@@ -801,7 +801,7 @@ public class Dynamic {
                                 if (topType == 2) return ((Number) a).floatValue() * ((Number) b).floatValue();
                                 if (topType == 3) return ((Number) a).longValue() * ((Number) b).longValue();
                                 return ((Number) a).doubleValue() * ((Number) b).doubleValue();
-                        case Lang.remainder:
+                        case LtRuntime.remainder:
                                 a = prepareNumber(a);
                                 if (a == null) break;
                                 b = prepareNumber(b);
@@ -811,7 +811,7 @@ public class Dynamic {
                                 if (topType == 2) break;
                                 if (topType == 3) return ((Number) a).longValue() % ((Number) b).longValue();
                                 break;
-                        case Lang.shiftLeft:
+                        case LtRuntime.shiftLeft:
                                 a = prepareNumber(a);
                                 if (a == null) break;
                                 b = prepareNumber(b);
@@ -821,7 +821,7 @@ public class Dynamic {
                                 if (topType == 2) break;
                                 if (topType == 3) return ((Number) a).longValue() << ((Number) b).longValue();
                                 break;
-                        case Lang.shiftRight:
+                        case LtRuntime.shiftRight:
                                 a = prepareNumber(a);
                                 if (a == null) break;
                                 b = prepareNumber(b);
@@ -831,7 +831,7 @@ public class Dynamic {
                                 if (topType == 2) break;
                                 if (topType == 3) return ((Number) a).longValue() >> ((Number) b).longValue();
                                 break;
-                        case Lang.subtract:
+                        case LtRuntime.subtract:
                                 a = prepareNumber(a);
                                 if (a == null) break;
                                 b = prepareNumber(b);
@@ -841,7 +841,7 @@ public class Dynamic {
                                 if (topType == 2) return ((Number) a).floatValue() - ((Number) b).floatValue();
                                 if (topType == 3) return ((Number) a).longValue() - ((Number) b).longValue();
                                 return ((Number) a).doubleValue() - ((Number) b).doubleValue();
-                        case Lang.unsignedShiftRight:
+                        case LtRuntime.unsignedShiftRight:
                                 a = prepareNumber(a);
                                 if (a == null) break;
                                 b = prepareNumber(b);
@@ -851,7 +851,7 @@ public class Dynamic {
                                 if (topType == 2) break;
                                 if (topType == 3) return ((Number) a).longValue() >>> ((Number) b).longValue();
                                 break;
-                        case Lang.xor:
+                        case LtRuntime.xor:
                                 a = prepareNumber(a);
                                 if (a == null) break;
                                 b = prepareNumber(b);

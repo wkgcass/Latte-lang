@@ -42,7 +42,7 @@ import lt.compiler.syntactic.pre.Import;
 import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
 import lt.lang.Dynamic;
-import lt.lang.Lang;
+import lt.lang.LtRuntime;
 import lt.lang.LtIterator;
 import lt.lang.Undefined;
 import lt.dependencies.asm.MethodVisitor;
@@ -187,8 +187,8 @@ public class SemanticProcessor {
                         // java::lang::_
                         // lt::lang::_
                         // lt::lang::Utils._
-                        imports.add(new Import(new AST.PackageRef("java::lang", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                         imports.add(new Import(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(new AST.PackageRef("java::lang", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                         imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Utils", LineCol.SYNTHETIC), true, LineCol.SYNTHETIC));
 
                         fileNameToPackageName.put(fileName, pkg);
@@ -1006,7 +1006,7 @@ public class SemanticProcessor {
                                 lastExp = new NumberLiteral("0", lineCol);
                         } else {
                                 Iterator<SFieldDef> it = cls.fields().iterator();
-                                // Lang.getHashCode(this.field)
+                                // LtRuntime.getHashCode(this.field)
                                 lastExp = null;
                                 while (it.hasNext()) {
                                         SFieldDef f = it.next();
@@ -1016,7 +1016,7 @@ public class SemanticProcessor {
                                                 new AST.Access(
                                                         new AST.Access(
                                                                 new AST.PackageRef("lt::lang", lineCol),
-                                                                "Lang",
+                                                                "LtRuntime",
                                                                 lineCol
                                                         ),
                                                         "getHashCode",
@@ -1580,17 +1580,17 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Lang#castToThrowable(Object)}
+         * {@link LtRuntime#castToThrowable(Object)}
          */
         private SMethodDef Lang_castToThrowable;
 
         /**
-         * @return {@link Lang#castToThrowable(Object)}
+         * @return {@link LtRuntime#castToThrowable(Object)}
          * @throws SyntaxException exception
          */
         private SMethodDef getLang_castToThrowable() throws SyntaxException {
                 if (Lang_castToThrowable == null) {
-                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         for (SMethodDef m : Lang.methods()) {
                                 if (m.name().equals("castToThrowable")) {
                                         Lang_castToThrowable = m;
@@ -1919,17 +1919,17 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Lang#throwableWrapperObject(Throwable)}
+         * {@link LtRuntime#throwableWrapperObject(Throwable)}
          */
         private SMethodDef Lang_throwableWrapperObject;
 
         /**
-         * @return {@link Lang#throwableWrapperObject(Throwable)}
+         * @return {@link LtRuntime#throwableWrapperObject(Throwable)}
          * @throws SyntaxException exception
          */
         private SMethodDef getLang_throwableWrapperObject() throws SyntaxException {
                 if (Lang_throwableWrapperObject == null) {
-                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         for (SMethodDef m : Lang.methods()) {
                                 if (m.name().equals("throwableWrapperObject")) {
                                         Lang_throwableWrapperObject = m;
@@ -2618,8 +2618,12 @@ public class SemanticProcessor {
         private void parseInstructionFromReturn(AST.Return ret, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions) throws SyntaxException {
                 Ins.TReturn tReturn;
                 if (ret.exp == null) {
+                        if (!methodReturnType.equals(VoidType.get()))
+                                throw new SyntaxException("the method is not void but returns nothing", ret.line_col());
                         tReturn = new Ins.TReturn(null, ret.line_col());
                 } else {
+                        if (methodReturnType.equals(VoidType.get()))
+                                throw new SyntaxException("the method is void but returns a value", ret.line_col());
                         Value v = parseValueFromExpression(ret.exp, methodReturnType, scope);
 
                         tReturn = new Ins.TReturn(v, ret.line_col());
@@ -2628,17 +2632,17 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Lang#putField(Object, String, Object, Class)}
+         * {@link LtRuntime#putField(Object, String, Object, Class)}
          */
         private SMethodDef Lang_putField;
 
         /**
-         * @return {@link Lang#putField(Object, String, Object, Class)}
+         * @return {@link LtRuntime#putField(Object, String, Object, Class)}
          * @throws SyntaxException exception
          */
         private SMethodDef getLang_putField() throws SyntaxException {
                 if (null == Lang_putField) {
-                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         for (SMethodDef m : Lang.methods()) {
                                 if (m.name().equals("putField")) {
                                         Lang_putField = m;
@@ -2809,15 +2813,15 @@ public class SemanticProcessor {
                                         assignment.line_col()),
                                 scope, assignment.line_col()));
                 } else if (assignTo instanceof Ins.InvokeStatic) {
-                        // assignTo should be lt.lang.Lang.getField(o,name)
+                        // assignTo should be lt.lang.LtRuntime.getField(o,name)
                         // which means
                         Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) assignTo;
                         if (invokeStatic.invokable() instanceof SMethodDef) {
                                 SMethodDef method = (SMethodDef) invokeStatic.invokable();
-                                if (method.declaringType().fullName().equals("lt.lang.Lang")) {
+                                if (method.declaringType().fullName().equals("lt.lang.LtRuntime")) {
                                         if (method.name().equals("getField")) {
                                                 // dynamically get field
-                                                // invoke lt.lang.Lang.putField(o,name,value)
+                                                // invoke lt.lang.LtRuntime.putField(o,name,value)
                                                 SMethodDef putField = getLang_putField();
                                                 Ins.InvokeStatic invoke = new Ins.InvokeStatic(putField, assignment.line_col());
                                                 invoke.arguments().add(invokeStatic.arguments().get(0));
@@ -4218,17 +4222,17 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Lang#compare(int, int)}
+         * {@link LtRuntime#compare(int, int)}
          */
         private SMethodDef Lang_compare;
 
         /**
-         * @return {@link Lang#compare(int, int)}
+         * @return {@link LtRuntime#compare(int, int)}
          * @throws SyntaxException exception
          */
         private SMethodDef getLang_compare() throws SyntaxException {
                 if (Lang_compare == null) {
-                        SClassDef cls = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                        SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("compare")
                                         && m.getParameters().size() == 2
@@ -4270,7 +4274,7 @@ public class SemanticProcessor {
          * parse value from two var op compare
          *
          * @param left         the value of the left of the operator
-         * @param compare_mode compare_mode {@link Lang#COMPARE_MODE_EQ} {@link Lang#COMPARE_MODE_GT} {@link Lang#COMPARE_MODE_LT}
+         * @param compare_mode compare_mode {@link LtRuntime#COMPARE_MODE_EQ} {@link LtRuntime#COMPARE_MODE_GT} {@link LtRuntime#COMPARE_MODE_LT}
          * @param methodName   if requires method invocation, use this method to invoke
          * @param right        the value of the right of the operator
          * @param scope        current scope
@@ -4316,7 +4320,7 @@ public class SemanticProcessor {
                                 Ins.InvokeInterface invokeInterface = new Ins.InvokeInterface(left, m, lineCol);
                                 invokeInterface.arguments().add(right);
 
-                                // Lang.compare(left.compareTo(right), compare_mode)
+                                // LtRuntime.compare(left.compareTo(right), compare_mode)
                                 SMethodDef compare = getLang_compare();
                                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(compare, lineCol);
                                 invokeStatic.arguments().add(invokeInterface);
@@ -4331,17 +4335,17 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Lang#compareRef(Object, Object)}
+         * {@link LtRuntime#compareRef(Object, Object)}
          */
         private SMethodDef Lang_compareRef;
 
         /**
-         * @return {@link Lang#compareRef(Object, Object)}
+         * @return {@link LtRuntime#compareRef(Object, Object)}
          * @throws SyntaxException exception
          */
         private SMethodDef getLang_compareRef() throws SyntaxException {
                 if (Lang_compareRef == null) {
-                        SClassDef cls = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                        SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("compareRef")
                                         && m.getParameters().size() == 2
@@ -4411,37 +4415,37 @@ public class SemanticProcessor {
                                         return invokeMethodWithArgs(lineCol, left.type(), left, "pow", args, scope);
                                 }
                         case "*":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Imul, Lang.multiply, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Imul, LtRuntime.multiply, right, scope, lineCol);
                         case "/":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Idiv, Lang.divide, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Idiv, LtRuntime.divide, right, scope, lineCol);
                         case "%":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Irem, Lang.remainder, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Irem, LtRuntime.remainder, right, scope, lineCol);
                         case "+":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iadd, Lang.add, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iadd, LtRuntime.add, right, scope, lineCol);
                         case "-":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Isub, Lang.subtract, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Isub, LtRuntime.subtract, right, scope, lineCol);
                         case "<<":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishl, Lang.shiftLeft, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishl, LtRuntime.shiftLeft, right, scope, lineCol);
                         case ">>":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishr, Lang.shiftRight, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishr, LtRuntime.shiftRight, right, scope, lineCol);
                         case ">>>":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iushr, Lang.unsignedShiftRight, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iushr, LtRuntime.unsignedShiftRight, right, scope, lineCol);
                         case ">":
-                                return parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_GT, Lang.gt, right, scope, lineCol);
+                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_GT, LtRuntime.gt, right, scope, lineCol);
                         case "<":
-                                return parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_LT, Lang.lt, right, scope, lineCol);
+                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT, LtRuntime.lt, right, scope, lineCol);
                         case ">=":
-                                return parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_GT | Lang.COMPARE_MODE_EQ, Lang.ge, right, scope, lineCol);
+                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_GT | LtRuntime.COMPARE_MODE_EQ, LtRuntime.ge, right, scope, lineCol);
                         case "<=":
-                                return parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_LT | Lang.COMPARE_MODE_EQ, Lang.le, right, scope, lineCol);
+                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT | LtRuntime.COMPARE_MODE_EQ, LtRuntime.le, right, scope, lineCol);
                         case "==":
-                                return parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
+                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
                         case "!=":
-                                Value eq = parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
+                                Value eq = parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
                                 return parseValueFromTwoVarOpILFD(eq, Ins.TwoVarOp.Ixor, null, new BoolValue(true), scope, lineCol);
                         case "===":
                                 if (left.type() instanceof PrimitiveTypeDef && right.type() instanceof PrimitiveTypeDef) {
-                                        return parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_EQ, null, right, scope, lineCol);
+                                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, null, right, scope, lineCol);
                                 } else {
                                         if (left.type() instanceof PrimitiveTypeDef || right.type() instanceof PrimitiveTypeDef) {
                                                 throw new SyntaxException("reference type cannot compare to primitive type", lineCol);
@@ -4455,27 +4459,27 @@ public class SemanticProcessor {
                                 }
                         case "!==":
                                 if (left.type() instanceof PrimitiveTypeDef && right.type() instanceof PrimitiveTypeDef) {
-                                        return parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_LT | Lang.COMPARE_MODE_GT, null, right, scope, lineCol);
+                                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT | LtRuntime.COMPARE_MODE_GT, null, right, scope, lineCol);
                                 } else {
                                         if (left.type() instanceof PrimitiveTypeDef || right.type() instanceof PrimitiveTypeDef) {
                                                 throw new SyntaxException("reference type cannot compare to primitive type", lineCol);
                                         } else {
-                                                // Lang.compareRef(left,right)
+                                                // LtRuntime.compareRef(left,right)
                                                 SMethodDef m = getLang_compareRef();
                                                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
                                                 invokeStatic.arguments().add(left);
                                                 invokeStatic.arguments().add(right);
 
-                                                // ! Lang.compareRef(left,right)
+                                                // ! LtRuntime.compareRef(left,right)
                                                 return parseValueFromTwoVarOpILFD(invokeStatic, Ins.TwoVarOp.Ixor, null, new BoolValue(true), scope, lineCol);
                                         }
                                 }
                         case "=:=":
-                                return parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_EQ, Lang.equal, right, scope, lineCol);
+                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, LtRuntime.equal, right, scope, lineCol);
                         case "!:=":
-                                return parseValueFromTwoVarOpCompare(left, Lang.COMPARE_MODE_EQ, Lang.notEqual, right, scope, lineCol);
+                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, LtRuntime.notEqual, right, scope, lineCol);
                         case "is": {
-                                // invoke static Lang.is
+                                // invoke static LtRuntime.is
                                 SMethodDef m = getLang_is();
                                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
                                 if (left.type() instanceof PrimitiveTypeDef) {
@@ -4495,7 +4499,7 @@ public class SemanticProcessor {
                                 return invokeStatic;
                         }
                         case "not": {
-                                // invoke static Lang.not
+                                // invoke static LtRuntime.not
                                 SMethodDef m = getLang_not();
                                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
                                 if (left.type() instanceof PrimitiveTypeDef) {
@@ -4519,11 +4523,11 @@ public class SemanticProcessor {
                                 args.add(left);
                                 return invokeMethodWithArgs(lineCol, right.type(), right, "contains", args, scope);
                         case "&":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iand, Lang.and, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iand, LtRuntime.and, right, scope, lineCol);
                         case "^":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ixor, Lang.xor, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ixor, LtRuntime.xor, right, scope, lineCol);
                         case "|":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ior, Lang.or, right, scope, lineCol);
+                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ior, LtRuntime.or, right, scope, lineCol);
                         case "&&":
                         case "and":
                                 // logic and with short cut
@@ -4545,17 +4549,17 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Lang#is(Object, Object, Class)}
+         * {@link LtRuntime#is(Object, Object, Class)}
          */
         private SMethodDef Lang_is;
 
         /**
-         * @return {@link Lang#is(Object, Object, Class)}
+         * @return {@link LtRuntime#is(Object, Object, Class)}
          * @throws SyntaxException exception
          */
         private SMethodDef getLang_is() throws SyntaxException {
                 if (Lang_is == null) {
-                        SClassDef cls = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                        SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("is")
                                         && m.getParameters().size() == 3
@@ -4569,17 +4573,17 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Lang#not(Object, Object, Class)}
+         * {@link LtRuntime#not(Object, Object, Class)}
          */
         private SMethodDef Lang_not;
 
         /**
-         * @return {@link Lang#not(Object, Object, Class)}
+         * @return {@link LtRuntime#not(Object, Object, Class)}
          * @throws SyntaxException exception
          */
         private SMethodDef getLang_not() throws SyntaxException {
                 if (Lang_not == null) {
-                        SClassDef cls = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                        SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("not")
                                         && m.getParameters().size() == 3
@@ -4980,7 +4984,7 @@ public class SemanticProcessor {
                                 if (access.exp instanceof AST.Access) {
                                         try {
                                                 type = getTypeWithAccess((AST.Access) access.exp, imports);
-                                        } catch (SyntaxException | AssertionError ignore) {
+                                        } catch (Throwable ignore) {
                                                 // type not found or wrong Access format
                                         }
                                 }
@@ -5020,7 +5024,7 @@ public class SemanticProcessor {
         }
 
         /**
-         * invoke {@link Lang#getField(Object, String, Class)}
+         * invoke {@link LtRuntime#getField(Object, String, Class)}
          *
          * @param target      1st arg
          * @param name        2nd arg
@@ -5041,17 +5045,17 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Lang#getField(Object, String, Class)}
+         * {@link LtRuntime#getField(Object, String, Class)}
          */
         private SMethodDef Lang_getField = null;
 
         /**
-         * @return {@link Lang#getField(Object, String, Class)}
+         * @return {@link LtRuntime#getField(Object, String, Class)}
          * @throws SyntaxException exception
          */
         private SMethodDef getLang_getField() throws SyntaxException {
                 if (Lang_getField == null) {
-                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         for (SMethodDef m : Lang.methods()) {
                                 if (m.name().equals("getField")) {
                                         Lang_getField = m;
@@ -5059,7 +5063,7 @@ public class SemanticProcessor {
                                 }
                         }
                 }
-                if (Lang_getField == null) throw new LtBug("lt.lang.Lang.getField(Object,String) should exist");
+                if (Lang_getField == null) throw new LtBug("lt.lang.LtRuntime.getField(Object,String) should exist");
                 return Lang_getField;
         }
 
@@ -5341,7 +5345,7 @@ public class SemanticProcessor {
         }
 
         /**
-         * invoke {@link Lang#cast(Object, Class)}<br>
+         * invoke {@link LtRuntime#cast(Object, Class)}<br>
          * note that the result object is always `java.lang.Object` when compiling,<br>
          * use {@link lt.compiler.semantic.Ins.CheckCast} to cast to required type to avoid some error when runtime validates the class file
          *
@@ -5352,7 +5356,7 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         private Value castObjToObj(STypeDef type, Value v, LineCol lineCol) throws SyntaxException {
-                SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.Lang", lineCol);
+                SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", lineCol);
                 SMethodDef method = null;
                 for (SMethodDef m : Lang.methods()) {
                         if (m.name().equals("cast")) {
@@ -5360,7 +5364,7 @@ public class SemanticProcessor {
                                 break;
                         }
                 }
-                if (method == null) throw new LtBug("lt.lang.Lang.castToInt(Object,Class) should exist");
+                if (method == null) throw new LtBug("lt.lang.LtRuntime.castToInt(Object,Class) should exist");
                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                 invokeStatic.arguments().add(v);
                 invokeStatic.arguments().add(
@@ -5372,7 +5376,7 @@ public class SemanticProcessor {
         }
 
         /**
-         * invoke castToX methods defined in lt.lang.Lang
+         * invoke castToX methods defined in lt.lang.LtRuntime
          *
          * @param type    the primitive type
          * @param v       value to cast
@@ -5381,7 +5385,7 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         private Value castObjToPrimitive(PrimitiveTypeDef type, Value v, LineCol lineCol) throws SyntaxException {
-                SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.Lang", LineCol.SYNTHETIC);
+                SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                 SMethodDef method = null;
                 if (type instanceof IntTypeDef) {
                         for (SMethodDef m : Lang.methods()) {
@@ -5390,7 +5394,7 @@ public class SemanticProcessor {
                                         break;
                                 }
                         }
-                        if (method == null) throw new LtBug("lt.lang.Lang.castToInt(Object) should exist");
+                        if (method == null) throw new LtBug("lt.lang.LtRuntime.castToInt(Object) should exist");
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                         invokeStatic.arguments().add(v);
                         return invokeStatic;
@@ -5401,7 +5405,7 @@ public class SemanticProcessor {
                                         break;
                                 }
                         }
-                        if (method == null) throw new LtBug("lt.lang.Lang.castToLong(Object) should exist");
+                        if (method == null) throw new LtBug("lt.lang.LtRuntime.castToLong(Object) should exist");
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                         invokeStatic.arguments().add(v);
                         return invokeStatic;
@@ -5412,7 +5416,7 @@ public class SemanticProcessor {
                                         break;
                                 }
                         }
-                        if (method == null) throw new LtBug("lt.lang.Lang.castToShort(Object) should exist");
+                        if (method == null) throw new LtBug("lt.lang.LtRuntime.castToShort(Object) should exist");
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                         invokeStatic.arguments().add(v);
                         return invokeStatic;
@@ -5423,7 +5427,7 @@ public class SemanticProcessor {
                                         break;
                                 }
                         }
-                        if (method == null) throw new LtBug("lt.lang.Lang.castToByte(Object) should exist");
+                        if (method == null) throw new LtBug("lt.lang.LtRuntime.castToByte(Object) should exist");
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                         invokeStatic.arguments().add(v);
                         return invokeStatic;
@@ -5434,7 +5438,7 @@ public class SemanticProcessor {
                                         break;
                                 }
                         }
-                        if (method == null) throw new LtBug("lt.lang.Lang.castToFloat(Object) should exist");
+                        if (method == null) throw new LtBug("lt.lang.LtRuntime.castToFloat(Object) should exist");
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                         invokeStatic.arguments().add(v);
                         return invokeStatic;
@@ -5445,7 +5449,7 @@ public class SemanticProcessor {
                                         break;
                                 }
                         }
-                        if (method == null) throw new LtBug("lt.lang.Lang.castToDouble(Object) should exist");
+                        if (method == null) throw new LtBug("lt.lang.LtRuntime.castToDouble(Object) should exist");
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                         invokeStatic.arguments().add(v);
                         return invokeStatic;
@@ -5456,7 +5460,7 @@ public class SemanticProcessor {
                                         break;
                                 }
                         }
-                        if (method == null) throw new LtBug("lt.lang.Lang.castToBool(Object) should exist");
+                        if (method == null) throw new LtBug("lt.lang.LtRuntime.castToBool(Object) should exist");
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                         invokeStatic.arguments().add(v);
                         return invokeStatic;
@@ -5467,7 +5471,7 @@ public class SemanticProcessor {
                                         break;
                                 }
                         }
-                        if (method == null) throw new LtBug("lt.lang.Lang.castToChar(Object) should exist");
+                        if (method == null) throw new LtBug("lt.lang.LtRuntime.castToChar(Object) should exist");
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                         invokeStatic.arguments().add(v);
                         return invokeStatic;
@@ -6084,7 +6088,7 @@ public class SemanticProcessor {
         }
 
         /**
-         * check whether the `target` is <code>invokeStatic lt.lang.Lang.getField</code>
+         * check whether the `target` is <code>invokeStatic lt.lang.LtRuntime.getField</code>
          *
          * @param target target
          * @return true or false
@@ -6094,7 +6098,7 @@ public class SemanticProcessor {
                         Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) target;
                         if (invokeStatic.invokable() instanceof SMethodDef) {
                                 SMethodDef m = (SMethodDef) invokeStatic.invokable();
-                                if (m.name().equals("getField") && m.declaringType().fullName().equals("lt.lang.Lang")) {
+                                if (m.name().equals("getField") && m.declaringType().fullName().equals("lt.lang.LtRuntime")) {
                                         return true;
                                 }
                         }

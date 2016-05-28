@@ -32,7 +32,7 @@ import java.lang.reflect.*;
 /**
  * lang
  */
-public class Lang {
+public class LtRuntime {
         public static final String multiply = "multiply";
         public static final String divide = "divide";
         public static final String remainder = "remainder";
@@ -168,7 +168,7 @@ public class Lang {
                                                 });
                                 }
                         }
-                } else throw new LtBug("unsupported type cast");
+                } else throw new LtBug("unsupported type cast (targetType:" + targetType.getName() + ", o:" + o.getClass().getName() + ")");
                 throw new ClassCastException("cannot cast " + o + " (" + o.getClass().getName() + ") to " + targetType.getName());
         }
 

@@ -1,0 +1,16 @@
+package lt::html::test
+
+import lt::html::_
+
+class TestHtml
+    static
+        testConstructHtml()=Html()
+        testHtmlFormat()
+            return Html() + [
+                Head()
+                Body() + [
+                    Form() + [
+                        Input(typ='text', value='hello world')
+                    ]
+                ]
+            ]

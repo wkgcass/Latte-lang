@@ -1,14 +1,15 @@
 import lt.compiler.*;
 import lt.compiler.syntactic.Statement;
-import lt.repl.ClassPathLoader;
-import lt.repl.Evaluator;
-import lt.repl.REPL;
+import lt.repl.*;
+import lt.repl.Compiler;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,9 +50,41 @@ public class SimpleTest {
                 cpl.load(new URL(new File("/Volumes/PROJECTS/test/LessTypingOut").toURI().toString()));
                 System.out.println(evaluator.eval("lt::demo::test::User(1,'cass')").result);
                 */
+                /*
                 REPL.main(new String[]{
                         "/Volumes/PROJECTS/Test/LessTyping/hehe.lts"
                 });
+                */
+                /*
+                lt.repl.Compiler c = new Compiler();
+                c.configure(new LinkedHashMap() {{
+                        put("result", new LinkedHashMap() {{
+                                put("outputDir", "/Volumes/PROJECTS/Test/LessTypingOut");
+                        }});
+                }});
+                c.compile(new HashMap<String, Object>() {{
+                        put("html.lt", SimpleTest.class.getResourceAsStream("/lt/html.lt"));
+                        put("test_html.lt", SimpleTest.class.getResourceAsStream("/test_libraries/test_html.lt"));
+                }});
+                */
+                /*
+                InputStream is = SimpleTest.class.getResourceAsStream("/lt/lang/LtRuntime.class");
+                System.out.println(is);
+                */
+                File dir = new File("/Volumes/PROJECTS/openSource/LessTyping/target/classes/");
+                hehe(dir);
+        }
+
+        private static int l = "/Volumes/PROJECTS/openSource/LessTyping/target/classes/".length();
+
+        private static void hehe(File dir) {
+                for (File f : dir.listFiles()) {
+                        if (f.isDirectory()) {
+                                hehe(f);
+                        } else if (f.getName().endsWith(".class")) {
+                                System.out.println("\"" + f.getAbsolutePath().substring(l) + "\",");
+                        }
+                }
         }
 
         public void test() {

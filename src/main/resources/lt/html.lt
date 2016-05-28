@@ -1,0 +1,218 @@
+/*
+This is a package used to generate HTML text.
+e.g.
+
+    Html() + [
+        Head()
+        Body() + [
+            Form() + [
+                Input(typ='text', value='hello world')
+                Input(typ='submmit', value='ok')
+            ]
+        ]
+    ]
+
+invoke toString method, the result would be
+
+    <html><head></head><body><form><input type='text' value='hello world'><input type='submit' value='ok'></form></body></html>
+
+*/
+package lt::html
+
+/*
+The base of all DOM. the DOM provides 4 attributes : id, name, class, and style.
+The toString({}) method returns <simple-name-lower-case attr='value'>.
+It doesn't contain the closing tag
+Use class HTMLElementWithClosing if the closing tag is required
+*/
+abstract data class HTMLElement(id, name, cls, style)
+    toString(attrs):String
+        sb = StringBuilder()
+        sb append "<" append this.getClass.getSimpleName.toLowerCase
+        if id
+            sb append " id='" append id append "'"
+        if name
+            sb append " name='" append name append "'"
+        if cls
+            sb append " class='" append cls append "'"
+
+        for entry in attrs
+            if entry.value
+                sb append " " append entry.key append "='" append entry.value append "'"
+
+        sb append ">"
+
+        return sb toString
+
+/*
+The base of all DOM that should have a closing tag
+*/
+abstract data class HTMLElementWithClosing : HTMLElement
+    children : List
+
+    add(children:List)
+        this.children=children
+        return this
+
+    toString(attrs):String
+        sb=StringBuilder()
+        sb append HTMLElement.this.toString(attrs)
+
+        if children
+            for i in children
+                sb append i
+
+        sb append "</" append this.getClass.getSimpleName.toLowerCase append ">"
+        return sb toString
+
+; <html>...</html>
+data class Html : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <head>...</head>
+data class Head : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <meta http-equiv='' scheme=''>
+data class Meta(http_equiv, scheme) : HTMLElement
+    toString():String = toString({'http-equiv':http_equiv, 'scheme':scheme})
+
+; <script src='' type=''>...</script>
+data class Script(src, typ) : HTMLElementWithClosing
+    toString():String = toString({'scr':scr, 'type':typ})
+
+; <link rel='' type='' href=''>
+data class Link(rel, typ, href) : HTMLElement
+    toString():String = toString({'rel':rel, 'type':typ, 'href':href})
+
+; <body>...</body>
+data class Body : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <a href=''>...</a>
+data class A : HTMLElementWithClosing
+    toString():String = toString({'href':href})
+
+; <br>
+data class Br : HTMLElement
+    toString():String = toString({})
+
+; <button type=''>...</button>
+data class Button(typ) : HTMLElementWithClosing
+    toString():String = toString({'type':typ})
+
+; <code>...</code>
+data class Code : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <div>...</div>
+data class Div : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <h1>...</h1>
+data class H1 : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <h2>...</h2>
+data class H2 : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <h3>...</h3>
+data class H3 : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <h4>...</h4>
+data class H4 : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <h5>...</h5>
+data class H5 : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <h6>...</h6>
+data class H6 : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <hr>
+data class Hr : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <iframe src=''>...</iframe>
+data class IFrame(src) : HTMLElementWithClosing
+    toString():String = toString({'src':src})
+
+; <img src=''>...</img>
+data class Img(src) : HTMLElementWithClosing
+    toString():String = toString({'src':src})
+
+; <label>...</label>
+data class Label : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <form action='' method=''></form>
+data class Form(action, method) : HTMLElementWithClosing
+    toString():String = toString({'action':action, 'method':method})
+
+; <input type='' value=''>
+data class Input(typ, value) : HTMLElement
+    toString():String = toString({"type" : typ, "value" : value})
+
+; <textarea>...</textarea>
+data class TextArea : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <select>...</select>
+data class Select : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <option value=''>...</option>
+data class Option(value) : HTMLElementWithClosing
+    toString():String = toString({'value':value})
+
+; <nav>...</nav>
+data class Nav : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <ol>...</ol>
+data class Ol : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <ul>...</ul>
+data class Ul : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <li>...</li>
+data class Li : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <p>...</p>
+data class P : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <pre>...</pre>
+data class Pre : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <table>...</table>
+data class Table : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <thead>...</thead>
+data class THead : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <tbody>...</tbody>
+data class TBody : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <tfoot>...</tfoot>
+data class TFoot : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <tr>...</tr>
+data class Tr : HTMLElementWithClosing
+    toString():String = toString({})
+
+; <td>...</td>
+data class Td : HTMLElementWithClosing
+    toString():String = toString({})

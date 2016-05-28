@@ -188,10 +188,99 @@ $(document).ready(function () {
                     '</pre>' +
                     '<blockquote>关于Rational的测试用例可以在 <a target="_blank" href="https://github.com/wkgcass/LessTyping/blob/master/src/test/java/lt/compiler/cases/TestDemo.java">TestDemo</a> 中找到</blockquote>'
                 )
+            },
+            {
+                title: 'Html',
+                content: $sce.trustAsHtml('' +
+                    '<p>在scala中原生支持xml字面量, 在kotlin中也可以方便的书写html. 作为一款同样灵活的语言, LessTyping也可以使用标准语法书写html</p>' +
+                    '<p>我们的目标是:用如下代码</p>' +
+                    '<pre>' + highlighting('html.lt',
+                        'Html() + [\n' +
+                        '    Head()\n' +
+                        '    Body() + [\n' +
+                        '        Form() + [\n' +
+                        '            Input(typ="text" value="value")\n' +
+                        '            Input(typ="submit" value="OK")\n' +
+                        '        ]\n' +
+                        '    ]\n' +
+                        '] toString', {}
+                    ) +
+                    '</pre>' +
+                    '<p>生成如下HTML</p>' +
+                    '<textarea style="width:100%;resize: none;border: none;" disabled>' +
+                    '<html><head></head><body><form><input type="text" value="value"><input type="submit" value="OK"></form></body></html>' +
+                    '</textarea><br><br>' +
+                    '<p>通过本示例您可以了解有关<code>data class</code>的用法</p>' +
+                    '<p>可以看出, 代码使用了 <code>data class</code> 来模拟html的标签, 并通过列表<code>[]</code>来模拟html的层级关系</p>' +
+                    '<p>由于LessTyping的列表可以使用换行分割, 所以非常符合HTML"声明式"的性质</p>' +
+                    '<p>所有的html都有 <code>id, name, class, style</code> 属性, 所以可以写一个抽象类来规定这些字段</p>' +
+                    '<pre>' + highlighting('html.lt', 'abstract data class HTMLElement(id, name, cls, style)', {}) +
+                    '</pre>' +
+                    '<p>只需要一句定义,所有的字段,getter和setter,toString,equals,hashCode,包括无参构造函数都已经生成好了</p>' +
+                    '<p>不过,这样得到的toString方法并不是预期的 <code>&gt;标签&lt;</code> ,而是 <code>标签(id=?, name=?, cls=?, style=?)</code></p>' +
+                    '<p>考虑到还有其他可能需要提供的字段,例如 <code>input</code> 还会有 <code>type</code> 属性, 所以应当设置一个 <code>toString(attrs)</code> 方法,用于生成标签</p>' +
+                    '<pre style="height: 360px;">' + highlighting('html.lt', '' +
+                        'toString(attrs):String\n' +
+                        '    sb = StringBuilder()\n' +
+                        '    sb append "<" append this.getClass.getSimpleName.toLowerCase\n' +
+                        '    if id\n' +
+                        '        sb append " id=\'" append id append "\'"\n' +
+                        '    if name\n' +
+                        '        sb append " name=\'" append name append "\'"\n' +
+                        '    if cls\n' +
+                        '        sb append " class=\'" append cls append "\'"\n' +
+                        '\n' +
+                        '    for entry in attrs\n' +
+                        '        if entry.value\n' +
+                        '        sb append " " append entry.key append "=\'" append entry.value append "\'"\n' +
+                        '\n' +
+                        '    sb append ">"\n' +
+                        '\n' +
+                        '    return sb toString', {}) +
+                    '</pre>' +
+                    '<p>可以看出,若是没有赋任何参数的Input类,它将会输出 <code>&lt;input&gt;</code></p>' +
+                    '<p>有些标签是自关闭的,而有些可以有innerHTML,并且需要关闭标签. 所以还需要一个抽象类,来完成innerHTML的捕捉和输出,并提供关闭标签</p>' +
+                    '<pre style="height: 360px;">' + highlighting('html.lt', '' +
+                        'abstract data class HTMLElementWithClosing : HTMLElement\n' +
+                        '    children : List\n' +
+                        '\n' +
+                        '    add(children:List)\n' +
+                        '        this.children=children\n' +
+                        '        return this\n' +
+                        '\n' +
+                        '    toString(attrs):String\n' +
+                        '        sb=StringBuilder()\n' +
+                        '        sb append HTMLElement.this.toString(attrs)\n' +
+                        '\n' +
+                        '    if children\n' +
+                        '        for i in children\n' +
+                        '            sb append i\n' +
+                        '\n' +
+                        '    sb append "</" append this.getClass.getSimpleName.toLowerCase append ">"\n' +
+                        '    return sb toString', {}) +
+                    '</pre>' +
+                    '<p>可以看出,LessTyping中访问父类方法使用的是 <code>父类.this.方法(...)</code> . 这样,所有的节点都可以很方便的表示了</p>' +
+                    '<pre>' + highlighting('html.lt', '' +
+                        'data class Html : HTMLElementWithClosing\n' +
+                        '    toString():String = toString({})\n' +
+                        '\n' +
+                        'data class Head : HTMLElementWithClosing\n' +
+                        '    toString():String = toString({})\n' +
+                        '\n' +
+                        'data class Body : HTMLElementWithClosing\n' +
+                        '    toString():String = toString({})\n' +
+                        '\n' +
+                        'data class Form(action, method) : HTMLElementWithClosing\n' +
+                        '    toString():String = toString({\'action\':action, \'method\':method})\n' +
+                        '\n' +
+                        'data class Input(typ, value) : HTMLElement\n' +
+                        '    toString():String = toString({"type" : typ, "value" : value})', {}) +
+                    '</pre>' +
+                    '<p>现在就可以使用一开始提到的方式来书写HTML了!</p>' +
+                    '<blockquote>完整的html支持可以在 <a target="_blank" href="https://github.com/wkgcass/LessTyping/blob/master/src/main/resources/lt/html.lt">这里</a> 找到</blockquote>'
+                )
             }
         ];
     }
-    ])
-    ;
-})
-;
+    ]);
+});

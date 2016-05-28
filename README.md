@@ -27,7 +27,7 @@ clone the repository, and run
 
 	mvn clean package
 	
-you will get a runnable jar in target directory and a `lesstyping` and a `lesstyping.bat` in the root directory.
+You will get a runnable jar (`repl.jar`), `lesstyping` and `lesstyping.bat`. The last two files can help you run the `repl`.
 
 run:
 
@@ -105,9 +105,10 @@ comments are started by `;` , so it's ok if you like writing a `;` at the end of
 multiple line comments are started with `/*` and end with `*/`
 
 ##Syntax Hightlighting
-the `language-lesstyping` directory contains a syntax-highlighting for `Atom`.
+click [here](https://github.com/wkgcass/Atom-LessTyping-Highlighting) for highlighting on ATOM.   
+You can search for `Atom-LessTyping-Highlighting` in `atom`, or follow the instructions in the link to have the plugin installed.
 
-simply move `language-lesstyping` directory to `~/.atom/packages/`
+![](http://lesstyping.cassite.net/images/highlight.png)
 
 --
 
@@ -322,7 +323,7 @@ clone这个仓库,然后执行
 
 	mvn clean package
 	
-你将会在target目录下获取一个可执行jar. 在根目录下会得到一个 `lesstyping` 和一个 `lesstyping.bat`.
+你将会获取一个可执行jar (`repl.jar`) 以及 `lesstyping` 和 `lesstyping.bat`, 可以快捷地在任何操作系统上开启`repl`.
                        
 执行:
                        
@@ -398,9 +399,10 @@ clone这个仓库,然后执行
 多行注释由 `/*` 开始, 以 `*/` 结束.
 
 ##语法高亮
-`language-lesstyping`目录包含了一个针对`Atom`的语法高亮.
+在[这里](https://atom.io/packages/Atom-LessTyping-Highlighting)有一个针对`LessTyping`的语法高亮.  
+您可以直接在`atom`中搜索`Atom-LessTyping-Highlighting`来完成安装, 也可以按照链接中的指示进行安装.
 
-只需要将`language-lesstyping`目录整个挪到`~/.atom/packages/`中即可
+![](http://lesstyping.cassite.net/images/highlight.png)
 
 --
 

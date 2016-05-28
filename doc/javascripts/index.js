@@ -204,7 +204,7 @@ $(document).ready(function () {
         $scope.highlight = {
             title: "Atom的语法高亮",
             contents: [
-                $sce.trustAsHtml("针对Atom编辑器开发了一个<a target='_blank' href='https://github.com/wkgcass/LessTyping/tree/master/language-lesstyping'>语法高亮</a>"),
+                $sce.trustAsHtml("针对Atom编辑器开发了一个<a target='_blank' href='https://atom.io/packages/Atom-LessTyping-Highlighting'>语法高亮</a>"),
                 $sce.trustAsHtml("可以更加方便的编写LessTyping源代码")
             ]
         }

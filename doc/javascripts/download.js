@@ -81,7 +81,7 @@ $(document).ready(function () {
                     "</textarea>\n" +
                     "<script>var editor = CodeMirror.fromTextArea(document.getElementById('highlighting_html'));editor.setSize('auto', '220px');</script>"),
                 $sce.trustAsHtml("<h3>Atom</h3>"),
-                $sce.trustAsHtml("将下载文档的 <code>/language-lesstyping</code> , 直接放置在<code> ~/.atom/packages/ </code>目录下即可"),
+                $sce.trustAsHtml("在Atom中搜索并安装 <code>Atom-LessTyping-Highlighting</code> 或者按照<a href='https://atom.io/packages/Atom-LessTyping-Highlighting'>这里</a>的步骤进行安装"),
                 $sce.trustAsHtml("<img src='images/highlight.png'>")
             ]
         }
