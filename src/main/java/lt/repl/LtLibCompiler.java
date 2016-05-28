@@ -303,10 +303,6 @@ public class LtLibCompiler {
                 "/lt/html.lt"
         );
 
-        public static List<String> LESSTYPING_LT_CLASSES = Arrays.asList(
-                "lt/html/"
-        );
-
         public static ClassLoader loadAllClasses(ClassLoader loader, String classLoc) throws Exception {
                 Map<String, byte[]> bytes = new HashMap<>();
 
