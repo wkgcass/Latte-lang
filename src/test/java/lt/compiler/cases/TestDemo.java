@@ -762,6 +762,21 @@ public class TestDemo {
                 Method I_Have_Static_method2 = I_Have_Static.getDeclaredMethod("method2");
                 assertTrue(Modifier.isStatic(I_Have_Static_method2.getModifiers()));
 
+                // data class
+                Class<?> DataClass = classLoader.loadClass("DataClass");
+                assertEquals(DataClass.newInstance(), DataClass.newInstance());
+                assertEquals("DataClass()", DataClass.newInstance().toString());
+
+                // DataClassWithFields
+                Class<?> DataClassWithFields = classLoader.loadClass("DataClassWithFields");
+                DataClassWithFields.getDeclaredField("id");
+                DataClassWithFields.getDeclaredField("name");
+
+                // DataClassWithMethods
+                Class<?> DataClassWithMethods = classLoader.loadClass("DataClassWithMethods");
+                Method i_am_a_method_in_data_class = DataClassWithMethods.getMethod("i_am_a_method_in_data_class");
+                assertEquals("1", i_am_a_method_in_data_class.invoke(DataClassWithMethods.newInstance()));
+
                 // I_Am_An_Interface
                 Class<?> I_Am_An_Interface = classLoader.loadClass("I_Am_An_Interface");
                 assertTrue(I_Am_An_Interface.isInterface());

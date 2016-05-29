@@ -628,31 +628,49 @@ public class Compiler {
                                 zipOutputStream.write((MANIFEST).getBytes());
                                 zipOutputStream.closeEntry();
 
+                                // add the libraries
                                 if (config.result.with_lib) {
-                                        BufferedReader br = new BufferedReader(
-                                                new InputStreamReader(Compiler.class.getResourceAsStream("/classes.txt")));
+                                        InputStream classesInputStream = Compiler.class.getResourceAsStream("/classes.txt");
 
-                                        List<String> CLASSES = new ArrayList<>();
+                                        if (classesInputStream != null) {
+                                                BufferedReader br = new BufferedReader(
+                                                        new InputStreamReader(classesInputStream));
 
-                                        String CLASS;
-                                        while ((CLASS = br.readLine()) != null) {
-                                                if (CLASS.trim().isEmpty()) continue;
-                                                CLASSES.add(CLASS);
-                                        }
+                                                List<String> CLASSES = new ArrayList<>();
 
-                                        CLASSES.sort(null);
-
-                                        for (String C : CLASSES) {
-                                                InputStream is = Compiler.class.getResourceAsStream("/" + C);
-                                                ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-                                                byte[] bs = new byte[1024];
-                                                int n;
-                                                while ((n = is.read(bs)) != -1) {
-                                                        baos.write(bs, 0, n);
+                                                String CLASS;
+                                                while ((CLASS = br.readLine()) != null) {
+                                                        if (CLASS.trim().isEmpty()) continue;
+                                                        CLASSES.add(CLASS);
                                                 }
-                                                putZipEntry(zipOutputStream, C, baos.toByteArray());
+
+                                                CLASSES.sort(null);
+
+                                                for (String C : CLASSES) {
+                                                        InputStream is = Compiler.class.getResourceAsStream("/" + C);
+                                                        ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+                                                        byte[] bs = new byte[1024];
+                                                        int n;
+                                                        while ((n = is.read(bs)) != -1) {
+                                                                baos.write(bs, 0, n);
+                                                        }
+                                                        putZipEntry(zipOutputStream, C, baos.toByteArray());
+                                                }
                                         }
                                 }
+
+                                // add the classes.txt
+                                InputStream is = Compiler.class.getResourceAsStream("/classes.txt");
+                                if (is != null) {
+                                        ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+                                        byte[] bs = new byte[1024];
+                                        int n;
+                                        while ((n = is.read(bs)) != -1) {
+                                                baos.write(bs, 0, n);
+                                        }
+                                        putZipEntry(zipOutputStream, "classes.txt", baos.toByteArray());
+                                }
+
                                 zipOutputStream.close();
                         }
                 }
@@ -660,6 +678,14 @@ public class Compiler {
                 return loader;
         }
 
+        /**
+         * put the zip entry into the zip output stream
+         *
+         * @param zos   ZipOutputStream
+         * @param file  the entry name
+         * @param bytes bytes
+         * @throws IOException exception
+         */
         private void putZipEntry(ZipOutputStream zos, String file, byte[] bytes) throws IOException {
                 zos.putNextEntry(new ZipEntry(file));
                 zos.write(bytes);

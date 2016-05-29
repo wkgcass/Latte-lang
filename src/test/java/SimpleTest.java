@@ -75,8 +75,11 @@ public class SimpleTest {
                 File dir = new File("/Volumes/PROJECTS/openSource/LessTyping/target/classes/");
                 hehe(dir);
                 */
+                /*
                 ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 scriptCompiler.compile(new File("/Users/wkgcass/Desktop/build.lts")).run();
+                */
+                System.out.println(System.getProperty("user.dir"));
         }
 
         private static int l = "/Volumes/PROJECTS/openSource/LessTyping/target/classes/".length();

@@ -83,6 +83,46 @@ class I_Have_Static
     static method2():Unit
     static list + 2
 
+; data class
+data class DataClass
+; the data class generates Getters/Setters/toString/equals/hashCode/0-param-constructor automatically
+; it's used to create Java Beans
+
+data class DataClassWithFields(id, name)
+; it's the same as the following Java Code:
+/*
+    public class DataClassWithFields {
+        private Object id;
+        private Object name;
+        // constructor
+        public DataClassWithFields(){}
+        public DataClassWithFields(Object id,Object name) {
+            this.id=id;
+            this.name=name;
+        }
+        // getters and setters
+        public Object getId(){return id;}
+        public Object getName(){return name;}
+        public void setId(Object id){this.id=id;}
+        public void setName(Object name){this.name=name;}
+        // toString
+        public String toString(){return "DataClassWithFields(id="+id+",name="+name+")";}
+        // hashCode
+        public int hashCode(){return (id==null?0:id.hashCode()) + (name==null?0:name.hashCode());}
+        // equals
+        public boolean equals(Object o){
+            if(o instanceof DataClassWithFields){
+                DataClassWithFields that=(DataClassWithFields)o;
+                return LtRuntime.is(that.id, this.id) && LtRuntime.is(that.name,this.name);
+            }else return false;
+        }
+    }
+*/
+
+; a data class can have methods
+data class DataClassWithMethods
+    i_am_a_method_in_data_class()="1"
+
 ; interface definition
 interface I_Am_An_Interface
 
