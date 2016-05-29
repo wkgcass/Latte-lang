@@ -24,12 +24,23 @@
 
 package lt.repl;
 
+import lt.compiler.*;
+import lt.compiler.Scanner;
+import lt.compiler.syntactic.AST;
+import lt.compiler.syntactic.Definition;
+import lt.compiler.syntactic.Statement;
+import lt.compiler.syntactic.def.ClassDef;
+import lt.compiler.syntactic.def.InterfaceDef;
+import lt.compiler.syntactic.def.MethodDef;
+import lt.compiler.syntactic.def.VariableDef;
+import lt.compiler.syntactic.pre.Import;
+import lt.compiler.syntactic.pre.PackageDeclare;
+
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * script compiler. The script compiler first transform the script into<br>
@@ -82,8 +93,9 @@ public class ScriptCompiler {
                  * @return the Result object itself (invoke {@link #getResult()}) to get the return value
                  * @throws InvocationTargetException exception
                  * @throws IllegalAccessException    exception
+                 * @throws InstantiationException    exception
                  */
-                public Script run() throws InvocationTargetException, IllegalAccessException {
+                public Script run() throws InvocationTargetException, IllegalAccessException, InstantiationException {
                         return run(new String[0]);
                 }
 
@@ -94,9 +106,10 @@ public class ScriptCompiler {
                  * @return the Result object itself (invoke {@link #getResult()}) to get the return value
                  * @throws InvocationTargetException exception
                  * @throws IllegalAccessException    exception
+                 * @throws InstantiationException    exception
                  */
-                public Script run(String[] args) throws InvocationTargetException, IllegalAccessException {
-                        result = scriptMethod.invoke(null, new Object[]{args});
+                public Script run(String[] args) throws InvocationTargetException, IllegalAccessException, InstantiationException {
+                        result = scriptMethod.invoke(scriptClass.newInstance(), new Object[]{args});
                         return this;
                 }
 
@@ -186,12 +199,13 @@ public class ScriptCompiler {
         /**
          * compile the script
          *
+         * @param name   the script name
          * @param script script
          * @return compiling result
          * @throws Exception exception
          */
-        public Script compile(String script) throws Exception {
-                return compile(new StringReader(script));
+        public Script compile(String name, String script) throws Exception {
+                return compile(name, new StringReader(script));
         }
 
         /**
@@ -202,48 +216,95 @@ public class ScriptCompiler {
          * @throws Exception exception
          */
         public Script compile(File scriptFile) throws Exception {
-                return compile(new FileReader(scriptFile));
+                return compile(scriptFile.getName(), new FileReader(scriptFile));
         }
 
         /**
          * compile the script
          *
+         * @param name         the script name
          * @param scriptReader script reader
          * @return compiling result
          * @throws Exception exception
          */
-        public Script compile(Reader scriptReader) throws Exception {
+        public Script compile(String name, Reader scriptReader) throws Exception {
                 String nameForTheScript = "Script$LessTyping$";
                 int i = 0;
                 while (sources.containsKey(nameForTheScript + i)) ++i;
 
                 nameForTheScript += i;
 
-                StringBuilder sb = new StringBuilder();
                 // class N
                 //     static
                 //         method(args:String[])
                 //             ...
                 //
-                sb.append("" +
-                        "import java::util::_\n" +
-                        "import java::math::_\n" +
-                        "import lt::repl::_\n");
-                sb.append("class ").append(nameForTheScript)
-                        .append("\n    static")
-                        .append("\n        method(args:[]String)\n");
-                String s;
-                BufferedReader br = new BufferedReader(scriptReader);
-                while ((s = br.readLine()) != null) {
-                        for (int x = 0; x < 12; ++x) {
-                                sb.append(" ");
+                ErrorManager err = new ErrorManager(true);
+                Scanner scanner = new Scanner(name, scriptReader, new Scanner.Properties(), err);
+                Parser parser = new Parser(scanner.scan(), err);
+                List<Statement> statements = parser.parse();
+
+                List<Statement> innerStatements = new ArrayList<>();
+                List<Statement> defsAndImports = new ArrayList<>();
+                int importCursor = 0;
+
+                for (Statement stmt : statements) {
+                        if (stmt instanceof ClassDef || stmt instanceof InterfaceDef) {
+                                defsAndImports.add(stmt);
+                        } else if (stmt instanceof Import) {
+                                defsAndImports.add(importCursor++, stmt);
+                        } else if (stmt instanceof PackageDeclare) {
+                                throw new SyntaxException("scripts cannot have package declaration", stmt.line_col());
+                        } else {
+                                innerStatements.add(stmt);
                         }
-                        sb.append(s).append("\n");
                 }
 
-                sources.put(nameForTheScript, sb.toString());
+                VariableDef v = new VariableDef("args", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                v.setType(new AST.Access(new AST.Access(null, "String", LineCol.SYNTHETIC), "[]", LineCol.SYNTHETIC));
+                ClassDef classDef = new ClassDef(
+                        nameForTheScript,
+                        Collections.emptySet(),
+                        Collections.emptyList(),
+                        null,
+                        Collections.emptyList(),
+                        Collections.emptySet(),
+                        Collections.singletonList(
+                                new MethodDef(
+                                        "method",
+                                        Collections.emptySet(),
+                                        null,
+                                        Collections.singletonList(v),
+                                        Collections.emptySet(),
+                                        innerStatements,
+                                        LineCol.SYNTHETIC
+                                )
+                        ),
+                        LineCol.SYNTHETIC
+                );
 
-                ClassLoader loader = compiler.compile(sources);
+                defsAndImports.add(classDef);
+                defsAndImports.add(new Import(new AST.PackageRef("java::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                defsAndImports.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                defsAndImports.add(new Import(new AST.PackageRef("lt::repl", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+
+                ClassLoader theCompiledClasses = compiler.compile(sources);
+
+                SemanticProcessor sp = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
+                        put(name, defsAndImports);
+                }}, theCompiledClasses);
+                CodeGenerator cg = new CodeGenerator(sp.parse());
+                Map<String, byte[]> map = cg.generate();
+                ClassLoader loader = new ClassLoader() {
+                        @Override
+                        protected Class<?> findClass(String name) throws ClassNotFoundException {
+                                if (map.containsKey(name)) {
+                                        byte[] bs = map.get(name);
+                                        return defineClass(name, bs, 0, bs.length);
+                                } else throw new ClassNotFoundException(name);
+                        }
+                };
+
                 Class<?> scriptCls = loader.loadClass(nameForTheScript);
                 Method scriptMethod = scriptCls.getMethod("method", String[].class);
 

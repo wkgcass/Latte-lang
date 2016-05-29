@@ -36,8 +36,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * error manager<br>
- * controls compiling errors/info/warnings display and exception throwing
+ * controls compiling errors/info/warnings display and exception throwing.
  */
 public class ErrorManager {
         public static class Out {
@@ -107,7 +106,7 @@ public class ErrorManager {
          * @param msg the message to print
          */
         public void error(String msg) {
-                print("[ ERROR ] " + msg, out.err);
+                print("[ERROR] " + msg, out.err);
         }
 
         /**
@@ -125,7 +124,7 @@ public class ErrorManager {
          * @param msg the message to print
          */
         public void info(String msg) {
-                print("[ INFO  ] " + msg, out.info);
+                print("[INFO] " + msg, out.info);
         }
 
         /**
@@ -134,7 +133,7 @@ public class ErrorManager {
          * @param msg the message to print
          */
         public void debug(String msg) {
-                print("[ DEBUG ] " + msg, out.debug);
+                print("[DEBUG] " + msg, out.debug);
         }
 
         /**

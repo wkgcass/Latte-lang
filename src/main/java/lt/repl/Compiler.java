@@ -659,16 +659,18 @@ public class Compiler {
                                         }
                                 }
 
-                                // add the classes.txt
-                                InputStream is = Compiler.class.getResourceAsStream("/classes.txt");
-                                if (is != null) {
-                                        ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-                                        byte[] bs = new byte[1024];
-                                        int n;
-                                        while ((n = is.read(bs)) != -1) {
-                                                baos.write(bs, 0, n);
+                                // add required files
+                                for (String f : LtLibCompiler.REQUIRED_FILES) {
+                                        InputStream is = Compiler.class.getResourceAsStream("/" + f);
+                                        if (is != null) {
+                                                ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+                                                byte[] bs = new byte[1024];
+                                                int n;
+                                                while ((n = is.read(bs)) != -1) {
+                                                        baos.write(bs, 0, n);
+                                                }
+                                                putZipEntry(zipOutputStream, f, baos.toByteArray());
                                         }
-                                        putZipEntry(zipOutputStream, "classes.txt", baos.toByteArray());
                                 }
 
                                 zipOutputStream.close();

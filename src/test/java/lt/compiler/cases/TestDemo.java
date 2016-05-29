@@ -28,6 +28,7 @@ import lt.compiler.*;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 import lt.lang.function.Function1;
+import lt.repl.ScriptCompiler;
 import org.junit.Test;
 
 import java.io.*;
@@ -885,5 +886,16 @@ public class TestDemo {
                 assertEquals(con.newInstance(1, 4), TestRational.getMethod("testDivide", Rational, Rational).invoke(null, r_1_2, r_4_2));
                 assertEquals(false, TestRational.getMethod("testEquals", Rational, Rational).invoke(null, r_1_2, r_neg1_2));
                 assertEquals(true, TestRational.getMethod("testEquals", Rational, Rational).invoke(null, r_1_2, con.newInstance(1, 2)));
+        }
+
+        @Test
+        public void testScriptPass() throws Exception {
+                List<String> list = Arrays.asList(
+                        "literals.lts", "statements.lts"
+                );
+                for (String file : list) {
+                        ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                        sc.compile(file, new InputStreamReader(TestDemo.class.getResourceAsStream("/lang-demo/" + file))).run();
+                }
         }
 }

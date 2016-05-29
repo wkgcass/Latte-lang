@@ -22,8 +22,11 @@ Compiler() configure {
     },
     'fastFail':true,      ; the compiling process stops when any exception occurres
                           ; set this to `true` when LessTyping is used as a script
-    'result':{            ; some info about compling result
+    'result':{            ; some info about compiling result
         'outputDir':null  ;   output directory, or don't write to disk if it's not set (or is set to null)
+        'package':  null  ;   the jar file name, or null if don't wan't to pack jar. effective only when outputDir is not null
+        'main':     null  ;   main class, or null if there's no main class. effective only when package is not null
+        'with-lib': false ;   include LessTyping runtime libraries. effective only when package is not null
     }
 } compile filesInDirectory('...')
                           ; compile these files

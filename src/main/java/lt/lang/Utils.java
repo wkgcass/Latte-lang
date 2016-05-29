@@ -47,6 +47,10 @@ public class Utils {
                 System.out.println();
         }
 
+        public static void print(Object o) {
+                System.out.print(o);
+        }
+
         public static Object eval(String e) throws Exception {
                 Evaluator evaluator = new Evaluator(new ClassPathLoader());
                 return evaluator.eval(e).result;

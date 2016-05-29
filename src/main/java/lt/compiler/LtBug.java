@@ -25,7 +25,7 @@
 package lt.compiler;
 
 /**
- * bug for less typing
+ * detect bug in less typing
  */
 public class LtBug extends Error {
         public LtBug(String msg) {

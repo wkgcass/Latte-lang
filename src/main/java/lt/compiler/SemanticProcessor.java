@@ -1677,17 +1677,34 @@ public class SemanticProcessor {
                 localVariables.forEach((k, v) -> {
                         // construct a synthetic VariableDef as param
                         VariableDef variable = new VariableDef(k, Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
-                        variable.setType(
-                                new AST.Access(
-                                        v.pkg() == null
+                        if (v instanceof SArrayTypeDef) {
+                                STypeDef x = ((SArrayTypeDef) v).type();
+                                AST.Access theType = new AST.Access(
+                                        x.pkg() == null
                                                 ? null
-                                                : new AST.PackageRef(v.pkg(), LineCol.SYNTHETIC),
-                                        v.fullName().contains(".")
-                                                ? v.fullName().substring(v.fullName().lastIndexOf('.') + 1)
-                                                : v.fullName(),
+                                                : new AST.PackageRef(x.pkg(), LineCol.SYNTHETIC),
+                                        x.fullName().contains(".")
+                                                ? x.fullName().substring(x.fullName().lastIndexOf('.') + 1)
+                                                : x.fullName(),
                                         LineCol.SYNTHETIC
-                                )
-                        );
+                                );
+                                for (int ii = 0; ii < ((SArrayTypeDef) v).dimension(); ++ii) {
+                                        theType = new AST.Access(theType, "[]", LineCol.SYNTHETIC);
+                                }
+                                variable.setType(theType);
+                        } else {
+                                variable.setType(
+                                        new AST.Access(
+                                                v.pkg() == null
+                                                        ? null
+                                                        : new AST.PackageRef(v.pkg(), LineCol.SYNTHETIC),
+                                                v.fullName().contains(".")
+                                                        ? v.fullName().substring(v.fullName().lastIndexOf('.') + 1)
+                                                        : v.fullName(),
+                                                LineCol.SYNTHETIC
+                                        )
+                                );
+                        }
                         param4Locals.add(variable);
                 });
                 MethodDef newMethodDef = new MethodDef(
@@ -5737,6 +5754,14 @@ public class SemanticProcessor {
                                                 STypeDef pType = m.getParameters().get(i + inc).type();
                                                 STypeDef aType = argList.get(i).type();
                                                 if (!pType.isAssignableFrom(aType)) {
+                                                        if (aType instanceof PrimitiveTypeDef) {
+                                                                if (pType.isAssignableFrom(boxPrimitive(
+                                                                        argList.get(i),
+                                                                        LineCol.SYNTHETIC
+                                                                ).type())) {
+                                                                        continue;
+                                                                }
+                                                        }
                                                         canUse = false;
                                                         break;
                                                 }

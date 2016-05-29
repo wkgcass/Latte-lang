@@ -27,7 +27,7 @@ package lt.repl;
 import lt.compiler.SyntaxException;
 import lt.lang.Utils;
 
-import java.io.File;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -201,14 +201,16 @@ public class REPL {
                                         "usage: -s <script-location> [arguments [,...]]\n" +
                                         "       -c <source-directory> [-r] [-o <output-directory>] [-cp <classpath[:...]>]\n" +
                                         "       ClassName [-cp <classpath[:...]>]\n" +
+                                        "       -gb <project-directory>\n" +
                                         "       -repl" +
                                         "\n" +
-                                        "-s       specify the script location and run the script\n" +
-                                        "-c       specify the source file directory and compile *.lt files\n" +
-                                        "-r       [option] add sub directory files to compiling list.\n" +
-                                        "-o       [option] specify the output directory. (the source-directory/target/classes/ as default)\n" +
-                                        "-cp      [option] the classpath. use ':' to separate the class-paths\n" +
-                                        "-repl    start the repl (or run the program with 0 arguments)");
+                                        "-s       Specify the script location and run the script\n" +
+                                        "-c       Specify the source file directory and compile *.lt files\n" +
+                                        "-r       [option] Add sub directory files to compiling list.\n" +
+                                        "-o       [option] Specify the output directory. (the source-directory/target/classes/ as default)\n" +
+                                        "-cp      [option] The classpath. use ':' to separate the class-paths\n" +
+                                        "-repl    Start the repl (or run the program with 0 arguments)\n" +
+                                        "-gb      Generate build.lts in the given directory");
                                 break;
                         case "-s":
                                 // run scripts
@@ -227,7 +229,13 @@ public class REPL {
                                         System.arraycopy(args, 2, scriptArgs, 0, args.length - 2);
                                         script.run(scriptArgs);
                                 } catch (Exception e) {
-                                        e.printStackTrace();
+                                        if (e instanceof InvocationTargetException) {
+                                                e.getCause().printStackTrace();
+                                        } else if (e instanceof SyntaxException) {
+                                                System.err.println("[ERROR] " + e.getMessage());
+                                        } else {
+                                                e.printStackTrace();
+                                        }
                                 }
                                 break;
                         case "-c":
@@ -290,8 +298,50 @@ public class REPL {
                                 try {
                                         compiler.compile(Utils.filesInDirectory(sourceDir, recursive));
                                 } catch (Exception e) {
-                                        System.err.println("[ERROR] " + e.getMessage());
+                                        if (e instanceof SyntaxException) {
+                                                System.err.println("[ERROR] " + e.getMessage());
+                                        } else {
+                                                e.printStackTrace();
+                                        }
                                         return;
+                                }
+                                break;
+                        case "-gb":
+                                if (args.length != 2) {
+                                        System.err.println("invalid command -gb.");
+                                        System.err.println("see --help");
+                                        return;
+                                }
+                                String projectDir = args[1];
+                                String filePath = projectDir + File.separator + "build.lts";
+                                File file = new File(filePath);
+                                if (!file.exists()) {
+                                        try {
+                                                file.createNewFile();
+                                        } catch (IOException e) {
+                                                e.printStackTrace();
+                                        }
+                                }
+
+                                try {
+                                        FileWriter fw = new FileWriter(file);
+                                        BufferedReader br = new BufferedReader(new InputStreamReader(REPL.class.getResourceAsStream("/build.lts.template")));
+
+                                        String core = String.valueOf(Runtime.getRuntime().availableProcessors());
+                                        String separator = File.separator;
+
+                                        String ss;
+                                        while ((ss = br.readLine()) != null) {
+                                                ss = ss.replace("${core}", core)
+                                                        .replace("${dir}", projectDir)
+                                                        .replace("${separator}", separator)
+                                                        .replace("\\", "\\\\") + "\n";
+                                                fw.write(ss.toCharArray());
+                                        }
+                                        fw.flush();
+                                        fw.close();
+                                } catch (IOException e) {
+                                        e.printStackTrace();
                                 }
                                 break;
                         case "-repl":
@@ -345,7 +395,9 @@ public class REPL {
                                         method.setAccessible(true);
                                         method.invoke(null, new Object[]{runArgs});
                                 } catch (Exception e) {
-                                        System.err.println("[ERROR] " + e.getMessage());
+                                        if (e instanceof InvocationTargetException) {
+                                                e.getCause().printStackTrace();
+                                        } else e.printStackTrace();
                                 }
                 }
         }

@@ -303,6 +303,10 @@ public class LtLibCompiler {
                 "/lt/html.lt"
         );
 
+        public static List<String> REQUIRED_FILES = Arrays.asList(
+                "classes.txt", "build.lts.template"
+        );
+
         public static ClassLoader loadAllClasses(ClassLoader loader, String classLoc) throws Exception {
                 Map<String, byte[]> bytes = new HashMap<>();
 
