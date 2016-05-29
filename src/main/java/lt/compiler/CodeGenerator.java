@@ -33,7 +33,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * code generator, generate byte code from STypeDef
+ * The code generator, generate byte code from STypeDef.
  */
 public class CodeGenerator {
         private Set<STypeDef> types;
@@ -62,7 +62,7 @@ public class CodeGenerator {
         }
 
         /**
-         * get type descriptor of the given type<br>
+         * get type descriptor of the given type.<br>
          * e.g. <code>Ljava/lang/Object;</code>
          *
          * @param type type
@@ -94,7 +94,7 @@ public class CodeGenerator {
         }
 
         /**
-         * get internal name of a type<br>
+         * get internal name of a type.<br>
          * e.g. <code>java/lang/Object</code>
          *
          * @param type type
@@ -108,7 +108,7 @@ public class CodeGenerator {
         }
 
         /**
-         * get method descriptor<br>
+         * get method descriptor.<br>
          * e.g. <code>(II)Ljava/lang/Runnable;</code>
          *
          * @param returnType return type
@@ -126,7 +126,7 @@ public class CodeGenerator {
         }
 
         /**
-         * start the generating process
+         * start the generating process.
          *
          * @return Map&lt;FileName, byte[]&gt;
          */
@@ -195,7 +195,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build new<br>
+         * build new<.br>
          * <br>
          * <code>
          * new TYPE<br>
@@ -227,7 +227,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build cast<br>
+         * build cast.<br>
          * <br>
          * <code>
          * buildValueAccess ------- original value<br>
@@ -253,7 +253,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build two variable operation<br>
+         * build two variable operation.<br>
          * <br>
          * <code>
          * buildValueAccess ------ a<br>
@@ -307,7 +307,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build logicAND<br>
+         * build logicAND.<br>
          * <br>
          * <code>
          * buildValueAccess<br>
@@ -360,7 +360,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build logicOr<br>
+         * build logicOr.<br>
          * <br>
          * <code>
          * buildValueAccess<br>
@@ -412,7 +412,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build TALoad<br>
+         * build TALoad.<br>
          * <br>
          * <code>
          * buildValueAccess<br>
@@ -434,7 +434,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build OneVarOp<br>
+         * build OneVarOp.<br>
          * <br>
          * <code>
          * buildValueAccess ------ the value<br>
@@ -460,7 +460,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build NewArray<br>
+         * build NewArray.<br>
          * <br>
          * <code>
          * buildPrimitive ------ array length<br>
@@ -496,7 +496,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build ANewArray<br>
+         * build ANewArray.<br>
          * <br>
          * <code>
          * buildPrimitive ---- array length<br>
@@ -532,7 +532,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build NewList<br>
+         * build NewList.<br>
          * <br>
          * <code>
          * NEW Type<br>
@@ -571,7 +571,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build NewMap<br>
+         * build NewMap.<br>
          * <br>
          * <code>
          * New Type<br>
@@ -619,7 +619,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build Value
+         * build Value.
          *
          * @param methodVisitor method visitor
          * @param info          method info
@@ -793,7 +793,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build Primitive
+         * build Primitive.
          *
          * @param methodVisitor method visitor
          * @param info          method info
@@ -837,7 +837,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build invoke
+         * build invoke.
          *
          * @param methodVisitor method visitor
          * @param info          info
@@ -1057,7 +1057,7 @@ public class CodeGenerator {
         }
 
         /**
-         * get asm {@link Handle} object from {@link MethodHandleValue}
+         * get asm {@link Handle} object from {@link MethodHandleValue}.
          *
          * @param handle {@link MethodHandleValue}
          * @return {@link Handle}
@@ -1075,7 +1075,7 @@ public class CodeGenerator {
         }
 
         /**
-         * get invoke dynamic arguments (bootstrap arguments)
+         * get invoke dynamic arguments (bootstrap arguments).
          *
          * @param invokeDynamic invoke dynamic
          * @return Object array containing required objects
@@ -1104,7 +1104,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build Return<br>
+         * build Return.<br>
          * <br>
          * <code>
          * RETURN<br>
@@ -1128,7 +1128,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build TStore<br>
+         * build TStore.<br>
          * <br>
          * <code>
          * buildValueAccess ---- the value to store<br>
@@ -1147,7 +1147,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build PutField<br>
+         * build PutField.<br>
          * <br>
          * <code>
          * buildValueAccess ---- the instance<br>
@@ -1171,7 +1171,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build GetField<br>
+         * build GetField.<br>
          * <br>
          * <code>
          * buildValueAccess ---- the instance<br>
@@ -1199,7 +1199,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build PutStatic<br>
+         * build PutStatic.<br>
          * <br>
          * <code>
          * buildValueAccess ---- the value to be put<br>
@@ -1221,7 +1221,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build TAStore<br>
+         * build TAStore.<br>
          * <br>
          * <code>
          * buildValueAccess ---- array<br>
@@ -1244,7 +1244,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build MonitorEnter<br>
+         * build MonitorEnter.<br>
          * <br>
          * <code>
          * buildValueAccess ---- the object to be monitored<br>
@@ -1268,7 +1268,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build MonitorExit<br>
+         * build MonitorExit.<br>
          * <br>
          * ALoad ---- the object that was monitored<br>
          * MonitorExit
@@ -1285,7 +1285,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build one Instruction
+         * build one Instruction.
          *
          * @param methodVisitor method visitor
          * @param info          method info
@@ -1392,7 +1392,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build instructions for method/constructor/staticScope<br>
+         * build instructions for method/constructor/staticScope.<br>
          * <ol>
          * <li>build instructions</li>
          * <li>
@@ -1478,7 +1478,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build static block (clinit)
+         * build static block (clinit).
          *
          * @param classWriter    class writer
          * @param staticIns      static instructions
@@ -1491,7 +1491,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build constructor and its annotations
+         * build constructor and its annotations.
          *
          * @param classWriter  class writer
          * @param constructors the constructors to build
@@ -1522,7 +1522,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build field and its annotations
+         * build field and its annotations.
          *
          * @param classWriter class writer
          * @param fields      the fields to build
@@ -1542,7 +1542,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build method and its annotations
+         * build method and its annotations.
          *
          * @param classWriter class writer
          * @param methods     methods to build
@@ -1584,7 +1584,7 @@ public class CodeGenerator {
         }
 
         /**
-         * check whether the annotation should be visible at runtime
+         * check whether the annotation should be visible at runtime.
          *
          * @param anno annotation to check
          * @return true if visible at runtime, false otherwise
@@ -1616,7 +1616,7 @@ public class CodeGenerator {
         }
 
         /**
-         * build annotation
+         * build annotation.
          *
          * @param annotationVisitor annotation visitor
          * @param anno              the annotation to build
@@ -1658,7 +1658,7 @@ public class CodeGenerator {
         }
 
         /**
-         * transform {@link Value} into asm Object<br>
+         * transform {@link Value} into asm Object.<br>
          * the Value can only be {@link PrimitiveValue}, {@link StringConstantValue}, {@link ClassValue}, {@link SArrayValue}
          *
          * @param value the value

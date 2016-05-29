@@ -78,6 +78,7 @@ public class REPL {
                                                 System.out.println(":                                          set current input to empty string");
                                                 System.out.println(":cp <class-path>                           load classes");
                                                 System.out.println(":script <script-path>                      compile a script");
+                                                System.out.println(":import <import-stmt>                      the import statement");
                                                 System.out.println("----------------------------------------------------------------");
                                                 System.out.println("Compiler()                                 construct a new Compiler");
                                                 System.out.println("compiler >> '<directory>'                  set compiler output directory");
@@ -118,6 +119,9 @@ public class REPL {
                                                 }
                                         } else if (cmd.equals(":")) {
                                                 sb.delete(0, sb.length());
+                                        } else if (cmd.startsWith(":import ")) {
+                                                String im = cmd.substring(":import ".length()).trim();
+                                                evaluator.addImport(im);
                                         } else {
                                                 System.err.println("unknown command " + cmd + ", Type :help for more more information");
                                                 sleep(10);
@@ -144,14 +148,20 @@ public class REPL {
                                                                 } else if (t instanceof SyntaxException) {
                                                                         int line = ((SyntaxException) t).lineCol.line - 1;
                                                                         int col = ((SyntaxException) t).lineCol.column - 1;
-                                                                        String[] strs = stmt.split("\\n|\\r");
-                                                                        String s = strs[line];
-                                                                        System.err.println(s);
-                                                                        for (int i = 0; i < col; ++i) {
-                                                                                System.err.print(" ");
+
+                                                                        if (line < 0) {
+                                                                                System.err.println(t.getMessage());
+                                                                        } else {
+
+                                                                                String[] strs = stmt.split("\\n|\\r");
+                                                                                String s = strs[line];
+                                                                                System.err.println(s);
+                                                                                for (int i = 0; i < col; ++i) {
+                                                                                        System.err.print(" ");
+                                                                                }
+                                                                                System.err.print("^ ");
+                                                                                System.err.println(t.getMessage());
                                                                         }
-                                                                        System.err.print("^ ");
-                                                                        System.err.println(t.getMessage());
                                                                 } else {
                                                                         t.printStackTrace();
                                                                 }

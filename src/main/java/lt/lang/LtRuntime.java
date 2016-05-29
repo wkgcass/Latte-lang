@@ -24,44 +24,132 @@
 
 package lt.lang;
 
-import lt.compiler.LtBug;
 import lt.lang.function.Function;
 
 import java.lang.reflect.*;
 
 /**
- * lang
+ * Defines LessTyping Runtime behavior.
+ * The Runtime provides type cast, field getting and setting, comparison, ref comparison,
+ * <b>is</b> and <b>not</b> operator behavior, wrapping object for throwing, hashCode retrieving.
  */
 public class LtRuntime {
+        /**
+         * multiply
+         */
         public static final String multiply = "multiply";
+        /**
+         * divide
+         */
         public static final String divide = "divide";
+        /**
+         * remainder
+         */
         public static final String remainder = "remainder";
+        /**
+         * add
+         */
         public static final String add = "add";
+        /**
+         * subtract
+         */
         public static final String subtract = "subtract";
+        /**
+         * shiftLeft
+         */
         public static final String shiftLeft = "shiftLeft";
+        /**
+         * shiftRight
+         */
         public static final String shiftRight = "shiftRight";
+        /**
+         * unsignedShiftRight
+         */
         public static final String unsignedShiftRight = "unsignedShiftRight";
+        /**
+         * gt
+         */
         public static final String gt = "gt";
+        /**
+         * lt
+         */
         public static final String lt = "lt";
+        /**
+         * ge
+         */
         public static final String ge = "ge";
+        /**
+         * le
+         */
         public static final String le = "le";
+        /**
+         * equal
+         */
         public static final String equal = "equal";
+        /**
+         * notEqual
+         */
         public static final String notEqual = "notEqual";
+        /**
+         * and
+         */
         public static final String and = "and";
+        /**
+         * xor
+         */
         public static final String xor = "xor";
+        /**
+         * or
+         */
         public static final String or = "or";
 
+        /**
+         * Check whether the given type is {@link Integer} {@link Short}
+         * {@link Byte} {@link Character} {@link Long} {@link Boolean}
+         * {@link Float} {@link Double}.
+         *
+         * @param type the type to check.
+         * @return true if it's a box type.
+         */
         private static boolean isBoxType(Class<?> type) {
                 return type.equals(Integer.class) || type.equals(Short.class) || type.equals(Byte.class) || type.equals(Character.class)
                         || type.equals(Long.class) || type.equals(Boolean.class) || type.equals(Float.class) || type.equals(Double.class);
         }
 
-        @SuppressWarnings("unused")
+        /**
+         * Cast the object to a {@link Throwable}. If the object is instance of throwable,
+         * it's directly returned. Otherwise, a {@link Wrapper} object would be returned.
+         *
+         * @param o the object to cast.
+         * @return a Throwable object.
+         */
         public static Throwable castToThrowable(Object o) {
                 if (o instanceof Throwable) return (Throwable) o;
                 return new Wrapper(o);
         }
 
+        /**
+         * generate {@link ClassCastException} for throwing.
+         *
+         * @param o    the object to cast.
+         * @param type the target type.
+         * @return {@link ClassCastException}
+         */
+        private static ClassCastException generateClassCastException(Object o, Class<?> type) {
+                return new ClassCastException("Cannot cast " +
+                        (o == null ? "null" : o.getClass().getName()) +
+                        " to " + type.getName());
+        }
+
+        /**
+         * Cast the object to given type.
+         *
+         * @param o          the object to cast.
+         * @param targetType the type that the object cast to.
+         * @return the casting result.
+         * @throws Exception maybe {@link ClassCastException} if the cast fails,
+         *                   or some errors when casting.
+         */
         public static Object cast(Object o, Class<?> targetType) throws Exception {
                 if (targetType.isInstance(o)) return o;
                 if (isBoxType(targetType)) {
@@ -168,40 +256,86 @@ public class LtRuntime {
                                                 });
                                 }
                         }
-                } else throw new LtBug("unsupported type cast (targetType:" + targetType.getName() + ", o:" + o.getClass().getName() + ")");
-                throw new ClassCastException("cannot cast " + o + " (" + o.getClass().getName() + ") to " + targetType.getName());
+                }// else throw new LtBug("unsupported type cast (targetType:" + targetType.getName() + ", o:" + o.getClass().getName() + ")");
+                throw generateClassCastException(o, targetType);
         }
 
+        /**
+         * Cast the object to int value. Only {@link Number} can be cast to int.
+         *
+         * @param o the object to cast.
+         * @return int value.
+         */
         public static int castToInt(Object o) {
                 if (o instanceof Number) return ((Number) o).intValue();
-                throw new ClassCastException("cannot cast " + o + " (" + o.getClass().getName() + ") to int");
+                throw generateClassCastException(o, int.class);
         }
 
+        /**
+         * Cast the object to long value. Only {@link Number} can be cast to long.
+         *
+         * @param o the object to cast.
+         * @return long value.
+         */
         public static long castToLong(Object o) {
                 if (o instanceof Number) return ((Number) o).longValue();
-                throw new ClassCastException("cannot cast " + o + " (" + o.getClass().getName() + ") to long");
+                throw generateClassCastException(o, long.class);
         }
 
+        /**
+         * Cast the object to short value. Only {@link Number} can be cast to short.
+         *
+         * @param o the object to cast.
+         * @return short value.
+         */
         public static short castToShort(Object o) {
                 if (o instanceof Number) return ((Number) o).shortValue();
-                throw new ClassCastException("cannot cast " + o + " (" + o.getClass().getName() + ") to short");
+                throw generateClassCastException(o, short.class);
         }
 
+        /**
+         * Cast the object to byte value. Only {@link Number} can be cast to byte.
+         *
+         * @param o the object to cast.
+         * @return byte value.
+         */
         public static byte castToByte(Object o) {
                 if (o instanceof Number) return ((Number) o).byteValue();
-                throw new ClassCastException("cannot cast " + o + " (" + o.getClass().getName() + ") to byte");
+                throw generateClassCastException(o, byte.class);
         }
 
+        /**
+         * Cast the object to float value. Only {@link Number} can be cast to float.
+         *
+         * @param o the object to cast.
+         * @return float value.
+         */
         public static float castToFloat(Object o) {
                 if (o instanceof Number) return ((Number) o).floatValue();
-                throw new ClassCastException("cannot cast " + o + " (" + o.getClass().getName() + ") to float");
+                throw generateClassCastException(o, float.class);
         }
 
+        /**
+         * Cast the object to double value. Only {@link Number} can be cast to double.
+         *
+         * @param o the object to cast.
+         * @return double value.
+         */
         public static double castToDouble(Object o) {
                 if (o instanceof Number) return ((Number) o).doubleValue();
-                throw new ClassCastException("cannot cast " + o + " (" + o.getClass().getName() + ") to double");
+                throw generateClassCastException(o, double.class);
         }
 
+        /**
+         * Cast the object to boolean value. All types can be cast to bool.
+         * If the object is null or undefined, the result is false.
+         * Else if the object is {@link Boolean}, the result is the unboxing value.
+         * Else if the object is {@link Number}, the result is number != 0.
+         * Else the result is true.
+         *
+         * @param o the object to cast.
+         * @return bool value.
+         */
         public static boolean castToBool(Object o) {
                 // check null and undefined
                 if (o == null || o instanceof Undefined) return false;
@@ -213,11 +347,21 @@ public class LtRuntime {
                 return true;
         }
 
+        /**
+         * Cast the object to char.
+         * If the object is {@link Number}, get the {@link Number#intValue()} and cast to char.
+         * Else if the object is {@link Character}, the result is the unboxing value.
+         * Else if the object is CharSequence and the length is 1, the result is {@link CharSequence#charAt(int)}(0).
+         * Else throw a {@link ClassCastException}.
+         *
+         * @param o the object to cast.
+         * @return char value.
+         */
         public static char castToChar(Object o) {
                 if (o instanceof Number) return (char) ((Number) o).intValue();
                 if (o instanceof Character) return (Character) o;
                 if (o instanceof CharSequence && ((CharSequence) o).length() == 1) return ((CharSequence) o).charAt(0);
-                throw new RuntimeException("cannot cast " + o + " to char");
+                throw generateClassCastException(o, char.class);
         }
 
         /**
@@ -230,7 +374,6 @@ public class LtRuntime {
          * @param callerClass caller class
          * @return the value or undefined
          */
-        @SuppressWarnings("unused")
         public static Object getField(Object o, String fieldName, Class<?> callerClass) {
                 if (o.getClass().isArray()) {
                         if (fieldName.equals("length")) {
@@ -309,8 +452,17 @@ public class LtRuntime {
                 }
         }
 
+        /**
+         * if a &gt; b then return true.
+         */
         public static final int COMPARE_MODE_GT = 0b001;
+        /**
+         * if a == b then return true.
+         */
         public static final int COMPARE_MODE_EQ = 0b010;
+        /**
+         * if a &lt; b then return true.
+         */
         public static final int COMPARE_MODE_LT = 0b100;
 
         /**
@@ -409,6 +561,7 @@ public class LtRuntime {
          * @param o the object
          * @return hash code of the object (or 0 if it's null)
          */
+        @SuppressWarnings("unused")
         public static int getHashCode(Object o) {
                 if (o == null) return 0;
                 return o.hashCode();

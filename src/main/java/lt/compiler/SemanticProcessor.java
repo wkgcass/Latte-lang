@@ -4439,8 +4439,26 @@ public class SemanticProcessor {
                         case "<=":
                                 return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT | LtRuntime.COMPARE_MODE_EQ, LtRuntime.le, right, scope, lineCol);
                         case "==":
+                                // null check
+                                if (left.equals(NullValue.get()) || right.equals(NullValue.get())) {
+                                        if (right.equals(NullValue.get())) {
+                                                Value tmp = left;
+                                                left = right;
+                                                right = tmp;
+                                        }
+                                        return parseValueFromTwoVarOp(left, "is", right, scope, lineCol);
+                                }
                                 return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
                         case "!=":
+                                // null check
+                                if (left.equals(NullValue.get()) || right.equals(NullValue.get())) {
+                                        if (right.equals(NullValue.get())) {
+                                                Value tmp = left;
+                                                left = right;
+                                                right = tmp;
+                                        }
+                                        return parseValueFromTwoVarOp(left, "not", right, scope, lineCol);
+                                }
                                 Value eq = parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
                                 return parseValueFromTwoVarOpILFD(eq, Ins.TwoVarOp.Ixor, null, new BoolValue(true), scope, lineCol);
                         case "===":

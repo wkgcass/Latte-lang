@@ -46,6 +46,7 @@ import java.util.*;
  */
 public class Evaluator {
         private List<Entry> recordedEntries = new ArrayList<>();
+        private List<String> imports = new ArrayList<>();
 
         private String recordedStatements = "\n";
 
@@ -70,8 +71,8 @@ public class Evaluator {
                 "import java::util::_\n" +
                 "import java::math::_\n" +
                 "import lt::repl::_\n" +
-                "import java::io::_\n" +
-                "class Evaluate";
+                "import java::io::_\n";
+        private static final String EVALUATE_CLASS_DEF = "class Evaluate";
         private static final int EVALUATE_BASIC_LINES = 5;
 
         private int generatedVariableIndex = 0;
@@ -105,6 +106,13 @@ public class Evaluator {
                 recordedEntries.add(new Entry(name, var));
         }
 
+        public void addImport(String anImport) {
+                for (String im : imports) {
+                        if (im.equals(anImport)) return;
+                }
+                imports.add(anImport);
+        }
+
         public Entry eval(String stmt) throws Exception {
                 if (null == stmt || stmt.trim().isEmpty()) throw new IllegalArgumentException("the input string cannot be empty or null");
 
@@ -135,7 +143,11 @@ public class Evaluator {
 
                         StringBuilder sb = new StringBuilder();
 
-                        sb.append(EVALUATE_BASIC_FORMAT).append("(");
+                        sb.append(EVALUATE_BASIC_FORMAT);
+                        for (String im : imports) {
+                                sb.append("import ").append(im).append("\n");
+                        }
+                        sb.append(EVALUATE_CLASS_DEF).append("(");
 
                         // build local variables
                         boolean isFirst = true;
@@ -173,7 +185,7 @@ public class Evaluator {
                         Parser parser = new Parser(root, errorManager);
                         List<Statement> statements = parser.parse();
 
-                        ClassDef classDef = (ClassDef) statements.get(4); // it must be class def (class Evaluate)
+                        ClassDef classDef = (ClassDef) statements.get(4 + imports.size()); // it must be class def (class Evaluate)
                         List<Statement> classStatements = classDef.statements;
                         int lastIndex = classStatements.size() - 1;
                         Statement lastStatement = classStatements.get(lastIndex);
