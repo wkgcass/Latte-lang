@@ -4,6 +4,18 @@
 
 LessTyping is a JVM language. It's highly readable and extensible.
 
+Click [here](https://www.youtube.com/embed/gd1Hods0BQE) to watch a video about LessTyping.
+
+[Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)
+
+[LessTyping WebSite](http://lesstyping.cassite.net/)
+
+`Atom` Extensions :
+
+[atom-lesstyping-highlighting](https://atom.io/packages/Atom-LessTyping-Highlighting)
+
+[atom-lesstyping-ide](https://atom.io/packages/atom-lesstyping-ide)
+
 LessTyping supports 
 
 * Operator Binding
@@ -14,10 +26,6 @@ LessTyping supports
 * JSON Literal
 * Read Eval Print Loop
 * many other features
-
-[Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)
-
-[LessTyping WebSite](http://lesstyping.cassite.net/)
 
 `LessTyping` is based on java 8. It's compiled to JVM byte code, and can collaborate with any java library.
 
@@ -115,6 +123,18 @@ or visit the [LessTyping WebSite](http://lesstyping.cassite.net/)
 
 LessTyping是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
+点击 [这里](http://player.youku.com/embed/XMTU4ODc3Mzc4MA==) 观看有关LessTyping的视频。
+
+[Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)
+
+[LessTyping 主页](http://lesstyping.cassite.net/)
+
+`Atom`上的扩展插件:
+
+[atom-lesstyping-highlighting](https://atom.io/packages/Atom-LessTyping-Highlighting)
+
+[atom-lesstyping-ide](https://atom.io/packages/atom-lesstyping-ide)
+
 LessTyping 支持如下功能
 
 * 运算符绑定
@@ -125,10 +145,6 @@ LessTyping 支持如下功能
 * JSON 字面量
 * Read Eval Print Loop
 * 许多其它特性
-
-[Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)
-
-[LessTyping 主页](http://lesstyping.cassite.net/)
 
 `LessTyping`基于java8。它被编译到JVM字节码，可以与任何Java类库完美互通。
 

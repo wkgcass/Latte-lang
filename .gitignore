@@ -19,3 +19,5 @@ target/*
 # sh and bat #
 lesstyping
 lesstyping.bat
+
+*.mp4

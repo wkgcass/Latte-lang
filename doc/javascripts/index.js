@@ -202,9 +202,10 @@ $(document).ready(function () {
             help: $sce.trustAsHtml("<a href=''>运算符绑定</a> 可能对您有帮助")
         };
         $scope.highlight = {
-            title: "Atom的语法高亮",
+            title: "Atom 语法高亮与IDE",
             contents: [
-                $sce.trustAsHtml("针对Atom编辑器开发了一个<a target='_blank' href='https://atom.io/packages/Atom-LessTyping-Highlighting'>语法高亮</a>"),
+                $sce.trustAsHtml("针对Atom编辑器开发了<a target='_blank' href='https://atom.io/packages/Atom-LessTyping-Highlighting'>语法高亮</a>和" +
+                    "<a target='_blank' href='https://atom.io/packages/atom-lesstyping-ide'>IDE</a>"),
                 $sce.trustAsHtml("可以更加方便的编写LessTyping源代码")
             ]
         }

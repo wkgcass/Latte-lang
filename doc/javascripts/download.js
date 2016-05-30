@@ -84,6 +84,13 @@ $(document).ready(function () {
                 $sce.trustAsHtml("在Atom中搜索并安装 <code>Atom-LessTyping-Highlighting</code> 或者按照<a href='https://atom.io/packages/Atom-LessTyping-Highlighting'>这里</a>的步骤进行安装"),
                 $sce.trustAsHtml("<img src='images/highlight.png'>")
             ]
+        };
+        $scope.ide = {
+            title: "IDE",
+            contents: [
+                $sce.trustAsHtml("针对Atom开发了一个LessTyping的IDE"),
+                $sce.trustAsHtml("在Atom中搜索并安装 <code>atom-lesstyping-ide</code> 并按照<a target='_blank' href='https://atom.io/packages/atom-lesstyping-ide'>这里</a>的步骤进行配置")
+            ]
         }
     }
     ])
