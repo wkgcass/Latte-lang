@@ -4,7 +4,7 @@
 
 LessTyping is a JVM language. It's highly readable and extensible.
 
-Click [here](https://www.youtube.com/embed/gd1Hods0BQE) to watch a video about LessTyping.
+Click [here](http://lesstyping.cassite.net/#theVideo) to watch a video about LessTyping.
 
 [Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)
 
@@ -123,7 +123,7 @@ or visit the [LessTyping WebSite](http://lesstyping.cassite.net/)
 
 LessTyping是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
-点击 [这里](http://player.youku.com/embed/XMTU4ODc3Mzc4MA==) 观看有关LessTyping的视频。
+点击 [这里](http://lesstyping.cassite.net/#theVideo) 观看有关LessTyping的视频。
 
 [Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)
 
