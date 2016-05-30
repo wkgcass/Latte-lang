@@ -31,5 +31,5 @@ package lt.lang.function;
 public interface Function15 extends Function {
         Object apply(Object a, Object b, Object c, Object d, Object e,
                      Object f, Object g, Object h, Object i, Object j,
-                     Object k, Object l, Object m, Object n, Object o) throws Throwable;
+                     Object k, Object l, Object m, Object n, Object o) throws Exception;
 }

@@ -34,5 +34,5 @@ public interface Function26 extends Function {
                      Object k, Object l, Object m, Object n, Object o,
                      Object p, Object q, Object r, Object s, Object t,
                      Object u, Object v, Object w, Object x, Object y,
-                     Object z) throws Throwable;
+                     Object z) throws Exception;
 }

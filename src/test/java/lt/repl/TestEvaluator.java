@@ -24,6 +24,7 @@
 
 package lt.repl;
 
+import lt.lang.List;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -148,6 +149,24 @@ public class TestEvaluator {
                 Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 evaluator.eval("method()=1");
                 assertEquals(1, evaluator.eval("method()").result);
+        }
+
+        @Test
+        public void testEvaluateClass() throws Exception {
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
+                @SuppressWarnings("unchecked")
+                java.util.List<Class<?>> list = (java.util.List<Class<?>>) evaluator.eval("class User").result;
+                assertEquals(1, list.size());
+                assertEquals("User", list.get(0).getName());
+        }
+
+        @Test
+        public void testEvaluateClassAndStmt() throws Exception {
+                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
+                Object o = evaluator.eval("" +
+                        "class User\n" +
+                        "User()").result;
+                assertEquals("User", o.getClass().getName());
         }
 
         @Test

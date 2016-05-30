@@ -246,13 +246,10 @@ public class ScriptCompiler {
 
                 List<Statement> innerStatements = new ArrayList<>();
                 List<Statement> defsAndImports = new ArrayList<>();
-                int importCursor = 0;
 
                 for (Statement stmt : statements) {
-                        if (stmt instanceof ClassDef || stmt instanceof InterfaceDef) {
+                        if (stmt instanceof ClassDef || stmt instanceof InterfaceDef || stmt instanceof Import) {
                                 defsAndImports.add(stmt);
-                        } else if (stmt instanceof Import) {
-                                defsAndImports.add(importCursor++, stmt);
                         } else if (stmt instanceof PackageDeclare) {
                                 throw new SyntaxException("scripts cannot have package declaration", stmt.line_col());
                         } else {
@@ -286,6 +283,7 @@ public class ScriptCompiler {
                 defsAndImports.add(classDef);
                 defsAndImports.add(new Import(new AST.PackageRef("java::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                defsAndImports.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("lt::repl", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
 
                 ClassLoader theCompiledClasses = compiler.compile(sources);

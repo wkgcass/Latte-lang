@@ -29,5 +29,5 @@ package lt.lang.function;
  */
 @FunctionalInterface
 public interface Function1 extends Function {
-        Object apply(Object a) throws Throwable;
+        Object apply(Object a) throws Exception;
 }

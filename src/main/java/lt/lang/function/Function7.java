@@ -30,5 +30,5 @@ package lt.lang.function;
 @FunctionalInterface
 public interface Function7 extends Function {
         Object apply(Object a, Object b, Object c, Object d, Object e,
-                     Object f, Object g) throws Throwable;
+                     Object f, Object g) throws Exception;
 }
