@@ -280,7 +280,7 @@ public class ScriptCompiler {
                                         LineCol.SYNTHETIC
                                 )
                         ),
-                        LineCol.SYNTHETIC
+                        new LineCol(name, 0, 0)
                 );
 
                 defsAndImports.add(classDef);

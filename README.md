@@ -177,7 +177,7 @@ clone这个仓库,然后执行
     
     >
 
-#Compile `lt` Files
+#编译 `lt` 文件
 
 * 使用程序命令
 

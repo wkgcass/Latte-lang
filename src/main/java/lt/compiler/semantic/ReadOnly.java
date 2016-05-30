@@ -22,4 +22,10 @@
  * SOFTWARE.
  */
 
-package lt.compiler.semantic.builtin;
+package lt.compiler.semantic;
+
+/**
+ * Represent that the instruction or value is <b>read only</b>
+ */
+public interface ReadOnly {
+}

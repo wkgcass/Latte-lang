@@ -26,7 +26,6 @@ package lt.compiler;
 
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
-import lt.compiler.semantic.builtin.ClassValue;
 import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.ClassDef;
 import lt.compiler.syntactic.def.InterfaceDef;
@@ -6439,7 +6438,7 @@ public class SemanticProcessor {
          * <li>DoubleValue</li>
          * <li>StringConstantValue</li>
          * <li>EnumValue</li>
-         * <li>ClassValue</li>
+         * <li>Ins.GetClass</li>
          * <li>SAnno</li>
          * <li>SArrayValue</li>
          * </ul>
@@ -6476,10 +6475,9 @@ public class SemanticProcessor {
                         return e;
                 } else if (o instanceof Class) {
                         // class
-                        ClassValue c = new ClassValue();
-                        c.setClassName(((Class) o).getName());
-                        c.setType(getTypeWithName("java.lang.Class", LineCol.SYNTHETIC));
-                        return c;
+                        return new Ins.GetClass(
+                                getTypeWithName(((Class) o).getName(), LineCol.SYNTHETIC),
+                                (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC));
                 } else if (o instanceof Annotation) {
                         // annotation
                         SAnno a = new SAnno();

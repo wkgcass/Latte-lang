@@ -76,7 +76,7 @@ public class Ins {
         /**
          * arrayLength
          */
-        public static class ArrayLength implements Value, Instruction {
+        public static class ArrayLength implements Value, Instruction, ReadOnly {
                 private final LineCol lineCol;
                 private final Value arrayValue;
 
@@ -231,7 +231,7 @@ public class Ins {
         /**
          * XXX.class
          */
-        public static class GetClass implements Value {
+        public static class GetClass implements Value, ReadOnly {
                 private final STypeDef targetType;
                 private final SClassDef classClassDef;
 
@@ -267,7 +267,7 @@ public class Ins {
         /**
          * get non-static field
          */
-        public static class GetField implements Value, Instruction {
+        public static class GetField implements Value, Instruction, ReadOnly {
                 private final LineCol lineCol;
                 private final SFieldDef field;
                 private final Value object;
@@ -300,7 +300,7 @@ public class Ins {
         /**
          * get static field
          */
-        public static class GetStatic implements Value, Instruction {
+        public static class GetStatic implements Value, Instruction, ReadOnly {
                 private final LineCol lineCol;
                 private final SFieldDef field;
 
@@ -926,7 +926,7 @@ public class Ins {
         /**
          * TALoad
          */
-        public static class TALoad implements Value, Instruction {
+        public static class TALoad implements Value, Instruction, ReadOnly {
                 public static int Baload = 0;
                 public static int Saload = 0;
                 public static int Iaload = 0;
@@ -1032,7 +1032,7 @@ public class Ins {
         /**
          * this
          */
-        public static class This implements Value {
+        public static class This implements Value, ReadOnly {
                 private final STypeDef type;
 
                 public This(STypeDef type) {
@@ -1048,7 +1048,7 @@ public class Ins {
         /**
          * tload instruction
          */
-        public static class TLoad implements Value, Instruction {
+        public static class TLoad implements Value, Instruction, ReadOnly {
                 public static int Iload = 0x15;
                 public static int Lload = 0x16;
                 public static int Fload = 0x17;

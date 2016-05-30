@@ -26,7 +26,6 @@ package lt.compiler;
 
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
-import lt.compiler.semantic.builtin.ClassValue;
 import lt.dependencies.asm.*;
 
 import java.util.*;
@@ -45,6 +44,18 @@ public class CodeGenerator {
          */
         public CodeGenerator(Set<STypeDef> types) {
                 this.types = types;
+        }
+
+        /**
+         * visit line number attribute
+         *
+         * @param methodVisitor method visitor
+         * @param lineCol       the line col (can be null)
+         * @param label         the label to visit
+         */
+        private void VisitLineNumber(MethodVisitor methodVisitor, LineCol lineCol, Label label) {
+                if (lineCol == null || lineCol.line <= 0) return;
+                methodVisitor.visitLineNumber(lineCol.line, label);
         }
 
         /**
@@ -213,8 +224,12 @@ public class CodeGenerator {
                 methodVisitor.visitInsn(Opcodes.DUP);
                 info.push(CodeInfo.Size._1);
                 for (Value v : aNew.args()) {
-                        buildValueAccess(methodVisitor, info, v);
+                        buildValueAccess(methodVisitor, info, v, true);
                 }
+
+                Label label = new Label();
+                methodVisitor.visitLabel(label);
+
                 methodVisitor.visitMethodInsn(
                         Opcodes.INVOKESPECIAL,
                         typeToInternalName(aNew.type()),
@@ -224,6 +239,8 @@ public class CodeGenerator {
                                 aNew.constructor().getParameters().stream().map(SParameter::type).collect(Collectors.toList())),
                         false);
                 info.pop(1 + aNew.args().size());
+
+                VisitLineNumber(methodVisitor, aNew.line_col(), label);
         }
 
         /**
@@ -239,7 +256,11 @@ public class CodeGenerator {
          * @param cast          Ins.Cast
          */
         private void buildCast(MethodVisitor methodVisitor, CodeInfo info, Ins.Cast cast) {
-                buildValueAccess(methodVisitor, info, cast.value());
+                buildValueAccess(methodVisitor, info, cast.value(), true);
+
+                Label label = new Label();
+                methodVisitor.visitLabel(label);
+
                 methodVisitor.visitInsn(cast.castMode());
                 if (cast.castMode() == Ins.Cast.CAST_FLOAT_TO_DOUBLE
                         || cast.castMode() == Ins.Cast.CAST_INT_TO_DOUBLE
@@ -250,6 +271,8 @@ public class CodeGenerator {
                         info.pop(1);
                         info.push(CodeInfo.Size._1);
                 }
+
+                VisitLineNumber(methodVisitor, cast.line_col(), label);
         }
 
         /**
@@ -266,8 +289,8 @@ public class CodeGenerator {
          * @param twoVarOp      Ins.TwoVarOp
          */
         private void buildTwoVarOp(MethodVisitor methodVisitor, CodeInfo info, Ins.TwoVarOp twoVarOp) {
-                buildValueAccess(methodVisitor, info, twoVarOp.a());
-                buildValueAccess(methodVisitor, info, twoVarOp.b());
+                buildValueAccess(methodVisitor, info, twoVarOp.a(), true);
+                buildValueAccess(methodVisitor, info, twoVarOp.b(), true);
                 methodVisitor.visitInsn(twoVarOp.op());
                 info.pop(2);
                 if (twoVarOp.op() == Ins.TwoVarOp.Dadd
@@ -334,13 +357,13 @@ public class CodeGenerator {
                  * nop                (nop)
                  */
                 // b1
-                buildValueAccess(methodVisitor, info, logicAnd.b1());
+                buildValueAccess(methodVisitor, info, logicAnd.b1(), true);
                 // if eq goto flag
                 Label flag = new Label();
                 methodVisitor.visitJumpInsn(Opcodes.IFEQ, flag);
                 info.pop(1);
                 // b2
-                buildValueAccess(methodVisitor, info, logicAnd.b2());
+                buildValueAccess(methodVisitor, info, logicAnd.b2(), true);
                 // if eq goto flag
                 methodVisitor.visitJumpInsn(Opcodes.IFEQ, flag);
                 info.pop(1);
@@ -386,13 +409,13 @@ public class CodeGenerator {
                  * flag: true         (flag: push false into stack)
                  * nop                (nop)
                  */
-                buildValueAccess(methodVisitor, info, logicOr.b1());
+                buildValueAccess(methodVisitor, info, logicOr.b1(), true);
                 // if ne goto flag
                 Label flag = new Label();
                 methodVisitor.visitJumpInsn(Opcodes.IFNE, flag);
                 info.pop(1);
                 // b2
-                buildValueAccess(methodVisitor, info, logicOr.b2());
+                buildValueAccess(methodVisitor, info, logicOr.b2(), true);
                 // if ne goto flag
                 methodVisitor.visitJumpInsn(Opcodes.IFNE, flag);
                 info.pop(1);
@@ -426,11 +449,17 @@ public class CodeGenerator {
          * @param TALoad        Ins.TALoad
          */
         private void buildTALoad(MethodVisitor methodVisitor, CodeInfo info, Ins.TALoad TALoad) {
-                buildValueAccess(methodVisitor, info, TALoad.arr());
-                buildValueAccess(methodVisitor, info, TALoad.index());
+                buildValueAccess(methodVisitor, info, TALoad.arr(), true);
+                buildValueAccess(methodVisitor, info, TALoad.index(), true);
+
+                Label label = new Label();
+                methodVisitor.visitLabel(label);
+
                 methodVisitor.visitInsn(TALoad.mode());
                 info.pop(2);
                 info.push(CodeInfo.Size._1);
+
+                VisitLineNumber(methodVisitor, TALoad.line_col(), label);
         }
 
         /**
@@ -446,7 +475,7 @@ public class CodeGenerator {
          * @param oneVarOp      Ins.OneVarOp
          */
         private void buildOneVarOp(MethodVisitor methodVisitor, CodeInfo info, Ins.OneVarOp oneVarOp) {
-                buildValueAccess(methodVisitor, info, oneVarOp.value());
+                buildValueAccess(methodVisitor, info, oneVarOp.value(), true);
                 methodVisitor.visitInsn(oneVarOp.op());
 
                 if (oneVarOp.op() == Ins.OneVarOp.Dneg
@@ -486,7 +515,7 @@ public class CodeGenerator {
                         info.push(CodeInfo.Size._1);
                         methodVisitor.visitLdcInsn(i); // index
                         info.push(CodeInfo.Size._1);
-                        buildValueAccess(methodVisitor, info, v); // value
+                        buildValueAccess(methodVisitor, info, v, true); // value
 
                         methodVisitor.visitInsn(newArray.storeMode());
                         info.pop(3);
@@ -522,7 +551,7 @@ public class CodeGenerator {
                         info.push(CodeInfo.Size._1);
                         methodVisitor.visitLdcInsn(i); // index
                         info.push(CodeInfo.Size._1);
-                        buildValueAccess(methodVisitor, info, v); // value
+                        buildValueAccess(methodVisitor, info, v, true); // value
 
                         methodVisitor.visitInsn(Opcodes.AASTORE);
                         info.pop(3);
@@ -560,7 +589,7 @@ public class CodeGenerator {
                 for (Value v : newList.initValues()) {
                         methodVisitor.visitInsn(Opcodes.DUP); // list ref
                         info.push(CodeInfo.Size._1);
-                        buildValueAccess(methodVisitor, info, v); // arg
+                        buildValueAccess(methodVisitor, info, v, true); // arg
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
                         info.pop(2);
                         info.push(CodeInfo.Size._1); // the add result (boolean add(Object))
@@ -603,8 +632,8 @@ public class CodeGenerator {
                 for (Map.Entry<Value, Value> entry : newMap.initValues().entrySet()) {
                         methodVisitor.visitInsn(Opcodes.DUP);
                         info.push(CodeInfo.Size._1);
-                        buildValueAccess(methodVisitor, info, entry.getKey());
-                        buildValueAccess(methodVisitor, info, entry.getValue());
+                        buildValueAccess(methodVisitor, info, entry.getKey(), true);
+                        buildValueAccess(methodVisitor, info, entry.getValue(), true);
 
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
                                 "java/util/LinkedHashMap",
@@ -619,11 +648,86 @@ public class CodeGenerator {
         }
 
         /**
+         * build value pack
+         *
+         * @param methodVisitor method visitor
+         * @param info          method info
+         * @param value         the value pack
+         * @param requireValue  require a value
+         */
+        private void buildValuePack(MethodVisitor methodVisitor, CodeInfo info, ValuePack value, boolean requireValue) {
+                int depth = info.getCurrentStackDepth();
+                List<Instruction> instructions = value.instructions();
+                for (int i = 0; i < instructions.size() - 1; ++i) {
+                        buildOneIns(methodVisitor, info, instructions.get(i), true);
+
+                        if (value.autoPop()) {
+                                while (info.getCurrentStackDepth() != depth) {
+                                        if (info.peekSize() == CodeInfo.Size._1) {
+                                                methodVisitor.visitInsn(Opcodes.POP);
+                                        } else {
+                                                methodVisitor.visitInsn(Opcodes.POP2);
+                                        }
+                                        info.pop(1);
+                                }
+                        }
+                }
+
+                Instruction ins = instructions.get(instructions.size() - 1);
+                boolean buildLastStmt;
+                if (!value.autoPop()) {
+                        // not auto pop
+                        buildLastStmt = true;
+                } else {
+                        // auto pop
+                        if (requireValue) {
+                                // require a value
+                                buildLastStmt = true;
+                        } else {
+                                // doesn't require a value
+                                if (ins instanceof ReadOnly) {
+                                        // read only
+                                        buildLastStmt = false;
+                                } else {
+                                        // not read only
+                                        // check LtRuntime.getField and Undefined.get
+                                        if (ins instanceof Ins.InvokeStatic) {
+                                                Ins.InvokeStatic is = (Ins.InvokeStatic) ins;
+                                                SMethodDef theMethod = (SMethodDef) is.invokable();
+                                                if (
+                                                        theMethod.name().equals("getField")
+                                                                &&
+                                                                theMethod.declaringType().fullName().equals("lt.lang.LtRuntime")) {
+                                                        // lt.lang.LtRuntime.getField
+                                                        buildLastStmt = false;
+                                                } else if (
+                                                        theMethod.name().equals("get")
+                                                                &&
+                                                                theMethod.declaringType().fullName().equals("lt.lang.Undefined")) {
+                                                        // lt.lang.Undefined.get
+                                                        buildLastStmt = false;
+                                                } else {
+                                                        buildLastStmt = true;
+                                                }
+                                        } else {
+                                                buildLastStmt = true;
+                                        }
+                                }
+                        }
+                }
+
+                if (buildLastStmt) {
+                        buildOneIns(methodVisitor, info, ins, requireValue);
+                }
+        }
+
+        /**
          * build Value.
          *
          * @param methodVisitor method visitor
          * @param info          method info
          * @param value         the value to build
+         * @param requireValue  requires a value when generating {@link ValuePack}
          * @see Value
          * @see lt.compiler.semantic.Ins.This
          * @see lt.compiler.semantic.Ins.GetStatic
@@ -650,7 +754,7 @@ public class CodeGenerator {
          * @see MethodHandleValue
          * @see lt.compiler.semantic.Ins.CheckCast
          */
-        private void buildValueAccess(MethodVisitor methodVisitor, CodeInfo info, Value value) {
+        private void buildValueAccess(MethodVisitor methodVisitor, CodeInfo info, Value value, boolean requireValue) {
                 if (value instanceof Ins.This) {
                         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
                         info.push(CodeInfo.Size._1);
@@ -671,7 +775,7 @@ public class CodeGenerator {
                                 info.push(CodeInfo.Size._2);
                         else info.push(CodeInfo.Size._1);
 
-                        methodVisitor.visitLineNumber(((Ins.GetStatic) value).line_col().line, label);
+                        VisitLineNumber(methodVisitor, ((Ins.GetStatic) value).line_col(), label);
                 } else if (value instanceof Ins.TLoad) {
                         // tLoad
                         Ins.TLoad tLoad = (Ins.TLoad) value;
@@ -684,14 +788,14 @@ public class CodeGenerator {
                                 info.push(CodeInfo.Size._2);
                         else info.push(CodeInfo.Size._1);
 
-                        methodVisitor.visitLineNumber(((Ins.TLoad) value).line_col().line, label);
+                        VisitLineNumber(methodVisitor, ((Ins.TLoad) value).line_col(), label);
                 } else if (value instanceof StringConstantValue) {
                         methodVisitor.visitLdcInsn(((StringConstantValue) value).getStr());
                         info.push(CodeInfo.Size._1);
                 } else if (value instanceof PrimitiveValue) {
                         buildPrimitive(methodVisitor, info, (PrimitiveValue) value);
                 } else if (value instanceof Ins.Invoke) {
-                        buildInvoke(methodVisitor, info, (Ins.Invoke) value);
+                        buildInvoke(methodVisitor, info, (Ins.Invoke) value, requireValue);
                 } else if (value instanceof Ins.New) {
                         buildNew(methodVisitor, info, (Ins.New) value);
                 } else if (value instanceof Ins.Cast) {
@@ -699,24 +803,7 @@ public class CodeGenerator {
                 } else if (value instanceof Ins.TwoVarOp) {
                         buildTwoVarOp(methodVisitor, info, (Ins.TwoVarOp) value);
                 } else if (value instanceof ValuePack) {
-                        int depth = info.getCurrentStackDepth();
-                        List<Instruction> instructions = ((ValuePack) value).instructions();
-                        for (int i = 0; i < instructions.size() - 1; ++i) {
-                                buildOneIns(methodVisitor, info, instructions.get(i));
-
-                                if (((ValuePack) value).autoPop()) {
-                                        while (info.getCurrentStackDepth() != depth) {
-                                                if (info.peekSize() == CodeInfo.Size._1) {
-                                                        methodVisitor.visitInsn(Opcodes.POP);
-                                                } else {
-                                                        methodVisitor.visitInsn(Opcodes.POP2);
-                                                }
-                                                info.pop(1);
-                                        }
-                                }
-                        }
-                        Instruction ins = instructions.get(instructions.size() - 1);
-                        buildOneIns(methodVisitor, info, ins);
+                        buildValuePack(methodVisitor, info, (ValuePack) value, requireValue);
                 } else if (value instanceof Ins.GetField) {
                         buildGetField(methodVisitor, info, (Ins.GetField) value);
                 } else if (value instanceof Ins.LogicAnd) {
@@ -764,7 +851,7 @@ public class CodeGenerator {
                         methodVisitor.visitInsn(Opcodes.ACONST_NULL);
                         info.push(CodeInfo.Size._1);
                 } else if (value instanceof Ins.ArrayLength) {
-                        buildValueAccess(methodVisitor, info, ((Ins.ArrayLength) value).arrayValue());
+                        buildValueAccess(methodVisitor, info, ((Ins.ArrayLength) value).arrayValue(), true);
                         methodVisitor.visitInsn(Opcodes.ARRAYLENGTH);
                         // pop 1 and push 1
                 } else if (value instanceof Ins.OneVarOp) {
@@ -781,12 +868,19 @@ public class CodeGenerator {
                         methodVisitor.visitLdcInsn(getHandle((MethodHandleValue) value));
                         info.push(CodeInfo.Size._1);
                 } else if (value instanceof Ins.CheckCast) {
-                        buildValueAccess(methodVisitor, info, ((Ins.CheckCast) value).theValueToCheck());
+                        buildValueAccess(methodVisitor, info, ((Ins.CheckCast) value).theValueToCheck(), true);
+
+                        Label label = new Label();
+                        methodVisitor.visitLabel(label);
+
                         methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, typeToInternalName(value.type()));
                         info.pop(1);
                         info.push(CodeInfo.Size._1);
+
+                        VisitLineNumber(methodVisitor, ((Ins.CheckCast) value).line_col(), label);
+
                 } else if (value instanceof ValueAnotherType) {
-                        buildValueAccess(methodVisitor, info, ((ValueAnotherType) value).value());
+                        buildValueAccess(methodVisitor, info, ((ValueAnotherType) value).value(), requireValue);
                 } else {
                         throw new LtBug("unknown value " + value);
                 }
@@ -842,6 +936,7 @@ public class CodeGenerator {
          * @param methodVisitor method visitor
          * @param info          info
          * @param invoke        Ins.Invoke
+         * @param requireValue  requires a value
          * @see lt.compiler.semantic.Ins.Invoke
          * @see lt.compiler.semantic.Ins.InvokeSpecial
          * @see lt.compiler.semantic.Ins.InvokeVirtual
@@ -849,14 +944,15 @@ public class CodeGenerator {
          * @see lt.compiler.semantic.Ins.InvokeInterface
          * @see lt.compiler.semantic.Ins.InvokeDynamic
          */
-        private void buildInvoke(MethodVisitor methodVisitor, CodeInfo info, Ins.Invoke invoke) {
+        private void buildInvoke(MethodVisitor methodVisitor, CodeInfo info, Ins.Invoke invoke, boolean requireValue) {
+                Label label = new Label();
                 if (invoke instanceof Ins.InvokeSpecial) {
                         // push target object
-                        buildValueAccess(methodVisitor, info, ((Ins.InvokeSpecial) invoke).target());
+                        buildValueAccess(methodVisitor, info, ((Ins.InvokeSpecial) invoke).target(), true);
 
                         // push parameters
                         for (Value v : invoke.arguments()) {
-                                buildValueAccess(methodVisitor, info, v);
+                                buildValueAccess(methodVisitor, info, v, true);
                         }
 
                         // invoke special
@@ -876,7 +972,6 @@ public class CodeGenerator {
 
                         String owner = typeToInternalName(invokable.declaringType());
 
-                        Label label = new Label();
                         methodVisitor.visitLabel(label);
 
                         methodVisitor.visitMethodInsn(
@@ -891,14 +986,13 @@ public class CodeGenerator {
                                 else info.push(CodeInfo.Size._1);
                         }
 
-                        methodVisitor.visitLineNumber(invoke.line_col().line, label);
                 } else if (invoke instanceof Ins.InvokeVirtual) {
                         // push target object
-                        buildValueAccess(methodVisitor, info, ((Ins.InvokeVirtual) invoke).target());
+                        buildValueAccess(methodVisitor, info, ((Ins.InvokeVirtual) invoke).target(), true);
 
                         // push parameters
                         for (Value v : invoke.arguments()) {
-                                buildValueAccess(methodVisitor, info, v);
+                                buildValueAccess(methodVisitor, info, v, true);
                         }
 
                         // invoke special
@@ -915,7 +1009,6 @@ public class CodeGenerator {
 
                         String owner = typeToInternalName(invokable.declaringType());
 
-                        Label label = new Label();
                         methodVisitor.visitLabel(label);
 
                         methodVisitor.visitMethodInsn(
@@ -930,11 +1023,10 @@ public class CodeGenerator {
                                 else info.push(CodeInfo.Size._1);
                         }
 
-                        methodVisitor.visitLineNumber(invoke.line_col().line, label);
                 } else if (invoke instanceof Ins.InvokeStatic) {
                         // push parameters
                         for (Value v : invoke.arguments()) {
-                                buildValueAccess(methodVisitor, info, v);
+                                buildValueAccess(methodVisitor, info, v, true);
                         }
 
                         // invoke special
@@ -951,7 +1043,6 @@ public class CodeGenerator {
 
                         String owner = typeToInternalName(invokable.declaringType());
 
-                        Label label = new Label();
                         methodVisitor.visitLabel(label);
 
                         methodVisitor.visitMethodInsn(
@@ -966,14 +1057,13 @@ public class CodeGenerator {
                                 else info.push(CodeInfo.Size._1);
                         }
 
-                        methodVisitor.visitLineNumber(invoke.line_col().line, label);
                 } else if (invoke instanceof Ins.InvokeInterface) {
                         // push target object
-                        buildValueAccess(methodVisitor, info, ((Ins.InvokeInterface) invoke).target());
+                        buildValueAccess(methodVisitor, info, ((Ins.InvokeInterface) invoke).target(), true);
 
                         // push parameters
                         for (Value v : invoke.arguments()) {
-                                buildValueAccess(methodVisitor, info, v);
+                                buildValueAccess(methodVisitor, info, v, true);
                         }
 
                         // invoke special
@@ -990,7 +1080,6 @@ public class CodeGenerator {
 
                         String owner = typeToInternalName(invokable.declaringType());
 
-                        Label label = new Label();
                         methodVisitor.visitLabel(label);
 
                         methodVisitor.visitMethodInsn(
@@ -1005,18 +1094,16 @@ public class CodeGenerator {
                                 else info.push(CodeInfo.Size._1);
                         }
 
-                        methodVisitor.visitLineNumber(invoke.line_col().line, label);
                 } else if (invoke instanceof Ins.InvokeDynamic) {
                         // push parameters
                         for (Value v : invoke.arguments()) {
-                                buildValueAccess(methodVisitor, info, v);
+                                buildValueAccess(methodVisitor, info, v, true);
                         }
 
                         // invoke dynamic
                         Ins.InvokeDynamic invokeDynamic = (Ins.InvokeDynamic) invoke;
                         SInvokable bootstrapMethod = invokeDynamic.invokable();
 
-                        Label label = new Label();
                         methodVisitor.visitLabel(label);
 
                         methodVisitor.visitInvokeDynamicInsn(
@@ -1041,9 +1128,12 @@ public class CodeGenerator {
                                 else info.push(CodeInfo.Size._1);
                         }
 
-                        methodVisitor.visitLineNumber(invoke.line_col().line, label);
                 } else throw new LtBug("unknown invoke type " + invoke);
-                if (invoke.invokable().getReturnType().equals(VoidType.get())) {
+
+                // line number
+                VisitLineNumber(methodVisitor, invoke.line_col(), label);
+
+                if (invoke.invokable().getReturnType().equals(VoidType.get()) && requireValue) {
                         // void methods
                         // push Undefined into stack
                         methodVisitor.visitMethodInsn(
@@ -1121,7 +1211,7 @@ public class CodeGenerator {
                 if (tReturn.returnIns() == Ins.TReturn.Return) {
                         methodVisitor.visitInsn(Opcodes.RETURN);
                 } else {
-                        buildValueAccess(methodVisitor, info, tReturn.value());
+                        buildValueAccess(methodVisitor, info, tReturn.value(), true);
                         methodVisitor.visitInsn(tReturn.returnIns());
                         info.pop(1);
                 }
@@ -1140,7 +1230,7 @@ public class CodeGenerator {
          * @param tStore        Ins.TStore
          */
         private void buildTStore(MethodVisitor methodVisitor, CodeInfo info, Ins.TStore tStore) {
-                buildValueAccess(methodVisitor, info, tStore.newValue());
+                buildValueAccess(methodVisitor, info, tStore.newValue(), true);
                 methodVisitor.visitVarInsn(tStore.mode(), tStore.index());
                 info.pop(1);
                 info.registerLocal(tStore.index());
@@ -1160,8 +1250,8 @@ public class CodeGenerator {
          * @param putField      Ins.PutField
          */
         private void buildPutField(MethodVisitor methodVisitor, CodeInfo info, Ins.PutField putField) {
-                buildValueAccess(methodVisitor, info, putField.obj());
-                buildValueAccess(methodVisitor, info, putField.value());
+                buildValueAccess(methodVisitor, info, putField.obj(), true);
+                buildValueAccess(methodVisitor, info, putField.value(), true);
                 methodVisitor.visitFieldInsn(
                         Opcodes.PUTFIELD,
                         typeToInternalName(putField.field().declaringType()),
@@ -1183,7 +1273,11 @@ public class CodeGenerator {
          * @param getField      Ins.GetField
          */
         private void buildGetField(MethodVisitor methodVisitor, CodeInfo info, Ins.GetField getField) {
-                buildValueAccess(methodVisitor, info, getField.object());
+                buildValueAccess(methodVisitor, info, getField.object(), true);
+
+                Label label = new Label();
+                methodVisitor.visitLabel(label);
+
                 methodVisitor.visitFieldInsn(
                         Opcodes.GETFIELD,
                         typeToInternalName(getField.field().declaringType()),
@@ -1196,6 +1290,8 @@ public class CodeGenerator {
                         getField.field().type().equals(LongTypeDef.get())) {
                         info.push(CodeInfo.Size._2);
                 } else info.push(CodeInfo.Size._1);
+
+                VisitLineNumber(methodVisitor, getField.line_col(), label);
         }
 
         /**
@@ -1211,7 +1307,7 @@ public class CodeGenerator {
          * @param putStatic     Ins.PutStatic
          */
         private void buildPutStatic(MethodVisitor methodVisitor, CodeInfo info, Ins.PutStatic putStatic) {
-                buildValueAccess(methodVisitor, info, putStatic.value());
+                buildValueAccess(methodVisitor, info, putStatic.value(), true);
                 methodVisitor.visitFieldInsn(
                         Opcodes.PUTSTATIC,
                         typeToInternalName(putStatic.field().declaringType()),
@@ -1235,9 +1331,9 @@ public class CodeGenerator {
          * @param TAStore       Ins.TAStore
          */
         private void buildTAStore(MethodVisitor methodVisitor, CodeInfo info, Ins.TAStore TAStore) {
-                buildValueAccess(methodVisitor, info, TAStore.array()); // array
-                buildValueAccess(methodVisitor, info, TAStore.index()); // index
-                buildValueAccess(methodVisitor, info, TAStore.value()); // value
+                buildValueAccess(methodVisitor, info, TAStore.array(), true); // array
+                buildValueAccess(methodVisitor, info, TAStore.index(), true); // index
+                buildValueAccess(methodVisitor, info, TAStore.value(), true); // value
 
                 methodVisitor.visitInsn(TAStore.mode());
                 info.pop(3);
@@ -1258,7 +1354,7 @@ public class CodeGenerator {
          * @param monitorEnter  Ins.MonitorEnter
          */
         private void buildMonitorEnter(MethodVisitor methodVisitor, CodeInfo info, Ins.MonitorEnter monitorEnter) {
-                buildValueAccess(methodVisitor, info, monitorEnter.valueToMonitor());
+                buildValueAccess(methodVisitor, info, monitorEnter.valueToMonitor(), true);
                 methodVisitor.visitInsn(Opcodes.DUP);
                 info.push(CodeInfo.Size._1);
                 methodVisitor.visitVarInsn(Opcodes.ASTORE, monitorEnter.storeIndex());
@@ -1290,6 +1386,7 @@ public class CodeGenerator {
          * @param methodVisitor method visitor
          * @param info          method info
          * @param ins           Instruction
+         * @param requireValue  requires a value when generating {@link ValuePack}
          * @see Instruction
          * @see Value
          * @see lt.compiler.semantic.Ins.TReturn
@@ -1307,7 +1404,7 @@ public class CodeGenerator {
          * @see lt.compiler.semantic.Ins.MonitorEnter
          * @see lt.compiler.semantic.Ins.MonitorExit
          */
-        private void buildOneIns(MethodVisitor methodVisitor, CodeInfo info, Instruction ins) {
+        private void buildOneIns(MethodVisitor methodVisitor, CodeInfo info, Instruction ins, boolean requireValue) {
                 CodeInfo.Container container;
                 if (info.insToLabel.containsKey(ins)) {
                         // fill label
@@ -1323,7 +1420,7 @@ public class CodeGenerator {
                 }
 
                 if (ins instanceof Value) {
-                        buildValueAccess(methodVisitor, info, (Value) ins);
+                        buildValueAccess(methodVisitor, info, (Value) ins, requireValue);
                 } else if (ins instanceof Ins.TReturn) {
                         buildReturn(methodVisitor, info, (Ins.TReturn) ins);
                 } else if (ins instanceof Ins.TStore) {
@@ -1333,7 +1430,7 @@ public class CodeGenerator {
                 } else if (ins instanceof Ins.PutStatic) {
                         buildPutStatic(methodVisitor, info, (Ins.PutStatic) ins);
                 } else if (ins instanceof Ins.IfNe) {
-                        buildValueAccess(methodVisitor, info, ((Ins.IfNe) ins).condition());
+                        buildValueAccess(methodVisitor, info, ((Ins.IfNe) ins).condition(), true);
                         Label l;
                         if (info.insToLabel.containsKey(((Ins.IfNe) ins).gotoIns())) {
                                 l = info.insToLabel.get(((Ins.IfNe) ins).gotoIns()).label;
@@ -1344,7 +1441,7 @@ public class CodeGenerator {
                         methodVisitor.visitJumpInsn(Opcodes.IFNE, l);
                         info.pop(1);
                 } else if (ins instanceof Ins.IfEq) {
-                        buildValueAccess(methodVisitor, info, ((Ins.IfEq) ins).condition());
+                        buildValueAccess(methodVisitor, info, ((Ins.IfEq) ins).condition(), true);
                         Label l;
                         if (info.insToLabel.containsKey(((Ins.IfEq) ins).gotoIns())) {
                                 l = info.insToLabel.get(((Ins.IfEq) ins).gotoIns()).label;
@@ -1369,9 +1466,16 @@ public class CodeGenerator {
                 } else if (ins instanceof Ins.Nop) {
                         methodVisitor.visitInsn(Opcodes.NOP);
                 } else if (ins instanceof Ins.AThrow) {
-                        buildValueAccess(methodVisitor, info, ((Ins.AThrow) ins).exception());
+                        buildValueAccess(methodVisitor, info, ((Ins.AThrow) ins).exception(), true);
+
+                        Label label = new Label();
+                        methodVisitor.visitLabel(label);
+
                         methodVisitor.visitInsn(Opcodes.ATHROW);
                         info.pop(1);
+
+                        VisitLineNumber(methodVisitor, ins.line_col(), label);
+
                 } else if (ins instanceof Ins.ExStore) {
                         info.push(CodeInfo.Size._1);
                         methodVisitor.visitVarInsn(Opcodes.ASTORE, ((Ins.ExStore) ins).index());
@@ -1422,7 +1526,7 @@ public class CodeGenerator {
 
                 methodVisitor.visitCode();
                 for (Instruction ins : instructions) {
-                        buildOneIns(methodVisitor, info, ins);
+                        buildOneIns(methodVisitor, info, ins, false);
                         while (info.getCurrentStackDepth() != 0) {
                                 CodeInfo.Size peek = info.peekSize();
                                 if (peek == CodeInfo.Size._1) methodVisitor.visitInsn(Opcodes.POP);
@@ -1674,7 +1778,8 @@ public class CodeGenerator {
                 else if (value instanceof FloatValue) return ((FloatValue) value).getValue();
                 else if (value instanceof DoubleValue) return ((DoubleValue) value).getValue();
                 else if (value instanceof StringConstantValue) return ((StringConstantValue) value).getStr();
-                else if (value instanceof ClassValue) return Type.getObjectType(((ClassValue) value).className().replace(".", "/"));
+                else if (value instanceof Ins.GetClass) return Type.getObjectType(((Ins.GetClass) value).targetType()
+                        .fullName().replace(".", "/"));
                 else if (value instanceof SArrayValue && ((SArrayValue) value).type().type() instanceof PrimitiveTypeDef) {
                         PrimitiveTypeDef primitiveType = (PrimitiveTypeDef) ((SArrayValue) value).type().type();
                         int length = ((SArrayValue) value).length();

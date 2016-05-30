@@ -31,7 +31,7 @@ public class SimpleTest {
                         "                    n+=i\n" +
                         "                finally\n" +
                         "                    ++n\n" +
-                        "            <n"), new Scanner.Properties(), new ErrorManager(true));
+                        "            return n"), new Scanner.Properties(), new ErrorManager(true));
                 Parser parser = new Parser(scanner.scan(), new ErrorManager(true));
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", parser.parse());
@@ -80,7 +80,12 @@ public class SimpleTest {
                 scriptCompiler.compile(new File("/Users/wkgcass/Desktop/build.lts")).run();
                 */
                 // System.out.println(System.getProperty("user.dir"));
-                REPL.main(new String[]{"-gb", "/Volumes/PROJECTS/openSource/LessTyping/"});
+                // REPL.main(new String[]{"-gb", "/Volumes/PROJECTS/openSource/LessTyping/"});
+                ScriptCompiler scriptCompiler=new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                scriptCompiler.compile("script","" +
+                        "class X\n" +
+                        "    throw RuntimeException()\n" +
+                        "X()").run();
         }
 
         private static int l = "/Volumes/PROJECTS/openSource/LessTyping/target/classes/".length();

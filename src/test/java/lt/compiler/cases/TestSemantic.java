@@ -28,7 +28,6 @@ import lt.compiler.*;
 import lt.compiler.Scanner;
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
-import lt.compiler.semantic.builtin.ClassValue;
 import lt.compiler.syntactic.Expression;
 import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.literal.BoolLiteral;
@@ -345,11 +344,11 @@ public class TestSemantic {
                                 assertEquals(2, arr.length());
                                 assertEquals("java.lang.Class", arr.type().type().fullName());
                                 Value[] values = arr.values();
-                                assertTrue(values[0] instanceof ClassValue);
-                                assertTrue(values[1] instanceof ClassValue);
+                                assertTrue(values[0] instanceof Ins.GetClass);
+                                assertTrue(values[1] instanceof Ins.GetClass);
 
-                                assertEquals("java.lang.Class", ((ClassValue) values[0]).className());
-                                assertEquals("java.lang.String", ((ClassValue) values[1]).className());
+                                assertEquals("java.lang.Class", ((Ins.GetClass) values[0]).targetType().fullName());
+                                assertEquals("java.lang.String", ((Ins.GetClass) values[1]).targetType().fullName());
                         } else if (f.name().equals("strArr")) {
                                 Value v = f.defaultValue();
                                 assertTrue(v instanceof SArrayValue);
@@ -370,9 +369,9 @@ public class TestSemantic {
                                 assertEquals("PUBLIC", ((EnumValue) v).enumStr());
                         } else if (f.name().equals("cls")) {
                                 Value v = f.defaultValue();
-                                assertTrue(v instanceof ClassValue);
+                                assertTrue(v instanceof Ins.GetClass);
                                 assertEquals("java.lang.Class", v.type().fullName());
-                                assertEquals("java.lang.String", ((ClassValue) v).className());
+                                assertEquals("java.lang.String", ((Ins.GetClass) v).targetType().fullName());
                         } else if (f.name().equals("str")) {
                                 Value v = f.defaultValue();
                                 assertEquals(new StringConstantValue("str"), v);
