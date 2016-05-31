@@ -1283,20 +1283,68 @@ public class SemanticProcessor {
                                                 if (a.assignTo.name.equals(f.name())) {
                                                         // find annotation field
                                                         Value v = parseValueFromExpression(a.assignFrom, f.type(), null);
+                                                        v = checkAndCastAnnotationValues(v, a.assignTo.line_col());
                                                         map.put(f, v);
                                                         continue out;
                                                 }
                                         }
                                 }
                                 // not found, check defaultValue
-                                if (f.defaultValue() != null) {
-                                        map.put(f, f.defaultValue());
-                                } else
+                                if (f.defaultValue() == null)
                                         throw new SyntaxException(f.name() + " missing",
                                                 anno == null ? LineCol.SYNTHETIC : anno.line_col());
                         }
                         sAnno.values().putAll(map);
                 }
+        }
+
+        /**
+         * check and cast annotation values
+         *
+         * @param value   value
+         * @param lineCol line column
+         * @return the cast value
+         * @throws SyntaxException compiling error
+         */
+        private Value checkAndCastAnnotationValues(Value value, LineCol lineCol) throws SyntaxException {
+                if (value instanceof IntValue
+                        || value instanceof ShortValue
+                        || value instanceof ByteValue
+                        || value instanceof CharValue
+                        || value instanceof BoolValue
+                        || value instanceof LongValue
+                        || value instanceof DoubleValue
+                        || value instanceof FloatValue
+                        || value instanceof SArrayValue
+                        || value instanceof StringConstantValue
+                        || value instanceof SAnno
+                        || value instanceof Ins.GetClass
+                        || value instanceof EnumValue) {
+                        return value;
+                } else if (value instanceof Ins.GetStatic) {
+                        Ins.GetStatic gs = (Ins.GetStatic) value;
+                        EnumValue enumValue = new EnumValue();
+                        enumValue.setType(gs.field().declaringType());
+                        enumValue.setEnumStr(gs.field().name());
+                        return enumValue;
+                } else if (value instanceof Ins.NewArray || value instanceof Ins.ANewArray) {
+                        List<Value> theValues =
+                                value instanceof Ins.NewArray
+                                        ? ((Ins.NewArray) value).initValues()
+                                        : ((Ins.ANewArray) value).initValues();
+
+                        SArrayValue arr = new SArrayValue();
+                        arr.setDimension(1);
+                        arr.setType((SArrayTypeDef) value.type());
+
+                        List<Value> values = new ArrayList<>();
+                        for (Value v : theValues) {
+                                values.add(checkAndCastAnnotationValues(v, lineCol));
+                        }
+
+                        arr.setValues(values.toArray(new Value[values.size()]));
+                        return arr;
+                } else throw new SyntaxException("invalid annotation field " + value, lineCol);
         }
 
         /**
@@ -5005,8 +5053,9 @@ public class SemanticProcessor {
                         try {
                                 v = parseValueFromExpression(access.exp, null, scope);
                                 if (null != v) isValue = true;
-                        } catch (SyntaxException e) {
-                                ex = e;
+                        } catch (Throwable e) {
+                                if (e instanceof SyntaxException)
+                                        ex = (SyntaxException) e;
                         }
                         if (isValue && isGetFieldAtRuntime(v)) {
                                 isValue = false;
@@ -5027,7 +5076,7 @@ public class SemanticProcessor {
                         // handle
                         if (type != null) {
                                 // SomeClass.fieldName -- getStatic
-                                SFieldDef f = findFieldFromTypeDef(access.name, type, scope.type(), FIND_MODE_STATIC, true);
+                                SFieldDef f = findFieldFromTypeDef(access.name, type, scope == null ? null : scope.type(), FIND_MODE_STATIC, true);
                                 if (null != f) {
                                         return new Ins.GetStatic(f, access.line_col());
                                 } else
@@ -5053,7 +5102,12 @@ public class SemanticProcessor {
                                                 return new Ins.GetField(f, v, access.line_col());
                                         }
                                 }
-                        } else throw ex;
+                        } else {
+                                if (ex == null) {
+                                        throw new SyntaxException("cannot parse " + access, access.line_col());
+                                } else
+                                        throw ex;
+                        }
                 }
         }
 
@@ -5141,16 +5195,20 @@ public class SemanticProcessor {
 
                         if (f.name().equals(fieldName)) {
                                 if (f.modifiers().contains(SModifier.PUBLIC)) return f;
-                                else if (f.modifiers().contains(SModifier.PROTECTED)) {
-                                        if (theClass.isAssignableFrom(type) // type is subclass of theClass
-                                                ||
-                                                theClass.pkg().equals(type.pkg()) // same package
-                                                ) return f;
-                                } else if (f.modifiers().contains(SModifier.PRIVATE)) {
-                                        if (theClass.equals(type)) return f;
-                                } else {
-                                        // package access
-                                        if (theClass.pkg().equals(type.pkg())) return f;
+                                else {
+                                        if (type != null) {
+                                                if (f.modifiers().contains(SModifier.PROTECTED)) {
+                                                        if (theClass.isAssignableFrom(type) // type is subclass of theClass
+                                                                ||
+                                                                theClass.pkg().equals(type.pkg()) // same package
+                                                                ) return f;
+                                                } else if (f.modifiers().contains(SModifier.PRIVATE)) {
+                                                        if (theClass.equals(type)) return f;
+                                                } else {
+                                                        // package access
+                                                        if (theClass.pkg().equals(type.pkg())) return f;
+                                                }
+                                        }
                                 }
                         }
                 }
@@ -6426,7 +6484,7 @@ public class SemanticProcessor {
          * </ul>
          *
          * @param o the input object
-         * @return Value object<br>
+         * @return Value object.<br>
          * <ul>
          * <li>IntValue</li>
          * <li>LongValue</li>
@@ -6488,6 +6546,7 @@ public class SemanticProcessor {
                                 try {
                                         Object obj = annoCls.getMethod(f.name()).invoke(o);
                                         Value v = parseValueFromObject(obj);
+                                        v = checkAndCastAnnotationValues(v, LineCol.SYNTHETIC);
                                         map.put(f, v);
                                 } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                                         throw new LtBug(e);

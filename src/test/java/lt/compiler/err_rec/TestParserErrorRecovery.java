@@ -295,36 +295,20 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "@Anno(a=invoke())\n" +
-                /*               ^expecting literal or array */
                         "@[]\n" +
                 /*        ^expecting annotation instance */
                         "a"
                         , err);
 
-                assertEquals(2, err.errorList.size());
-                assertEquals(1, err.errorList.get(0).lineCol.line);
-                assertEquals(7, err.errorList.get(0).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(0).type);
+                assertEquals(1, err.errorList.size());
 
-                assertEquals(2, err.errorList.get(1).lineCol.line);
-                assertEquals(2, err.errorList.get(1).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(1).type);
+                assertEquals(1, err.errorList.get(0).lineCol.line);
+                assertEquals(2, err.errorList.get(0).lineCol.column);
+                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(0).type);
 
                 assertEquals(1, statements.size());
                 assertEquals(
-                        new VariableDef(
-                                "a",
-                                Collections.emptySet(),
-                                Collections.singleton(
-                                        new AST.Anno(
-                                                new AST.Access(null, "Anno", LineCol.SYNTHETIC),
-                                                Collections.emptyList(),
-                                                LineCol.SYNTHETIC
-                                        )
-                                ),
-                                LineCol.SYNTHETIC
-                        ),
+                        new AST.Access(null, "a", LineCol.SYNTHETIC),
                         statements.get(0)
                 );
         }

@@ -29,6 +29,7 @@ package lt.compiler;
  */
 public class SyntaxException extends CompileException {
         public final LineCol lineCol;
+        public final String msg;
 
         public SyntaxException(String msg, LineCol lineCol) {
                 super(msg +
@@ -38,6 +39,7 @@ public class SyntaxException extends CompileException {
                         (lineCol.useDefine.isEmpty()
                                 ? ""
                                 : "\nThis line uses defined replacement (" + lineCol.useDefine + "), the column might not be precise"));
+                this.msg = msg;
                 this.lineCol = lineCol;
         }
 }

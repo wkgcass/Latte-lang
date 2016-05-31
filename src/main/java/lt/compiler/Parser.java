@@ -201,7 +201,7 @@ public class Parser {
                                         jumpToTheNearestEndingNode();
                                         continue;
                                 } catch (SyntaxException e) {
-                                        err.SyntaxException(e.getMessage(), e.lineCol);
+                                        err.SyntaxException(e.msg, e.lineCol);
                                         jumpToTheNearestEndingNode();
                                         continue;
                                 }
@@ -759,17 +759,11 @@ public class Parser {
                                 if (exp instanceof VariableDef) {
                                         VariableDef v = (VariableDef) exp;
 
-                                        // only takes literal or Array
-                                        if (v.getInit() instanceof Literal || v.getInit() instanceof AST.ArrayExp) {
-                                                AST.Assignment a = new AST.Assignment(
-                                                        new AST.Access(null, v.getName(), v.line_col()),
-                                                        "=",
-                                                        v.getInit(), v.line_col());
-                                                assignments.add(a);
-                                        } else {
-                                                err.UnexpectedTokenException("literal or array", v.toString(), v.line_col());
-                                                err.debug("ignore the value, assume that the annotation field is not set");
-                                        }
+                                        AST.Assignment a = new AST.Assignment(
+                                                new AST.Access(null, v.getName(), v.line_col()),
+                                                "=",
+                                                v.getInit(), v.line_col());
+                                        assignments.add(a);
                                 } else {
                                         AST.Assignment a = new AST.Assignment(
                                                 new AST.Access(null, "value", exp.line_col()),

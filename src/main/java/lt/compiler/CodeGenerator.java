@@ -1746,7 +1746,7 @@ public class CodeGenerator {
                                                 AnnotationVisitor annoVisitor = visitor.visitAnnotation(null, typeToDesc(arrValue.type()));
                                                 buildAnnotation(annoVisitor, (SAnno) arrValue);
                                         } else {
-                                                visitor.visit(null, parseValueIntoASMObject(v));
+                                                visitor.visit(null, parseValueIntoASMObject(arrValue));
                                         }
                                 }
                                 visitor.visitEnd();

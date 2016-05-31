@@ -26,6 +26,7 @@ package lt.compiler.cases;
 
 import lt.compiler.*;
 import lt.compiler.Scanner;
+import lt.compiler.semantic.SModifier;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 import lt.lang.*;
@@ -2006,5 +2007,63 @@ public class TestCodeGen {
                 Method testNameSetter = cls.getMethod("testNameSetter", Object.class);
                 testNameSetter.invoke(null, u);
                 assertEquals("abc", testNameGetter.invoke(null, u));
+        }
+
+        @Test
+        public void testAllKindsOfAnnotations() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "@lt::compiler::TestAllKindsOfAnnos(\n" +
+                                "    str='theStr'\n" +
+                                "    strArr=['a','b']\n" +
+                                "    i=1\n" +
+                                "    iArr=[1,2]\n" +
+                                "    s=1\n" +
+                                "    sArr=[1,2]\n" +
+                                "    b=1\n" +
+                                "    bArr=[1,2]\n" +
+                                "    c='a'\n" +
+                                "    cArr=['a','b']\n" +
+                                "    bo=true\n" +
+                                "    boArr=[true,false]\n" +
+                                "    l=1\n" +
+                                "    lArr=[1,2]\n" +
+                                "    f=1\n" +
+                                "    fArr=[1,2]\n" +
+                                "    d=1\n" +
+                                "    dArr=[1,2]\n" +
+                                "    cls=type Class\n" +
+                                "    clsArr=[type Class,type Object]\n" +
+                                "    en=lt::compiler::semantic::SModifier.PUBLIC\n" +
+                                "    enArr=[\n" +
+                                "        lt::compiler::semantic::SModifier.PUBLIC\n" +
+                                "        lt::compiler::semantic::SModifier.PRIVATE" +
+                                "    ]\n" +
+                                ")\n" +
+                                "class TestAllKindsOfAnnotations",
+                        "TestAllKindsOfAnnotations");
+                TestAllKindsOfAnnos test = cls.getAnnotation(TestAllKindsOfAnnos.class);
+                assertEquals("theStr", test.str());
+                assertArrayEquals(new String[]{"a", "b"}, test.strArr());
+                assertEquals(1, test.i());
+                assertArrayEquals(new int[]{1, 2}, test.iArr());
+                assertEquals((short) 1, test.s());
+                assertArrayEquals(new short[]{1, 2}, test.sArr());
+                assertEquals((byte) 1, test.b());
+                assertArrayEquals(new byte[]{1, 2}, test.bArr());
+                assertEquals('a', test.c());
+                assertArrayEquals(new char[]{'a', 'b'}, test.cArr());
+                assertEquals(true, test.bo());
+                assertArrayEquals(new boolean[]{true, false}, test.boArr());
+                assertEquals((long) 1, test.l());
+                assertArrayEquals(new long[]{1, 2}, test.lArr());
+                assertEquals((float) 1, test.f(), 0);
+                assertArrayEquals(new float[]{1, 2}, test.fArr(), 0);
+                assertEquals((double) 1, test.d(), 0);
+                assertArrayEquals(new double[]{1, 2}, test.dArr(), 0);
+                assertEquals(Class.class, test.cls());
+                assertArrayEquals(new Class[]{Class.class, Object.class}, test.clsArr());
+                assertEquals(SModifier.PUBLIC, test.en());
+                assertArrayEquals(new SModifier[]{SModifier.PUBLIC, SModifier.PRIVATE}, test.enArr());
         }
 }
