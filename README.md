@@ -18,6 +18,7 @@ LessTyping supports
 
 * Operator Binding
 * DSL
+* Data Class
 * Pre-Processing define/undef
 * Inner Method
 * Lambda
@@ -135,6 +136,7 @@ LessTyping 支持如下功能
 
 * 运算符绑定
 * DSL
+* Data Class
 * 预处理 define/undef
 * 内部方法
 * Lambda

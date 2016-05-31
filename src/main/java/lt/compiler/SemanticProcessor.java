@@ -4910,7 +4910,7 @@ public class SemanticProcessor {
                         try {
                                 Value i = cast(IntTypeDef.get(), list.get(0), index.args.get(0).line_col());
                                 return new Ins.TALoad(v, i, index.line_col());
-                        } catch (SyntaxException ignore) {
+                        } catch (Throwable ignore) {
                                 // cast failed
                         }
                 }
@@ -5923,7 +5923,7 @@ public class SemanticProcessor {
                                         Throwable throwableWhenTryValue = null;
                                         try {
                                                 target = parseValueFromExpression(access.exp, null, scope);
-                                        } catch (SyntaxException | LtBug e) {
+                                        } catch (Throwable e) {
                                                 // parse from value failed
                                                 isValue = false;
                                                 throwableWhenTryValue = e;
@@ -5937,7 +5937,7 @@ public class SemanticProcessor {
                                                         try {
                                                                 getTypeWithAccess((AST.Access) access.exp, imports);
                                                                 isValue = false; // parse Type
-                                                        } catch (SyntaxException | AssertionError ignore) {
+                                                        } catch (Throwable ignore) {
                                                                 // not type or wrong format
                                                         }
                                                 }
@@ -6031,7 +6031,7 @@ public class SemanticProcessor {
                         STypeDef type = null;
                         try {
                                 type = getTypeWithAccess(access, imports);
-                        } catch (SyntaxException | AssertionError | ClassCastException ignore) {
+                        } catch (Throwable ignore) {
                                 // not found or not type format
                         }
                         if (type instanceof SClassDef) {
@@ -7229,7 +7229,7 @@ public class SemanticProcessor {
                                         assert m.getParameterCount() == 0;
                                         try {
                                                 sAnno.alreadyCompiledAnnotationValueMap().put(m.getName(), m.invoke(a));
-                                        } catch (Exception e) {
+                                        } catch (Throwable e) {
                                                 // the exception should never occur
                                                 throw new LtBug(e);
                                         }
