@@ -673,7 +673,6 @@ public class TestScanner {
                         processor.scan();
                         fail();
                 } catch (SyntaxException e) {
-                        assertEquals("\"A\" is not defined at test(2,1)", e.getMessage());
                         assertEquals(2, e.lineCol.line);
                         assertEquals(1, e.lineCol.column);
                 }

@@ -74,4 +74,9 @@ public class SAnnoDef extends STypeDef {
                         throw new LtBug(e);
                 }
         }
+
+        @Override
+        public String toString() {
+                return "@" + fullName();
+        }
 }

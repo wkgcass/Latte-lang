@@ -1073,8 +1073,7 @@ public class Parser {
                                                                                 err.SyntaxException("parameter cannot be " + access.toString(), access.line_col());
                                                                                 err.debug("ignore access.exp");
                                                                         }
-                                                                        VariableDef v = new VariableDef(access.name, Collections.emptySet(), annos, current.getLineCol());
-                                                                        annos.clear();
+                                                                        VariableDef v = new VariableDef(access.name, Collections.emptySet(), Collections.emptySet(), current.getLineCol());
                                                                         params.add(v);
 
                                                                         newParamNames.add(v.getName());
@@ -1345,8 +1344,7 @@ public class Parser {
                                         }
 
                                         AST.Access access = (AST.Access) s;
-                                        VariableDef d = new VariableDef(access.name, Collections.emptySet(), annos, access.line_col());
-                                        annos.clear();
+                                        VariableDef d = new VariableDef(access.name, Collections.emptySet(), Collections.emptySet(), access.line_col());
                                         variableList.add(d);
                                         names.add(access.name);
                                 } else if (s instanceof VariableDef) {

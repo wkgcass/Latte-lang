@@ -51,7 +51,8 @@ import org.junit.runner.RunWith;
         TestScannerErrorRecovery.class,
         TestParserErrorRecovery.class,
         TestScript.class,
-        TestLibraries.class
+        TestLibraries.class,
+        TestAnnotations.class
 })
 public class Suite extends TestSuite {
 }

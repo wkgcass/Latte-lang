@@ -46,7 +46,7 @@ public class LtLibCompiler {
          * these files should be added into generated jar files
          */
         public static List<String> REQUIRED_FILES = Arrays.asList(
-                "classes.txt", "build.lts.template"
+                "classes.txt", "build.lts.template", "run.lts.template"
         );
 
         /**

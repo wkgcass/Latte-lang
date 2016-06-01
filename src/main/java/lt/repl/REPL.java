@@ -206,7 +206,7 @@ public class REPL {
                                         "-o       [option] Specify the output directory. (the source-directory/target/classes/ as default)\n" +
                                         "-cp      [option] The classpath. use ':' to separate the class-paths\n" +
                                         "-repl    Start the repl (or run the program with 0 arguments)\n" +
-                                        "-gb      Generate build.lts in the given directory");
+                                        "-gb      Generate build.lts and run.lts in the given directory");
                                 break;
                         case "-s":
                                 // run scripts
@@ -303,41 +303,49 @@ public class REPL {
                                 }
                                 break;
                         case "-gb":
+
+                                final List<String> theFilesToBeGenerated = Arrays.asList("build.lts", "run.lts");
+
                                 if (args.length != 2) {
                                         System.err.println("invalid command -gb.");
                                         System.err.println("see --help");
                                         return;
                                 }
                                 String projectDir = args[1];
-                                String filePath = projectDir + File.separator + "build.lts";
-                                File file = new File(filePath);
-                                if (!file.exists()) {
+
+                                String core = String.valueOf(Runtime.getRuntime().availableProcessors());
+                                String separator = File.separator;
+
+                                for (String theFile : theFilesToBeGenerated) {
+                                        String filePath = projectDir + File.separator + theFile;
+                                        File file = new File(filePath);
+                                        if (file.exists()) {
+                                                System.out.println("[INFO] " + filePath + " exists");
+                                        } else {
+                                                try {
+                                                        file.createNewFile();
+                                                } catch (IOException e) {
+                                                        e.printStackTrace();
+                                                }
+                                        }
+
                                         try {
-                                                file.createNewFile();
+                                                FileWriter fw = new FileWriter(file);
+                                                BufferedReader br = new BufferedReader(new InputStreamReader(REPL.class.getResourceAsStream("/" + theFile + ".template")));
+
+                                                String ss;
+                                                while ((ss = br.readLine()) != null) {
+                                                        ss = ss.replace("${core}", core)
+                                                                .replace("${dir}", projectDir)
+                                                                .replace("${separator}", separator)
+                                                                .replace("\\", "\\\\") + "\n";
+                                                        fw.write(ss.toCharArray());
+                                                }
+                                                fw.flush();
+                                                fw.close();
                                         } catch (IOException e) {
                                                 e.printStackTrace();
                                         }
-                                }
-
-                                try {
-                                        FileWriter fw = new FileWriter(file);
-                                        BufferedReader br = new BufferedReader(new InputStreamReader(REPL.class.getResourceAsStream("/build.lts.template")));
-
-                                        String core = String.valueOf(Runtime.getRuntime().availableProcessors());
-                                        String separator = File.separator;
-
-                                        String ss;
-                                        while ((ss = br.readLine()) != null) {
-                                                ss = ss.replace("${core}", core)
-                                                        .replace("${dir}", projectDir)
-                                                        .replace("${separator}", separator)
-                                                        .replace("\\", "\\\\") + "\n";
-                                                fw.write(ss.toCharArray());
-                                        }
-                                        fw.flush();
-                                        fw.close();
-                                } catch (IOException e) {
-                                        e.printStackTrace();
                                 }
                                 break;
                         case "-repl":
@@ -382,18 +390,16 @@ public class REPL {
                                                 default:
                                                         System.err.println("unknown option " + cmd);
                                                         System.err.println("see --help");
+                                                        return;
                                         }
                                 }
-                                URLClassLoader urlClassLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]));
+
                                 try {
-                                        Class<?> cls = urlClassLoader.loadClass(command.replace("::", "."));
-                                        Method method = cls.getDeclaredMethod("main", String[].class);
-                                        method.setAccessible(true);
-                                        method.invoke(null, new Object[]{runArgs});
-                                } catch (Exception e) {
-                                        if (e instanceof InvocationTargetException) {
-                                                e.getCause().printStackTrace();
-                                        } else e.printStackTrace();
+                                        // run the class
+                                        Run run = new Run(urls, command);
+                                        run.exec(runArgs);
+                                } catch (Throwable t) {
+                                        t.printStackTrace();
                                 }
                 }
         }

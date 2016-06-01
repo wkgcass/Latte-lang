@@ -323,6 +323,9 @@ public class Scanner {
                 int rootIndent = -1;
                 while (line != null) {
                         ++args.currentLine;
+
+                        err.putLineRecord(args.fileName, args.currentLine, line);
+
                         args.currentCol = properties._COLUMN_BASE_;
                         args.useDefine.clear();
 

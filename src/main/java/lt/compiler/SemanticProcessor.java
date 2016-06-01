@@ -342,7 +342,8 @@ public class SemanticProcessor {
                                 }
 
                                 // annos
-                                parseAnnos(classDef.annos, sClassDef, imports, ElementType.TYPE);
+                                parseAnnos(classDef.annos, sClassDef, imports, ElementType.TYPE,
+                                        Collections.singletonList(ElementType.CONSTRUCTOR));
 
                                 // parse constructor
                                 int generateIndex = -1;
@@ -376,6 +377,11 @@ public class SemanticProcessor {
 
                                         constructor.setDeclaringType(sClassDef);
 
+                                        // annotation
+                                        parseAnnos(classDef.annos, constructor, imports, ElementType.CONSTRUCTOR,
+                                                Collections.singletonList(ElementType.TYPE));
+
+                                        // modifier
                                         boolean hasAccessModifier = false;
                                         for (Modifier m : classDef.modifiers) {
                                                 if (m.modifier.equals(Modifier.Available.PUBLIC)
@@ -503,7 +509,7 @@ public class SemanticProcessor {
                                 }
 
                                 // parse annos
-                                parseAnnos(interfaceDef.annos, sInterfaceDef, imports, ElementType.TYPE);
+                                parseAnnos(interfaceDef.annos, sInterfaceDef, imports, ElementType.TYPE, Collections.emptyList());
 
                                 // parse fields and methods
                                 List<AST.StaticScope> staticScopes = new ArrayList<>();
@@ -1160,6 +1166,15 @@ public class SemanticProcessor {
                         );
                         is.arguments().addAll(initValues);
                         zeroParamCons.statements().add(is);
+
+                        // annotations
+                        for (SAnno anno : con.annos()) {
+                                SAnno newAnno = new SAnno();
+                                newAnno.setAnnoDef(anno.type());
+                                newAnno.setPresent(zeroParamCons);
+                                newAnno.values().putAll(anno.values());
+                                zeroParamCons.annos().add(newAnno);
+                        }
                 }
                 for (SFieldDef f : cls.fields()) {
                         if (f.modifiers().contains(SModifier.STATIC)) continue;
@@ -6758,18 +6773,31 @@ public class SemanticProcessor {
          * @param type                  the annotation accepts element type
          * @throws SyntaxException exception
          */
-        private void parseAnnos(Set<AST.Anno> annos, SAnnotationPresentable annotationPresentable, List<Import> imports, ElementType type) throws SyntaxException {
+        private void parseAnnos(Set<AST.Anno> annos,
+                                SAnnotationPresentable annotationPresentable,
+                                List<Import> imports,
+                                ElementType type,
+                                List<ElementType> checkTheseWhenFail) throws SyntaxException {
                 for (AST.Anno anno : annos) {
-                        STypeDef annoType = getTypeWithAccess(anno.anno, imports);
-                        if (!((SAnnoDef) annoType).canPresentOn(type)) {
-                                throw new SyntaxException("annotation " + annoType + " cannot present on " + type, anno.line_col());
-                        }
-                        SAnno s = new SAnno();
-                        s.setAnnoDef((SAnnoDef) annoType);
-                        s.setPresent(annotationPresentable);
-                        annotationPresentable.annos().add(s);
+                        SAnnoDef annoType = (SAnnoDef) getTypeWithAccess(anno.anno, imports);
+                        if (annoType.canPresentOn(type)) {
+                                SAnno s = new SAnno();
+                                s.setAnnoDef(annoType);
+                                s.setPresent(annotationPresentable);
+                                annotationPresentable.annos().add(s);
 
-                        annotationRecorder.put(s, anno);
+                                annotationRecorder.put(s, anno);
+                        } else {
+                                boolean fail = true;
+                                for (ElementType t : checkTheseWhenFail) {
+                                        if (annoType.canPresentOn(t)) {
+                                                fail = false;
+                                                break;
+                                        }
+                                }
+                                if (fail)
+                                        throw new SyntaxException("annotation " + annoType + " cannot present on " + type, anno.line_col());
+                        }
                 }
         }
 
@@ -6820,7 +6848,10 @@ public class SemanticProcessor {
                                 }
                         }
 
-                        parseAnnos(v.getAnnos(), param, imports, ElementType.PARAMETER);
+                        parseAnnos(v.getAnnos(), param, imports, ElementType.PARAMETER,
+                                // the modifier may be field
+                                allowAccessModifier ? Collections.singletonList(ElementType.FIELD) : Collections.emptyList()
+                        );
 
                         invokable.getParameters().add(param);
                 }
@@ -6906,7 +6937,7 @@ public class SemanticProcessor {
                         fieldDef.modifiers().add(SModifier.STATIC);
                 }
                 // annos
-                parseAnnos(v.getAnnos(), fieldDef, imports, ElementType.FIELD);
+                parseAnnos(v.getAnnos(), fieldDef, imports, ElementType.FIELD, Collections.singletonList(ElementType.PARAMETER));
 
                 // check whether the field has already been defined
                 List<SFieldDef> fields;
@@ -7012,7 +7043,7 @@ public class SemanticProcessor {
                 }
 
                 // annos
-                parseAnnos(m.annos, methodDef, imports, ElementType.METHOD);
+                parseAnnos(m.annos, methodDef, imports, ElementType.METHOD, Collections.emptyList());
 
                 // check can be added into class
                 List<SMethodDef> methods;

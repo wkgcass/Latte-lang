@@ -1602,13 +1602,6 @@ public class CodeGenerator {
          */
         private void buildConstructor(ClassWriter classWriter, List<SConstructorDef> constructors) {
                 for (SConstructorDef cons : constructors) {
-                        // annotations
-                        for (SAnno anno : cons.annos()) {
-                                AnnotationVisitor annotationVisitor = classWriter.visitAnnotation(typeToDesc(anno.type()),
-                                        annotationIsVisible(anno));
-                                buildAnnotation(annotationVisitor, anno);
-                        }
-
                         MethodVisitor methodVisitor = classWriter.visitMethod(
                                 acc(cons.modifiers()),
                                 "<init>",
@@ -1616,6 +1609,15 @@ public class CodeGenerator {
                                         VoidType.get(),
                                         cons.getParameters().stream().map(SParameter::type).collect(Collectors.toList())),
                                 null, null);
+
+                        // annotations
+                        for (SAnno anno : cons.annos()) {
+                                AnnotationVisitor annotationVisitor = methodVisitor.visitAnnotation(typeToDesc(anno.type()),
+                                        annotationIsVisible(anno));
+                                buildAnnotation(annotationVisitor, anno);
+                        }
+                        buildParameter(methodVisitor, cons.getParameters());
+
                         buildInstructions(
                                 methodVisitor,
                                 new CodeInfo(1 + cons.getParameters().size()),
@@ -1633,14 +1635,15 @@ public class CodeGenerator {
          */
         private void buildField(ClassWriter classWriter, List<SFieldDef> fields) {
                 for (SFieldDef field : fields) {
+                        FieldVisitor fieldVisitor = classWriter.visitField(acc(field.modifiers()), field.name(), typeToDesc(field.type()), null, null);
+
                         // annotations
                         for (SAnno anno : field.annos()) {
-                                AnnotationVisitor annotationVisitor = classWriter.visitAnnotation(typeToDesc(anno.type()),
+                                AnnotationVisitor annotationVisitor = fieldVisitor.visitAnnotation(typeToDesc(anno.type()),
                                         annotationIsVisible(anno));
                                 buildAnnotation(annotationVisitor, anno);
                         }
 
-                        FieldVisitor fieldVisitor = classWriter.visitField(acc(field.modifiers()), field.name(), typeToDesc(field.type()), null, null);
                         fieldVisitor.visitEnd();
                 }
         }
@@ -1669,6 +1672,7 @@ public class CodeGenerator {
                                 );
                                 buildAnnotation(annotationVisitor, anno);
                         }
+                        buildParameter(methodVisitor, method.getParameters());
 
                         if (method.modifiers().contains(SModifier.ABSTRACT)) {
                                 if (!method.statements().isEmpty()) throw new LtBug("statements for abstract method should be empty");
@@ -1684,6 +1688,25 @@ public class CodeGenerator {
 
                         }
                         methodVisitor.visitEnd();
+                }
+        }
+
+        /**
+         * build parameter annotations
+         *
+         * @param methodVisitor method visitor
+         * @param params        parameters
+         */
+        private void buildParameter(MethodVisitor methodVisitor, List<SParameter> params) {
+                for (int i = 0; i < params.size(); i++) {
+                        SParameter param = params.get(i);
+                        methodVisitor.visitParameter(param.name(), param.canChange() ? 0 : Opcodes.ACC_FINAL);
+                        for (SAnno anno : param.annos()) {
+                                AnnotationVisitor annotationVisitor = methodVisitor.visitParameterAnnotation(
+                                        i, typeToDesc(anno.type()), annotationIsVisible(anno)
+                                );
+                                buildAnnotation(annotationVisitor, anno);
+                        }
                 }
         }
 
