@@ -22,15 +22,15 @@ $(document).ready(function () {
     app.controller('controller', ['$scope', '$sce', function ($scope, $sce) {
         $scope.git_repo = common_git_repo();
 
-        $scope.header = "Latte";
-        $scope.header_descr = "Highly Readable and Extensible JVM Language";
+        $scope.header = "The Latte Programming Language";
+        $scope.header_descr = "100% interoperable with Java™";
         $scope.header_button = "Fork me on Github";
         $scope.navs = common_navs();
         $scope.navs[0].active = true;
 
         $scope.introduction = {
             title: "Latte",
-            content: $sce.trustAsHtml("Latte是一种可读,灵活,简单,易扩展的JVM编程语言")
+            content: $sce.trustAsHtml("Latte是一种可读,灵活,简单,易扩展的JVM编程语言. 正如它的名字一样,可以与java完美融合.")
         };
         $scope.feature = {
             title: "特性",

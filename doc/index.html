@@ -86,16 +86,17 @@
             </div>
         </div>
     </div>
-    <video id="theVideo" src="https://github.com/wkgcass/Latte-lang/raw/master/doc/images/Latte-Demo.mp4"
-           style="background-color: black; margin-top: -60px;padding-top:60px;z-index:0"
-           width="100%"
-           height="600px"
-           controls="controls">your browser does not support video.
-        please visit <a target="_blank" href="https://www.youtube.com/embed/gd1Hods0BQE">here (youtube)</a>
-        or visit <a target="_blank" href="http://player.youku.com/embed/XMTU4ODc3Mzc4MA==">here (youku)</a>
-        to watch another video. <br>
-        Or you can use Chrome/Firefox to watch this video.
-    </video>
+    <div id="theVideo" style="text-align: center;margin-top: -60px; padding-top: 60px;z-index: 99">
+        <embed
+                src="http://player.youku.com/player.php/sid/XMTU5MzkxMTQwMA==/v.swf"
+                allowFullScreen="true"
+                quality="high"
+                width="100%"
+                height="600"
+                align="middle"
+                allowScriptAccess="always"
+                type="application/x-shockwave-flash"></embed>
+    </div>
     <div class="ui vertical stripe segment">
         <div class="ui text container">
             <h3>{{build.title}}</h3>

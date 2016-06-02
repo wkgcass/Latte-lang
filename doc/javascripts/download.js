@@ -81,7 +81,7 @@ $(document).ready(function () {
                     "</textarea>\n" +
                     "<script>var editor = CodeMirror.fromTextArea(document.getElementById('highlighting_html'));editor.setSize('auto', '220px');</script>"),
                 $sce.trustAsHtml("<h3>Atom</h3>"),
-                $sce.trustAsHtml("在Atom中搜索并安装 <code>Atom-Latte-Highlighting</code> 或者按照<a href='https://atom.io/packages/Atom-Latte-Highlighting'>这里</a>的步骤进行安装"),
+                $sce.trustAsHtml("在Atom中搜索并安装 <code>Atom-Latte-lang-Highlighting</code> 或者按照<a target='_blank' href='https://atom.io/packages/Atom-Latte-lang-Highlighting'>这里</a>的步骤进行安装"),
                 $sce.trustAsHtml("<img src='images/highlight.png'>")
             ]
         };
@@ -89,7 +89,7 @@ $(document).ready(function () {
             title: "IDE",
             contents: [
                 $sce.trustAsHtml("针对Atom开发了一个Latte的IDE"),
-                $sce.trustAsHtml("在Atom中搜索并安装 <code>atom-latte-ide</code> 并按照<a target='_blank' href='https://atom.io/packages/atom-latte-ide'>这里</a>的步骤进行配置")
+                $sce.trustAsHtml("在Atom中搜索并安装 <code>atom-latte-lang-ide</code> 并按照<a target='_blank' href='https://atom.io/packages/atom-latte-lang-ide'>这里</a>的步骤进行配置")
             ]
         }
     }
