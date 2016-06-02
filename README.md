@@ -11,8 +11,8 @@ Click [here](http://latte.cassite.net/#theVideo) to watch a video about Latte.
 
 `Atom` Extensions :
 
-[atom-latte-highlighting](https://atom.io/packages/Atom-Latte-Highlighting)  
-[atom-latte-ide](https://atom.io/packages/atom-latte-ide)
+[atom-latte-lang-highlighting](https://atom.io/packages/Atom-Latte-lang-Highlighting)  
+[atom-latte-lang-ide](https://atom.io/packages/atom-latte-lang-ide)
 
 Latte supports 
 
@@ -129,8 +129,8 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
 `Atom`上的扩展插件:
 
-[atom-latte-highlighting](https://atom.io/packages/Atom-Latte-Highlighting)  
-[atom-latte-ide](https://atom.io/packages/atom-latte-ide)
+[atom-latte-lang-highlighting](https://atom.io/packages/Atom-Latte-lang-Highlighting)  
+[atom-latte-lang-ide](https://atom.io/packages/atom-latte-lang-ide)
 
 Latte 支持如下功能
 
