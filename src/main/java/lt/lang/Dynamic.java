@@ -70,7 +70,7 @@ public class Dynamic {
         }
 
         /**
-         * the bootstrap method for LessTyping Dynamic
+         * the bootstrap method for Latte Dynamic
          *
          * @param lookup     lookup
          * @param methodName method name

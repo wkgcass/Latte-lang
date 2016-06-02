@@ -11,7 +11,7 @@ $(document).ready(function () {
 
         $scope.compiler = {
             title: "编译器",
-            content: $sce.trustAsHtml("<p>LessTyping的编译器分为" +
+            content: $sce.trustAsHtml("<p>Latte的编译器分为" +
                 "词法分析(<code>lt.compiler.Scanner</code>)," +
                 "语法分析(<code>lt.compiler.Parser</code>)," +
                 "语义分析(<code>lt.compiler.SemanticProcessor</code>)," +
@@ -26,7 +26,7 @@ $(document).ready(function () {
 
         $scope.src_code = {
             title: "源代码结构",
-            descr: "LessTyping采用标准的Maven目录结构"
+            descr: "Latte采用标准的Maven目录结构"
         };
     }]);
 });

@@ -11,11 +11,11 @@ $(document).ready(function () {
 
         $scope.examples = [
             {
-                title: '你好, LessTyping',
+                title: '你好, Latte',
                 content: $sce.trustAsHtml('' +
                     '<p>进入REPL交互程序,你将会看到 <code>lt&gt;&nbsp;</code></p>' +
                     '<p>在右侧输入语句或表达式, 并按两次回车, REPL将编译并执行输入的表达式</p>' +
-                    '<p>输入 ' + highlighting('test.lt', "println('Hello LessTyping')", {}) + '</p><p>控制台将打印 <code>Hello LessTyping</code></p>')
+                    '<p>输入 ' + highlighting('test.lt', "println('Hello Latte')", {}) + '</p><p>控制台将打印 <code>Hello Latte</code></p>')
             },
             {
                 title: '九九乘法表',
@@ -55,8 +55,8 @@ $(document).ready(function () {
                         , {}) +
                     '</pre>' +
                     '<p>定义了一个类, 它拥有一个"带两个整数参数"的构造函数</p>' +
-                    '<p>在 <code>LessTyping</code> 中,构造函数的参数将直接视为字段(Field)</p>' +
-                    '<p>同时,构造块中定义的变量同样视为字段. 在 <code>LessTyping</code> 中字段默认为私有, 所以不用担心这些值被污染</p>' +
+                    '<p>在 <code>Latte</code> 中,构造函数的参数将直接视为字段(Field)</p>' +
+                    '<p>同时,构造块中定义的变量同样视为字段. 在 <code>Latte</code> 中字段默认为私有, 所以不用担心这些值被污染</p>' +
                     '<br>' +
                     '<p>输入时需要限定分母不为0, 在分母为0时需要抛出异常</p>' +
                     '<pre>' + highlighting('test.lt', "" +
@@ -113,7 +113,7 @@ $(document).ready(function () {
                         "    return n+d"
                         , {}) +
                     '</pre>' +
-                    '<p>现在可以在 <code>LessTyping</code> 中使用 <code>==</code> 和 <code>!=</code> 运算符比较Rational了</p>' +
+                    '<p>现在可以在 <code>Latte</code> 中使用 <code>==</code> 和 <code>!=</code> 运算符比较Rational了</p>' +
                     '<br>' +
                     '<p>接下来是运算符绑定</p>' +
                     '<p>最基本的运算有 <code>+ - * /</code>, 我们目标是使用运算符来计算Rational的值</p>' +
@@ -186,13 +186,13 @@ $(document).ready(function () {
                         "        testEquals(a:Rational, b:Rational)= a==b"
                         , {}) +
                     '</pre>' +
-                    '<blockquote>关于Rational的测试用例可以在 <a target="_blank" href="https://github.com/wkgcass/LessTyping/blob/master/src/test/java/lt/compiler/cases/TestDemo.java">TestDemo</a> 中找到</blockquote>'
+                    '<blockquote>关于Rational的测试用例可以在 <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/test/java/lt/compiler/cases/TestDemo.java">TestDemo</a> 中找到</blockquote>'
                 )
             },
             {
                 title: 'Html',
                 content: $sce.trustAsHtml('' +
-                    '<p>在scala中原生支持xml字面量, 在kotlin中也可以方便的书写html. 作为一款同样灵活的语言, LessTyping也可以使用标准语法书写html</p>' +
+                    '<p>在scala中原生支持xml字面量, 在kotlin中也可以方便的书写html. 作为一款同样灵活的语言, Latte也可以使用标准语法书写html</p>' +
                     '<p>我们的目标是:用如下代码</p>' +
                     '<pre>' + highlighting('html.lt',
                         'Html() + [\n' +
@@ -212,7 +212,7 @@ $(document).ready(function () {
                     '</textarea><br><br>' +
                     '<p>通过本示例您可以了解有关<code>data class</code>的用法</p>' +
                     '<p>可以看出, 代码使用了 <code>data class</code> 来模拟html的标签, 并通过列表<code>[]</code>来模拟html的层级关系</p>' +
-                    '<p>由于LessTyping的列表可以使用换行分割, 所以非常符合HTML"声明式"的性质</p>' +
+                    '<p>由于Latte的列表可以使用换行分割, 所以非常符合HTML"声明式"的性质</p>' +
                     '<p>所有的html都有 <code>id, name, class, style</code> 属性, 所以可以写一个抽象类来规定这些字段</p>' +
                     '<pre>' + highlighting('html.lt', 'abstract data class HTMLElement(id, name, cls, style)', {}) +
                     '</pre>' +
@@ -259,7 +259,7 @@ $(document).ready(function () {
                         '    sb append "</" append this.getClass.getSimpleName.toLowerCase append ">"\n' +
                         '    return sb toString', {}) +
                     '</pre>' +
-                    '<p>可以看出,LessTyping中访问父类方法使用的是 <code>父类.this.方法(...)</code> . 这样,所有的节点都可以很方便的表示了</p>' +
+                    '<p>可以看出,Latte中访问父类方法使用的是 <code>父类.this.方法(...)</code> . 这样,所有的节点都可以很方便的表示了</p>' +
                     '<pre>' + highlighting('html.lt', '' +
                         'data class Html : HTMLElementWithClosing\n' +
                         '    toString():String = toString({})\n' +
@@ -277,7 +277,7 @@ $(document).ready(function () {
                         '    toString():String = toString({"type" : typ, "value" : value})', {}) +
                     '</pre>' +
                     '<p>现在就可以使用一开始提到的方式来书写HTML了!</p>' +
-                    '<blockquote>完整的html支持可以在 <a target="_blank" href="https://github.com/wkgcass/LessTyping/blob/master/src/main/resources/lt/html.lt">这里</a> 找到</blockquote>'
+                    '<blockquote>完整的html支持可以在 <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/lt/html.lt">这里</a> 找到</blockquote>'
                 )
             }
         ];

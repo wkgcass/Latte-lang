@@ -9,9 +9,9 @@ $(document).ready(function () {
 
         $scope.git_repo = common_git_repo();
 
-        $scope.descr = "LessTyping是一种JVM语言, 它与Java有许多相似之处. 这里给出LessTyping与Java相同语义的比较";
+        $scope.descr = "Latte是一种JVM语言, 它与Java有许多相似之处. 这里给出Latte与Java相同语义的比较";
 
-        function getLessTypingHtml(str) {
+        function getLatteHtml(str) {
             return $sce.trustAsHtml(highlighting("", str, {}));
         }
 
@@ -19,8 +19,8 @@ $(document).ready(function () {
             {
                 title: "Hello World",
                 java: "System.out.println(\"hello world\");",
-                lesstyping: getLessTypingHtml("println('hello world')"),
-                note: $sce.trustAsHtml("LessTyping隐式导入 <code>lt.lang.Utils</code> 下的所有static方法.")
+                latte: getLatteHtml("println('hello world')"),
+                note: $sce.trustAsHtml("Latte隐式导入 <code>lt.lang.Utils</code> 下的所有static方法.")
             },
             {
                 title: "注释",
@@ -29,7 +29,7 @@ $(document).ready(function () {
                 "/*\n" +
                 "multiple line comment\n" +
                 "*/",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "; comment\n" +
                     "/*\n" +
                     "multiple line comment\n" +
@@ -50,7 +50,7 @@ $(document).ready(function () {
                 "map.put(\"id\", 12);\n" +
                 "map.put(\"name\", \"cass\");\n" +
                 "map.put(\"age\", 22);",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "i : int = 1\n" +
                     "f : float = 1.2\n" +
                     "o = Object()\n" +
@@ -63,7 +63,7 @@ $(document).ready(function () {
                     "    'name' : 'cass'\n" +
                     "    'age' : 22\n" +
                     "}"),
-                note: $sce.trustAsHtml("LessTyping是强弱类型结合的. 对于没有声明类型的变量将视为 <code>java.lang.Object</code>")
+                note: $sce.trustAsHtml("Latte是强弱类型结合的. 对于没有声明类型的变量将视为 <code>java.lang.Object</code>")
             },
             {
                 title: "类型定义",
@@ -80,7 +80,7 @@ $(document).ready(function () {
                 "        return \"User(id=\"+id+\", name=\"+name+\")\";\n" +
                 "    }\n" +
                 "}",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "class User(id : int, name : String)\n" +
                     "    toString():String='User(id='+id+', name='+name+')'\n" +
                     "\n" +
@@ -131,7 +131,7 @@ $(document).ready(function () {
                 "        this.name=name;\n" +
                 "    }\n" +
                 "}",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "data class User(id:int, name:String)")
             },
             {
@@ -144,7 +144,7 @@ $(document).ready(function () {
                 "\n" +
                 "List list = new LinkedList();\n" +
                 "list.add(1);",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "a = BigInteger(\"16\")\n" +
                     "b = BigInteger(\"3\")\n" +
                     "addRes = a + b\n" +
@@ -161,7 +161,7 @@ $(document).ready(function () {
                 "\n" +
                 "Map map = new LinkedHashMap()\n" +
                 "map.put(\"cass\", 22);",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "sb = StringBuilder()\n" +
                     "sb append 'Hello ' append 'world' toString\n" +
                     "\n" +
@@ -177,7 +177,7 @@ $(document).ready(function () {
                 "    a = new LinkedList();\n" +
                 "    map.put('key', a);\n" +
                 "}",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "if list\n" +
                     "    a = list\n" +
                     "else\n" +
@@ -195,7 +195,7 @@ $(document).ready(function () {
                 "for(int i=0;i<arr.length;++i) {\n" +
                 "    System.out.println(\"第\"+i+\"个元素值为\"+arr[i]);" +
                 "}",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "for u in userList\n" +
                     "    println(u)\n" +
                     "\n" +
@@ -216,7 +216,7 @@ $(document).ready(function () {
                 "do {\n" +
                 "    // do something\n" +
                 "} while(boolValue)",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "while line\n" +
                     "    if line == ''\n" +
                     "        ...\n" +
@@ -239,7 +239,7 @@ $(document).ready(function () {
                 "} finally {\n" +
                 "    stream.close();\n" +
                 "}",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "try\n" +
                     "    stream read\n" +
                     "catch e\n" +
@@ -253,7 +253,7 @@ $(document).ready(function () {
                     "    stream close\n" +
                     "\n" +
                     "throw 'a string'"),
-                note: $sce.trustAsHtml("LessTyping允许throw与catch任何类型, 例如 throw \"error message\", 所以并不直接提供java的catch Type")
+                note: $sce.trustAsHtml("Latte允许throw与catch任何类型, 例如 throw \"error message\", 所以并不直接提供java的catch Type")
             },
             {
                 title: "Synchronized",
@@ -263,7 +263,7 @@ $(document).ready(function () {
                 "        // do something\n" +
                 "    }\n" +
                 "}",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "synchronized(a,b)\n" +
                     "    ...")
             },
@@ -278,7 +278,7 @@ $(document).ready(function () {
                 "        System.out.println(e);\n" +
                 "    }\n" +
                 "});",
-                lesstyping: getLessTypingHtml("" +
+                latte: getLatteHtml("" +
                     "list.stream().map(\n" +
                     "    (e)->e.toString\n" +
                     ").collect(Collectors.toList())\n" +
@@ -288,7 +288,7 @@ $(document).ready(function () {
                     "        if e < 10\n" +
                     "            println(e)\n" +
                     ")"),
-                note: $sce.trustAsHtml("LessTyping的<code>lambda</code>与java的几乎一样. 区别在于 1.LessTyping不需要大括号,而是以缩进来代替. 2.对于单参数不能省略括号")
+                note: $sce.trustAsHtml("Latte的<code>lambda</code>与java的几乎一样. 区别在于 1.Latte不需要大括号,而是以缩进来代替. 2.对于单参数不能省略括号")
             }
         ];
         $scope.printScriptForJava = function (index, java) {

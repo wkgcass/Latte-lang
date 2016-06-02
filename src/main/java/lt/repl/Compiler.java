@@ -131,7 +131,7 @@ public class Compiler {
                          */
                         public String main = null;
                         /**
-                         * include LessTyping runtime libraries
+                         * include Latte runtime libraries
                          */
                         public boolean with_lib = false;
                 }
@@ -622,7 +622,7 @@ public class Compiler {
 
                                 String MANIFEST = "" +
                                         "Manifest-Version: 1.0\n" +
-                                        "Created-By: LessTyping Compiler\n";
+                                        "Created-By: Latte lang Compiler\n";
                                 if (config.result.main != null) {
                                         MANIFEST += "Main-Class: " + config.result.main.replace("::", ".") + "\n";
                                 }

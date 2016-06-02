@@ -29,7 +29,7 @@ import lt.lang.function.Function;
 import java.lang.reflect.*;
 
 /**
- * Defines LessTyping Runtime behavior.
+ * Defines Latte Runtime behavior.
  * The Runtime provides type cast, field getting and setting, comparison, ref comparison,
  * <b>is</b> and <b>not</b> operator behavior, wrapping object for throwing, hashCode retrieving.
  */
@@ -200,13 +200,13 @@ public class LtRuntime {
                                         int i = 0;
                                         while (true) {
                                                 try {
-                                                        Class.forName(targetType.getSimpleName() + "$LessTyping$lambda$" + i);
+                                                        Class.forName(targetType.getSimpleName() + "$Latte$lambda$" + i);
                                                 } catch (ClassNotFoundException e) {
                                                         break;
                                                 }
                                         }
                                         StringBuilder sb = new StringBuilder();
-                                        sb.append("class ").append(targetType.getSimpleName()).append("$LessTyping$lambda$").append(i)
+                                        sb.append("class ").append(targetType.getSimpleName()).append("$Latte$lambda$").append(i)
                                                 .append("(func:").append(funcMethod.getDeclaringClass().getInterfaces()[0].getName().replace(".", "::"))
                                                 .append("):").append(targetType.getName().replace(".", "::")).append("\n")
                                                 .append("    ").append(method.getName()).append("(");

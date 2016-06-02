@@ -2217,7 +2217,7 @@ public class TestSemantic {
                 SMethodDef innerMethod = classDef.methods().get(1);
 
                 assertEquals("method", method.name());
-                assertEquals("inner$LessTyping$InnerMethod$0", innerMethod.name());
+                assertEquals("inner$Latte$InnerMethod$0", innerMethod.name());
                 assertEquals(0, innerMethod.getParameters().size());
         }
 
@@ -2242,7 +2242,7 @@ public class TestSemantic {
                 SMethodDef innerMethod = classDef.methods().get(1);
 
                 assertEquals("method", method.name());
-                assertEquals("inner$LessTyping$InnerMethod$0", innerMethod.name());
+                assertEquals("inner$Latte$InnerMethod$0", innerMethod.name());
 
                 assertEquals(1, innerMethod.getParameters().size());
                 assertTrue(innerMethod.getParameters().get(0).type().equals(IntTypeDef.get()));
@@ -2271,7 +2271,7 @@ public class TestSemantic {
                 Ins.InvokeSpecial invokeSpecial = (Ins.InvokeSpecial) ((Ins.TReturn) i0).value();
 
                 assertTrue(invokeSpecial.invokable() instanceof SMethodDef);
-                assertEquals("procedure$0$LessTyping$InnerMethod$0", ((SMethodDef) invokeSpecial.invokable()).name());
+                assertEquals("procedure$0$Latte$InnerMethod$0", ((SMethodDef) invokeSpecial.invokable()).name());
 
                 assertEquals(new IntValue(1), ((Ins.TReturn) invokeSpecial.invokable().statements().get(0)).value());
         }
@@ -2296,7 +2296,7 @@ public class TestSemantic {
                 Ins.InvokeSpecial invokeSpecial = (Ins.InvokeSpecial) ((Ins.PutField) i1).value();
 
                 assertTrue(invokeSpecial.invokable() instanceof SMethodDef);
-                assertEquals("procedure$0$LessTyping$InnerMethod$0", ((SMethodDef) invokeSpecial.invokable()).name());
+                assertEquals("procedure$0$Latte$InnerMethod$0", ((SMethodDef) invokeSpecial.invokable()).name());
 
                 assertEquals(new IntValue(1), ((Ins.TReturn) invokeSpecial.invokable().statements().get(0)).value());
         }
@@ -2323,7 +2323,7 @@ public class TestSemantic {
                 Value v = ((Ins.PutField) i1).value();
                 assertTrue(v instanceof Ins.New);
                 Ins.New aNew = (Ins.New) v;
-                assertEquals("test.A$LessTyping$Lambda$0", aNew.constructor().declaringType().fullName());
+                assertEquals("test.A$Latte$Lambda$0", aNew.constructor().declaringType().fullName());
                 assertEquals(3, aNew.args().size());
         }
 
@@ -2349,7 +2349,7 @@ public class TestSemantic {
                 Value v = ((Ins.PutField) i1).value();
                 assertTrue(v instanceof Ins.New);
                 Ins.New aNew = (Ins.New) v;
-                assertEquals("test.A$LessTyping$Lambda$0", aNew.constructor().declaringType().fullName());
+                assertEquals("test.A$Latte$Lambda$0", aNew.constructor().declaringType().fullName());
                 assertEquals(3, aNew.args().size());
         }
 

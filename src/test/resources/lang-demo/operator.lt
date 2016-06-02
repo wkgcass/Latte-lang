@@ -1,8 +1,8 @@
-; LessTyping supports operator binding
+; Latte supports operator binding
 ; e.g. + is bond to add(?)
 ; a + b can be considered as a.add(b)
 
-; here's all operators supported in LessTyping
+; here's all operators supported in Latte
 class Num(public i)
     equals(o):bool             ; bind ==
         if o is null

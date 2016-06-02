@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * compiles all LessTyping libraries. The main method is called by maven.
+ * compiles all Latte libraries. The main method is called by maven.
  * This class also contains settings about files to be added into generated jars.
  */
 public class LtLibCompiler {
@@ -38,7 +38,7 @@ public class LtLibCompiler {
         /**
          * lt files to be compiled and fill into <b>classes</b> directory.
          */
-        public static List<String> LESSTYPING_LT_FILES = Collections.singletonList(
+        public static List<String> Latte_LT_FILES = Collections.singletonList(
                 "/lt/html.lt"
         );
 
@@ -68,7 +68,7 @@ public class LtLibCompiler {
 
                 Compiler compiler = new Compiler(loader);
                 Map<String, File> map = new HashMap<>();
-                for (String lt : LESSTYPING_LT_FILES) {
+                for (String lt : Latte_LT_FILES) {
                         map.put(lt, new File(ltDir +
                                 (replaceSeparator ? lt.replace("/", File.separator) : lt)
                         ));

@@ -34,8 +34,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * transform plain <tt>LessTyping</tt> text into Tokens<br>
- * <tt>LessTyping</tt> forces {@link lt.compiler.Scanner.Properties#_INDENTATION_} indentation to differ program blocks<br>
+ * transform plain <tt>Latte</tt> text into Tokens<br>
+ * <tt>Latte</tt> forces {@link lt.compiler.Scanner.Properties#_INDENTATION_} indentation to differ program blocks<br>
  * Instead of using <tt>INDENT</tt> and <tt>DEDENT</tt>, the Scanner uses a <b>Tree of Tokens</b> to record the indentation info.
  * Consistent statements with the same indentation are in the same <b>Layer</b><br>
  * <pre>

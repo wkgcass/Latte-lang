@@ -1,4 +1,4 @@
-; This configuration is used for compiling LessTyping projects
+; This configuration is used for compiling Latte projects
 
 Compiler() configure {
     'classpath':[],          ; class path. classes in these URLs will be loaded for compiling
@@ -23,13 +23,13 @@ Compiler() configure {
         'err': System.err    ; output err msg
     },
     'fastFail':false,        ; the compiling process stops when any exception occurres
-                             ; set this to `true` when LessTyping is used as a script
+                             ; set this to `true` when Latte is used as a script
     'result':{               ; some info about compiling result
                              ;   output directory, or don't write to disk if it's not set (or is set to null)
         'outputDir':"${dir}${separator}target${separator}classes"
         'package':  null     ;   the jar file name, or null if don't wan't to pack jar. effective only when outputDir is not null
         'main':     null     ;   main class, or null if there's no main class. effective only when package is not null
-        'with-lib': false    ;   include LessTyping runtime libraries. effective only when package is not null
+        'with-lib': false    ;   include Latte runtime libraries. effective only when package is not null
     }
 } compile filesInDirectory("${dir}")
                              ; compile these files

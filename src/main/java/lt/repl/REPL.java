@@ -54,10 +54,10 @@ public class REPL {
                 if (args != null && args.length != 0) {
                         runCommands(args);
                 } else {
-                        System.out.println("Welcome to LessTyping");
+                        System.out.println("Welcome to Latte lang");
                         System.out.println("Type in expressions and double Enter to have them evaluated.");
                         System.out.println("Type :help for more information.");
-                        System.out.println("for syntax help, please visit https://github.com/wkgcass/LessTyping/");
+                        System.out.println("for syntax help, please visit https://github.com/wkgcass/Latte-lang/");
                         System.out.println();
                         System.out.print(lineStarter);
 

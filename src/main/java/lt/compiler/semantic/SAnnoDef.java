@@ -42,7 +42,7 @@ public class SAnnoDef extends STypeDef {
         private final List<SModifier> modifiers = new ArrayList<>();
 
         public SAnnoDef() {
-                // annotations cannot be defined in LessTyping
+                // annotations cannot be defined in Latte
                 super(LineCol.SYNTHETIC);
         }
 

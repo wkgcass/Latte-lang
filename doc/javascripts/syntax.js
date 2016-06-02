@@ -12,7 +12,7 @@ $(document).ready(function () {
         files = {};
         function getLtFile(name) {
             $.ajax({
-                url: 'https://raw.githubusercontent.com/wkgcass/LessTyping/master/src/test/resources/lang-demo/' + name,
+                url: 'https://raw.githubusercontent.com/wkgcass/Latte-lang/master/src/test/resources/lang-demo/' + name,
                 async: false,
                 dataType: 'text',
                 success: function (res) {
@@ -30,8 +30,8 @@ $(document).ready(function () {
 
         $scope.descr = $sce.trustAsHtml("" +
             "如下语法规则示例代码直接通过ajax获取自" +
-            "<a href='https://github.com/wkgcass/LessTyping/tree/master/src/test/resources/lang-demo/'>github</a>, " +
-            "并且它们也被视为<a href='https://github.com/wkgcass/LessTyping/tree/master/src/test/java/lt/compiler/cases/TestDemo.java'>测试用例</a>");
+            "<a href='https://github.com/wkgcass/Latte-lang/tree/master/src/test/resources/lang-demo/'>github</a>, " +
+            "并且它们也被视为<a href='https://github.com/wkgcass/Latte-lang/tree/master/src/test/java/lt/compiler/cases/TestDemo.java'>测试用例</a>");
 
         $scope.files = files;
 

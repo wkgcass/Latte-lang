@@ -1,4 +1,4 @@
-; advanced features in LessTyping
+; advanced features in Latte
 ; ============
 ; inner method
 ; ============
@@ -31,7 +31,7 @@ class TestProcedure
               ; or more than one expression in the procedure
 ; the procedure allow you to write code anywhere
 ; e.g.
-; in java, you use boolValue?exp1:exp2, in LessTyping, you can use
+; in java, you use boolValue?exp1:exp2, in Latte, you can use
 ; (   if boolValue
 ;         return exp1
 ;     else
@@ -46,7 +46,7 @@ class TestProcedure
 ; lambda
 ; ======
 ; java supports lambda for FunctionalInterface
-; LessTyping not only supports that, but also supports `FunctionalAbstractClass`
+; Latte not only supports that, but also supports `FunctionalAbstractClass`
 ; a FunctionalAbstractClass means An abstract class with only one unimplemented
 ; method and it has an accessible constructor with no parameters
 ; e.g.

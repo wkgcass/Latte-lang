@@ -1,4 +1,4 @@
-#The LessTyping Language Sepcification
+#The Latte Language Sepcification
 #Contents
 1. File Structure
 	1. indentation
@@ -67,9 +67,9 @@
 
 #§1 File Structure
 ##1.1 indentation
-`LessTyping` forces 4 spaces indentation as default, which can be respecified with `Properties#_INDENTATION_` when constructing `lt::compiler::Scanner`
+`Latte` forces 4 spaces indentation as default, which can be respecified with `Properties#_INDENTATION_` when constructing `lt::compiler::Scanner`
 
-This _LessTyping Language Specification_ uses 4 spaces indentation when giving examples.
+This _Latte Language Specification_ uses 4 spaces indentation when giving examples.
 
 ##1.2 Layer
 Consistent lines with the same indentation are in the same `Layer`
@@ -126,7 +126,7 @@ the code would be parsed into the following structure
 you can consider the new layer as one token, and the contents are "filled" into the token.
 
 ##1.3 define/undef
-`LessTyping` supports very simple `define` and `undef` pre processing commands.
+`Latte` supports very simple `define` and `undef` pre processing commands.
 
 `define` should be used with caution. The Scanner can __NOT__ provide precise error report about columes on lines where `define` has effect on, and `define` command might pollute the string literals.
 
@@ -195,7 +195,7 @@ when trying to retrieve a type, it firstly tries to seek from import that specif
 e.g. `List`, it's specified in `java::util::List`, so this type is `java::util::List` instead of `java::awt::List`
 
 #§2 Literals
-LessTyping supports 5 kinds of literals
+Latte supports 5 kinds of literals
 
 1. number
 2. string
@@ -280,7 +280,7 @@ e.g.
 	
 #§3 TypeSystem
 ##3.1 Hybrid of Weak and Strong type
-`LessTyping` is a hybrid of weak and strong type language.
+`Latte` is a hybrid of weak and strong type language.
 
 you can specify the type/return type with `:` when defining variables and methods, or use `as` to cast primitives/references.
 
@@ -294,7 +294,7 @@ e.g.
 	
 	1 as long
 	
-this design let LessTyping be able to extend java classes, implement java interfaces and use any java library.
+this design let Latte be able to extend java classes, implement java interfaces and use any java library.
 
 ##3.2 Literal Default Types
 If rquired type is not set, literals are parsed into their default values.
@@ -376,9 +376,9 @@ if it's not specified, the type will be considered as `java::lang::Object`
 	    ...
 
 ##3.5 Type Definition
-`LessTyping` supports class and interface definitions
+`Latte` supports class and interface definitions
 
-`LessTyping` can use java libraries directly, so, other types such as `enum` and `Annotation`, can be defined in java source code
+`Latte` can use java libraries directly, so, other types such as `enum` and `Annotation`, can be defined in java source code
 
 ###class
 
@@ -421,7 +421,7 @@ the `User` class definition is the same as the following java source code
 	    }
 	}
 
-in `LessTyping`, the types are always modified with `public`. 
+in `Latte`, the types are always modified with `public`. 
 
 `private`, `protected`, `public`, `pkg` modifying the `class` are considered as constructor modifiers.
 
@@ -443,7 +443,7 @@ in `interface` :
 * methods' default access modifier is `public`
 
 ##3.6 Cast
-`number` , `string` and `bool` literals can only be parsed into limited types, and might produce a compiling error. In other circumstances, `LessTyping` supports a large range of type casting methods when compiling and at runtime.
+`number` , `string` and `bool` literals can only be parsed into limited types, and might produce a compiling error. In other circumstances, `Latte` supports a large range of type casting methods when compiling and at runtime.
 
 * `number` without dot can be `int`, `long`, `short`, `byte`, `double`, `float` and their boxing types
 * `number` with dot can be `double`, `float` and their boxing types
@@ -460,7 +460,7 @@ all cast for reference types to primitive types are defined as "castToX", such a
 
 when the cast fails, a `java::lang::ClassCastException` would be thrown.
 
-the following table show how `LessTyping` casts types
+the following table show how `Latte` casts types
 
 ###primitives
 type           | required type            | method
@@ -534,7 +534,7 @@ type           | required type            | method
 ---------------|--------------------------|-----------
 java::util::List | array                  | cast every element into component type
 Function       | functional interface     | param length should be the same and use Proxy to generate new object
-Function       | functional abstract class | param length should be the same and use `LessTyping` compiler to generate new object
+Function       | functional abstract class | param length should be the same and use `Latte` compiler to generate new object
 
 ##3.7 Pre Defined
 ###types
@@ -558,7 +558,7 @@ the following values are defined as default
 `null` can be assigned to any type, and `undefined` is used as a symbol of non-exist fields or `void` methods return
 
 #§4 Keywords
-all java keywords are `LessTyping` keywords :
+all java keywords are `Latte` keywords :
 
 	"abstract", "assert", "boolean", "break", "byte", "case",
 	"catch", "char", "class", "const", "continue", "default",
@@ -568,27 +568,27 @@ all java keywords are `LessTyping` keywords :
 	"private", "protected", "public", "return", "short", "static",
 	"strictfp", "throw", "true", "try", "while"
 	
-there're a few more keywords defined in `LessTyping` :
+there're a few more keywords defined in `Latte` :
 
 	"is", "not", "bool", "yes", "no", "type", "as",
 	"undefined", "in", "elseif", "Unit", "data", "val"
 	
 note that `define` and `undef` are not keywords, they only enables if the first characters of the line is `define` or `undef`.
 
-`boolean` is a keyword, but invalid in `LessTyping`, use `bool` instead.
+`boolean` is a keyword, but invalid in `Latte`, use `bool` instead.
 
 write
 
 	`valid java name`
 
-to use those names defined in java but happend to be `LessTyping` keywords.
+to use those names defined in java but happend to be `Latte` keywords.
 
 e.g.
 
 	System.`in`
 	
 ##4.1 Modifiers
-`LessTyping` modifiers are almost the same `Java` modifiers, but `val` represents `final`, `pkg` and `data` are new modifiers.
+`Latte` modifiers are almost the same `Java` modifiers, but `val` represents `final`, `pkg` and `data` are new modifiers.
 
 `pkg` is a access modifier, it's the same with "no access modifiers" in java
 
@@ -627,7 +627,7 @@ At most one access modifier can exist on one object
 `val`
 
 #§5 Statements
-`LessTyping` support the following statements
+`Latte` support the following statements
 
 1. (...)
 2. for
@@ -694,7 +694,7 @@ if the input is
 		while tmp.hasNext
 		    variable = tmp.next
 		    
-`LessTyping` doesn't support traditional C-like for statement. Instead, use `range list` instead
+`Latte` doesn't support traditional C-like for statement. Instead, use `range list` instead
 
 ##5.3 while / do-while
 
@@ -756,7 +756,7 @@ for those methods with primitive return type, return the primitive type's defaul
 
 for those methods with reference return type, return `null`
 
-the return value of `void` method is `undefined` in `LessTyping`, but it won't return anything in `Java`.
+the return value of `void` method is `undefined` in `Latte`, but it won't return anything in `Java`.
 
 ##5.8 synchronized
 
@@ -771,9 +771,9 @@ and they are released when the execution of statements is finished.
 
 	throw anyObject
 	
-`LessTyping` allow you to throw any object. The objects whose types are not sub-class of `Throwable` are filled into `lt::lang::Wrapper`, and can be retrieved with it's `public` field : `object`. So if `LessTyping` methods are called in `Java`, catch `lt.lang.Wrapper` to retrieve the wrapped objects.
+`Latte` allow you to throw any object. The objects whose types are not sub-class of `Throwable` are filled into `lt::lang::Wrapper`, and can be retrieved with it's `public` field : `object`. So if `Latte` methods are called in `Java`, catch `lt.lang.Wrapper` to retrieve the wrapped objects.
 
-When catching exceptions in `LessTyping`, the wrapped object is automatically retrieved and assigned to the exceptionVariable
+When catching exceptions in `Latte`, the wrapped object is automatically retrieved and assigned to the exceptionVariable
 
 ##5.10 try
 
@@ -867,7 +867,7 @@ The interface definitions can be found in chapter 3.5
 	class InterfaceName:SuperInterface1,SuperInterface2
 
 #§6 Expressions
-`LessTyping` supports the following expressions
+`Latte` supports the following expressions
 
 1. number literals
 2. bool literals
@@ -979,10 +979,10 @@ get array element value at index `i`
 
 if `arr` is not an array __OR__ `i` is not integer, then invoke `get(i)` on `arr`.
 
-NOTE THAT in `LessTyping`, the `i` might not be integer when compiling, but might be integer at runtime. So, when meets `get(int/Integer)` invocation, if the `arr` is array, the expression is still considered as getting array element value.
+NOTE THAT in `Latte`, the `i` might not be integer when compiling, but might be integer at runtime. So, when meets `get(int/Integer)` invocation, if the `arr` is array, the expression is still considered as getting array element value.
 
 ##6.9 one variable operation
-`LessTyping` supports the following one variable operators
+`Latte` supports the following one variable operators
 
 	"++", "--", "!", "~", "+", "-"
 	
@@ -1024,7 +1024,7 @@ it's the same for `--` operator
 	other : invokes `logicNot()`
 	
 ##6.10 two variable operation
-`LessTyping` supports the following two variable operations, and their priorities are listed as below: (top to bottom, the priority reduces)
+`Latte` supports the following two variable operations, and their priorities are listed as below: (top to bottom, the priority reduces)
 
 	{"..", ".:"},
 	{":::"},

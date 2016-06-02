@@ -1777,7 +1777,7 @@ public class SemanticProcessor {
                 }
 
                 // generate method name
-                String generatedMethodName = methodDef.name + "$LessTyping$InnerMethod$";
+                String generatedMethodName = methodDef.name + "$Latte$InnerMethod$";
                 int i = 0;
                 out:
                 while (true) {
@@ -3761,7 +3761,7 @@ public class SemanticProcessor {
                         sClassDef.setParent((SClassDef) methodToOverride.declaringType());
                 }
                 sClassDef.setPkg(lambdaClassType.pkg());
-                String className = lambdaClassType.fullName() + "$LessTyping$Lambda$";
+                String className = lambdaClassType.fullName() + "$Latte$Lambda$";
                 int i = 0;
                 while (types.containsKey(className + i)) ++i;
                 className += i;

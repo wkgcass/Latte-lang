@@ -1,5 +1,5 @@
 function common_git_repo() {
-    return "https://github.com/wkgcass/LessTyping";
+    return "https://github.com/wkgcass/Latte-lang";
 }
 function common_navs() {
     return [
@@ -52,7 +52,7 @@ function common_compile_highlighting() {
 function common_script_highlighting() {
     var txt;
     $.ajax({
-        url: 'https://raw.githubusercontent.com/wkgcass/LessTyping/master/src/main/resources/build.lts',
+        url: 'https://raw.githubusercontent.com/wkgcass/Latte-lang/master/src/main/resources/build.lts',
         async: false,
         dataType: 'text',
         success: function (res) {

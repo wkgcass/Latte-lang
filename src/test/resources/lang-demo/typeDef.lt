@@ -1,4 +1,4 @@
-; LessTyping allows class and interface definition
+; Latte allows class and interface definition
 class I_Am_A_Class
 
 ; a class can have constructor parameters
@@ -30,7 +30,7 @@ abstract class I_Have_Both_Class_And_Interface : I_Am_A_Class, java::util::List
 ; so a class can have modifiers
 
 ; the avaliable modifiers are the same as java language
-; hoever, all types defined in LessTyping are "public"
+; hoever, all types defined in Latte are "public"
 ; the access level modifiers on class is considered as constructor modifier
 private class My_Constructor_Is_Private_But_Type_Is_Still_Public
 
@@ -48,7 +48,7 @@ class I_Have_Methods
         ...   ; statements in the method
 
     ; you can specify the return type
-    ; return type can be any type or void/Unit (both void and Unit are valid in LessTyping)
+    ; return type can be any type or void/Unit (both void and Unit are valid in Latte)
     i_am_a_method_with_return_type_spec():Unit
 
     ; you can write a method that's only one statement in this form

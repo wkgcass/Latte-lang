@@ -1368,7 +1368,7 @@ public class TestCodeGen {
                 Map<String, byte[]> list = codeGenerator.generate();
 
                 byte[] b1 = list.get("TestLambdaLT");
-                byte[] b2 = list.get("TestLambdaLT$LessTyping$Lambda$0");
+                byte[] b2 = list.get("TestLambdaLT$Latte$Lambda$0");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -1382,7 +1382,7 @@ public class TestCodeGen {
                 };
 
                 Class<?> TestLambdaLT = classLoader.loadClass("TestLambdaLT");
-                Class<?> lambda = classLoader.loadClass("TestLambdaLT$LessTyping$Lambda$0");
+                Class<?> lambda = classLoader.loadClass("TestLambdaLT$Latte$Lambda$0");
 
                 TestLambdaFunc func = (TestLambdaFunc) TestLambdaLT.getDeclaredMethod("method").invoke(null);
                 assertEquals(3, func.apply(1));
@@ -1409,7 +1409,7 @@ public class TestCodeGen {
                 Map<String, byte[]> list = codeGenerator.generate();
 
                 byte[] b1 = list.get("TestLambdaLT");
-                byte[] b2 = list.get("TestLambdaLT$LessTyping$Lambda$0");
+                byte[] b2 = list.get("TestLambdaLT$Latte$Lambda$0");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -1423,7 +1423,7 @@ public class TestCodeGen {
                 };
 
                 Class<?> TestLambdaLT = classLoader.loadClass("TestLambdaLT");
-                Class<?> lambda = classLoader.loadClass("TestLambdaLT$LessTyping$Lambda$0");
+                Class<?> lambda = classLoader.loadClass("TestLambdaLT$Latte$Lambda$0");
 
                 TestLambdaFunc func = (TestLambdaFunc) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(3, func.apply(1));
@@ -1450,7 +1450,7 @@ public class TestCodeGen {
                 Map<String, byte[]> list = codeGenerator.generate();
 
                 byte[] b1 = list.get("TestLambdaLT");
-                byte[] b2 = list.get("TestLambdaLT$LessTyping$Lambda$0");
+                byte[] b2 = list.get("TestLambdaLT$Latte$Lambda$0");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -1464,7 +1464,7 @@ public class TestCodeGen {
                 };
 
                 Class<?> TestLambdaLT = classLoader.loadClass("TestLambdaLT");
-                Class<?> lambda = classLoader.loadClass("TestLambdaLT$LessTyping$Lambda$0");
+                Class<?> lambda = classLoader.loadClass("TestLambdaLT$Latte$Lambda$0");
 
                 Function func = (Function) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(3, func.apply(1));

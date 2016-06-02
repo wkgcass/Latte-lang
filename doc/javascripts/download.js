@@ -12,11 +12,11 @@ $(document).ready(function () {
         $scope.source_code = {
             title: "源代码",
             contents: [
-                $sce.trustAsHtml("LessTyping源代码托管于 <a href='" + common_git_repo() + "'>Github</a>"),
+                $sce.trustAsHtml("Latte源代码托管于 <a href='" + common_git_repo() + "'>Github</a>"),
                 $sce.trustAsHtml("您可以下载整个 <code>master</code> 分支自行Build , 或者下载已经编译的 <code>jar</code> 文件")
             ],
             download: "下载 Master 分支",
-            link: "https://github.com/wkgcass/LessTyping/archive/master.zip"
+            link: "https://github.com/wkgcass/Latte-lang/archive/master.zip"
         };
         $scope.build = {
             title: "依赖项 与 Build",
@@ -28,7 +28,7 @@ $(document).ready(function () {
                     "</ul>"),
                 $sce.trustAsHtml("如果手动编译请编译 <code>/src/main/java</code> 目录"),
                 $sce.trustAsHtml("若需自动编译, 下载 Master 分支, 然后执行<code>mvn clean package</code>, 在生成的target目录下可以找到打包的 jar 文件, 并且在跟目录会生成批处理文件."),
-                $sce.trustAsHtml("执行 <code>.&#47;lesstyping</code> 即可启动 REPL, 当然也可将jar文件引入到项目中使用")
+                $sce.trustAsHtml("执行 <code>.&#47;latte</code> 即可启动 REPL, 当然也可将jar文件引入到项目中使用")
             ]
         };
         $scope.compile = {
@@ -52,10 +52,10 @@ $(document).ready(function () {
         $scope.compile = {
             title: "Script 与 编译",
             contents: [
-                $sce.trustAsHtml("LessTyping支持Script, 所以编译建议通过脚本完成"),
+                $sce.trustAsHtml("Latte支持Script, 所以编译建议通过脚本完成"),
                 $sce.trustAsHtml(common_script_highlighting()),
                 $sce.trustAsHtml("可以使用如下方法运行脚本"),
-                $sce.trustAsHtml("<code>.&#47;lesstyping script-file-path script-arguments</code>"),
+                $sce.trustAsHtml("<code>.&#47;latte script-file-path script-arguments</code>"),
                 $sce.trustAsHtml("或者进入REPL后, 输入"),
                 $sce.trustAsHtml("<code>:script script-path<br>" +
                     "script run<br>" +
@@ -66,9 +66,9 @@ $(document).ready(function () {
         $scope.highlight = {
             title: "语法高亮",
             contents: [
-                $sce.trustAsHtml("LessTyping 支持 <code>HTML</code> 和 <code>Atom 编辑器</code> 的语法高亮"),
+                $sce.trustAsHtml("Latte 支持 <code>HTML</code> 和 <code>Atom 编辑器</code> 的语法高亮"),
                 $sce.trustAsHtml("<h3>HTML</h3>"),
-                $sce.trustAsHtml("HTML语法高亮基于<code>LessTyping Scanner for JavaScript</code>. 在您的html文件中引入如下文件和代码即可获取高亮生成的内容"),
+                $sce.trustAsHtml("HTML语法高亮基于<code>Latte Scanner for JavaScript</code>. 在您的html文件中引入如下文件和代码即可获取高亮生成的内容"),
                 $sce.trustAsHtml("<textarea id='highlighting_html'>\n" +
                     "<script src=\"javascripts/scanner.js\"></script>\n" +
                     "<script src=\"javascripts/code.js\"></script>\n" +
@@ -81,15 +81,15 @@ $(document).ready(function () {
                     "</textarea>\n" +
                     "<script>var editor = CodeMirror.fromTextArea(document.getElementById('highlighting_html'));editor.setSize('auto', '220px');</script>"),
                 $sce.trustAsHtml("<h3>Atom</h3>"),
-                $sce.trustAsHtml("在Atom中搜索并安装 <code>Atom-LessTyping-Highlighting</code> 或者按照<a href='https://atom.io/packages/Atom-LessTyping-Highlighting'>这里</a>的步骤进行安装"),
+                $sce.trustAsHtml("在Atom中搜索并安装 <code>Atom-Latte-Highlighting</code> 或者按照<a href='https://atom.io/packages/Atom-Latte-Highlighting'>这里</a>的步骤进行安装"),
                 $sce.trustAsHtml("<img src='images/highlight.png'>")
             ]
         };
         $scope.ide = {
             title: "IDE",
             contents: [
-                $sce.trustAsHtml("针对Atom开发了一个LessTyping的IDE"),
-                $sce.trustAsHtml("在Atom中搜索并安装 <code>atom-lesstyping-ide</code> 并按照<a target='_blank' href='https://atom.io/packages/atom-lesstyping-ide'>这里</a>的步骤进行配置")
+                $sce.trustAsHtml("针对Atom开发了一个Latte的IDE"),
+                $sce.trustAsHtml("在Atom中搜索并安装 <code>atom-latte-ide</code> 并按照<a target='_blank' href='https://atom.io/packages/atom-latte-ide'>这里</a>的步骤进行配置")
             ]
         }
     }

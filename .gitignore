@@ -17,5 +17,5 @@ target/*
 *.iml
 
 # sh and bat #
-lesstyping
-lesstyping.bat
+/latte
+/latte.bat

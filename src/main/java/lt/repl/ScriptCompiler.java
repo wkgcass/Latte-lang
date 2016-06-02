@@ -227,7 +227,7 @@ public class ScriptCompiler {
          * @throws Exception exception
          */
         public Script compile(String name, Reader scriptReader) throws Exception {
-                String nameForTheScript = "Script$LessTyping$";
+                String nameForTheScript = "Script$Latte$";
                 int i = 0;
                 while (sources.containsKey(nameForTheScript + i)) ++i;
 

@@ -1,4 +1,4 @@
-; there are 5 kinds of literals in LessTyping
+; there are 5 kinds of literals in Latte
 ; string number map array bool
 
 ; string
@@ -40,7 +40,7 @@ i_am_short : short = 1
 i_am_byte : byte = 1
 ; note that float number cannot be parsed into integers, which could result in a compiling error
 
-; eight java primitives still exist in LessTyping
+; eight java primitives still exist in Latte
 ; implicit cast would be performed during both compiling and runtime
 ; so there's rarely any difference between primitive and boxing types
 

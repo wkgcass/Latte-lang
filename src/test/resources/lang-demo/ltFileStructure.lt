@@ -7,7 +7,7 @@
 define "CREATE TABLE" as "class"
 ; then, all "create table" would be replaced with "class"
 ; 'define' or 'undef' must be the first word of the line
-; note that "define" is not a keyword of LessTyping, you can use this word freely in code part
+; note that "define" is not a keyword of Latte, you can use this word freely in code part
 define "VARCHAR" as ": String"
 define "NUMBER" as ": int"
 ; there can be 0 or 1 or more defines in this part
@@ -33,7 +33,7 @@ import java::util::Collections._  ; import all static fields and methods from ja
 ; there can be 0 or 1 or more imports
 ; and "import" can appear in any position in the root of the code part
 
-; LessTyping allows class and interface definition
+; Latte allows class and interface definition
 ; if the file is *.lts, the rest part can be type definitions, statements or expressions
 ; you can see "statements.lts" for more details
 ; if the file is *.lt, the rest part in root of code can only hold type definitions

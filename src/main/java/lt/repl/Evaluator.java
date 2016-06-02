@@ -43,7 +43,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * evaluator for LessTyping
+ * evaluator for Latte
  */
 public class Evaluator {
         private final static String evalFileName = "eval";

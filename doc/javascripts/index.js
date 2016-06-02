@@ -22,15 +22,15 @@ $(document).ready(function () {
     app.controller('controller', ['$scope', '$sce', function ($scope, $sce) {
         $scope.git_repo = common_git_repo();
 
-        $scope.header = "LessTyping";
+        $scope.header = "Latte";
         $scope.header_descr = "Highly Readable and Extensible JVM Language";
         $scope.header_button = "Fork me on Github";
         $scope.navs = common_navs();
         $scope.navs[0].active = true;
 
         $scope.introduction = {
-            title: "LessTyping",
-            content: $sce.trustAsHtml("LessTyping是一种可读,灵活,简单,易扩展的JVM编程语言")
+            title: "Latte",
+            content: $sce.trustAsHtml("Latte是一种可读,灵活,简单,易扩展的JVM编程语言")
         };
         $scope.feature = {
             title: "特性",
@@ -158,7 +158,7 @@ $(document).ready(function () {
                     "map = {\n" +
                     "    'id' : 1,\n" +
                     "    'name' : 'cass',\n" +
-                    "    'repo' : ['LessTyping', 'Pure.IoC']\n" +
+                    "    'repo' : ['Latte', 'Pure.IoC']\n" +
                     "}\n" +
                     "; map末尾的逗号也可以省略\n" +
                     "\n" +
@@ -184,19 +184,19 @@ $(document).ready(function () {
         $scope.build = {
             title: "如何Build",
             contents: [
-                $sce.trustAsHtml("LessTyping需要 <code>JRE 8</code>"),
+                $sce.trustAsHtml("Latte只需要 <code>JRE 8</code>"),
                 $sce.trustAsHtml("建议以<code>lt.repl.REPL</code>为主类打包为jar"),
                 $sce.trustAsHtml("本工程通过Maven管理, 所以您也可以使用 <code>Maven 3</code> 进行自动Build"),
                 $sce.trustAsHtml("clone<a href='" + $scope.git_repo + "'>该仓库</a>, 然后执行 <code>mvn clean package</code> , 在 <code>target</code> 目录下将生成一个可执行的jar文件, 并且在跟目录生成批处理文件."),
-                $sce.trustAsHtml("直接执行 <code>.&#47;lesstyping</code> , REPL将启动")
+                $sce.trustAsHtml("直接执行 <code>.&#47;latte</code> , REPL将启动")
             ]
         };
         $scope.compile = {
             title: "REPL 与 编译",
             contents: [
-                $sce.trustAsHtml("LessTyping提供一个REPL, 您可以运行自动Build后生成的jar包,或者直接执行 <code>lt.repl.REPL</code> 类以使用"),
-                $sce.trustAsHtml("REPL环境除去任何LessTyping代码都会执行的导入以外, 还会自动导入 <ul><li><code>java::util::_</code></li><li><code>java::math::_</code></li><li><code>lt::repl::_</code></li></ul>"),
-                $sce.trustAsHtml("若需要编译LessTyping源代码文件(<code>*.lt</code>), 您可以在REPL环境下使用 <code>Compiler()</code> 构造一个 <code>lt::repl::Compiler</code> 对象. 您也可以在java代码中用类似的方式进行 <code>lt</code> 文件的编译"),
+                $sce.trustAsHtml("Latte提供一个REPL, 您可以运行自动Build后生成的jar包,或者直接执行 <code>lt.repl.REPL</code> 类以使用"),
+                $sce.trustAsHtml("REPL环境除去任何Latte代码都会执行的导入以外, 还会自动导入 <ul><li><code>java::util::_</code></li><li><code>java::math::_</code></li><li><code>lt::repl::_</code></li></ul>"),
+                $sce.trustAsHtml("若需要编译Latte源代码文件(<code>*.lt</code>), 您可以在REPL环境下使用 <code>Compiler()</code> 构造一个 <code>lt::repl::Compiler</code> 对象. 您也可以在java代码中用类似的方式进行 <code>lt</code> 文件的编译"),
                 $sce.trustAsHtml(common_compile_highlighting())
             ],
             help: $sce.trustAsHtml("<a href=''>运算符绑定</a> 可能对您有帮助")
@@ -204,9 +204,9 @@ $(document).ready(function () {
         $scope.highlight = {
             title: "Atom 语法高亮与IDE",
             contents: [
-                $sce.trustAsHtml("针对Atom编辑器开发了<a target='_blank' href='https://atom.io/packages/Atom-LessTyping-Highlighting'>语法高亮</a>和" +
-                    "<a target='_blank' href='https://atom.io/packages/atom-lesstyping-ide'>IDE</a>"),
-                $sce.trustAsHtml("可以更加方便的编写LessTyping源代码")
+                $sce.trustAsHtml("针对Atom编辑器开发了<a target='_blank' href='https://atom.io/packages/Atom-Latte-Highlighting'>语法高亮</a>和" +
+                    "<a target='_blank' href='https://atom.io/packages/atom-latte-ide'>IDE</a>"),
+                $sce.trustAsHtml("可以更加方便的编写Latte源代码")
             ]
         }
     }]);

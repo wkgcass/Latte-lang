@@ -1,20 +1,20 @@
-#LessTyping
+#Latte-Lang
 
-![](http://lesstyping.cassite.net/images/highlight.png)
+![](http://latte.cassite.net/images/highlight.png)
 
-LessTyping is a JVM language. It's highly readable and extensible.
+Latte is a JVM language. It's highly readable and extensible.
 
-Click [here](http://lesstyping.cassite.net/#theVideo) to watch a video about LessTyping.
+Click [here](http://latte.cassite.net/#theVideo) to watch a video about Latte.
 
-[Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)  
-[LessTyping WebSite](http://lesstyping.cassite.net/)
+[Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)  
+[Latte WebSite](http://latte.cassite.net/)
 
 `Atom` Extensions :
 
-[atom-lesstyping-highlighting](https://atom.io/packages/Atom-LessTyping-Highlighting)  
-[atom-lesstyping-ide](https://atom.io/packages/atom-lesstyping-ide)
+[atom-latte-highlighting](https://atom.io/packages/Atom-Latte-Highlighting)  
+[atom-latte-ide](https://atom.io/packages/atom-latte-ide)
 
-LessTyping supports 
+Latte supports 
 
 * Operator Binding
 * DSL
@@ -26,7 +26,7 @@ LessTyping supports
 * Read Eval Print Loop
 * many other features
 
-`LessTyping` is based on java 8. It's compiled to JVM byte code, and can collaborate with any java library.
+`Latte` is based on java 8. It's compiled to JVM byte code, and can collaborate with any java library.
 
 最下面有中文 ：）
 
@@ -40,18 +40,18 @@ clone the repository, and run
 
 	mvn clean package
 	
-You will get a runnable jar (`repl.jar`) and two shell scripts (`lesstyping` and `lesstyping.bat`). The shell scripts can help you run the `repl`.
+You will get a runnable jar (`repl.jar`) and two shell scripts (`latte` and `latte.bat`). The shell scripts can help you run the `repl`.
 
 run:
 
-	./lesstyping
+	./latte
 	
-then the [REPL](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) starts
+then the [REPL](https://github.com/wkgcass/Latte-lang/blob/master/src/main/java/lt/repl/REPL.java) starts
     
-	Welcome to LessTyping
+	Welcome to Latte lang
 	Type in expressions and double Enter to have them evaluated.
 	Type :help for more information.
-	for syntax help, please visit https://github.com/wkgcass/LessTyping/
+	for syntax help, please visit https://github.com/wkgcass/Latte-lang/
     
     >1+1
     |
@@ -64,11 +64,11 @@ There are two ways of compiling `lt` files
 
 * use program command
 
-		lesstyping -c <source-directory>
+		latte -c <source-directory>
 		
 	the detailed commands and options can be found in
 	
-		lesstyping -help
+		latte -help
 		
 or:
 
@@ -98,13 +98,13 @@ or:
 
 		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...')
 		
-	You can write a `script` to configure the settings. Check [build.lts](https://github.com/wkgcass/LessTyping/blob/master/src/main/resources/build.lts) for more info.
+	You can write a `script` to configure the settings. Check [build.lts](https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/build.lts) for more info.
 	
 #Scripts
 
 * you can run a script directly
 
-		lesstyping -s script-location script-arguments...
+		latte -s script-location script-arguments...
 		
 or:
 	
@@ -114,25 +114,25 @@ or:
 	then use `script run` or `script run ['string array']` to run the script
 	
 #Syntax
-For Language Syntax Help, please visit the [Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)
+For Language Syntax Help, please visit the [Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)
 
-or visit the [LessTyping WebSite](http://lesstyping.cassite.net/)
+or visit the [Latte WebSite](http://latte.cassite.net/)
 
 #中文版 Chinese Version README
 
-LessTyping是一种JVM编程语言。 它非常可读，同时也非常可扩展。
+Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
-点击 [这里](http://lesstyping.cassite.net/#theVideo) 观看有关LessTyping的视频。
+点击 [这里](http://latte.cassite.net/#theVideo) 观看有关Latte的视频。
 
-[Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)  
-[LessTyping 主页](http://lesstyping.cassite.net/)
+[Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)  
+[Latte 主页](http://latte.cassite.net/)
 
 `Atom`上的扩展插件:
 
-[atom-lesstyping-highlighting](https://atom.io/packages/Atom-LessTyping-Highlighting)  
-[atom-lesstyping-ide](https://atom.io/packages/atom-lesstyping-ide)
+[atom-latte-highlighting](https://atom.io/packages/Atom-Latte-Highlighting)  
+[atom-latte-ide](https://atom.io/packages/atom-latte-ide)
 
-LessTyping 支持如下功能
+Latte 支持如下功能
 
 * 运算符绑定
 * DSL
@@ -144,7 +144,7 @@ LessTyping 支持如下功能
 * Read Eval Print Loop
 * 许多其它特性
 
-`LessTyping`基于java8。它被编译到JVM字节码，可以与任何Java类库完美互通。
+`Latte`基于java8。它被编译到JVM字节码，可以与任何Java类库完美互通。
 
 #如何构建工程
 
@@ -156,18 +156,18 @@ clone这个仓库,然后执行
 
 	mvn clean package
 	
-你将会获取一个可执行jar (`repl.jar`) 以及两个shell脚本 (`lesstyping` 和 `lesstyping.bat`), shell脚本可以快捷地开启`repl`.
+你将会获取一个可执行jar (`repl.jar`) 以及两个shell脚本 (`latte` 和 `latte.bat`), shell脚本可以快捷地开启`repl`.
                        
 执行:
                        
-	./lesstyping
+	./latte
 	
-接着, [REPL](https://github.com/wkgcass/LessTyping/blob/master/src/main/java/lt/repl/REPL.java) 将开始运行
+接着, [REPL](https://github.com/wkgcass/Latte-lang/blob/master/src/main/java/lt/repl/REPL.java) 将开始运行
     
-	Welcome to LessTyping
+	Welcome to Latte lang
 	Type in expressions and double Enter to have them evaluated.
 	Type :help for more information.
-	for syntax help, please visit https://github.com/wkgcass/LessTyping/
+	for syntax help, please visit https://github.com/wkgcass/Latte-lang/
         
     >1+1
     |
@@ -179,11 +179,11 @@ clone这个仓库,然后执行
 
 * 使用程序命令
 
-		lesstyping -c <source-directory>
+		latte -c <source-directory>
 		
 	详细的命令与选项可以这样找到
 	
-		lesstyping -help
+		latte -help
 
 或者:
 
@@ -213,12 +213,12 @@ clone这个仓库,然后执行
 
 		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...')
 		
-	您可以编写一个脚本 `script` 来配置这些属性。查看 [build.lts](https://github.com/wkgcass/LessTyping/blob/master/src/main/resources/build.lts) 以获取更多信息。
+	您可以编写一个脚本 `script` 来配置这些属性。查看 [build.lts](https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/build.lts) 以获取更多信息。
 	
 #Scripts
 * 你可以直接运行脚本
 
-		lesstyping -s script-file-path script-arguments...
+		latte -s script-file-path script-arguments...
 		
 或者：
 
@@ -230,6 +230,6 @@ clone这个仓库,然后执行
 #语法
 您可以从这两个地方获取语法规则
 
-[Wiki Pages](https://github.com/wkgcass/LessTyping/wiki)
+[Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)
 
-[LessTyping 主页](http://lesstyping.cassite.net/)
+[Latte 主页](http://latte.cassite.net/)

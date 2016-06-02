@@ -29,7 +29,7 @@ package lt.compiler.semantic;
  */
 public interface LeftValue extends Value {
         /**
-         * whether this value is a final value (`val` in LessTyping)
+         * whether this value is a final value (`val` in Latte)
          *
          * @return true/false
          */
