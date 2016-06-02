@@ -27,7 +27,6 @@ package lt.repl;
 import lt.compiler.*;
 import lt.compiler.Scanner;
 import lt.compiler.syntactic.AST;
-import lt.compiler.syntactic.Definition;
 import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.def.ClassDef;
 import lt.compiler.syntactic.def.InterfaceDef;
@@ -290,7 +289,7 @@ public class ScriptCompiler {
 
                 SemanticProcessor sp = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                         put(name, defsAndImports);
-                }}, theCompiledClasses);
+                }}, theCompiledClasses, err);
                 CodeGenerator cg = new CodeGenerator(sp.parse());
                 Map<String, byte[]> map = cg.generate();
                 ClassLoader loader = new ClassLoader() {

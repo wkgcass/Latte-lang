@@ -53,7 +53,7 @@ public class TestAnnotations {
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);

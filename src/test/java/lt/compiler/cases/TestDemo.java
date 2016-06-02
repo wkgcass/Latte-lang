@@ -43,11 +43,13 @@ import static org.junit.Assert.*;
  */
 public class TestDemo {
         private Map<String, byte[]> generate(BufferedReader br, String fileName) throws IOException, SyntaxException, ClassNotFoundException {
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner(fileName, br, new lt.compiler.Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
+                ErrorManager err = new ErrorManager(true);
+
+                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner(fileName, br, new lt.compiler.Scanner.Properties(), err);
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put(fileName, syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);

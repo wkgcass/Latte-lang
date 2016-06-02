@@ -220,7 +220,7 @@ public class Evaluator {
 
                 SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                         put(evalFileName, defsAndImports);
-                }}, cl);
+                }}, cl, err);
                 CodeGenerator codeGen = new CodeGenerator(processor.parse());
                 Map<String, byte[]> byteCodes = codeGen.generate();
                 List<Class<?>> classes = new ArrayList<>();

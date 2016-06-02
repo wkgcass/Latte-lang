@@ -54,7 +54,7 @@ public class ErrorManager {
                 }
         }
 
-        private final boolean fastFail;
+        private boolean fastFail;
         public Out out = new Out();
         public final List<CompilingError> errorList = new ArrayList<>();
 
@@ -93,6 +93,15 @@ public class ErrorManager {
          * @param fastFail throw exception when meets an exception
          */
         public ErrorManager(boolean fastFail) {
+                this.fastFail = fastFail;
+        }
+
+        /**
+         * set fast fail. It's called in {@link SemanticProcessor}
+         *
+         * @param fastFail fast fail
+         */
+        public void setFastFail(boolean fastFail) {
                 this.fastFail = fastFail;
         }
 

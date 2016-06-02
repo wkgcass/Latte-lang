@@ -294,25 +294,25 @@ public class Compiler {
                                         Map ou = (Map) o;
                                         if (ou.containsKey("debug")) {
                                                 Object debug = ou.get("debug");
-                                                if (debug instanceof PrintStream) {
+                                                if (debug == null || debug instanceof PrintStream) {
                                                         out.debug = (PrintStream) debug;
                                                 } else throw new IllegalArgumentException("config.out.debug should be PrintStream");
                                         }
                                         if (ou.containsKey("info")) {
                                                 Object info = ou.get("info");
-                                                if (info instanceof PrintStream) {
+                                                if (info == null || info instanceof PrintStream) {
                                                         out.info = (PrintStream) info;
                                                 } else throw new IllegalArgumentException("config.out.info should be PrintStream");
                                         }
                                         if (ou.containsKey("warn")) {
                                                 Object warn = ou.get("warn");
-                                                if (warn instanceof PrintStream) {
+                                                if (warn == null || warn instanceof PrintStream) {
                                                         out.warn = (PrintStream) warn;
                                                 } else throw new IllegalArgumentException("config.out.warn should be PrintStream");
                                         }
                                         if (ou.containsKey("err")) {
                                                 Object error = ou.get("err");
-                                                if (error instanceof PrintStream) {
+                                                if (error == null || error instanceof PrintStream) {
                                                         out.err = (PrintStream) error;
                                                 } else throw new IllegalArgumentException("config.out.err should be PrintStream");
                                         }
@@ -332,6 +332,7 @@ public class Compiler {
                                                 Object o = re.get("outputDir");
                                                 if (o instanceof String) {
                                                         File f = new File((String) o);
+                                                        if (!f.exists()) f.mkdirs();
                                                         if (f.isDirectory()) {
                                                                 result.outputDir = f;
                                                         } else throw new IllegalArgumentException("config.result.outputDir should be a directory");
@@ -529,7 +530,7 @@ public class Compiler {
                         throw new Wrapper(errorManager.errorList);
                 }
 
-                SemanticProcessor processor = new SemanticProcessor(parseRes, classPathLoader);
+                SemanticProcessor processor = new SemanticProcessor(parseRes, classPathLoader, errorManager);
                 Set<STypeDef> types = processor.parse();
 
                 // code gen

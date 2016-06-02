@@ -48,13 +48,15 @@ import static org.junit.Assert.*;
  */
 public class TestSemantic {
         private Set<STypeDef> parse(Map<String, String> fileMap) throws IOException, SyntaxException {
+                ErrorManager err = new ErrorManager(true);
+
                 Map<String, List<Statement>> map = new HashMap<>();
                 for (String fileName : fileMap.keySet()) {
-                        lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test", new StringReader(fileMap.get(fileName)), new Scanner.Properties(), new ErrorManager(true));
-                        Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
+                        lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test", new StringReader(fileMap.get(fileName)), new Scanner.Properties(), err);
+                        Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                         map.put(fileName, syntacticProcessor.parse());
                 }
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 return semanticProcessor.parse();
         }
 
@@ -654,7 +656,7 @@ public class TestSemantic {
 
         @Test
         public void testVariableWithNoLimit() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader());
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(), new ErrorManager(true));
                 processor.parse();
 
                 assertEquals(new IntValue(1), parseValueFromExpression(processor, new NumberLiteral("1", LineCol.SYNTHETIC), null, null));
@@ -668,7 +670,7 @@ public class TestSemantic {
 
         @Test
         public void testPrimitiveVariableWithLimit() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader());
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(),new ErrorManager(true));
                 processor.parse();
 
                 assertEquals(new CharValue('c'), parseValueFromExpression(processor, new StringLiteral("\"c\"", LineCol.SYNTHETIC), CharTypeDef.get(), null));
@@ -685,7 +687,7 @@ public class TestSemantic {
 
         @Test
         public void testCharAndString() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader());
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(),new ErrorManager(true));
                 processor.parse();
 
                 STypeDef charSequenceType = getTypeWithName(processor, "java.lang.CharSequence", LineCol.SYNTHETIC);

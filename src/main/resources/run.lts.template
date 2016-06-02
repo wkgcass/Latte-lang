@@ -1,8 +1,8 @@
 Run(
            ; the class path. classes in these URLs will be loaded
-    classPath:[
+    classPath=[
         "${dir}${separator}target${separator}classes"
     ],
            ; the main class. the main method is retrieved from the class
-    mainClass:""
+    mainClass=""
 ) exec []  ; the main method arguments. should be a list of Strings

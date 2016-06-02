@@ -48,11 +48,12 @@ import static org.junit.Assert.*;
  */
 public class TestCodeGen {
         private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), new Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
+                ErrorManager err = new ErrorManager(true);
+                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), new Scanner.Properties(), err);
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);
@@ -1349,17 +1350,18 @@ public class TestCodeGen {
 
         @Test
         public void testLambdaLT1() throws Exception {
+                ErrorManager err = new ErrorManager(true);
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
                         "import lt::compiler::_\n" +
                         "class TestLambdaLT\n" +
                         "    static\n" +
                         "        method():TestLambdaFunc\n" +
                         "            i=1\n" +
-                        "            return (o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
+                        "            return (o)->o+1+i"), new Scanner.Properties(), err);
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);
@@ -1390,16 +1392,17 @@ public class TestCodeGen {
 
         @Test
         public void testLambdaLT2() throws Exception {
+                ErrorManager err = new ErrorManager(true);
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
                         "import lt::compiler::_\n" +
                         "class TestLambdaLT\n" +
                         "    method():TestLambdaFunc\n" +
                         "        i=1\n" +
-                        "        return (o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
+                        "        return (o)->o+1+i"), new Scanner.Properties(), err);
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);
@@ -1430,16 +1433,17 @@ public class TestCodeGen {
 
         @Test
         public void testLambdaLT3() throws Throwable {
+                ErrorManager err = new ErrorManager(true);
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
                         "import java::util::function::_\n" +
                         "class TestLambdaLT\n" +
                         "    method():Function\n" +
                         "        i=1\n" +
-                        "        return (o)->o+1+i"), new Scanner.Properties(), new ErrorManager(true));
-                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), new ErrorManager(true));
+                        "        return (o)->o+1+i"), new Scanner.Properties(), err);
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
-                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader());
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types);
