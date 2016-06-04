@@ -28,6 +28,7 @@ import lt.repl.Compiler;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,5 +72,36 @@ public class TestLibraries {
                         "</form>" +
                         "</body>" +
                         "</html>", testHtmlFormat.invoke(null).toString());
+        }
+
+        @Test
+        public void testSQL() throws Exception {
+                ClassLoader loader = load(new HashMap<String, Object>() {{
+                        try {
+                                ClassLoader.getSystemClassLoader().loadClass("lt.sql.DB");
+                        } catch (ClassNotFoundException ignore) {
+                                put("sql.lt", TestLibraries.class.getResourceAsStream("/lt/sql.lt"));
+                        }
+                        put("test_sql.lt", TestLibraries.class.getResourceAsStream("/test_libraries/test_sql.lt"));
+                }});
+                Class<?> TestSQL = loader.loadClass("lt.sql.test.TestSQL");
+                Method testSelectString = TestSQL.getMethod("testSelectString");
+                assertEquals("(select User.id, User.name from User where User.id > 7 order by User.id desc limit 1,7)",
+                        testSelectString.invoke(null));
+                Method testSelectWithSubQuery = TestSQL.getMethod("testSelectWithSubQuery");
+                assertEquals("(select User.id, User.name from User where User.id <= (select User.id from User limit 1) order by User.id desc)",
+                        testSelectWithSubQuery.invoke(null));
+                Method testInsertString = TestSQL.getMethod("testInsertString");
+                assertEquals("(insert into User (User.id, User.name) values (1, cass))",
+                        testInsertString.invoke(null));
+                Method testUpdateString = TestSQL.getMethod("testUpdateString");
+                assertEquals("(update User set User.id = 1 where User.name == cass)",
+                        testUpdateString.invoke(null));
+                Method testDeleteString = TestSQL.getMethod("testDeleteString");
+                assertEquals("(delete from User where User.id == 1)",
+                        testDeleteString.invoke(null));
+                Method testDBUpdate = TestSQL.getMethod("testDBUpdate");
+                // System.out.println(testDBUpdate.invoke(null));
+                // Method testManipDbQuery = TestSQL.getMethod("testManipDbQuery");
         }
 }

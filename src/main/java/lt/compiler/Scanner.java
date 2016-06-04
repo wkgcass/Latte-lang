@@ -109,7 +109,8 @@ public class Scanner {
                 "=:=", "!:=", // equal or not$equal
                 "..", ".:", // list generator
                 "...", // pass
-                ":::" // concat
+                ":::", // concat
+                ":=" // assign
         ));
         /**
          * symbols that let the scanner know the following input should be scanned as a string<br>
@@ -826,7 +827,8 @@ public class Scanner {
                 if (CompileUtil.isModifier(str)) return TokenType.MODIFIER;
                 if (CompileUtil.isNumber(str)) return TokenType.NUMBER;
                 if (CompileUtil.isString(str)) return TokenType.STRING;
-                if (CompileUtil.isKey(str)) return TokenType.KEY; // however in/is/not are two variable operators, they are marked as keys
+                if (CompileUtil.isKey(str))
+                        return TokenType.KEY; // however in/is/not are two variable operators, they are marked as keys
                 if (CompileUtil.isSymbol(str)) return TokenType.SYMBOL;
                 if (SPLIT.contains(str)) return TokenType.SYMBOL;
                 if (CompileUtil.isValidName(str)) return TokenType.VALID_NAME;

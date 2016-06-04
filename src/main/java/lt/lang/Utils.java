@@ -56,15 +56,15 @@ public class Utils {
                 return evaluator.eval(e).result;
         }
 
-        public static Map<String, File> filesInDirectory(String dir) {
-                return filesInDirectory(new File(dir), false);
+        public static Map<String, File> filesInDirectory(String dir, String regex) {
+                return filesInDirectory(dir, regex, false);
         }
 
-        public static Map<String, File> filesInDirectory(String dir, boolean recursively) {
-                return filesInDirectory(new File(dir), recursively);
+        public static Map<String, File> filesInDirectory(String dir, String regex, boolean recursively) {
+                return filesInDirectory(new File(dir), regex, recursively);
         }
 
-        public static Map<String, File> filesInDirectory(File dir, boolean recursively) {
+        public static Map<String, File> filesInDirectory(File dir, String regex, boolean recursively) {
                 if (dir == null) throw new NullPointerException("dir is null");
                 Map<String, File> map = new LinkedHashMap<>();
                 if (dir.isDirectory()) {
@@ -72,11 +72,11 @@ public class Utils {
                         if (listFiles != null) {
                                 for (File f : listFiles) {
                                         if (f.isFile()) {
-                                                if (f.getName().endsWith(".lt")) {
+                                                if (f.getName().matches(regex)) {
                                                         map.put(f.getName(), f);
                                                 }
                                         } else if (f.isDirectory() && recursively) {
-                                                Map<String, File> files = filesInDirectory(f, true);
+                                                Map<String, File> files = filesInDirectory(f, regex, true);
                                                 map.putAll(files);
                                         }
                                 }

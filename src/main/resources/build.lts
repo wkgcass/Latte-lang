@@ -28,7 +28,7 @@ Compiler() configure {
         'main':     null  ;   main class, or null if there's no main class. effective only when package is not null
         'with-lib': false ;   include Latte runtime libraries. effective only when package is not null
     }
-} compile filesInDirectory('...')
+} compile filesInDirectory('...', '.*\\.lt')
                           ; compile these files
                           ; use filesInDirectory('...', true) to recursively
                           ; compile all `lt` files in children directories

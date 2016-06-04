@@ -2070,4 +2070,19 @@ public class TestCodeGen {
                 assertEquals(SModifier.PUBLIC, test.en());
                 assertArrayEquals(new SModifier[]{SModifier.PUBLIC, SModifier.PRIVATE}, test.enArr());
         }
+
+        @Test
+        public void testAssignOp() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "data class X(x)\n" +
+                                "    assign(x)=x+1\n" +
+                                "class TestAssignOp\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            return X():=1\n",
+                        "TestAssignOp");
+                Method method = cls.getMethod("method");
+                assertEquals(2, method.invoke(null));
+        }
 }

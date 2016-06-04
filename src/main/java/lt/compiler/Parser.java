@@ -1487,16 +1487,19 @@ public class Parser {
 
                 if (current instanceof Element && ((Element) current).getContent().equals("=")) {
                         // check "="
-                        Expression exp = next_exp(false);
+                        if (current.next() instanceof Element && ((Element) current.next()).getContent().equals("...")) {
+                                return new MethodDef(methodName, modifiers, returnType, variableList, annos,
+                                        Collections.emptyList(),
+                                        lineCol);
+                        } else {
+                                Expression exp = next_exp(false);
 
-                        MethodDef def = new MethodDef(methodName, modifiers, returnType, variableList, annos,
-                                Collections.singletonList(
-                                        new AST.Return(exp, exp.line_col())
-                                ),
-                                lineCol);
-                        annos.clear();
-                        modifiers.clear();
-                        return def;
+                                return new MethodDef(methodName, modifiers, returnType, variableList, annos,
+                                        Collections.singletonList(
+                                                new AST.Return(exp, exp.line_col())
+                                        ),
+                                        lineCol);
+                        }
                 } else {
                         if (current instanceof ElementStartNode) {
                                 // parse

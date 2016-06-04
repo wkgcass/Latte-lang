@@ -545,12 +545,16 @@ public class Dynamic {
                                         return invoke(targetClass, o, invoker, "put", primitives, args);
                                 }
                         }
-                        StringBuilder sb = new StringBuilder().append(targetClass.getName()).append(".").append(method).append("(");
+                        StringBuilder sb = new StringBuilder().append(
+                                o == null
+                                        ? targetClass.getName()
+                                        : o.getClass().getName()
+                        ).append("#").append(method).append("(");
                         boolean isFirst = true;
                         for (Object arg : args) {
                                 if (isFirst) isFirst = false;
                                 else sb.append(", ");
-                                sb.append(arg.getClass().getName());
+                                sb.append(arg == null ? "null" : arg.getClass().getName());
                         }
                         sb.append(")");
                         throw new RuntimeException("cannot find method to invoke " + sb.toString());

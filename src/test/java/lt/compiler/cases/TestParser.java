@@ -2009,4 +2009,20 @@ public class TestParser {
                         stmt
                 );
         }
+
+        @Test
+        public void testAssignOp() throws Exception {
+                List<Statement> list = parse("a:=1");
+                assertEquals(1, list.size());
+
+                Statement stmt = list.get(0);
+                assertEquals(
+                        new TwoVariableOperation(
+                                ":=",
+                                new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                new NumberLiteral("1", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC),
+                        stmt
+                );
+        }
 }

@@ -670,7 +670,7 @@ public class TestSemantic {
 
         @Test
         public void testPrimitiveVariableWithLimit() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(),new ErrorManager(true));
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(), new ErrorManager(true));
                 processor.parse();
 
                 assertEquals(new CharValue('c'), parseValueFromExpression(processor, new StringLiteral("\"c\"", LineCol.SYNTHETIC), CharTypeDef.get(), null));
@@ -687,7 +687,7 @@ public class TestSemantic {
 
         @Test
         public void testCharAndString() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(),new ErrorManager(true));
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(), new ErrorManager(true));
                 processor.parse();
 
                 STypeDef charSequenceType = getTypeWithName(processor, "java.lang.CharSequence", LineCol.SYNTHETIC);
@@ -2556,5 +2556,23 @@ public class TestSemantic {
                         assertEquals(4, e.lineCol.line);
                         assertEquals(5, e.lineCol.column);
                 }
+        }
+
+        @Test
+        public void testAssignOp() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    a:=1");
+                Set<STypeDef> set = parse(map);
+                assertEquals(1, set.size());
+
+                Iterator<STypeDef> it = set.iterator();
+
+                SClassDef classDef = (SClassDef) it.next();
+                Instruction ins = classDef.constructors().get(0).statements().get(1);
+                assertTrue(ins instanceof Ins.InvokeDynamic);
+                assertEquals("assign", ((Ins.InvokeDynamic) ins).methodName());
         }
 }

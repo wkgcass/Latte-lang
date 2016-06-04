@@ -1,0 +1,287 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
+This is a package that uses DSL to write SQLs. The SQLs can be executed directly
+*/
+package lt::sql
+
+import java::sql::_
+
+interface SQLBuilder
+    buildSQL():String
+
+interface QueryExecutor
+    execQuery():ResultSet
+
+interface UpdateExecutor
+    execUpdate():int
+
+; class that represents the database.
+data class DB(url:String, user:String, pwd:String)
+    conn:Connection
+
+    ; connect to the db
+    ; fill in a Connection object as the inside connection
+    ; if the conn is null, then the connection will be retrieved via
+    ; DriverManager#getConnection(url, user, pwd)
+    connect(conn:Connection=null):DB
+        if conn
+            this.conn=conn
+        else
+            conn = DriverManager.getConnection(url, user, pwd)
+        return this
+
+    execUpdate(sql):int
+    execQuery(sql):ResultSet
+
+    select(col:Column):Select = select([col])
+    select(cols:List):Select = Select(SelectContext(), cols)
+    insert_into(tbl_o):Insert = Insert(conn, tbl_o)
+    update(tbl_o):Update = Update(conn, tbl_o)
+    delete_from(tbl_o):UpdateWhere = UpdateWhere(conn, "delete from "+tbl_o.getClass.simpleName)
+
+    close():Unit
+        if conn
+            conn.close()
+
+; represents a Column.
+; tbl_o is filled with Entity object and name is filled with the column's name
+data class Column(tbl_o, name:String)
+    tbl = tbl_o.getClass.simpleName
+
+    gt(o):Condition=Condition(">", this, [o])
+    lt(o):Condition=Condition("<", this, [o])
+    ge(o):Condition=Condition(">=", this, [o])
+    le(o):Condition=Condition("<=", this, [o])
+    equal(o):Condition=Condition("==", this, [o])
+    notEqual(o):Condition=Condition("<>", this, [o])
+    between(a,b):Condition=Condition("between", this, [a,b])
+    `in`(agg):Condition=Condition("in", this, [agg])
+
+    assign(o):Assign=Assign(this, o)
+
+    desc():Order=Order(this, false)
+    asc():Order=Order(this, true)
+
+; assign to the column
+data class Assign(col:Column, o)
+
+; represents a Condition
+data class Condition(op:String, col:Column, ls:List)
+    toString():String
+        sb = StringBuilder()
+        sb append col.tbl append "." append col.name append " " append op append " "
+        if ls
+            isFirst=true
+            for o in ls
+                if isFirst
+                    isFirst=false
+                else
+                    sb append ", "
+                sb append o
+        return sb.toString
+
+data class Order(col:Column, isAsc:bool)
+
+data class SelectContext(
+    conn:Connection         ; connection
+    cols:List               ; the selected columns
+    tbls:List               ; select from the tables
+    joins:List              ; join these tables on these conditions
+    where:Condition         ; the condition
+    orders:List             ; order by these orders
+    groupBys:List           ; group by these columns
+    limitStart:Integer      ; limit _,?
+    limitLength:Integer     ; limit _ or limit ?,_
+)
+    toString():String
+        sb = StringBuilder("(")
+        if cols
+            sb append "select "
+            isFirst=true
+            for col in cols
+                if isFirst
+                    isFirst=false
+                else
+                    sb append ", "
+                sb append col.tbl append "." append col.name
+        if tbls
+            sb append " from "
+            isFirst=true
+            for tbl in tbls
+                if isFirst
+                    isFirst=false
+                else
+                    sb append ", "
+                if tbl is type EndStatement
+                    sb append append "(" tbl append ")"
+                else
+                    sb append tbl.getClass.simpleName
+        if joins
+            for join in joins
+                sb append " join " append join.tbl append " on " append join.condition
+        if where
+            sb append " where " append where
+        if orders
+            sb append " order by "
+            isFirst=true
+            for order in orders
+                if isFirst
+                    isFirst=false
+                else
+                    sb append ", "
+                sb append order.col.tbl append "." append order.col.name append " " append (
+                    if order.isAsc
+                        return "asc"
+                    else
+                        return "desc"
+                )
+        if limitStart!=null
+            sb append " limit " append limitStart append "," append limitLength
+        elseif limitLength!=null
+            sb append " limit " append limitLength
+        sb append ")"
+        return sb.toString
+
+data class Select(context:SelectContext, cols:List)
+    context.cols=cols
+    from(tbl):From
+        return From(context, [tbl])
+    from(tbls:List):From
+        return From(context, tbls)
+
+abstract class EndStatement(context:SelectContext):SQLBuilder,QueryExecutor
+    orderBy(order:Order):EndStatement
+        context.orders=[order]
+        return this
+    orderBy(orders:List):EndStatement
+        context.orders=orders
+        return this
+    groupBy(col:Column):EndStatement
+        return this
+    groupBy(cols:List):EndStatement
+        return this
+    limit(length:int):EndStatement
+        context.limitStart=null
+        context.limitLength=length
+        return this
+    limit(start:int, length:int):EndStatement
+        context.limitStart=start
+        context.limitLength=length
+        return this
+    toString():String = buildSQL()
+    buildSQL():String = context.toString
+    execQuery():ResultSet=...
+
+class From(context:SelectContext, tbls:List):EndStatement(context)
+    context.tbls=tbls
+    join(tbl_o):Join
+        return Join(context, tbl_o, this)
+    where(con:Condition):QueryWhere
+        return QueryWhere(context, con)
+
+class Join(context:SelectContext, tbl_o, from:From)
+    tbl:String=tbl_o.getClass.simpleName
+    condition:Condition
+    on(con:Condition):From
+        this.condition=con
+        if !context.joins
+            context.joins=List()
+        context.joins + this
+        return from
+
+class QueryWhere(context:SelectContext, con:Condition):EndStatement(context)
+    context.where=con
+
+class Insert(conn:Connection, tbl_o):SQLBuilder,UpdateExecutor
+    tbl = tbl_o.getClass.simpleName
+    cols:List
+    values:List
+
+    _(col:Column) = _([col])
+    _(cols:List)
+        this.cols=cols
+        return this
+    values(o) = values([o])
+    values(values:List)
+        this.values=values
+        return this
+    toString():String = buildSQL()
+    buildSQL():String
+        sb = StringBuilder()
+        sb append "(insert into " append tbl
+        if cols
+            sb append " ("
+            isFirst=true
+            for col in cols
+                if isFirst
+                    isFirst=false
+                else
+                    sb append ", "
+                sb append col.tbl append "." append col.name
+            sb append ")"
+        if values
+            sb append " values ("
+            isFirst=true
+            for value in values
+                if isFirst
+                    isFirst=false
+                else
+                    sb append ", "
+                sb append value
+            sb append ")"
+        sb.append(")")
+        return sb.toString
+    execUpdate():int=...
+
+class Update(conn:Connection, tbl_o)
+    tbl=tbl_o.getClass.simpleName
+    set(assign:Assign)=set([assign])
+    set(assigns:List):UpdateWhere
+        sb = StringBuilder() append "update " append tbl append " "
+        if assigns
+            isFirst=true
+            for assign in assigns
+                if isFirst
+                    isFirst=false
+                else
+                    sb append ", "
+                sb append "set " append assign.col.tbl append "." append assign.col.name append " = " append assign.o
+        return UpdateWhere(conn, sb.toString)
+
+class UpdateWhere(conn:Connection, alreadyBuiltSQL):SQLBuilder,UpdateExecutor
+    condition:Condition
+    where(con:Condition)
+        this.condition=con
+        return this
+    buildSQL():String
+        sb = StringBuilder()
+        sb append "(" append alreadyBuiltSQL
+        if condition
+            sb append " where " append condition
+        sb append ")"
+        return sb.toString
+    execUpdate():int=...
+    toString():String=buildSQL()

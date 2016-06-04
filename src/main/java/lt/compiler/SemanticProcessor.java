@@ -46,6 +46,7 @@ import lt.lang.LtIterator;
 import lt.lang.Undefined;
 import lt.dependencies.asm.MethodVisitor;
 
+import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandles;
@@ -1739,6 +1740,10 @@ public class SemanticProcessor {
          */
         private SMethodDef parseInnerMethod(MethodDef methodDef, SemanticScope scope) throws SyntaxException {
                 if (scope.parent == null) throw new LtBug("scope.parent should not be null");
+
+                SemanticScope theTopScope = scope.parent;
+                while (theTopScope.parent != null) theTopScope = theTopScope.parent;
+
                 // check method name
                 if (scope.containsInnerMethod(methodDef.name)) {
                         err.SyntaxException("duplicate inner method name", methodDef.line_col());
@@ -1858,7 +1863,7 @@ public class SemanticProcessor {
 
                 // generate a scope for the inner method
                 // the scope contains the inner method itself
-                SemanticScope innerMethodScope = new SemanticScope(scope.parent);
+                SemanticScope innerMethodScope = new SemanticScope(theTopScope);
                 innerMethodScope.addMethodDef(name, rec);
 
                 parseMethod(m, newMethodDef.body, innerMethodScope);
@@ -3870,7 +3875,8 @@ public class SemanticProcessor {
                                 break;
                         }
                 }
-                if (LinkedList_Con == null) throw new LtBug("java.util.LinkedList should have constructor LinkedList(Collection)");
+                if (LinkedList_Con == null)
+                        throw new LtBug("java.util.LinkedList should have constructor LinkedList(Collection)");
                 Ins.New aNew = new Ins.New(LinkedList_Con, LineCol.SYNTHETIC);
                 aNew.args().add(new Ins.GetField(f3, meScope.getThis(), LineCol.SYNTHETIC));
                 LocalVariable localVariable = new LocalVariable(LinkedList_Type, false);
@@ -3911,7 +3917,8 @@ public class SemanticProcessor {
                                         break;
                                 }
                         }
-                        if (LinkedList_add2 == null) throw new LtBug("java.util.LinkedList should have method add(int,Object)");
+                        if (LinkedList_add2 == null)
+                                throw new LtBug("java.util.LinkedList should have method add(int,Object)");
                         Ins.InvokeVirtual invokeVirtual = new Ins.InvokeVirtual(
                                 new Ins.TLoad(localVariable, meScope, LineCol.SYNTHETIC),
                                 LinkedList_add2,
@@ -3931,7 +3938,8 @@ public class SemanticProcessor {
                                 break;
                         }
                 }
-                if (MethodHandle_invokeWithArguments == null) throw new LtBug("java.lang.invoke.MethodHandle should have method invokeWithArguments(Object[])");
+                if (MethodHandle_invokeWithArguments == null)
+                        throw new LtBug("java.lang.invoke.MethodHandle should have method invokeWithArguments(Object[])");
                 Ins.InvokeVirtual invokeMethodHandle = new Ins.InvokeVirtual(
                         new Ins.GetField(f1, meScope.getThis(), LineCol.SYNTHETIC),
                         MethodHandle_invokeWithArguments,
@@ -4034,6 +4042,7 @@ public class SemanticProcessor {
                         requiredType = getTypeWithName("java.lang.Object", LineCol.SYNTHETIC);
                 }
 
+                assert requiredType != null;
                 MethodDef methodDef = new MethodDef(
                         methodName, Collections.emptySet(),
                         new AST.Access(
@@ -4742,6 +4751,11 @@ public class SemanticProcessor {
                                         cast(BoolTypeDef.get(), right, lineCol),
                                         lineCol
                                 );
+                        case ":=":
+                                // assign
+                                args = new ArrayList<>();
+                                args.add(right);
+                                return invokeMethodWithArgs(lineCol, left.type(), left, "assign", args, scope);
                         default:
                                 err.SyntaxException("unknown two variable operator " + op, lineCol);
                                 return null;
@@ -5449,7 +5463,8 @@ public class SemanticProcessor {
                                                                         v,
                                                                         lineCol),
                                                                 lineCol);
-                                                } else throw new LtBug("unknown primitive requiredType " + requiredType);
+                                                } else
+                                                        throw new LtBug("unknown primitive requiredType " + requiredType);
                                         } else if (v.type().equals(LongTypeDef.get())) {
                                                 if (requiredType instanceof IntTypeDef) {
                                                         // long to int
@@ -5479,7 +5494,8 @@ public class SemanticProcessor {
                                                                         v,
                                                                         lineCol),
                                                                 lineCol);
-                                                } else throw new LtBug("unknown primitive requiredType " + requiredType);
+                                                } else
+                                                        throw new LtBug("unknown primitive requiredType " + requiredType);
                                         } else if (v.type().equals(FloatTypeDef.get())) {
                                                 if (requiredType instanceof IntTypeDef) {
                                                         // float to int
@@ -5509,7 +5525,8 @@ public class SemanticProcessor {
                                                                         v,
                                                                         lineCol),
                                                                 lineCol);
-                                                } else throw new LtBug("unknown primitive requiredType " + requiredType);
+                                                } else
+                                                        throw new LtBug("unknown primitive requiredType " + requiredType);
                                         } else if (v.type().equals(DoubleTypeDef.get())) {
                                                 if (requiredType instanceof IntTypeDef) {
                                                         // double to int
@@ -5539,7 +5556,8 @@ public class SemanticProcessor {
                                                                         v,
                                                                         lineCol),
                                                                 lineCol);
-                                                } else throw new LtBug("unknown primitive requiredType " + requiredType);
+                                                } else
+                                                        throw new LtBug("unknown primitive requiredType " + requiredType);
                                         } else if (v.type().equals(BoolTypeDef.get())) {
                                                 err.SyntaxException("cannot cast from boolean to other primitives", lineCol);
                                                 return null;
@@ -5707,10 +5725,12 @@ public class SemanticProcessor {
          * @param methodList method list
          * @return true/false
          */
-        private boolean whetherTheMethodIsOverriddenByMethodsInTheList(SMethodDef method, List<SMethodDef> methodList) {
+        private boolean whetherTheMethodIsOverriddenByMethodsInTheList(SMethodDef method, List<SMethodDef> methodList) throws SyntaxException {
                 // methodList is null
                 // return false
                 if (methodList == null) return false;
+                if (method.modifiers().contains(SModifier.STATIC)) return false;
+                /*
                 // foreach m in methodList
                 for (SMethodDef m : methodList) {
                         // equals means overridden
@@ -5718,7 +5738,10 @@ public class SemanticProcessor {
                         // check m.overRide methods
                         if (whetherTheMethodIsOverriddenByMethodsInTheList(method, m.overRide())) return true;
                 }
-                // not found, return false
+                */
+                // check signature
+                if (null != findMethodWithSameSignature(method, methodList, true)) return true;
+                // still not found, return false
                 return false;
         }
 
@@ -5799,6 +5822,17 @@ public class SemanticProcessor {
          * @param checkSuper     whether to check super types
          */
         private void findMethodFromClassWithArguments(String name, List<Value> argList, STypeDef invokeOn, SClassDef sClassDef, int mode, List<SMethodDef> matchedMethods, boolean checkSuper) throws SyntaxException {
+                // prevent invalid class access
+                if (!sClassDef.modifiers().contains(SModifier.PUBLIC)) {
+                        if (sClassDef.modifiers().contains(SModifier.PROTECTED)) {
+                                if (!sClassDef.isAssignableFrom(invokeOn) && !sClassDef.pkg().equals(invokeOn.pkg()))
+                                        return;
+                        } else if (sClassDef.modifiers().contains(SModifier.PRIVATE)) return;
+                        else {
+                                // package
+                                if (!sClassDef.pkg().equals(invokeOn.pkg())) return;
+                        }
+                }
                 out:
                 for (SMethodDef m : sClassDef.methods()) {
                         // check name
@@ -5842,8 +5876,31 @@ public class SemanticProcessor {
                                         if (!sClassDef.pkg().equals(invokeOn.pkg())) continue;
                                 }
 
+                                // check overridden
                                 if (!whetherTheMethodIsOverriddenByMethodsInTheList(m, matchedMethods)) {
-                                        matchedMethods.add(m);
+                                        // check return type accessible
+                                        STypeDef type = m.getReturnType();
+                                        boolean canAccess = false;
+
+                                        if (type instanceof SClassDef) {
+                                                if (((SClassDef) type).modifiers().contains(SModifier.PUBLIC)) {
+                                                        canAccess = true;
+                                                } else if (((SClassDef) type).modifiers().contains(SModifier.PROTECTED)) {
+                                                        if (type.isAssignableFrom(invokeOn) || type.pkg().equals(invokeOn.pkg())) {
+                                                                canAccess = true;
+                                                        }
+                                                } else if (!((SClassDef) type).modifiers().contains(SModifier.PUBLIC)) {
+                                                        if (type.pkg().equals(invokeOn.pkg())) {
+                                                                canAccess = true;
+                                                        }
+                                                }
+                                        } else {
+                                                canAccess = true;
+                                        }
+
+                                        if (canAccess) {
+                                                matchedMethods.add(m);
+                                        }
                                 }
                         }
                 }
@@ -5914,7 +5971,10 @@ public class SemanticProcessor {
                 // parse args
                 List<Value> argList = new ArrayList<>();
                 for (Expression arg : invocation.args) {
-                        argList.add(parseValueFromExpression(arg, null, scope));
+                        Value v = parseValueFromExpression(arg, null, scope);
+                        if (v == null)
+                                throw new SyntaxException(arg + " is not method argument", arg.line_col());
+                        argList.add(v);
                 }
 
                 List<SMethodDef> methodsToInvoke = new ArrayList<>();
@@ -6223,7 +6283,9 @@ public class SemanticProcessor {
 
                 if (methodsToInvoke.isEmpty() && innerMethod == null) {
                         // invoke dynamic
-                        argList.add(0, new Ins.GetClass(scope.type(), (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                        argList.add(0, new Ins.GetClass(
+                                target == null ? scope.type() : target.type(),
+                                (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                         if (target == null) {
                                 if (scope.getThis() == null)
                                         argList.add(1, NullValue.get());
@@ -6775,14 +6837,14 @@ public class SemanticProcessor {
                                 SMethodDef overriddenMethod = null;
                                 // try to find method from parent class
                                 while (parent != null) {
-                                        overriddenMethod = findMethodWithSameSignature(method, parent.methods());
+                                        overriddenMethod = findMethodWithSameSignature(method, parent.methods(), false);
                                         if (overriddenMethod == null) {
                                                 // check parent interfaces
                                                 q.clear();
                                                 q.addAll(parent.superInterfaces());
                                                 while (!q.isEmpty()) {
                                                         SInterfaceDef i = q.remove();
-                                                        overriddenMethod = findMethodWithSameSignature(method, i.methods());
+                                                        overriddenMethod = findMethodWithSameSignature(method, i.methods(), false);
                                                         if (overriddenMethod != null) break;
                                                         q.addAll(i.superInterfaces());
                                                 }
@@ -6794,7 +6856,7 @@ public class SemanticProcessor {
                                         interfaceDefs.addAll(c.superInterfaces());
                                         while (!interfaceDefs.isEmpty()) {
                                                 SInterfaceDef i = interfaceDefs.remove();
-                                                overriddenMethod = findMethodWithSameSignature(method, i.methods());
+                                                overriddenMethod = findMethodWithSameSignature(method, i.methods(), false);
                                                 if (overriddenMethod != null) {
                                                         checkFinalAndOverride(method, overriddenMethod);
                                                 }
@@ -6812,7 +6874,7 @@ public class SemanticProcessor {
                                 q.addAll(i.superInterfaces());
                                 while (!q.isEmpty()) {
                                         SInterfaceDef in = q.remove();
-                                        SMethodDef m = findMethodWithSameSignature(method, in.methods());
+                                        SMethodDef m = findMethodWithSameSignature(method, in.methods(), false);
                                         if (m != null) {
                                                 checkFinalAndOverride(method, m);
                                         }
@@ -6849,14 +6911,17 @@ public class SemanticProcessor {
          * method name and arguments should be the same<br>
          * if the above conditions are matched, the found return type should be assignable from return type of the method to be checked
          *
-         * @param method       the method to be checked
-         * @param superMethods super methods
+         * @param method             the method to be checked
+         * @param methodList         super methods
+         * @param onlyCheckSignature only check signature, doesn't check modifier and return type
          * @return found method or null
          * @throws SyntaxException exception
          */
-        private SMethodDef findMethodWithSameSignature(SMethodDef method, List<SMethodDef> superMethods) throws SyntaxException {
+        private SMethodDef findMethodWithSameSignature(SMethodDef method,
+                                                       List<SMethodDef> methodList,
+                                                       boolean onlyCheckSignature) throws SyntaxException {
                 outer:
-                for (SMethodDef m : superMethods) {
+                for (SMethodDef m : methodList) {
                         // same name
                         if (m.name().equals(method.name())) {
                                 // same param length
@@ -6869,41 +6934,48 @@ public class SemanticProcessor {
                                                         continue outer;
                                                 }
                                         }
-                                        // method
-                                        // check access modifier
-                                        // super is private, continue
-                                        if (m.modifiers().contains(SModifier.PRIVATE)) continue;
-                                        if (
-                                                // super is public, this is not public
-                                                (m.modifiers().contains(SModifier.PUBLIC)
-                                                        && !method.modifiers().contains(SModifier.PUBLIC)
-                                                )
-                                                        ||
-                                                        // super is protected, this is not public/protected
-                                                        (m.modifiers().contains(SModifier.PROTECTED)
-                                                                && !m.modifiers().contains(SModifier.PUBLIC)
-                                                                && !m.modifiers().contains(SModifier.PROTECTED)
-                                                        )
-                                                        ||
-                                                        // super is package access, (this is private or they are not in same pkg)
-                                                        (!m.modifiers().contains(SModifier.PUBLIC)
-                                                                && !m.modifiers().contains(SModifier.PROTECTED)
-                                                                && !m.modifiers().contains(SModifier.PRIVATE)
-                                                                &&
-                                                                (
-                                                                        method.modifiers().contains(SModifier.PRIVATE)
-                                                                                ||
-                                                                                !m.declaringType().pkg().equals(method.declaringType().pkg())
-                                                                )
-                                                        )
-                                                ) {
-                                                err.SyntaxException(method + " cannot override " + m, method.line_col());
-                                                return null;
-                                        }
 
-                                        if (!m.getReturnType().isAssignableFrom(method.getReturnType())) {
-                                                err.SyntaxException(m + " return type should be assignable from " + method + " 's", method.line_col());
-                                                return null;
+                                        if (!onlyCheckSignature) {
+
+                                                // method
+                                                // check access modifier
+                                                // super is private, continue
+                                                if (m.modifiers().contains(SModifier.PRIVATE)) continue;
+                                                if (
+                                                        // super is public, this is not public
+                                                        (m.modifiers().contains(SModifier.PUBLIC)
+                                                                && !method.modifiers().contains(SModifier.PUBLIC)
+                                                        )
+                                                                ||
+                                                                // super is protected, this is not public/protected
+                                                                (m.modifiers().contains(SModifier.PROTECTED)
+                                                                        && !m.modifiers().contains(SModifier.PUBLIC)
+                                                                        && !m.modifiers().contains(SModifier.PROTECTED)
+                                                                )
+                                                                ||
+                                                                // super is package access, (this is private or they are not in same pkg)
+                                                                (!m.modifiers().contains(SModifier.PUBLIC)
+                                                                        && !m.modifiers().contains(SModifier.PROTECTED)
+                                                                        && !m.modifiers().contains(SModifier.PRIVATE)
+                                                                        &&
+                                                                        (
+                                                                                method.modifiers().contains(SModifier.PRIVATE)
+                                                                                        ||
+                                                                                        !m.declaringType().pkg().equals(method.declaringType().pkg())
+                                                                        )
+                                                                )
+                                                        ) {
+                                                        err.SyntaxException(method + " cannot override " + m, method.line_col());
+                                                        return null;
+                                                }
+
+                                                if (!m.getReturnType().isAssignableFrom(method.getReturnType())
+                                                        &&
+                                                        !method.getReturnType().isAssignableFrom(m.getReturnType())) {
+                                                        err.SyntaxException(m + " return type should be assignable from " + method + " 's", method.line_col());
+                                                        return null;
+                                                }
+
                                         }
 
                                         return m;

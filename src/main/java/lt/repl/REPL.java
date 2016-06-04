@@ -292,7 +292,7 @@ public class REPL {
                                 compiler.config.classpath = classPaths;
 
                                 try {
-                                        compiler.compile(Utils.filesInDirectory(sourceDir, recursive));
+                                        compiler.compile(Utils.filesInDirectory(sourceDir, ".*\\.lt", recursive));
                                 } catch (Exception e) {
                                         if (e instanceof SyntaxException) {
                                                 System.err.println("[ERROR] " + e.getMessage());

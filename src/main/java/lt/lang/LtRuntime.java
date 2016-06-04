@@ -152,6 +152,15 @@ public class LtRuntime {
          */
         public static Object cast(Object o, Class<?> targetType) throws Exception {
                 if (targetType.isInstance(o)) return o;
+
+                if (o == null) {
+                        if (targetType.isPrimitive()) {
+                                throw generateClassCastException(o, targetType);
+                        } else {
+                                return null;
+                        }
+                }
+
                 if (isBoxType(targetType)) {
                         if (targetType.equals(Integer.class)) {
                                 return castToInt(o);
