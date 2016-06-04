@@ -39,6 +39,7 @@ import java.lang.reflect.*;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import static org.junit.Assert.*;
@@ -1022,7 +1023,7 @@ public class TestCodeGen {
                 @SuppressWarnings("unchecked")
                 List<Integer> list = (List<Integer>) method.invoke(null);
 
-                assertTrue(list.getClass().equals(lt.lang.List.class));
+                assertEquals(lt.lang.List.class, list.getClass());
 
                 assertEquals(10, list.get(0).intValue());
                 assertEquals(20, list.get(1).intValue());
@@ -1059,7 +1060,9 @@ public class TestCodeGen {
                 expected.put("a", 1);
                 expected.put("b", 2);
                 Object o = expected;
-                assertEquals(o, method.invoke(null));
+                Object res = method.invoke(null);
+                assertEquals(o, res);
+                assertEquals(lt.lang.Map.class, res.getClass());
         }
 
         @Test
@@ -2084,5 +2087,24 @@ public class TestCodeGen {
                         "TestAssignOp");
                 Method method = cls.getMethod("method");
                 assertEquals(2, method.invoke(null));
+        }
+
+        @Test
+        public void testIndexAccessAssign() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestIndexAccessAssign\n" +
+                                "    static\n" +
+                                "        method(arr)\n" +
+                                "            i=0\n" +
+                                "            a=0\n" +
+                                "            while i<arr.size\n" +
+                                "                a+=arr[i++]\n" +
+                                "            m()\n" +
+                                "                return 1+1\n" +
+                                "            return a"
+                        , "TestIndexAccessAssign");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(3, method.invoke(null, Arrays.asList(1, 2)));
         }
 }

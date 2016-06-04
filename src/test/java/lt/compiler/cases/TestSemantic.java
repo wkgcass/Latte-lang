@@ -1670,9 +1670,9 @@ public class TestSemantic {
 
                 Instruction i1 = con.statements().get(1 + 1);
                 assertTrue(i1 instanceof ValuePack);
-                assertTrue(((ValuePack) i1).instructions().get(0) instanceof Ins.PutField);
-                assertTrue(((ValuePack) i1).instructions().get(1) instanceof Ins.GetField);
-                assertTrue(((Ins.PutField) ((ValuePack) i1).instructions().get(0)).value() instanceof Ins.TwoVarOp);
+                assertTrue(((ValuePack) i1).instructions().get(1) instanceof Ins.PutField);
+                assertTrue(((ValuePack) i1).instructions().get(2) instanceof Ins.TLoad);
+                assertTrue(((Ins.PutField) ((ValuePack) i1).instructions().get(1)).value() instanceof Ins.TLoad);
         }
 
         @Test
@@ -1722,16 +1722,14 @@ public class TestSemantic {
                 assertTrue(i instanceof ValuePack);
                 ValuePack valuePack = (ValuePack) i;
 
-                Instruction i0 = valuePack.instructions().get(0); // IAStore
-                Instruction i1 = valuePack.instructions().get(1); // IALoad
+                Instruction i0 = valuePack.instructions().get(1); // IAStore
+                Instruction i1 = valuePack.instructions().get(2); // IALoad
 
                 assertTrue(i0 instanceof Ins.TAStore);
-                assertTrue(i1 instanceof Ins.TALoad);
+                assertTrue(i1 instanceof Ins.TLoad);
 
                 Ins.TAStore TAStore = (Ins.TAStore) i0;
                 assertEquals(Ins.TAStore.IASTORE, TAStore.mode());
-                Ins.TALoad TALoad = (Ins.TALoad) i1;
-                assertEquals(Ins.TALoad.Iaload, TALoad.mode());
         }
 
         @Test
@@ -1754,20 +1752,17 @@ public class TestSemantic {
                 assertTrue(i instanceof ValuePack);
                 ValuePack valuePack = (ValuePack) i;
 
-                Instruction i0 = valuePack.instructions().get(0); // InvokeDynamic
-                Instruction i1 = valuePack.instructions().get(1); // InvokeInterface
+                Instruction i0 = valuePack.instructions().get(1); // InvokeDynamic
+                Instruction i1 = valuePack.instructions().get(2); // InvokeInterface
 
                 assertTrue(i0 instanceof Ins.InvokeInterface);
-                assertTrue(i1 instanceof Ins.InvokeInterface);
+                assertTrue(i1 instanceof Ins.TLoad);
 
                 Ins.InvokeInterface in0 = (Ins.InvokeInterface) i0;
                 assertEquals("set", ((SMethodDef) in0.invokable()).name());
                 assertEquals(2, in0.arguments().size());
                 assertTrue(in0.arguments().get(0) instanceof IntValue);
                 assertTrue(in0.arguments().get(1) instanceof Ins.InvokeStatic);
-
-                Ins.InvokeInterface in1 = (Ins.InvokeInterface) i1;
-                assertEquals("get", ((SMethodDef) in1.invokable()).name());
         }
 
         @Test
@@ -1789,11 +1784,11 @@ public class TestSemantic {
                 assertTrue(i instanceof ValuePack);
                 ValuePack valuePack = (ValuePack) i;
 
-                Instruction i0 = valuePack.instructions().get(0); // InvokeDynamic
-                Instruction i1 = valuePack.instructions().get(1); // InvokeDynamic
+                Instruction i0 = valuePack.instructions().get(1); // InvokeDynamic
+                Instruction i1 = valuePack.instructions().get(2); // InvokeDynamic
 
                 assertTrue(i0 instanceof Ins.InvokeDynamic);
-                assertTrue(i1 instanceof Ins.InvokeDynamic);
+                assertTrue(i1 instanceof Ins.TLoad);
 
                 Ins.InvokeDynamic in0 = (Ins.InvokeDynamic) i0;
                 assertEquals("set", in0.methodName());
@@ -1801,11 +1796,7 @@ public class TestSemantic {
                 assertTrue(in0.arguments().get(0) instanceof Ins.GetClass);
                 assertTrue(in0.arguments().get(1) instanceof Ins.GetField);
                 assertTrue(in0.arguments().get(2) instanceof IntValue);
-                assertTrue(in0.arguments().get(3) instanceof IntValue);
-
-                Ins.InvokeDynamic in1 = (Ins.InvokeDynamic) i1;
-                assertEquals("get", in1.methodName());
-                assertEquals(3, in1.arguments().size());
+                assertTrue(in0.arguments().get(3) instanceof Ins.TLoad);
         }
 
         @Test
@@ -1964,9 +1955,9 @@ public class TestSemantic {
                 ValuePack p3 = (ValuePack) i3;
                 ValuePack p4 = (ValuePack) i4;
 
-                Instruction i30 = p3.instructions().get(0);
+                Instruction i30 = p3.instructions().get(1); // 0 is TStore and 1 is PutField and 2 is TLoad
                 assertTrue(i30 instanceof Ins.PutField);
-                Instruction i40 = p4.instructions().get(0);
+                Instruction i40 = p4.instructions().get(1);
                 assertTrue(i40 instanceof Ins.PutField);
         }
 
@@ -2021,9 +2012,9 @@ public class TestSemantic {
                 ValuePack p3 = (ValuePack) i3;
                 ValuePack p4 = (ValuePack) i4;
 
-                Instruction i30 = p3.instructions().get(0);
+                Instruction i30 = p3.instructions().get(1);
                 assertTrue(i30 instanceof Ins.PutField);
-                Instruction i40 = p4.instructions().get(0);
+                Instruction i40 = p4.instructions().get(1);
                 assertTrue(i40 instanceof Ins.PutField);
         }
 

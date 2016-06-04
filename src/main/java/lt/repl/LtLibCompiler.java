@@ -39,7 +39,7 @@ public class LtLibCompiler {
          * lt files to be compiled and fill into <b>classes</b> directory.
          */
         public static List<String> Latte_LT_FILES = Arrays.asList(
-                "/lt/html.lt" //, "/lt/sql.lt"
+                "/lt/html.lt", "/lt/sql.lt"
         );
 
         /**

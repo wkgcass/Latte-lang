@@ -618,13 +618,13 @@ public class CodeGenerator {
          * @param newMap        Ins.NewMap
          */
         private void buildNewMap(MethodVisitor methodVisitor, CodeInfo info, Ins.NewMap newMap) {
-                methodVisitor.visitTypeInsn(Opcodes.NEW, "java/util/LinkedHashMap");
+                methodVisitor.visitTypeInsn(Opcodes.NEW, typeToInternalName(newMap.type()));
                 info.push(CodeInfo.Size._1);
                 methodVisitor.visitInsn(Opcodes.DUP);
                 info.push(CodeInfo.Size._1);
 
                 methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                        "java/util/LinkedHashMap",
+                        typeToInternalName(newMap.type()),
                         "<init>",
                         "()V", false);
                 info.pop(1);
@@ -635,10 +635,10 @@ public class CodeGenerator {
                         buildValueAccess(methodVisitor, info, entry.getKey(), true);
                         buildValueAccess(methodVisitor, info, entry.getValue(), true);
 
-                        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                                "java/util/LinkedHashMap",
+                        methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE,
+                                "java/util/Map",
                                 "put",
-                                "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", false);
+                                "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
                         info.pop(3);
                         info.push(CodeInfo.Size._1); // the put result (Object put(Object,Object))
                         methodVisitor.visitInsn(Opcodes.POP);
@@ -1675,7 +1675,8 @@ public class CodeGenerator {
                         buildParameter(methodVisitor, method.getParameters());
 
                         if (method.modifiers().contains(SModifier.ABSTRACT)) {
-                                if (!method.statements().isEmpty()) throw new LtBug("statements for abstract method should be empty");
+                                if (!method.statements().isEmpty())
+                                        throw new LtBug("statements for abstract method should be empty");
                         } else {
 
                                 buildInstructions(

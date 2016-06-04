@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 
 /**
- * list for <tt>Latte</tt><br>
+ * list for <tt>Latte</tt>.<br>
  * The List supports functions of <tt>Array</tt> provided in <tt>JavaScript</tt><br>
  * <ul>
  * <li>concat(...)</li>

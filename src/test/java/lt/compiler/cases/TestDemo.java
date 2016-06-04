@@ -891,13 +891,14 @@ public class TestDemo {
         }
 
         @Test
-        public void testScriptPass() throws Exception {
-                List<String> list = Arrays.asList(
-                        "literals.lts", "statements.lts"
-                );
-                for (String file : list) {
-                        ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
-                        sc.compile(file, new InputStreamReader(TestDemo.class.getResourceAsStream("/lang-demo/" + file))).run();
-                }
+        public void testScriptPass_Literals() throws Exception {
+                ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                sc.compile("literals.lts", new InputStreamReader(TestDemo.class.getResourceAsStream("/lang-demo/literals.lts"))).run();
+        }
+
+        @Test
+        public void testScriptPass_Statements() throws Exception {
+                ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                sc.compile("statements.lts", new InputStreamReader(TestDemo.class.getResourceAsStream("/lang-demo/statements.lts"))).run();
         }
 }

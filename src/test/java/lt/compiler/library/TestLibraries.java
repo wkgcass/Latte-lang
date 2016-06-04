@@ -86,19 +86,20 @@ public class TestLibraries {
                 }});
                 Class<?> TestSQL = loader.loadClass("lt.sql.test.TestSQL");
                 Method testSelectString = TestSQL.getMethod("testSelectString");
-                assertEquals("(select User.id, User.name from User where User.id > 7 order by User.id desc limit 1,7)",
+                assertEquals("select `User`.`id`, `User`.`name` from `User` where `User`.`id` > ?1 order by `User`.`id` desc limit ?2,?3",
                         testSelectString.invoke(null));
                 Method testSelectWithSubQuery = TestSQL.getMethod("testSelectWithSubQuery");
-                assertEquals("(select User.id, User.name from User where User.id <= (select User.id from User limit 1) order by User.id desc)",
+                assertEquals("select `User`.`id`, `User`.`name` from `User` where `User`.`id` <= " +
+                                "(select `User`.`id` from `User` limit ?1) order by `User`.`id` desc",
                         testSelectWithSubQuery.invoke(null));
                 Method testInsertString = TestSQL.getMethod("testInsertString");
-                assertEquals("(insert into User (User.id, User.name) values (1, cass))",
+                assertEquals("insert into `User` (`User`.`id`, `User`.`name`) values (?1, ?2)",
                         testInsertString.invoke(null));
                 Method testUpdateString = TestSQL.getMethod("testUpdateString");
-                assertEquals("(update User set User.id = 1 where User.name == cass)",
+                assertEquals("update `User` set `User`.`id` = ?1 where `User`.`name` == ?2",
                         testUpdateString.invoke(null));
                 Method testDeleteString = TestSQL.getMethod("testDeleteString");
-                assertEquals("(delete from User where User.id == 1)",
+                assertEquals("delete from `User` where `User`.`id` == ?1",
                         testDeleteString.invoke(null));
                 Method testDBUpdate = TestSQL.getMethod("testDBUpdate");
                 // System.out.println(testDBUpdate.invoke(null));

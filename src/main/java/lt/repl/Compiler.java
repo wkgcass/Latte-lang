@@ -235,21 +235,25 @@ public class Compiler {
                                                 Object scanner = t.get("scanner");
                                                 if (scanner instanceof Integer && ((int) scanner) >= 1) {
                                                         threads.scanner = (int) scanner;
-                                                } else throw new IllegalArgumentException("config.threads.scanner should be Integer and >=1");
+                                                } else
+                                                        throw new IllegalArgumentException("config.threads.scanner should be Integer and >=1");
                                         }
                                         if (t.containsKey("parser")) {
                                                 Object parser = t.get("parser");
                                                 if (parser instanceof Integer && ((int) parser) >= 1) {
                                                         threads.parser = (int) parser;
-                                                } else throw new IllegalArgumentException("config.threads.parser should be Integer and >= 1");
+                                                } else
+                                                        throw new IllegalArgumentException("config.threads.parser should be Integer and >= 1");
                                         }
                                         if (t.containsKey("codeGen")) {
                                                 Object codeGen = t.get("codeGen");
                                                 if (codeGen instanceof Integer && ((int) codeGen) >= 1) {
                                                         threads.codeGen = (int) codeGen;
-                                                } else throw new IllegalArgumentException("config.threads.codeGen should be Integer and >=1");
+                                                } else
+                                                        throw new IllegalArgumentException("config.threads.codeGen should be Integer and >=1");
                                         }
-                                } else throw new IllegalArgumentException("config.threads should be {scanner:?, parser:?, codeGen:?}");
+                                } else
+                                        throw new IllegalArgumentException("config.threads should be {scanner:?, parser:?, codeGen:?}");
                         }
                         if (config.containsKey("code")) {
                                 Object o = config.get("code");
@@ -272,21 +276,25 @@ public class Compiler {
                                                 Object i = c.get("indentation");
                                                 if (i instanceof Integer && ((int) i) >= 1) {
                                                         code.indentation = (int) i;
-                                                } else throw new IllegalArgumentException("config.code.indentation should be Integer and >=1");
+                                                } else
+                                                        throw new IllegalArgumentException("config.code.indentation should be Integer and >=1");
                                         }
                                         if (c.containsKey("lineBase")) {
                                                 Object l = c.get("lineBase");
                                                 if (l instanceof Integer) {
                                                         code.lineBase = (int) l;
-                                                } else throw new IllegalArgumentException("config.code.lineBase should be Integer");
+                                                } else
+                                                        throw new IllegalArgumentException("config.code.lineBase should be Integer");
                                         }
                                         if (c.containsKey("columnBase")) {
                                                 Object co = c.get("columnBase");
                                                 if (co instanceof Integer) {
                                                         code.columnBase = (int) co;
-                                                } else throw new IllegalArgumentException("config.code.columnBase should be Integer");
+                                                } else
+                                                        throw new IllegalArgumentException("config.code.columnBase should be Integer");
                                         }
-                                } else throw new IllegalArgumentException("config.code should be {autoImport:?, indentation:?, lineBase:?, columnBase:?}");
+                                } else
+                                        throw new IllegalArgumentException("config.code should be {autoImport:?, indentation:?, lineBase:?, columnBase:?}");
                         }
                         if (config.containsKey("out")) {
                                 Object o = config.get("out");
@@ -296,27 +304,32 @@ public class Compiler {
                                                 Object debug = ou.get("debug");
                                                 if (debug == null || debug instanceof PrintStream) {
                                                         out.debug = (PrintStream) debug;
-                                                } else throw new IllegalArgumentException("config.out.debug should be PrintStream");
+                                                } else
+                                                        throw new IllegalArgumentException("config.out.debug should be PrintStream");
                                         }
                                         if (ou.containsKey("info")) {
                                                 Object info = ou.get("info");
                                                 if (info == null || info instanceof PrintStream) {
                                                         out.info = (PrintStream) info;
-                                                } else throw new IllegalArgumentException("config.out.info should be PrintStream");
+                                                } else
+                                                        throw new IllegalArgumentException("config.out.info should be PrintStream");
                                         }
                                         if (ou.containsKey("warn")) {
                                                 Object warn = ou.get("warn");
                                                 if (warn == null || warn instanceof PrintStream) {
                                                         out.warn = (PrintStream) warn;
-                                                } else throw new IllegalArgumentException("config.out.warn should be PrintStream");
+                                                } else
+                                                        throw new IllegalArgumentException("config.out.warn should be PrintStream");
                                         }
                                         if (ou.containsKey("err")) {
                                                 Object error = ou.get("err");
                                                 if (error == null || error instanceof PrintStream) {
                                                         out.err = (PrintStream) error;
-                                                } else throw new IllegalArgumentException("config.out.err should be PrintStream");
+                                                } else
+                                                        throw new IllegalArgumentException("config.out.err should be PrintStream");
                                         }
-                                } else throw new IllegalArgumentException("config.out should be {debug:?, info:?, warn:?, err:?}");
+                                } else
+                                        throw new IllegalArgumentException("config.out should be {debug:?, info:?, warn:?, err:?}");
                         }
                         if (config.containsKey("fastFail")) {
                                 Object f = config.get("fastFail");
@@ -335,19 +348,23 @@ public class Compiler {
                                                         if (!f.exists()) f.mkdirs();
                                                         if (f.isDirectory()) {
                                                                 result.outputDir = f;
-                                                        } else throw new IllegalArgumentException("config.result.outputDir should be a directory");
+                                                        } else
+                                                                throw new IllegalArgumentException("config.result.outputDir should be a directory");
                                                 } else if (o instanceof File) {
                                                         if (((File) o).isDirectory()) {
                                                                 result.outputDir = (File) o;
-                                                        } else throw new IllegalArgumentException("config.result.outputDir should be a directory");
-                                                } else throw new IllegalArgumentException("config.result.outputDir should be File/String");
+                                                        } else
+                                                                throw new IllegalArgumentException("config.result.outputDir should be a directory");
+                                                } else
+                                                        throw new IllegalArgumentException("config.result.outputDir should be File/String");
                                         }
                                         if (re.containsKey("package")) {
                                                 Object o = re.get("package");
                                                 if (o != null) {
                                                         if (o instanceof String) {
                                                                 result.pkg = (String) o;
-                                                        } else throw new IllegalArgumentException("config.result.package should be String");
+                                                        } else
+                                                                throw new IllegalArgumentException("config.result.package should be String");
                                                 }
                                         }
                                         if (re.containsKey("main")) {
@@ -355,16 +372,19 @@ public class Compiler {
                                                 if (o != null) {
                                                         if (o instanceof String) {
                                                                 result.main = (String) o;
-                                                        } else throw new IllegalArgumentException("config.result.main should be String");
+                                                        } else
+                                                                throw new IllegalArgumentException("config.result.main should be String");
                                                 }
                                         }
                                         if (re.containsKey("with-lib")) {
                                                 Object o = re.get("with-lib");
                                                 if (o instanceof Boolean) {
                                                         result.with_lib = (boolean) o;
-                                                } else throw new IllegalArgumentException("config.result.with-lib should be bool");
+                                                } else
+                                                        throw new IllegalArgumentException("config.result.with-lib should be bool");
                                         }
-                                } else throw new IllegalArgumentException("config.result should be {outputDir:?, statistic:?}");
+                                } else
+                                        throw new IllegalArgumentException("config.result should be {outputDir:?, statistic:?}");
                         }
 
                         this.config.classpath = classpathToSet;
@@ -443,7 +463,8 @@ public class Compiler {
                                 input.put(name, new InputStreamReader((InputStream) v));
                         } else if (v instanceof Reader) {
                                 input.put(name, (Reader) v);
-                        } else throw new IllegalArgumentException("the mapped values should be String/File/InputStream/Reader");
+                        } else
+                                throw new IllegalArgumentException("the mapped values should be String/File/InputStream/Reader");
                 }
 
                 // validate configuration
@@ -451,7 +472,8 @@ public class Compiler {
                 if (config.threads.parser < 1) throw new IllegalArgumentException("config.threads.parser should >=1");
                 if (config.threads.scanner < 1) throw new IllegalArgumentException("config.threads.scanner should >=1");
 
-                if (config.code.indentation < 1) throw new IllegalArgumentException("config.code.indentation should >=1");
+                if (config.code.indentation < 1)
+                        throw new IllegalArgumentException("config.code.indentation should >=1");
 
                 if (config.result.outputDir != null && !config.result.outputDir.isDirectory())
                         throw new IllegalArgumentException("config.result.outputDir should be a directory");
@@ -481,7 +503,7 @@ public class Compiler {
 
                 List<Future<FileRoot>> scanRes = scannerPool.invokeAll(scans);
                 Map<String, List<Statement>> parseRes = new ConcurrentHashMap<>();
-                List<Future<?>> parseState = new Vector<>();
+                List<Future<Map<String, List<Statement>>>> parseState = new Vector<>();
 
                 Exception[] caughtException = new Exception[]{null};
 
@@ -492,12 +514,10 @@ public class Compiler {
                                         try {
                                                 root = f.get();
                                         } catch (ExecutionException e) {
-                                                if (config.out.err != null)
-                                                        e.getCause().printStackTrace(config.out.err);
                                                 caughtException[0] = (Exception) e.getCause();
                                                 return;
                                         }
-                                        Future<?> future = parserPool.submit(new Parse(root.fileName, root.root, parseRes, errorManager));
+                                        Future<Map<String, List<Statement>>> future = parserPool.submit(new Parse(root.fileName, root.root, errorManager));
                                         parseState.add(future);
                                 } catch (InterruptedException ignore) {
                                 }
@@ -517,8 +537,16 @@ public class Compiler {
                 }
 
                 // wait until all parse process finishes
-                for (Future<?> f : parseState) {
+                for (Future<Map<String, List<Statement>>> f : parseState) {
                         while (!f.isDone()) Thread.sleep(1);
+                        try {
+                                parseRes.putAll(f.get());
+                        } catch (ExecutionException e) {
+                                scannerPool.shutdown();
+                                parserPool.shutdown();
+
+                                throw (Exception) e.getCause();
+                        }
                 }
 
                 // all parsing finished
@@ -598,12 +626,14 @@ public class Compiler {
                                 String theDir = (className.contains(".") ? className.substring(0, className.lastIndexOf('.')).replace(".", "/") : "");
                                 // the file
                                 File path = new File(dir + File.separator + (File.separator.equals("/") ? theDir : theDir.replace("/", File.separator)));
-                                if (!path.exists()) if (!path.mkdirs()) throw new IOException("cannot create directory " + path);
+                                if (!path.exists())
+                                        if (!path.mkdirs()) throw new IOException("cannot create directory " + path);
 
                                 // simple name
                                 String simpleName = (className.contains(".") ? className.substring(className.lastIndexOf('.') + 1) : className) + ".class";
                                 File newFile = new File(path.getAbsolutePath() + File.separator + simpleName);
-                                if (!newFile.exists()) if (!newFile.createNewFile()) throw new IOException("cannot create file " + newFile);
+                                if (!newFile.exists()) if (!newFile.createNewFile())
+                                        throw new IOException("cannot create file " + newFile);
 
                                 FileOutputStream fos = new FileOutputStream(newFile);
                                 fos.write(bytes);
@@ -723,29 +753,28 @@ public class Compiler {
                 }
         }
 
-        private class Parse implements Runnable {
+        private class Parse implements Callable<Map<String, List<Statement>>> {
                 private final String fileName;
                 private final ElementStartNode root;
-                private final Map<String, List<Statement>> resultMap;
                 private final ErrorManager err;
 
-                private Parse(String fileName, ElementStartNode root, Map<String, List<Statement>> resultMap, ErrorManager err) {
+                private Parse(String fileName,
+                              ElementStartNode root,
+                              ErrorManager err) {
                         this.fileName = fileName;
                         this.root = root;
-                        this.resultMap = resultMap;
                         this.err = err;
                 }
 
                 @Override
-                public void run() {
+                public Map<String, List<Statement>> call() throws Exception {
                         Parser parser = new Parser(root, err);
-                        try {
-                                resultMap.put(
-                                        fileName,
-                                        parser.parse()
-                                );
-                        } catch (SyntaxException ignore) {
-                        }
+                        Map<String, List<Statement>> resultMap = new HashMap<>();
+                        resultMap.put(
+                                fileName,
+                                parser.parse()
+                        );
+                        return resultMap;
                 }
         }
 }

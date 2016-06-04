@@ -32,12 +32,6 @@ import java::sql::_
 interface SQLBuilder
     buildSQL():String
 
-interface QueryExecutor
-    execQuery():ResultSet
-
-interface UpdateExecutor
-    execUpdate():int
-
 ; class that represents the database.
 data class DB(url:String, user:String, pwd:String)
     conn:Connection
@@ -53,14 +47,12 @@ data class DB(url:String, user:String, pwd:String)
             conn = DriverManager.getConnection(url, user, pwd)
         return this
 
-    execUpdate(sql):int
-    execQuery(sql):ResultSet
+    execUpdate(sql:String):int
+    execQuery(sql:String):ResultSet
+    execUpdate(builder:SQLBuilder)=execUpdate(builder.buildSQL)
+    execQuery(builder:SQLBuilder)=execQuery(builder.buildSQL)
 
-    select(col:Column):Select = select([col])
-    select(cols:List):Select = Select(SelectContext(), cols)
-    insert_into(tbl_o):Insert = Insert(conn, tbl_o)
-    update(tbl_o):Update = Update(conn, tbl_o)
-    delete_from(tbl_o):UpdateWhere = UpdateWhere(conn, "delete from "+tbl_o.getClass.simpleName)
+    createStatement():Context = Context()
 
     close():Unit
         if conn
@@ -85,14 +77,18 @@ data class Column(tbl_o, name:String)
     desc():Order=Order(this, false)
     asc():Order=Order(this, true)
 
+    toString():String
+        return "`"+tbl+"`.`"+name+"`"
+
 ; assign to the column
 data class Assign(col:Column, o)
+    toString(context:Context):String = col+" = "+context.putValue(o)
 
 ; represents a Condition
 data class Condition(op:String, col:Column, ls:List)
-    toString():String
+    toString(context:Context):String
         sb = StringBuilder()
-        sb append col.tbl append "." append col.name append " " append op append " "
+        sb append col append " " append op append " "
         if ls
             isFirst=true
             for o in ls
@@ -100,188 +96,150 @@ data class Condition(op:String, col:Column, ls:List)
                     isFirst=false
                 else
                     sb append ", "
-                sb append o
+                sb append context.putValue(o)
         return sb.toString
 
 data class Order(col:Column, isAsc:bool)
+    toString():String = col + " " + (
+        if isAsc
+            return "asc"
+        else
+            return "desc"
+    )
 
-data class SelectContext(
-    conn:Connection         ; connection
-    cols:List               ; the selected columns
-    tbls:List               ; select from the tables
-    joins:List              ; join these tables on these conditions
-    where:Condition         ; the condition
-    orders:List             ; order by these orders
-    groupBys:List           ; group by these columns
-    limitStart:Integer      ; limit _,?
-    limitLength:Integer     ; limit _ or limit ?,_
+data class Context(
+    argMap:Map = {}                           ; the map of position => arguments
+    count:int = 0                             ; count
 )
-    toString():String
-        sb = StringBuilder("(")
-        if cols
-            sb append "select "
-            isFirst=true
-            for col in cols
-                if isFirst
-                    isFirst=false
-                else
-                    sb append ", "
-                sb append col.tbl append "." append col.name
-        if tbls
-            sb append " from "
-            isFirst=true
-            for tbl in tbls
-                if isFirst
-                    isFirst=false
-                else
-                    sb append ", "
-                if tbl is type EndStatement
-                    sb append append "(" tbl append ")"
-                else
-                    sb append tbl.getClass.simpleName
-        if joins
-            for join in joins
-                sb append " join " append join.tbl append " on " append join.condition
-        if where
-            sb append " where " append where
-        if orders
-            sb append " order by "
-            isFirst=true
-            for order in orders
-                if isFirst
-                    isFirst=false
-                else
-                    sb append ", "
-                sb append order.col.tbl append "." append order.col.name append " " append (
-                    if order.isAsc
-                        return "asc"
-                    else
-                        return "desc"
-                )
-        if limitStart!=null
-            sb append " limit " append limitStart append "," append limitLength
-        elseif limitLength!=null
-            sb append " limit " append limitLength
-        sb append ")"
-        return sb.toString
+    putValue(o):String
+        if o is type EndStatement
+            return objectToString(o)
+        else
+            argMap[++count]=o
+            return "?"+count
+    objectToString(o):String
+        if o is type EndStatement
+            return "(" + o.buildSQL + ")"
+        else
+            return "`" + o.getClass.simpleName + "`"
 
-data class Select(context:SelectContext, cols:List)
-    context.cols=cols
-    from(tbl):From
-        return From(context, [tbl])
-    from(tbls:List):From
-        return From(context, tbls)
+    select(col:Column):Select = select([col])
+    select(cols:List):Select
+        sb:StringBuilder = StringBuilder()
+        sb append "select "
+        return Select(this, sb, cols)
+    insert_into(tbl_o):Insert
+        sb:StringBuilder = StringBuilder()
+        sb append "insert into "
+        return Insert(this, sb, tbl_o)
+    update(tbl_o):Update
+        sb:StringBuilder = StringBuilder()
+        sb append "update "
+        return Update(this, sb, tbl_o)
+    delete_from(tbl_o):UpdateWhere
+        sb:StringBuilder = StringBuilder()
+        sb append "delete from " append objectToString(tbl_o) append " where "
+        return UpdateWhere(this, sb)
 
-abstract class EndStatement(context:SelectContext):SQLBuilder,QueryExecutor
+data class Select(context:Context, sb:StringBuilder, cols:List)
+    sb append cols.join(", ")
+
+    from(tbl_o):From
+        return from([tbl_o])
+    from(tbl_os:List):From
+        sb append " from "
+        return From(context, sb, tbl_os)
+
+abstract class EndStatement(context:Context, sb:StringBuilder):SQLBuilder
     orderBy(order:Order):EndStatement
-        context.orders=[order]
-        return this
+        return orderBy([order])
     orderBy(orders:List):EndStatement
-        context.orders=orders
+        sb append " order by " append orders.join(", ")
         return this
+
     groupBy(col:Column):EndStatement
-        return this
+        return groupBy([col])
     groupBy(cols:List):EndStatement
+        sb append " group by " append cols.join(", ")
         return this
+
     limit(length:int):EndStatement
-        context.limitStart=null
-        context.limitLength=length
+        sb append " limit " append context.putValue(length)
         return this
     limit(start:int, length:int):EndStatement
-        context.limitStart=start
-        context.limitLength=length
+        sb append " limit " append context.putValue(start) append "," append context.putValue(length)
         return this
-    toString():String = buildSQL()
-    buildSQL():String = context.toString
+
+    buildSQL():String = sb.toString
     execQuery():ResultSet=...
 
-class From(context:SelectContext, tbls:List):EndStatement(context)
-    context.tbls=tbls
-    join(tbl_o):Join
-        return Join(context, tbl_o, this)
-    where(con:Condition):QueryWhere
-        return QueryWhere(context, con)
+class From(context:Context, sb:StringBuilder, tbls:List):EndStatement(context, sb)
+    isFirst=true
+    for tbl in tbls
+        if isFirst
+            isFirst=false
+        else
+            sb append ", "
+        sb append context.objectToString(tbl)
 
-class Join(context:SelectContext, tbl_o, from:From)
-    tbl:String=tbl_o.getClass.simpleName
-    condition:Condition
+    join(tbl_o):Join
+        sb append " join "
+        return Join(context, sb, tbl_o, this)
+
+    where(con:Condition):QueryWhere
+        sb append " where "
+        return QueryWhere(context, sb, con)
+
+class Join(context:Context, sb:StringBuilder, tbl_o, from:From)
+    sb append context.objectToString(tbl_o)
+
     on(con:Condition):From
-        this.condition=con
-        if !context.joins
-            context.joins=List()
-        context.joins + this
+        sb append " on " append con.toString(context)
         return from
 
-class QueryWhere(context:SelectContext, con:Condition):EndStatement(context)
-    context.where=con
+class QueryWhere(context:Context, sb:StringBuilder, con:Condition):EndStatement(context, sb)
+    sb append con.toString(context)
 
-class Insert(conn:Connection, tbl_o):SQLBuilder,UpdateExecutor
-    tbl = tbl_o.getClass.simpleName
-    cols:List
-    values:List
+class Insert(context:Context, sb:StringBuilder, tbl_o):SQLBuilder
+    sb append context.objectToString(tbl_o)
 
     _(col:Column) = _([col])
     _(cols:List)
-        this.cols=cols
+        sb append " (" append cols.join(", ") append ")"
         return this
     values(o) = values([o])
     values(values:List)
-        this.values=values
+        sb append " values ("
+        isFirst=true
+        for value in values
+            if isFirst
+                isFirst = false
+            else
+                sb append ", "
+            sb append context.putValue(value)
+        sb append ")"
         return this
     toString():String = buildSQL()
-    buildSQL():String
-        sb = StringBuilder()
-        sb append "(insert into " append tbl
-        if cols
-            sb append " ("
-            isFirst=true
-            for col in cols
-                if isFirst
-                    isFirst=false
-                else
-                    sb append ", "
-                sb append col.tbl append "." append col.name
-            sb append ")"
-        if values
-            sb append " values ("
-            isFirst=true
-            for value in values
-                if isFirst
-                    isFirst=false
-                else
-                    sb append ", "
-                sb append value
-            sb append ")"
-        sb.append(")")
-        return sb.toString
-    execUpdate():int=...
+    buildSQL():String = sb.toString
 
-class Update(conn:Connection, tbl_o)
-    tbl=tbl_o.getClass.simpleName
+class Update(context:Context, sb:StringBuilder, tbl_o)
+    sb append context.objectToString(tbl_o)
+
     set(assign:Assign)=set([assign])
     set(assigns:List):UpdateWhere
-        sb = StringBuilder() append "update " append tbl append " "
-        if assigns
-            isFirst=true
-            for assign in assigns
-                if isFirst
-                    isFirst=false
-                else
-                    sb append ", "
-                sb append "set " append assign.col.tbl append "." append assign.col.name append " = " append assign.o
-        return UpdateWhere(conn, sb.toString)
+        sb append " set "
+        isFirst=true
+        for assign in assigns
+            if isFirst
+                isFirst=false
+            else
+                sb append ", "
+            sb append assign.toString(context)
+        sb append " where "
+        return UpdateWhere(context, sb)
 
-class UpdateWhere(conn:Connection, alreadyBuiltSQL):SQLBuilder,UpdateExecutor
-    condition:Condition
+class UpdateWhere(context:Context, sb:StringBuilder):SQLBuilder
     where(con:Condition)
-        this.condition=con
+        sb append con.toString(context)
         return this
-    buildSQL():String
-        sb = StringBuilder()
-        sb append "(" append alreadyBuiltSQL
-        if condition
-            sb append " where " append condition
-        sb append ")"
-        return sb.toString
-    execUpdate():int=...
-    toString():String=buildSQL()
+    buildSQL():String =  sb.toString

@@ -451,7 +451,8 @@ public class SemanticProcessor {
                                                         invoke.arguments().add(new Ins.TLoad(p, count++, LineCol.SYNTHETIC));
                                                 }
                                                 List<SParameter> paramsOfLast = lastConstructor.getParameters();
-                                                invoke.arguments().add(parseValueFromExpression(classDef.params.get(i).getInit(), paramsOfLast.get(paramsOfLast.size() - 1).type(), null));
+                                                invoke.arguments().add(parseValueFromExpression(classDef.params.get(i).getInit(), paramsOfLast.get(paramsOfLast.size() - 1).type(),
+                                                        new SemanticScope(sClassDef)));
 
                                                 constructor.statements().add(invoke);
                                         }
@@ -2603,17 +2604,19 @@ public class SemanticProcessor {
                 Ins.Nop nopBreak = new Ins.Nop();
                 Ins.Nop nopContinue = new Ins.Nop();
 
+                SemanticScope whileScope = new SemanticScope(scope);
+
                 List<Instruction> ins = new ArrayList<>();
                 for (Statement stmt : aWhile.statements) {
                         parseStatement(
                                 stmt,
                                 methodReturnType,
-                                scope,
+                                whileScope,
                                 ins,
                                 exceptionTable, nopBreak, nopContinue, false);
                 }
 
-                Value condition = parseValueFromExpression(aWhile.condition, BoolTypeDef.get(), scope);
+                Value condition = parseValueFromExpression(aWhile.condition, BoolTypeDef.get(), whileScope);
 
                 if (aWhile.doWhile) {
                         /*
@@ -2812,63 +2815,22 @@ public class SemanticProcessor {
          * but in {@link #parseValueFromAssignment(AST.Assignment, SemanticScope)}<br>
          * the instructions should be {@link ValuePack} instruction list
          *
-         * @param assignment   Assignment
+         * @param assignTo     assignTo -- the value before "="
+         * @param assignFrom   the value after "="
          * @param scope        current scope
          * @param instructions instruction list
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromAssignment(AST.Assignment assignment, SemanticScope scope, List<Instruction> instructions) throws SyntaxException {
+        private void parseInstructionFromAssignment(Value assignTo,
+                                                    Value assignFrom,
+                                                    SemanticScope scope,
+                                                    List<Instruction> instructions,
+                                                    LineCol lineCol) throws SyntaxException {
                 // []= means Tastore or <set(?,?) or put(?,?)> ==> (reflectively invoke)
                 // []+= means TALoad then Tastore, or get(?) then <set(?,?) or put(?,?)> ==> then set/put step would be invoked reflectively
-                String op = assignment.op;
-                if (!op.equals("=")) {
-                        switch (op) {
-                                case "+=": {
-                                        // change to Assign(assignTo,TwoVariableOperation(assignTo,"+",assignFrom))
-                                        AST.Assignment newAssign = new AST.Assignment(assignment.assignTo, "=", new TwoVariableOperation("+", assignment.assignTo, assignment.assignFrom, assignment.line_col()), assignment.line_col());
-                                        parseInstructionFromAssignment(newAssign, scope, instructions);
-                                        return;
-                                }
-                                case "-=": {
-                                        // change to Assign(assignTo,TwoVariableOperation(assignTo,"-",assignFrom))
-                                        AST.Assignment newAssign = new AST.Assignment(assignment.assignTo, "=", new TwoVariableOperation("-", assignment.assignTo, assignment.assignFrom, assignment.line_col()), assignment.line_col());
-                                        parseInstructionFromAssignment(newAssign, scope, instructions);
-                                        return;
-                                }
-                                case "*=": {
-                                        // change to Assign(assignTo,TwoVariableOperation(assignTo,"*",assignFrom))
-                                        AST.Assignment newAssign = new AST.Assignment(assignment.assignTo, "=", new TwoVariableOperation("*", assignment.assignTo, assignment.assignFrom, assignment.line_col()), assignment.line_col());
-                                        parseInstructionFromAssignment(newAssign, scope, instructions);
-                                        return;
-                                }
-                                case "/=": {
-                                        // change to Assign(assignTo,TwoVariableOperation(assignTo,"/",assignFrom))
-                                        AST.Assignment newAssign = new AST.Assignment(assignment.assignTo, "=", new TwoVariableOperation("/", assignment.assignTo, assignment.assignFrom, assignment.line_col()), assignment.line_col());
-                                        parseInstructionFromAssignment(newAssign, scope, instructions);
-                                        return;
-                                }
-                                case "%=": {
-                                        // change to Assign(assignTo,TwoVariableOperation(assignTo,"%",assignFrom))
-                                        AST.Assignment newAssign = new AST.Assignment(assignment.assignTo, "=", new TwoVariableOperation("%", assignment.assignTo, assignment.assignFrom, assignment.line_col()), assignment.line_col());
-                                        parseInstructionFromAssignment(newAssign, scope, instructions);
-                                        return;
-                                }
-                                default:
-                                        err.SyntaxException("unknown assign operator " + op, assignment.line_col());
-                                        return;
-                        }
-                }
+
                 // else
                 // simply assign `assignFrom` to `assignTo`
-
-                Value assignTo = parseValueFromExpression(assignment.assignTo, null, scope);
-                if (!(assignTo instanceof Instruction)) {
-                        err.SyntaxException(
-                                "cannot assign value to " + assignment.assignTo,
-                                assignment.assignTo.line_col());
-                        return;
-                }
-                Value assignFrom = parseValueFromExpression(assignment.assignFrom, null, scope);
                 // the following actions would be assign work
                 if (assignTo instanceof Ins.GetField) {
                         // field
@@ -2876,10 +2838,10 @@ public class SemanticProcessor {
                                 ((Ins.GetField) assignTo).field(),
                                 ((Ins.GetField) assignTo).object(),
                                 cast(((Ins.GetField) assignTo).field().type(), assignFrom, ((Ins.GetField) assignTo).line_col()),
-                                assignment.line_col()));
+                                lineCol));
                 } else if (assignTo instanceof Ins.GetStatic) {
                         // static
-                        instructions.add(new Ins.PutStatic(((Ins.GetStatic) assignTo).field(), assignFrom, assignment.line_col()));
+                        instructions.add(new Ins.PutStatic(((Ins.GetStatic) assignTo).field(), assignFrom, lineCol));
                 } else if (assignTo instanceof Ins.TALoad) {
                         // arr[?]
                         Ins.TALoad TALoad = (Ins.TALoad) assignTo;
@@ -2891,72 +2853,72 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.AASTORE,
                                         TALoad.index(),
-                                        cast(arrayType.type(), assignFrom, assignment.line_col()),
-                                        assignment.line_col()));
+                                        cast(arrayType.type(), assignFrom, lineCol),
+                                        lineCol));
                         } else if (arrayType.type().equals(IntTypeDef.get())) {
                                 // int[] IASTORE
                                 instructions.add(new Ins.TAStore(
                                         TALoad.arr(),
                                         Ins.TAStore.IASTORE,
                                         TALoad.index(),
-                                        cast(IntTypeDef.get(), assignFrom, assignment.line_col()),
-                                        assignment.line_col()));
+                                        cast(IntTypeDef.get(), assignFrom, lineCol),
+                                        lineCol));
                         } else if (arrayType.type().equals(LongTypeDef.get())) {
                                 // long[] LASTORE
                                 instructions.add(new Ins.TAStore(
                                         TALoad.arr(),
                                         Ins.TAStore.LASTORE,
                                         TALoad.index(),
-                                        cast(LongTypeDef.get(), assignFrom, assignment.line_col()),
-                                        assignment.line_col()));
+                                        cast(LongTypeDef.get(), assignFrom, lineCol),
+                                        lineCol));
                         } else if (arrayType.type().equals(ShortTypeDef.get())) {
                                 // short[] SASTORE
                                 instructions.add(new Ins.TAStore(
                                         TALoad.arr(),
                                         Ins.TAStore.SASTORE,
                                         TALoad.index(),
-                                        cast(ShortTypeDef.get(), assignFrom, assignment.line_col()),
-                                        assignment.line_col()));
+                                        cast(ShortTypeDef.get(), assignFrom, lineCol),
+                                        lineCol));
                         } else if (arrayType.type().equals(ByteTypeDef.get()) || arrayType.type().equals(BoolTypeDef.get())) {
                                 // byte[]/boolean[] BASTORE
                                 instructions.add(new Ins.TAStore(
                                         TALoad.arr(),
                                         Ins.TAStore.BASTORE,
                                         TALoad.index(),
-                                        cast(ByteTypeDef.get(), assignFrom, assignment.line_col()),
-                                        assignment.line_col()));
+                                        cast(ByteTypeDef.get(), assignFrom, lineCol),
+                                        lineCol));
                         } else if (arrayType.type().equals(FloatTypeDef.get())) {
                                 // float[] FASTORE
                                 instructions.add(new Ins.TAStore(
                                         TALoad.arr(),
                                         Ins.TAStore.FASTORE,
                                         TALoad.index(),
-                                        cast(FloatTypeDef.get(), assignFrom, assignment.line_col()),
-                                        assignment.line_col()));
+                                        cast(FloatTypeDef.get(), assignFrom, lineCol),
+                                        lineCol));
                         } else if (arrayType.type().equals(DoubleTypeDef.get())) {
                                 // double[] DASTORE
                                 instructions.add(new Ins.TAStore(
                                         TALoad.arr(),
                                         Ins.TAStore.DASTORE,
                                         TALoad.index(),
-                                        cast(DoubleTypeDef.get(), assignFrom, assignment.line_col()),
-                                        assignment.line_col()));
+                                        cast(DoubleTypeDef.get(), assignFrom, lineCol),
+                                        lineCol));
                         } else if (arrayType.type().equals(CharTypeDef.get())) {
                                 // char[] CASTORE
                                 instructions.add(new Ins.TAStore(
                                         TALoad.arr(),
                                         Ins.TAStore.CASTORE,
                                         TALoad.index(),
-                                        cast(CharTypeDef.get(), assignFrom, assignment.line_col()),
-                                        assignment.line_col()));
+                                        cast(CharTypeDef.get(), assignFrom, lineCol),
+                                        lineCol));
                         } else {
                                 // object[] AASTORE
                                 instructions.add(new Ins.TAStore(
                                         TALoad.arr(),
                                         Ins.TAStore.AASTORE,
                                         TALoad.index(),
-                                        cast(arrayType.type(), assignFrom, assignment.line_col()),
-                                        assignment.line_col()));
+                                        cast(arrayType.type(), assignFrom, lineCol),
+                                        lineCol));
                         }
                 } else if (assignTo instanceof Ins.TLoad) {
                         // local variable
@@ -2965,8 +2927,8 @@ public class SemanticProcessor {
                                 cast(
                                         assignTo.type(),
                                         assignFrom,
-                                        assignment.line_col()),
-                                scope, assignment.line_col()));
+                                        lineCol),
+                                scope, lineCol));
                 } else if (assignTo instanceof Ins.InvokeStatic) {
                         // assignTo should be lt.lang.LtRuntime.getField(o,name)
                         // which means
@@ -2978,7 +2940,7 @@ public class SemanticProcessor {
                                                 // dynamically get field
                                                 // invoke lt.lang.LtRuntime.putField(o,name,value)
                                                 SMethodDef putField = getLang_putField();
-                                                Ins.InvokeStatic invoke = new Ins.InvokeStatic(putField, assignment.line_col());
+                                                Ins.InvokeStatic invoke = new Ins.InvokeStatic(putField, lineCol);
                                                 invoke.arguments().add(invokeStatic.arguments().get(0));
                                                 invoke.arguments().add(invokeStatic.arguments().get(1));
 
@@ -2989,7 +2951,7 @@ public class SemanticProcessor {
                                                 invoke.arguments().add(assignFrom);
                                                 invoke.arguments().add(
                                                         new Ins.GetClass(scope.type(),
-                                                                (SClassDef) getTypeWithName("java.lang.Class", assignment.line_col())));
+                                                                (SClassDef) getTypeWithName("java.lang.Class", lineCol)));
 
                                                 // add into instructin list
                                                 instructions.add(invoke);
@@ -2998,7 +2960,7 @@ public class SemanticProcessor {
                                         }
                                 }
                         }
-                        err.SyntaxException("cannot assign value to " + assignment.assignTo, assignment.assignTo.line_col());
+                        err.SyntaxException("cannot assign", lineCol);
                         return;
                 } else if (assignTo instanceof Ins.InvokeDynamic) {
                         // invoke dynamic get(?)
@@ -3016,7 +2978,7 @@ public class SemanticProcessor {
                                 list.add(assignFrom);
 
                                 instructions.add(invokeMethodWithArgs(
-                                        assignment.line_col(),
+                                        lineCol,
                                         cls.targetType(),
                                         target,
                                         "set",
@@ -3024,7 +2986,7 @@ public class SemanticProcessor {
                                         scope));
                                 return;
                         }
-                        err.SyntaxException("cannot assign value to " + assignment.assignTo, assignment.assignTo.line_col());
+                        err.SyntaxException("cannot assign", lineCol);
                         return;
                 } else if (assignTo instanceof Ins.InvokeWithTarget) {
                         // the method name should be 'get(?1)'
@@ -3037,7 +2999,7 @@ public class SemanticProcessor {
                                         list.addAll(invoke.arguments());
                                         list.add(assignFrom);
                                         instructions.add(invokeMethodWithArgs(
-                                                assignment.line_col(),
+                                                lineCol,
                                                 invoke.target().type(),
                                                 invoke.target(),
                                                 "set",
@@ -3046,10 +3008,10 @@ public class SemanticProcessor {
                                         return;
                                 }
                         }
-                        err.SyntaxException("cannot assign value to " + assignment.assignTo, assignment.assignTo.line_col());
+                        err.SyntaxException("cannot assign", lineCol);
                         return;
                 } else {
-                        err.SyntaxException(assignment.assignTo + " cannot be left value", assignment.assignTo.line_col());
+                        err.SyntaxException("cannot assign", lineCol);
                         return;
                 }
         }
@@ -3150,7 +3112,7 @@ public class SemanticProcessor {
          * <li>{@link lt.compiler.syntactic.AST.UndefinedExp}</li>
          * <li>{@link lt.compiler.syntactic.AST.Null}</li>
          * <li>{@link lt.compiler.syntactic.AST.ArrayExp} =&gt; array/lt.lang.List</li>
-         * <li>{@link lt.compiler.syntactic.AST.MapExp} =&gt; java.util.LinkedHashMap</li>
+         * <li>{@link lt.compiler.syntactic.AST.MapExp} =&gt; lt.lang.Map</li>
          * <li>{@link lt.compiler.syntactic.AST.Procedure}</li>
          * <li>{@link lt.compiler.syntactic.AST.Lambda}</li>
          * <li>{@link lt.compiler.syntactic.AST.TypeOf} =&gt; {@link lt.compiler.semantic.Ins.GetClass}</li>
@@ -4071,12 +4033,18 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         private Value parseValueFromMapExp(AST.MapExp mapExp, SemanticScope scope) throws SyntaxException {
-                Ins.NewMap newMap = new Ins.NewMap(getTypeWithName("java.util.LinkedHashMap", mapExp.line_col()));
+                Ins.NewMap newMap = new Ins.NewMap(getTypeWithName("lt.lang.Map", mapExp.line_col()));
 
                 SClassDef Object_type = (SClassDef) getTypeWithName("java.lang.Object", mapExp.line_col());
                 for (Map.Entry<Expression, Expression> expEntry : mapExp.map.entrySet()) {
                         Value key = parseValueFromExpression(expEntry.getKey(), Object_type, scope);
                         Value value = parseValueFromExpression(expEntry.getValue(), Object_type, scope);
+                        if (key.type() instanceof PrimitiveTypeDef) {
+                                key = boxPrimitive(key, LineCol.SYNTHETIC);
+                        }
+                        if (value.type() instanceof PrimitiveTypeDef) {
+                                value = boxPrimitive(value, LineCol.SYNTHETIC);
+                        }
                         newMap.initValues().put(key, value);
                 }
                 return newMap;
@@ -4180,8 +4148,12 @@ public class SemanticProcessor {
                         SClassDef Object_type = (SClassDef) getTypeWithName("java.lang.Object", arrayExp.line_col());
                         // init values
                         for (Expression exp : arrayExp.list) {
+                                Value v = parseValueFromExpression(exp, Object_type, scope);
+                                if (v.type() instanceof PrimitiveTypeDef) {
+                                        v = boxPrimitive(v, LineCol.SYNTHETIC);
+                                }
                                 newList.initValues().add(
-                                        parseValueFromExpression(exp, Object_type, scope)
+                                        v
                                 );
                         }
                         return newList;
@@ -4190,7 +4162,7 @@ public class SemanticProcessor {
 
         /**
          * parse assignment<br>
-         * generate a ValuePack, then invoke {@link #parseInstructionFromAssignment(AST.Assignment, SemanticScope, List)}<br>
+         * generate a ValuePack, then invoke {@link #parseInstructionFromAssignment(Value, Value, SemanticScope, List, LineCol)}<br>
          * then add a retrieve expression to the pack
          *
          * @param exp   assignment expression
@@ -4202,10 +4174,35 @@ public class SemanticProcessor {
                 ValuePack pack = new ValuePack(true); // value pack
                 // assignment
                 // =/+=/-=/*=//=/%=
-                parseInstructionFromAssignment(exp, scope, pack.instructions());
-                Value assignTo = parseValueFromExpression((exp).assignTo, null, scope);
-                assert assignTo instanceof Instruction;
-                pack.instructions().add((Instruction) assignTo);
+                Value assignFrom = parseValueFromExpression(exp.assignFrom, null, scope);
+                Value assignTo = parseValueFromExpression(exp.assignTo, null, scope);
+                if (!exp.op.equals("=")) {
+                        assignFrom = parseValueFromTwoVarOp(assignTo,
+                                exp.op.substring(0, exp.op.length() - 1),
+                                assignFrom, scope, LineCol.SYNTHETIC);
+                }
+
+                assert assignFrom != null;
+                LocalVariable local = new LocalVariable(assignFrom.type(), false);
+                scope.putLeftValue(scope.generateTempName(), local);
+
+                Ins.TStore tStore = new Ins.TStore(local, assignFrom, scope, LineCol.SYNTHETIC);
+                pack.instructions().add(tStore);
+
+                Ins.TLoad tLoad = new Ins.TLoad(local, scope, LineCol.SYNTHETIC);
+
+                if (tLoad.mode() == Ins.TLoad.Aload) {
+                        parseInstructionFromAssignment(assignTo,
+                                new Ins.CheckCast(tLoad, assignFrom.type(), LineCol.SYNTHETIC),
+                                scope, pack.instructions(), exp.line_col());
+                } else {
+                        parseInstructionFromAssignment(assignTo, tLoad,
+                                scope, pack.instructions(), exp.line_col());
+                }
+
+
+                pack.instructions().add(new Ins.TLoad(local, scope, LineCol.SYNTHETIC));
+
                 return pack;
         }
 
@@ -4224,6 +4221,7 @@ public class SemanticProcessor {
         private Ins.InvokeStatic invoke_Undefined_get(LineCol lineCol) throws SyntaxException {
                 if (Undefined_get == null) {
                         SClassDef UndefiendClass = (SClassDef) getTypeWithName("lt.lang.Undefined", lineCol);
+                        assert UndefiendClass != null;
                         for (SMethodDef m : UndefiendClass.methods()) {
                                 if (m.name().equals("get")) {
                                         Undefined_get = m;
@@ -5068,6 +5066,7 @@ public class SemanticProcessor {
                                 index.line_col());
                 } else {
                         SMethodDef methodDef = findBestMatch(list, methods, index.line_col());
+                        list = castArgsForMethodInvoke(list, methodDef.getParameters(), LineCol.SYNTHETIC);
                         if (methodDef.modifiers().contains(SModifier.PRIVATE)) {
                                 // invoke special
                                 Ins.InvokeSpecial invokeSpecial = new Ins.InvokeSpecial(v, methodDef, index.line_col());

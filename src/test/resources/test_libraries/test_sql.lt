@@ -12,31 +12,32 @@ class TestSQL
             db = DB()
             user = User()
 
-            return (db select [user.id,user.name] from user where user.id > 7 orderBy user.id.desc limit 1,7) buildSQL
+            return (db.createStatement select [user.id,user.name] from user where user.id > 7 orderBy user.id.desc limit 1,7) buildSQL
 
         testSelectWithSubQuery()
             db = DB()
             user = User()
 
-            return (db select [user.id, user.name] from user where user.id <= (db select user.id from user limit 1) orderBy user.id.desc) buildSQL
+            SQL = db.createStatement
+            return (SQL select [user.id, user.name] from user where user.id <= (SQL select user.id from user limit 1) orderBy user.id.desc) buildSQL
 
         testInsertString()
             db = DB()
             user = User()
 
-            return (db insert_into user _ [user.id, user.name] values [1, 'cass']) buildSQL
+            return (db.createStatement insert_into user _ [user.id, user.name] values [1, 'cass']) buildSQL
 
         testUpdateString()
             db = DB()
             user = User()
 
-            return (db update user set user.id:=1 where user.name=:='cass') buildSQL
+            return (db.createStatement update user set user.id:=1 where user.name=:='cass') buildSQL
 
         testDeleteString()
             db = DB()
             user = User()
 
-            return (db delete_from user where user.id=:=1) buildSQL
+            return (db.createStatement delete_from user where user.id=:=1) buildSQL
 
         testDBUpdate()
             Class.forName("org.hsqldb.jdbcDriver")

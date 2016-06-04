@@ -31,6 +31,7 @@ import java.lang.invoke.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.List;
+import java.util.Map;
 
 /**
  * invoke dynamic
