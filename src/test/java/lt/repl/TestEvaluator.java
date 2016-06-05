@@ -24,7 +24,6 @@
 
 package lt.repl;
 
-import lt.lang.List;
 import org.junit.Test;
 
 import java.lang.reflect.Method;

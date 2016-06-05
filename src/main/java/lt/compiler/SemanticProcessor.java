@@ -3111,8 +3111,8 @@ public class SemanticProcessor {
          * <li>{@link lt.compiler.syntactic.AST.Assignment}</li>
          * <li>{@link lt.compiler.syntactic.AST.UndefinedExp}</li>
          * <li>{@link lt.compiler.syntactic.AST.Null}</li>
-         * <li>{@link lt.compiler.syntactic.AST.ArrayExp} =&gt; array/lt.lang.List</li>
-         * <li>{@link lt.compiler.syntactic.AST.MapExp} =&gt; lt.lang.Map</li>
+         * <li>{@link lt.compiler.syntactic.AST.ArrayExp} =&gt; array/lt.util.List</li>
+         * <li>{@link lt.compiler.syntactic.AST.MapExp} =&gt; lt.util.Map</li>
          * <li>{@link lt.compiler.syntactic.AST.Procedure}</li>
          * <li>{@link lt.compiler.syntactic.AST.Lambda}</li>
          * <li>{@link lt.compiler.syntactic.AST.TypeOf} =&gt; {@link lt.compiler.semantic.Ins.GetClass}</li>
@@ -4033,7 +4033,7 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         private Value parseValueFromMapExp(AST.MapExp mapExp, SemanticScope scope) throws SyntaxException {
-                Ins.NewMap newMap = new Ins.NewMap(getTypeWithName("lt.lang.Map", mapExp.line_col()));
+                Ins.NewMap newMap = new Ins.NewMap(getTypeWithName("lt.util.Map", mapExp.line_col()));
 
                 SClassDef Object_type = (SClassDef) getTypeWithName("java.lang.Object", mapExp.line_col());
                 for (Map.Entry<Expression, Expression> expEntry : mapExp.map.entrySet()) {
@@ -4143,7 +4143,7 @@ public class SemanticProcessor {
                 } else {
                         // construct an ArrayList
                         Ins.NewList newList = new Ins.NewList(
-                                getTypeWithName("lt.lang.List", arrayExp.line_col())
+                                getTypeWithName("lt.util.List", arrayExp.line_col())
                         );
                         SClassDef Object_type = (SClassDef) getTypeWithName("java.lang.Object", arrayExp.line_col());
                         // init values

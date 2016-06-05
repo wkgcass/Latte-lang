@@ -1023,7 +1023,7 @@ public class TestCodeGen {
                 @SuppressWarnings("unchecked")
                 List<Integer> list = (List<Integer>) method.invoke(null);
 
-                assertEquals(lt.lang.List.class, list.getClass());
+                assertEquals(lt.util.List.class, list.getClass());
 
                 assertEquals(10, list.get(0).intValue());
                 assertEquals(20, list.get(1).intValue());
@@ -1062,7 +1062,7 @@ public class TestCodeGen {
                 Object o = expected;
                 Object res = method.invoke(null);
                 assertEquals(o, res);
-                assertEquals(lt.lang.Map.class, res.getClass());
+                assertEquals(lt.util.Map.class, res.getClass());
         }
 
         @Test
@@ -1793,7 +1793,7 @@ public class TestCodeGen {
                 assertEquals("ab", method.invoke(null, "a", "b"));
                 assertEquals(
                         Arrays.asList(1, 2, 3),
-                        method.invoke(null, new lt.lang.List(Arrays.asList(1, 2)), Collections.singletonList(3))
+                        method.invoke(null, new lt.util.List(Arrays.asList(1, 2)), Collections.singletonList(3))
                 );
         }
 

@@ -537,9 +537,7 @@ public class Dynamic {
                                         return invokePrimitive(o, method);
                                 } else if (method.equals("add")
                                         && args.length == 1
-                                        && (args[0] instanceof String || o instanceof String)
-                                        && !(o instanceof Undefined)
-                                        && !(args[0] instanceof Undefined)) {
+                                        && (args[0] instanceof String || o instanceof String)) {
                                         // string add
                                         return String.valueOf(o) + String.valueOf(args[0]);
                                 } else if (method.equals("set")) {

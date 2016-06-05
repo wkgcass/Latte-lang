@@ -28,9 +28,7 @@ import lt.repl.Compiler;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -85,24 +83,72 @@ public class TestLibraries {
                         put("test_sql.lt", TestLibraries.class.getResourceAsStream("/test_libraries/test_sql.lt"));
                 }});
                 Class<?> TestSQL = loader.loadClass("lt.sql.test.TestSQL");
+                TestSQL.getMethod("init").invoke(null);
+
                 Method testSelectString = TestSQL.getMethod("testSelectString");
-                assertEquals("select `User`.`id`, `User`.`name` from `User` where `User`.`id` > ?1 order by `User`.`id` desc limit ?2,?3",
+                assertEquals("select `User`.`id`, `User`.`name` from `User` where `User`.`id` > ? order by `User`.`id` desc limit ?,?",
                         testSelectString.invoke(null));
+
+                Method testSelectAlias = TestSQL.getMethod("testSelectAlias");
+                assertEquals("select `User`.`id` as theId, `User`.`name` as theName from `User`",
+                        testSelectAlias.invoke(null));
+
                 Method testSelectWithSubQuery = TestSQL.getMethod("testSelectWithSubQuery");
                 assertEquals("select `User`.`id`, `User`.`name` from `User` where `User`.`id` <= " +
-                                "(select `User`.`id` from `User` limit ?1) order by `User`.`id` desc",
+                                "(select `User`.`id` from `User` limit ?) order by `User`.`id` desc",
                         testSelectWithSubQuery.invoke(null));
+
                 Method testInsertString = TestSQL.getMethod("testInsertString");
-                assertEquals("insert into `User` (`User`.`id`, `User`.`name`) values (?1, ?2)",
+                assertEquals("insert into `User` (`id`, `name`) values (?, ?)",
                         testInsertString.invoke(null));
+
                 Method testUpdateString = TestSQL.getMethod("testUpdateString");
-                assertEquals("update `User` set `User`.`id` = ?1 where `User`.`name` == ?2",
+                assertEquals("update `User` set `User`.`id` = ? where `User`.`name` = ?",
                         testUpdateString.invoke(null));
+
                 Method testDeleteString = TestSQL.getMethod("testDeleteString");
-                assertEquals("delete from `User` where `User`.`id` == ?1",
+                assertEquals("delete from `User` where `User`.`id` = ?",
                         testDeleteString.invoke(null));
+
                 Method testDBUpdate = TestSQL.getMethod("testDBUpdate");
-                // System.out.println(testDBUpdate.invoke(null));
-                // Method testManipDbQuery = TestSQL.getMethod("testManipDbQuery");
+                Object testDBUpdateResult = testDBUpdate.invoke(null);
+                List<Map<String, Object>> testDBUpdateResultExpected = new ArrayList<>();
+                Map<String, Object> testDBUpdateResultExpectedMap = new LinkedHashMap<>();
+                testDBUpdateResultExpectedMap.put("ID", 1);
+                testDBUpdateResultExpectedMap.put("NAME", "cass");
+                testDBUpdateResultExpected.add(testDBUpdateResultExpectedMap);
+                assertEquals(testDBUpdateResultExpected, testDBUpdateResult);
+
+                Method testQuery = TestSQL.getMethod("testQuery");
+                Object testQueryResult = testQuery.invoke(null);
+
+                List<List<Map<String, Object>>> expected = new ArrayList<>();
+
+                List<Map<String, Object>> testQueryRes1 = new ArrayList<>();
+                Map<String, Object> testQueryRes1Map1 = new LinkedHashMap<>();
+                testQueryRes1Map1.put("THENAME", "cass");
+                Map<String, Object> testQueryRes1Map2 = new LinkedHashMap<>();
+                testQueryRes1Map2.put("THENAME", "latte");
+                testQueryRes1.add(testQueryRes1Map1);
+                testQueryRes1.add(testQueryRes1Map2);
+                expected.add(testQueryRes1);
+
+                List<Map<String, Object>> testQueryRes2 = new ArrayList<>();
+                Map<String, Object> testQueryRes2Map1 = new LinkedHashMap<>();
+                testQueryRes2Map1.put("THENAME", "wkgcass");
+                Map<String, Object> testQueryRes2Map2 = new LinkedHashMap<>();
+                testQueryRes2Map2.put("THENAME", "latte");
+                testQueryRes2.add(testQueryRes2Map1);
+                testQueryRes2.add(testQueryRes2Map2);
+                expected.add(testQueryRes2);
+
+                List<Map<String, Object>> testQueryRes3 = new ArrayList<>();
+                testQueryRes3.add(testQueryRes2Map1);
+                expected.add(testQueryRes3);
+
+                assertEquals(expected, testQueryResult);
+
+                Method testAndOr = TestSQL.getMethod("testAndOr");
+                assertEquals("select User.name from User where (User.id > ? and User.name <> ?) or User.id < ?", testAndOr.invoke(null));
         }
 }

@@ -43,6 +43,8 @@ invoke toString method, the result would be
 */
 package lt::html
 
+import lt::util::_
+
 /*
 The base of all DOM. the DOM provides 4 attributes : id, name, class, and style.
 The toString({}) method returns <simple-name-lower-case attr='value'>.

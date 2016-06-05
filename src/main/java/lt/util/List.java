@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package lt.lang;
+package lt.util;
 
 import java.util.Collection;
 import java.util.Collections;

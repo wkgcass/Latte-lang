@@ -28,9 +28,13 @@ This is a package that uses DSL to write SQLs. The SQLs can be executed directly
 package lt::sql
 
 import java::sql::_
+import lt::util::_
 
 interface SQLBuilder
     buildSQL():String
+    arguments():Map
+
+interface Selectable
 
 ; class that represents the database.
 data class DB(url:String, user:String, pwd:String)
@@ -44,15 +48,35 @@ data class DB(url:String, user:String, pwd:String)
         if conn
             this.conn=conn
         else
-            conn = DriverManager.getConnection(url, user, pwd)
+            this.conn = DriverManager.getConnection(url, user, pwd)
         return this
 
-    execUpdate(sql:String):int
-    execQuery(sql:String):ResultSet
-    execUpdate(builder:SQLBuilder)=execUpdate(builder.buildSQL)
-    execQuery(builder:SQLBuilder)=execQuery(builder.buildSQL)
+    private prepareStatement(sql:String, arguments:Map):PreparedStatement
+        prep = conn.prepareStatement(sql)
+        for entry in arguments
+            prep.setObject(entry.key, entry.value)
+        return prep
 
-    createStatement():Context = Context()
+    execUpdate(sql:String, arguments:Map):int = prepareStatement(sql, arguments).executeUpdate()
+    execQuery(sql:String, arguments:Map):List
+        rs:ResultSet = prepareStatement(sql, arguments).executeQuery()
+        rsmd:ResultSetMetaData = rs.getMetaData()
+        columnCount:int = rsmd.getColumnCount()
+        columnLabels = []
+        for i in 1..columnCount
+            columnLabels + rsmd.getColumnLabel(i)
+        result=[]
+        while rs.next()
+            record = {}
+            for i in 1..columnCount
+                record[columnLabels[i-1]] = rs.getObject(i)
+            result + record
+        return result
+
+    execUpdate(builder:SQLBuilder):int=execUpdate(builder.buildSQL, builder.arguments)
+    execQuery(builder:SQLBuilder):List=execQuery(builder.buildSQL, builder.arguments)
+
+    createStatement(surround=""):Context = Context(surround=surround)
 
     close():Unit
         if conn
@@ -60,14 +84,14 @@ data class DB(url:String, user:String, pwd:String)
 
 ; represents a Column.
 ; tbl_o is filled with Entity object and name is filled with the column's name
-data class Column(tbl_o, name:String)
+data class Column(tbl_o, name:String):Selectable
     tbl = tbl_o.getClass.simpleName
 
     gt(o):Condition=Condition(">", this, [o])
     lt(o):Condition=Condition("<", this, [o])
     ge(o):Condition=Condition(">=", this, [o])
     le(o):Condition=Condition("<=", this, [o])
-    equal(o):Condition=Condition("==", this, [o])
+    equal(o):Condition=Condition("=", this, [o])
     notEqual(o):Condition=Condition("<>", this, [o])
     between(a,b):Condition=Condition("between", this, [a,b])
     `in`(agg):Condition=Condition("in", this, [agg])
@@ -77,18 +101,23 @@ data class Column(tbl_o, name:String)
     desc():Order=Order(this, false)
     asc():Order=Order(this, true)
 
-    toString():String
-        return "`"+tbl+"`.`"+name+"`"
+    `as`(alias:String):As = As(this, alias)
+
+    toString(context):String = context.surround + tbl + context.surround + "." + context.surround + name + context.surround
+
+data class As(col:Column, alias:String)
+    toString(context):String
+        return col.toString(context) + " as " + alias
 
 ; assign to the column
 data class Assign(col:Column, o)
-    toString(context:Context):String = col+" = "+context.putValue(o)
+    toString(context:Context):String = col.toString(context)+" = "+context.putValue(o)
 
 ; represents a Condition
 data class Condition(op:String, col:Column, ls:List)
     toString(context:Context):String
         sb = StringBuilder()
-        sb append col append " " append op append " "
+        sb append col.toString(context) append " " append op append " "
         if ls
             isFirst=true
             for o in ls
@@ -98,9 +127,31 @@ data class Condition(op:String, col:Column, ls:List)
                     sb append ", "
                 sb append context.putValue(o)
         return sb.toString
+    `and`(b):AndOr = AndOr(true, this, b)
+    `or`(b):AndOr = AndOr(false, this, b)
+
+data class AndOr(isAnd:bool, a, b)
+    `and`(b):AndOr = AndOr(true, this, b)
+    `or`(b):AndOr = AndOr(false, this, b)
+    toString(context:Context):String = (
+        if a is type AndOr
+            return "(" + a.toString(context) + ")"
+        else
+            return a.toString(context)
+    ) + (
+        if isAnd
+            return " and "
+        else
+            return " or "
+    ) + (
+        if b is type AndOr
+            return "(" + b.toString(context) + ")"
+        else
+            return b.toString(context)
+    )
 
 data class Order(col:Column, isAsc:bool)
-    toString():String = col + " " + (
+    toString(context):String = col.toString(context) + " " + (
         if isAsc
             return "asc"
         else
@@ -108,6 +159,7 @@ data class Order(col:Column, isAsc:bool)
     )
 
 data class Context(
+    surround = ""                             ; surrounds table and columns
     argMap:Map = {}                           ; the map of position => arguments
     count:int = 0                             ; count
 )
@@ -116,14 +168,14 @@ data class Context(
             return objectToString(o)
         else
             argMap[++count]=o
-            return "?"+count
+            return "?"
     objectToString(o):String
         if o is type EndStatement
             return "(" + o.buildSQL + ")"
         else
-            return "`" + o.getClass.simpleName + "`"
+            return surround + o.getClass.simpleName + surround
 
-    select(col:Column):Select = select([col])
+    select(col:Selectable):Select = select([col])
     select(cols:List):Select
         sb:StringBuilder = StringBuilder()
         sb append "select "
@@ -141,8 +193,19 @@ data class Context(
         sb append "delete from " append objectToString(tbl_o) append " where "
         return UpdateWhere(this, sb)
 
+    toStringWithContext(cols:List):String
+        sb = StringBuilder()
+        isFirst=true
+        for col in cols
+            if isFirst
+                isFirst=false
+            else
+                sb append ", "
+            sb append col.toString(this)
+        return sb.toString
+
 data class Select(context:Context, sb:StringBuilder, cols:List)
-    sb append cols.join(", ")
+    sb append context.toStringWithContext(cols)
 
     from(tbl_o):From
         return from([tbl_o])
@@ -154,13 +217,14 @@ abstract class EndStatement(context:Context, sb:StringBuilder):SQLBuilder
     orderBy(order:Order):EndStatement
         return orderBy([order])
     orderBy(orders:List):EndStatement
-        sb append " order by " append orders.join(", ")
+        sb append " order by "
+        sb append context.toStringWithContext(orders)
         return this
 
     groupBy(col:Column):EndStatement
         return groupBy([col])
     groupBy(cols:List):EndStatement
-        sb append " group by " append cols.join(", ")
+        sb append " group by " append context.toStringWithContext(cols)
         return this
 
     limit(length:int):EndStatement
@@ -171,7 +235,7 @@ abstract class EndStatement(context:Context, sb:StringBuilder):SQLBuilder
         return this
 
     buildSQL():String = sb.toString
-    execQuery():ResultSet=...
+    arguments():Map = context.argMap
 
 class From(context:Context, sb:StringBuilder, tbls:List):EndStatement(context, sb)
     isFirst=true
@@ -186,7 +250,7 @@ class From(context:Context, sb:StringBuilder, tbls:List):EndStatement(context, s
         sb append " join "
         return Join(context, sb, tbl_o, this)
 
-    where(con:Condition):QueryWhere
+    where(con):QueryWhere
         sb append " where "
         return QueryWhere(context, sb, con)
 
@@ -197,18 +261,26 @@ class Join(context:Context, sb:StringBuilder, tbl_o, from:From)
         sb append " on " append con.toString(context)
         return from
 
-class QueryWhere(context:Context, sb:StringBuilder, con:Condition):EndStatement(context, sb)
+class QueryWhere(context:Context, sb:StringBuilder, con):EndStatement(context, sb)
     sb append con.toString(context)
 
 class Insert(context:Context, sb:StringBuilder, tbl_o):SQLBuilder
     sb append context.objectToString(tbl_o)
 
-    _(col:Column) = _([col])
-    _(cols:List)
-        sb append " (" append cols.join(", ") append ")"
+    _(col:Column):Insert = _([col])
+    _(cols:List):Insert
+        sb append " ("
+        isFirst=true
+        for col in cols
+            if isFirst
+                isFirst=false
+            else
+                sb append ", "
+            sb append context.surround append col.name append context.surround
+        sb append ")"
         return this
-    values(o) = values([o])
-    values(values:List)
+    values(o):Insert = values([o])
+    values(values:List):Insert
         sb append " values ("
         isFirst=true
         for value in values
@@ -219,13 +291,13 @@ class Insert(context:Context, sb:StringBuilder, tbl_o):SQLBuilder
             sb append context.putValue(value)
         sb append ")"
         return this
-    toString():String = buildSQL()
     buildSQL():String = sb.toString
+    arguments():Map = context.argMap
 
 class Update(context:Context, sb:StringBuilder, tbl_o)
     sb append context.objectToString(tbl_o)
 
-    set(assign:Assign)=set([assign])
+    set(assign:Assign):UpdateWhere=set([assign])
     set(assigns:List):UpdateWhere
         sb append " set "
         isFirst=true
@@ -239,7 +311,8 @@ class Update(context:Context, sb:StringBuilder, tbl_o)
         return UpdateWhere(context, sb)
 
 class UpdateWhere(context:Context, sb:StringBuilder):SQLBuilder
-    where(con:Condition)
+    where(con):UpdateWhere
         sb append con.toString(context)
         return this
     buildSQL():String =  sb.toString
+    arguments():Map = context.argMap

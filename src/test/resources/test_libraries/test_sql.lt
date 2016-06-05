@@ -8,54 +8,89 @@ data class User
 
 class TestSQL
     static
+        init()
+            Class.forName("org.hsqldb.jdbcDriver")
+            db = DB(
+                url  = "jdbc:hsqldb:mem:score"
+                user = "sa"
+                pwd  = ""
+            ).connect()
+            db execUpdate "create table User(id INTEGER PRIMARY KEY, name VARCHAR(255))", {}
+            db close
+
         testSelectString()
             db = DB()
             user = User()
 
-            return (db.createStatement select [user.id,user.name] from user where user.id > 7 orderBy user.id.desc limit 1,7) buildSQL
+            return (db.createStatement("`") select [user.id,user.name] from user where user.id > 7 orderBy user.id.desc limit 1,7) buildSQL
+
+        testSelectAlias()
+            db = DB()
+            user = User()
+
+            return (db.createStatement("`") select [
+                    user.id `as` "theId"
+                    user.name `as` "theName"
+                ] from user) buildSQL
 
         testSelectWithSubQuery()
             db = DB()
             user = User()
 
-            SQL = db.createStatement
+            SQL = db.createStatement("`")
             return (SQL select [user.id, user.name] from user where user.id <= (SQL select user.id from user limit 1) orderBy user.id.desc) buildSQL
 
         testInsertString()
             db = DB()
             user = User()
 
-            return (db.createStatement insert_into user _ [user.id, user.name] values [1, 'cass']) buildSQL
+            return (db.createStatement("`") insert_into user _ [user.id, user.name] values [1, 'cass']) buildSQL
 
         testUpdateString()
             db = DB()
             user = User()
 
-            return (db.createStatement update user set user.id:=1 where user.name=:='cass') buildSQL
+            return (db.createStatement("`") update user set user.id:=1 where user.name=:='cass') buildSQL
 
         testDeleteString()
             db = DB()
             user = User()
 
-            return (db.createStatement delete_from user where user.id=:=1) buildSQL
+            return (db.createStatement("`") delete_from user where user.id=:=1) buildSQL
 
         testDBUpdate()
-            Class.forName("org.hsqldb.jdbcDriver")
             db = DB(
                 url  = "jdbc:hsqldb:mem:score"
                 user = "sa"
                 pwd  = ""
             ).connect()
-            db execUpdate "create table TestTbl(id INTEGER PRIMARY KEY, name VARCHAR)"
-            db execUpdate "insert into TestTbl (1, 'cass')"
-            return db execQuery "select * from TestTbl"
-/*
-        testManipDbQuery()
-            Class.forName("org.hsqldb.jdbcDriver")
+            db execUpdate "create table TestTbl(id INTEGER PRIMARY KEY, name VARCHAR(255))", {}
+            db execUpdate "insert into TestTbl values (1, 'cass')", {}
+            res = db execQuery "select * from TestTbl", {}
+            db execUpdate "drop table TestTbl", {}
+            db close
+            return res
 
+        testQuery()
             db = DB(
                 url  = "jdbc:hsqldb:mem:score"
                 user = "sa"
                 pwd  = ""
             ).connect()
-            */
+            user = User()
+
+            db execUpdate (db.createStatement insert_into user _ [user.id, user.name] values [1, 'cass'])
+            db execUpdate (db.createStatement insert_into user _ [user.id, user.name] values [2, 'latte'])
+            res1 = db execQuery (db.createStatement select [user.name `as` "theName"] from user)
+            db execUpdate (db.createStatement update user set user.name:="wkgcass" where user.name=:="cass")
+            res2 = db execQuery (db.createStatement select [user.name `as` "theName"] from user)
+            db execUpdate (db.createStatement delete_from user where user.name=:="latte")
+            res3 = db execQuery (db.createStatement select [user.name `as` "theName"] from user)
+            db close
+            return [res1, res2, res3]
+
+        testAndOr()
+            db = DB()
+            user = User()
+
+            return (db.createStatement select user.name from user where user.id > 10 & user.name!:='abc' | user.id < 5) buildSQL
