@@ -2025,4 +2025,33 @@ public class TestParser {
                         stmt
                 );
         }
+
+        @Test
+        public void testAnnotationAsValue() throws Exception {
+                List<Statement> list = parse("" +
+                        "@Anno(a=@Anno)\n" +
+                        "val a");
+                assertEquals(1, list.size());
+                assertEquals(
+                        new VariableDef("a", Collections.singleton(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC)),
+                                Collections.singleton(new AST.Anno(
+                                        new AST.Access(null, "Anno", LineCol.SYNTHETIC),
+                                        Collections.singletonList(
+                                                new AST.Assignment(
+                                                        new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                                        "=",
+                                                        new AST.AnnoExpression(
+                                                                new AST.Anno(
+                                                                        new AST.Access(null, "Anno", LineCol.SYNTHETIC),
+                                                                        Collections.emptyList(),
+                                                                        LineCol.SYNTHETIC
+                                                                )
+                                                        ),
+                                                        LineCol.SYNTHETIC
+                                                )
+                                        ),
+                                        LineCol.SYNTHETIC
+                                )), LineCol.SYNTHETIC)
+                        , list.get(0));
+        }
 }

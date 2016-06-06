@@ -81,20 +81,25 @@ public class Parser {
         private Set<AST.Anno> annos = new HashSet<>();
 
         /**
-         * <b>state</b> <br>
+         * <b>state</b>.<br>
          * when parsing an expression and reaching a start node, if this variable is true, return normally. else throw exception
          */
         private boolean expectingStartNode = false;
         /**
-         * <b>state</b>  <br>
+         * <b>state</b>.<br>
          * is parsing map literal
          */
         private boolean isParsingMap = false;
         /**
-         * <b>state</b> <br>
+         * <b>state</b>.<br>
          * is parsing operator like invocation
          */
         private boolean isParsingOperatorLikeInvocation = false;
+        /**
+         * <b>state</b>.<br>
+         * consider annotations as values
+         */
+        private boolean annotationAsExpression = false;
         /**
          * error manager
          */
@@ -439,7 +444,18 @@ public class Parser {
                                         case "@":
                                                 modifiersIsEmpty();
 
+                                                boolean tmp = annotationAsExpression;
+                                                annotationAsExpression = true;
                                                 parse_anno();
+                                                annotationAsExpression = tmp;
+
+                                                if (annotationAsExpression)
+                                                        if (!annos.isEmpty()) {
+                                                                AST.Anno anno = annos.iterator().next();
+                                                                annos.clear();
+                                                                return new AST.AnnoExpression(anno);
+                                                        }
+
                                                 return null;
                                 }
                         }
@@ -545,6 +561,7 @@ public class Parser {
                         parser.addUsedVarNames(names);
                 }
                 parser.isParsingMap = parseMap;
+                parser.annotationAsExpression = this.annotationAsExpression;
                 return parser.parse();
         }
 
@@ -764,6 +781,8 @@ public class Parser {
                                                 "=",
                                                 v.getInit(), v.line_col());
                                         assignments.add(a);
+                                } else if (exp instanceof AST.Assignment) {
+                                        assignments.add((AST.Assignment) exp);
                                 } else {
                                         AST.Assignment a = new AST.Assignment(
                                                 new AST.Access(null, "value", exp.line_col()),
@@ -1697,6 +1716,20 @@ public class Parser {
                                                         modifiersIsEmpty();
 
                                                         parse_map();
+
+                                                } else if (content.equals("@")) {
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
+
+                                                        boolean tmp = annotationAsExpression;
+                                                        annotationAsExpression = true;
+                                                        parse_anno();
+                                                        annotationAsExpression = tmp;
+                                                        if (!annos.isEmpty()) {
+                                                                AST.Anno anno = annos.iterator().next();
+                                                                parsedExps.push(new AST.AnnoExpression(anno));
+                                                                annos.clear();
+                                                        }
 
                                                 } else if (content.equals("(")) {
                                                         annosIsEmpty();

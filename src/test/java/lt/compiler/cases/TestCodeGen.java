@@ -2020,6 +2020,7 @@ public class TestCodeGen {
         public void testAllKindsOfAnnotations() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
+                                "import lt::compiler::_\n" +
                                 "@lt::compiler::TestAllKindsOfAnnos(\n" +
                                 "    str='theStr'\n" +
                                 "    strArr=['a','b']\n" +
@@ -2046,6 +2047,8 @@ public class TestCodeGen {
                                 "        lt::compiler::semantic::SModifier.PUBLIC\n" +
                                 "        lt::compiler::semantic::SModifier.PRIVATE" +
                                 "    ]\n" +
+                                "    anno=@MyAnno(str='a')\n" +
+                                "    annos=[@MyAnno(str='b', i=200),@MyAnno(str='c')]\n" +
                                 ")\n" +
                                 "class TestAllKindsOfAnnotations",
                         "TestAllKindsOfAnnotations");
@@ -2072,6 +2075,25 @@ public class TestCodeGen {
                 assertArrayEquals(new Class[]{Class.class, Object.class}, test.clsArr());
                 assertEquals(SModifier.PUBLIC, test.en());
                 assertArrayEquals(new SModifier[]{SModifier.PUBLIC, SModifier.PRIVATE}, test.enArr());
+                MyAnno myAnno = test.anno();
+                assertEquals("a", myAnno.str());
+                MyAnno[] myAnnos = test.annos();
+                assertEquals(2, myAnnos.length);
+                assertEquals("b", myAnnos[0].str());
+                assertEquals(200, myAnnos[0].i());
+                assertEquals("c", myAnnos[1].str());
+        }
+
+        @Test
+        public void testAnnotationAnnotation() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "import lt::compiler::_\n" +
+                                "@AnnoAnno(myAnno=@MyAnno(str='a'))\n" +
+                                "class TestAnnotationAnnotation",
+                        "TestAnnotationAnnotation");
+                AnnoAnno annoAnno = cls.getAnnotation(AnnoAnno.class);
+                assertEquals("a", annoAnno.myAnno().str());
         }
 
         @Test

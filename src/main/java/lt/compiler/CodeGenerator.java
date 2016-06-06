@@ -1775,7 +1775,7 @@ public class CodeGenerator {
                                 }
                                 visitor.visitEnd();
                         } else if (v instanceof SAnno) {
-                                AnnotationVisitor visitor = annotationVisitor.visitAnnotation(name, typeToInternalName(v.type()));
+                                AnnotationVisitor visitor = annotationVisitor.visitAnnotation(name, typeToDesc(v.type()));
                                 buildAnnotation(visitor, (SAnno) v);
                         } else {
                                 // primitives

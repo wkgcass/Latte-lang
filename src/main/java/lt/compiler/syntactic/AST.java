@@ -140,6 +140,42 @@ public class AST {
         }
 
         /**
+         * annotation as expression
+         */
+        public static class AnnoExpression implements Expression {
+                public final Anno anno;
+
+                public AnnoExpression(Anno anno) {
+                        this.anno = anno;
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return anno.line_col();
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+
+                        AnnoExpression that = (AnnoExpression) o;
+
+                        return anno != null ? anno.equals(that.anno) : that.anno == null;
+                }
+
+                @Override
+                public int hashCode() {
+                        return anno != null ? anno.hashCode() : 0;
+                }
+
+                @Override
+                public String toString() {
+                        return anno.toString();
+                }
+        }
+
+        /**
          * array expression
          */
         public static class ArrayExp implements Expression {
@@ -969,8 +1005,10 @@ public class AST {
 
                         Try aTry = (Try) o;
 
-                        if (statements != null ? !statements.equals(aTry.statements) : aTry.statements != null) return false;
-                        if (catchStatements != null ? !catchStatements.equals(aTry.catchStatements) : aTry.catchStatements != null) return false;
+                        if (statements != null ? !statements.equals(aTry.statements) : aTry.statements != null)
+                                return false;
+                        if (catchStatements != null ? !catchStatements.equals(aTry.catchStatements) : aTry.catchStatements != null)
+                                return false;
                         if (varName != null ? !varName.equals(aTry.varName) : aTry.varName != null) return false;
                         //
                         return !(fin != null ? !fin.equals(aTry.fin) : aTry.fin != null);

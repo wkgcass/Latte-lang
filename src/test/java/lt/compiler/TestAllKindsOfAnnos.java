@@ -56,4 +56,8 @@ public @interface TestAllKindsOfAnnos {
         SModifier en();
 
         SModifier[] enArr();
+
+        MyAnno anno();
+
+        MyAnno[] annos();
 }

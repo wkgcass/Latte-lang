@@ -2566,4 +2566,28 @@ public class TestSemantic {
                 assertTrue(ins instanceof Ins.InvokeDynamic);
                 assertEquals("assign", ((Ins.InvokeDynamic) ins).methodName());
         }
+
+        @Test
+        public void testAnnotationAnnotation() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "import lt::compiler::_\n" +
+                        "@AnnoAnno(myAnno=@MyAnno(str='a'))\n" +
+                        "class A");
+                Set<STypeDef> set = parse(map);
+                assertEquals(1, set.size());
+
+                Iterator<STypeDef> it = set.iterator();
+
+                SClassDef classDef = (SClassDef) it.next();
+                SAnno anno = classDef.annos().get(0);
+                Map.Entry<SAnnoField, Value> entry = anno.values().entrySet().iterator().next();
+                assertEquals("myAnno", entry.getKey().name());
+                assertTrue(entry.getValue() instanceof SAnno);
+                SAnno value = (SAnno) entry.getValue();
+                Map.Entry<SAnnoField, Value> entry2 = value.values().entrySet().iterator().next();
+                assertEquals("str", entry2.getKey().name());
+                assertEquals("a", ((StringConstantValue) entry2.getValue()).getStr());
+        }
 }

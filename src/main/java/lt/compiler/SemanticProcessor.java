@@ -1350,7 +1350,7 @@ public class SemanticProcessor {
                                 }
                                 // not found, check defaultValue
                                 if (f.defaultValue() == null) {
-                                        err.SyntaxException(f.name() + " missing",
+                                        err.SyntaxException(f.name() + " is missing",
                                                 anno == null ? LineCol.SYNTHETIC : anno.line_col());
                                         return;
                                 }
@@ -3288,6 +3288,16 @@ public class SemanticProcessor {
                                         "java.lang.Class",
                                         LineCol.SYNTHETIC
                                 ));
+                } else if (exp instanceof AST.AnnoExpression) {
+                        SAnno anno = new SAnno();
+                        AST.Anno astAnno = ((AST.AnnoExpression) exp).anno;
+                        STypeDef type = getTypeWithAccess(astAnno.anno, imports);
+                        if (!(type instanceof SAnnoDef))
+                                throw new SyntaxException(type + " is not annotation type", astAnno.anno.line_col());
+                        anno.setAnnoDef((SAnnoDef) type);
+                        annotationRecorder.put(anno, astAnno);
+                        parseAnnoValues(Collections.singleton(anno));
+                        v = anno;
                 } else {
                         throw new LtBug("unknown expression " + exp);
                 }
@@ -6728,21 +6738,21 @@ public class SemanticProcessor {
         private Value parseValueFromObject(Object o) throws SyntaxException {
                 // primitives
                 if (o instanceof Integer) {
-                        return new IntValue(((Integer) o).intValue());
+                        return new IntValue((Integer) o);
                 } else if (o instanceof Long) {
-                        return new LongValue(((Long) o).longValue());
+                        return new LongValue((Long) o);
                 } else if (o instanceof Character) {
-                        return new CharValue(((Character) o).charValue());
+                        return new CharValue((Character) o);
                 } else if (o instanceof Short) {
-                        return new ShortValue(((Short) o).shortValue());
+                        return new ShortValue((Short) o);
                 } else if (o instanceof Byte) {
-                        return new ByteValue(((Byte) o).byteValue());
+                        return new ByteValue((Byte) o);
                 } else if (o instanceof Boolean) {
-                        return new BoolValue(((Boolean) o).booleanValue());
+                        return new BoolValue((Boolean) o);
                 } else if (o instanceof Float) {
-                        return new FloatValue(((Float) o).floatValue());
+                        return new FloatValue((Float) o);
                 } else if (o instanceof Double) {
-                        return new DoubleValue(((Double) o).doubleValue());
+                        return new DoubleValue((Double) o);
                 } else if (o instanceof String) {
                         // string
                         StringConstantValue v = new StringConstantValue((String) o);
