@@ -79,7 +79,7 @@ public class Run {
          * @param mainClass main class
          */
         public void setMainClass(String mainClass) {
-                this.mainClass = mainClass;
+                this.mainClass = mainClass.replace("::", ".");
         }
 
         /**

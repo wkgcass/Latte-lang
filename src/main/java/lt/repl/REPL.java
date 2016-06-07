@@ -336,9 +336,8 @@ public class REPL {
                                                 String ss;
                                                 while ((ss = br.readLine()) != null) {
                                                         ss = ss.replace("${core}", core)
-                                                                .replace("${dir}", projectDir)
-                                                                .replace("${separator}", separator)
-                                                                .replace("\\", "\\\\") + "\n";
+                                                                .replace("${dir}", projectDir.replace("\\", "\\\\"))
+                                                                .replace("${separator}", separator) + "\n";
                                                         fw.write(ss.toCharArray());
                                                 }
                                                 fw.flush();
