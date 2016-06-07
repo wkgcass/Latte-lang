@@ -46,7 +46,6 @@ import lt.lang.LtIterator;
 import lt.lang.Undefined;
 import lt.dependencies.asm.MethodVisitor;
 
-import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandles;
@@ -129,7 +128,8 @@ public class SemanticProcessor {
         }
 
         /**
-         * the parsing process are divided into 4 steps<br>
+         * parse the input AST into STypeDef objects.<br>
+         * the parsing process are divided into 4 steps.<br>
          * <ol>
          * <li><b>recording</b> : scan all classes and record them</li>
          * <li><b>signatures</b> : parse parents/superInterfaces, members, annotations, but don't parse statements or annotation values</li>
@@ -1596,7 +1596,18 @@ public class SemanticProcessor {
                 // testSymbol==true and not start with \' then return false
                 if (testSymbol && !literal.literal().startsWith("\'")) return false;
                 // check whether the string length is 1
-                return unescape(str, lineCol).length() == 1;
+                String s = unescape(str, lineCol);
+                assert s != null;
+                return s.length() == 1;
+        }
+
+        private SClassDef Throwable_Class;
+
+        private SClassDef getThrowable_Class() throws SyntaxException {
+                if (Throwable_Class == null) {
+                        Throwable_Class = (SClassDef) getTypeWithName("java.lang.Throwable", LineCol.SYNTHETIC);
+                }
+                return Throwable_Class;
         }
 
         /**
@@ -1659,7 +1670,8 @@ public class SemanticProcessor {
                                 ((AST.Throw) statement).exp,
                                 null,
                                 scope);
-                        if (!getTypeWithName("java.lang.Throwable", LineCol.SYNTHETIC).isAssignableFrom(throwable.type())) {
+                        assert throwable != null;
+                        if (!getThrowable_Class().isAssignableFrom(throwable.type())) {
                                 // cast to throwable
                                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(getLang_castToThrowable(), LineCol.SYNTHETIC);
                                 invokeStatic.arguments().add(throwable);
@@ -1708,6 +1720,7 @@ public class SemanticProcessor {
         private SMethodDef getLang_castToThrowable() throws SyntaxException {
                 if (Lang_castToThrowable == null) {
                         SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert Lang != null;
                         for (SMethodDef m : Lang.methods()) {
                                 if (m.name().equals("castToThrowable")) {
                                         Lang_castToThrowable = m;
@@ -2078,6 +2091,7 @@ public class SemanticProcessor {
         private SMethodDef getLang_throwableWrapperObject() throws SyntaxException {
                 if (Lang_throwableWrapperObject == null) {
                         SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert Lang != null;
                         for (SMethodDef m : Lang.methods()) {
                                 if (m.name().equals("throwableWrapperObject")) {
                                         Lang_throwableWrapperObject = m;
@@ -2428,6 +2442,7 @@ public class SemanticProcessor {
         private SMethodDef getLtIterator_Get() throws SyntaxException {
                 if (LtIterator_getIterator == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtIterator", LineCol.SYNTHETIC);
+                        assert cls != null;
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("getIterator")) {
                                         LtIterator_getIterator = m;
@@ -2450,6 +2465,7 @@ public class SemanticProcessor {
         private SMethodDef getLtIterator_hasNext() throws SyntaxException {
                 if (LtIterator_hasNext == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtIterator", LineCol.SYNTHETIC);
+                        assert cls != null;
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("hasNext")) {
                                         LtIterator_hasNext = m;
@@ -2472,6 +2488,7 @@ public class SemanticProcessor {
         private SMethodDef getLtIterator_next() throws SyntaxException {
                 if (LtIterator_next == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtIterator", LineCol.SYNTHETIC);
+                        assert cls != null;
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("next")) {
                                         LtIterator_next = m;
@@ -2521,6 +2538,7 @@ public class SemanticProcessor {
                 // LtIterator.get(aFor.exp)
                 Ins.InvokeStatic getIterator = new Ins.InvokeStatic(getLtIterator_Get(), LineCol.SYNTHETIC);
                 Value looper = parseValueFromExpression(aFor.exp, null, scope);
+                assert looper != null;
                 if (looper.type() instanceof PrimitiveTypeDef)
                         looper = boxPrimitive(looper, LineCol.SYNTHETIC);
                 getIterator.arguments().add(looper);
@@ -2797,6 +2815,7 @@ public class SemanticProcessor {
         private SMethodDef getLang_putField() throws SyntaxException {
                 if (null == Lang_putField) {
                         SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert Lang != null;
                         for (SMethodDef m : Lang.methods()) {
                                 if (m.name().equals("putField")) {
                                         Lang_putField = m;
@@ -2961,7 +2980,7 @@ public class SemanticProcessor {
                                 }
                         }
                         err.SyntaxException("cannot assign", lineCol);
-                        return;
+                        // code won't reach here
                 } else if (assignTo instanceof Ins.InvokeDynamic) {
                         // invoke dynamic get(?)
                         // list[?1]=?2
@@ -2987,7 +3006,7 @@ public class SemanticProcessor {
                                 return;
                         }
                         err.SyntaxException("cannot assign", lineCol);
-                        return;
+                        // code won't reach here
                 } else if (assignTo instanceof Ins.InvokeWithTarget) {
                         // the method name should be 'get(?1)'
                         Ins.InvokeWithTarget invoke = (Ins.InvokeWithTarget) assignTo;
@@ -3009,10 +3028,10 @@ public class SemanticProcessor {
                                 }
                         }
                         err.SyntaxException("cannot assign", lineCol);
-                        return;
+                        // code won't reach here
                 } else {
                         err.SyntaxException("cannot assign", lineCol);
-                        return;
+                        // code won't reach here
                 }
         }
 
@@ -3214,6 +3233,7 @@ public class SemanticProcessor {
                         str = str.substring(0, str.length() - 1);
                         str = unescape(str, exp.line_col());
                         if (isChar(requiredType, (StringLiteral) exp, exp.line_col())) {
+                                assert str != null;
                                 if (str.length() == 1) {
                                         CharValue charValue = new CharValue(str.charAt(0));
                                         if (requiredType == null || requiredType instanceof PrimitiveTypeDef) {
@@ -3322,6 +3342,7 @@ public class SemanticProcessor {
                         return null;
                 }
                 SClassDef classType = (SClassDef) theType;
+                assert classType != null;
 
                 SConstructorDef con = null;
                 for (SConstructorDef c : classType.constructors()) {
@@ -3582,6 +3603,8 @@ public class SemanticProcessor {
                 SConstructorDef constructorWithZeroParamAndCanAccess = null;
                 if (requiredType == null || requiredType.fullName().equals("java.lang.Object")) {
                         SInterfaceDef interfaceDef = getDefaultLambdaFunction(lambda.params.size(), lambda.line_col());
+                        assert interfaceDef != null;
+
                         requiredType = interfaceDef;
                         methodToOverride = interfaceDef.methods().get(0);
                 } else {
@@ -3630,9 +3653,10 @@ public class SemanticProcessor {
                 SMethodDef method = parseInnerMethod(methodDef, scope);
 
                 List<Value> args = new ArrayList<>();
-                for (LeftValue l : scope.getLeftValues(method.getParameters().size() - lambda.params.size())) {
-                        args.add(new Ins.TLoad(l, scope, LineCol.SYNTHETIC));
-                }
+                assert method != null;
+                args.addAll(scope.getLeftValues(method.getParameters().size() - lambda.params.size())
+                        .stream()
+                        .map(l -> new Ins.TLoad(l, scope, LineCol.SYNTHETIC)).collect(Collectors.toList()));
 
                 // interface and current method is static
                 if (requiredType instanceof SInterfaceDef && scope.getThis() == null) {
@@ -3709,6 +3733,15 @@ public class SemanticProcessor {
                 }
         }
 
+        private SClassDef Object_Class;
+
+        private SClassDef getObject_Class() throws SyntaxException {
+                if (Object_Class == null) {
+                        Object_Class = (SClassDef) getTypeWithName("java.lang.Object", LineCol.SYNTHETIC);
+                }
+                return Object_Class;
+        }
+
         /**
          * build a class for lambda<br>
          * see {@link #parseValueFromLambda(AST.Lambda, STypeDef, SemanticScope)} to see the class structure
@@ -3777,7 +3810,7 @@ public class SemanticProcessor {
                 if (isInterface) {
                         con.statements().add(new Ins.InvokeSpecial(
                                 conScope.getThis(),
-                                ((SClassDef) getTypeWithName("java.lang.Object", LineCol.SYNTHETIC)).constructors().get(0),
+                                getObject_Class().constructors().get(0),
                                 LineCol.SYNTHETIC
                         ));
                 } else {
@@ -3801,7 +3834,7 @@ public class SemanticProcessor {
                 // p2
                 if (!isStatic) {
                         SParameter p2 = new SParameter();
-                        p2.setType(getTypeWithName("java.lang.Object", LineCol.SYNTHETIC));
+                        p2.setType(getObject_Class());
                         con.getParameters().add(p2);
                         conScope.putLeftValue("p2", p2);
                         con.statements().add(new Ins.PutField(
@@ -3841,6 +3874,7 @@ public class SemanticProcessor {
                 // new ArrayList
                 SClassDef LinkedList_Type = (SClassDef) getTypeWithName("java.util.LinkedList", LineCol.SYNTHETIC);
                 SConstructorDef LinkedList_Con = null;
+                assert LinkedList_Type != null;
                 for (SConstructorDef co : LinkedList_Type.constructors()) {
                         if (co.getParameters().size() == 1 && co.getParameters().get(0).type().fullName().equals("java.util.Collection")) {
                                 LinkedList_Con = co;
@@ -3902,7 +3936,7 @@ public class SemanticProcessor {
                 }
                 // invoke the method handle
                 SMethodDef MethodHandle_invokeWithArguments = null;
-                for (SMethodDef m : ((SClassDef) getTypeWithName("java.lang.invoke.MethodHandle", LineCol.SYNTHETIC)).methods()) {
+                for (SMethodDef m : getMethodHandle_Class().methods()) {
                         if (m.name().equals("invokeWithArguments")
                                 && m.getParameters().size() == 1
                                 && m.getParameters().get(0).type().fullName().equals("java.util.List")) {
@@ -3982,6 +4016,7 @@ public class SemanticProcessor {
         private SMethodDef getLambdaMetafactory_metafactory() throws SyntaxException {
                 if (LambdaMetafactory_metafactory == null) {
                         SClassDef LambdaMetafactory = (SClassDef) getTypeWithName("java.lang.invoke.LambdaMetafactory", LineCol.SYNTHETIC);
+                        assert LambdaMetafactory != null;
                         for (SMethodDef m : LambdaMetafactory.methods()) {
                                 if (m.name().equals("metafactory") && m.getParameters().size() == 6) {
                                         LambdaMetafactory_metafactory = m;
@@ -4049,6 +4084,9 @@ public class SemanticProcessor {
                 for (Map.Entry<Expression, Expression> expEntry : mapExp.map.entrySet()) {
                         Value key = parseValueFromExpression(expEntry.getKey(), Object_type, scope);
                         Value value = parseValueFromExpression(expEntry.getValue(), Object_type, scope);
+                        assert key != null;
+                        assert value != null;
+
                         if (key.type() instanceof PrimitiveTypeDef) {
                                 key = boxPrimitive(key, LineCol.SYNTHETIC);
                         }
@@ -4159,6 +4197,7 @@ public class SemanticProcessor {
                         // init values
                         for (Expression exp : arrayExp.list) {
                                 Value v = parseValueFromExpression(exp, Object_type, scope);
+                                assert v != null;
                                 if (v.type() instanceof PrimitiveTypeDef) {
                                         v = boxPrimitive(v, LineCol.SYNTHETIC);
                                 }
@@ -4271,6 +4310,7 @@ public class SemanticProcessor {
         private SMethodDef getMath_pow() throws SyntaxException {
                 if (Math_pow == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("java.lang.Math", LineCol.SYNTHETIC);
+                        assert cls != null;
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("pow") && m.getParameters().size() == 2
                                         && m.getParameters().get(0).type().equals(DoubleTypeDef.get())
@@ -4297,6 +4337,7 @@ public class SemanticProcessor {
         private SConstructorDef getRangeListCons() throws SyntaxException {
                 if (RangeListCons == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.RangeList", LineCol.SYNTHETIC);
+                        assert cls != null;
                         RangeListCons = cls.constructors().get(0);
                 }
                 return RangeListCons;
@@ -4429,6 +4470,7 @@ public class SemanticProcessor {
         private SMethodDef getLang_compare() throws SyntaxException {
                 if (Lang_compare == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert cls != null;
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("compare")
                                         && m.getParameters().size() == 2
@@ -4455,6 +4497,7 @@ public class SemanticProcessor {
         private SMethodDef getComparable_compareTo() throws SyntaxException {
                 if (null == Comparable_compareTo) {
                         SInterfaceDef comparable = (SInterfaceDef) getTypeWithName("java.lang.Comparable", LineCol.SYNTHETIC);
+                        assert comparable != null;
                         for (SMethodDef m : comparable.methods()) {
                                 if (m.name().equals("compareTo")
                                         && m.getParameters().size() == 1) {
@@ -4510,6 +4553,7 @@ public class SemanticProcessor {
                         }
                 } else {
                         STypeDef comparable = getTypeWithName("java.lang.Comparable", lineCol);
+                        assert comparable != null;
                         if (comparable.isAssignableFrom(left.type())) { // Comparable
                                 // left.compareTo(right)
                                 SMethodDef m = getComparable_compareTo();
@@ -4542,6 +4586,7 @@ public class SemanticProcessor {
         private SMethodDef getLang_compareRef() throws SyntaxException {
                 if (Lang_compareRef == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert cls != null;
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("compareRef")
                                         && m.getParameters().size() == 2
@@ -4593,9 +4638,10 @@ public class SemanticProcessor {
                                 arg.add(right);
                                 return invokeMethodWithArgs(lineCol, left.type(), left, "concat", arg, scope);
                         case "^^":
+                                STypeDef Number_Class = getTypeWithName("java.lang.Number", LineCol.SYNTHETIC);
+                                assert Number_Class != null;
                                 if (left.type() instanceof PrimitiveTypeDef ||
-                                        getTypeWithName("java.lang.Number", LineCol.SYNTHETIC)
-                                                .isAssignableFrom(left.type())) {
+                                        Number_Class.isAssignableFrom(left.type())) {
                                         // primitive or Number
                                         Value doubleLeft = cast(DoubleTypeDef.get(), left, lineCol);
                                         Value doubleRight = cast(DoubleTypeDef.get(), right, lineCol);
@@ -4782,6 +4828,7 @@ public class SemanticProcessor {
         private SMethodDef getLang_is() throws SyntaxException {
                 if (Lang_is == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert cls != null;
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("is")
                                         && m.getParameters().size() == 3
@@ -4806,6 +4853,7 @@ public class SemanticProcessor {
         private SMethodDef getLang_not() throws SyntaxException {
                 if (Lang_not == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert cls != null;
                         for (SMethodDef m : cls.methods()) {
                                 if (m.name().equals("not")
                                         && m.getParameters().size() == 3
@@ -5182,6 +5230,8 @@ public class SemanticProcessor {
                                 } else if (access1.exp instanceof AST.Access && access1.name.equals("this")) {
                                         // SuperClass.this.fieldName
                                         STypeDef type = getTypeWithAccess((AST.Access) access1.exp, imports);
+                                        assert type != null;
+
                                         if (!type.isAssignableFrom(scope.type())) {
                                                 err.SyntaxException("`SuperClass` in SuperClass.this should be super class of this class", access1.line_col());
                                                 return null;
@@ -5300,6 +5350,8 @@ public class SemanticProcessor {
         private SMethodDef getLang_getField() throws SyntaxException {
                 if (Lang_getField == null) {
                         SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert Lang != null;
+
                         for (SMethodDef m : Lang.methods()) {
                                 if (m.name().equals("getField")) {
                                         Lang_getField = m;
@@ -5606,6 +5658,8 @@ public class SemanticProcessor {
          */
         private Value castObjToObj(STypeDef type, Value v, LineCol lineCol) throws SyntaxException {
                 SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", lineCol);
+                assert Lang != null;
+
                 SMethodDef method = null;
                 for (SMethodDef m : Lang.methods()) {
                         if (m.name().equals("cast")) {
@@ -5635,6 +5689,8 @@ public class SemanticProcessor {
          */
         private Value castObjToPrimitive(PrimitiveTypeDef type, Value v, LineCol lineCol) throws SyntaxException {
                 SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                assert Lang != null;
+
                 SMethodDef method = null;
                 if (type instanceof IntTypeDef) {
                         for (SMethodDef m : Lang.methods()) {
@@ -6101,6 +6157,7 @@ public class SemanticProcessor {
                                                 doInvokeSpecial = true;
 
                                                 STypeDef type = getTypeWithAccess((AST.Access) access1.exp, imports);
+                                                assert type != null;
                                                 // type should be assignable from scope.type()
                                                 if (!type.isAssignableFrom(scope.type())) {
                                                         err.SyntaxException("invokespecial type should be assignable from current class", access1.line_col());
@@ -6530,6 +6587,8 @@ public class SemanticProcessor {
         private SMethodDef getInvokeDynamicBootstrapMethod() throws SyntaxException {
                 if (invokeDynamicBootstrapMethod == null) {
                         SClassDef indyType = (SClassDef) getTypeWithName("lt.lang.Dynamic", LineCol.SYNTHETIC);
+                        assert indyType != null;
+
                         SMethodDef indyMethod = null;
                         for (SMethodDef m : indyType.methods()) {
                                 if (m.name().equals("bootstrap") && m.getParameters().size() == 3) {
@@ -6564,6 +6623,8 @@ public class SemanticProcessor {
                 assert primitive.type() instanceof PrimitiveTypeDef;
                 if (primitive.type() instanceof ByteTypeDef) {
                         SClassDef aByte = (SClassDef) getTypeWithName("java.lang.Byte", lineCol);
+                        assert aByte != null;
+
                         SMethodDef valueOf = null;
                         for (SMethodDef m : aByte.methods()) {
                                 if (m.name().equals("valueOf") && m.getParameters().size() == 1 && m.getParameters().get(0).type().equals(ByteTypeDef.get())) {
@@ -6576,6 +6637,8 @@ public class SemanticProcessor {
                         return invokeStatic;
                 } else if (primitive.type() instanceof BoolTypeDef) {
                         SClassDef aBoolean = (SClassDef) getTypeWithName("java.lang.Boolean", lineCol);
+                        assert aBoolean != null;
+
                         SMethodDef valueOf = null;
                         for (SMethodDef m : aBoolean.methods()) {
                                 if (m.name().equals("valueOf") && m.getParameters().size() == 1 && m.getParameters().get(0).type().equals(BoolTypeDef.get())) {
@@ -6588,6 +6651,8 @@ public class SemanticProcessor {
                         return invokeStatic;
                 } else if (primitive.type() instanceof CharTypeDef) {
                         SClassDef integer = (SClassDef) getTypeWithName("java.lang.Character", lineCol);
+                        assert integer != null;
+
                         SMethodDef valueOf = null;
                         for (SMethodDef m : integer.methods()) {
                                 if (m.name().equals("valueOf") && m.getParameters().size() == 1 && m.getParameters().get(0).type().equals(CharTypeDef.get())) {
@@ -6600,6 +6665,8 @@ public class SemanticProcessor {
                         return invokeStatic;
                 } else if (primitive.type() instanceof DoubleTypeDef) {
                         SClassDef aDouble = (SClassDef) getTypeWithName("java.lang.Double", lineCol);
+                        assert aDouble != null;
+
                         SMethodDef valueOf = null;
                         for (SMethodDef m : aDouble.methods()) {
                                 if (m.name().equals("valueOf") && m.getParameters().size() == 1 && m.getParameters().get(0).type().equals(DoubleTypeDef.get())) {
@@ -6612,6 +6679,8 @@ public class SemanticProcessor {
                         return invokeStatic;
                 } else if (primitive.type() instanceof FloatTypeDef) {
                         SClassDef aFloat = (SClassDef) getTypeWithName("java.lang.Float", lineCol);
+                        assert aFloat != null;
+
                         SMethodDef valueOf = null;
                         for (SMethodDef m : aFloat.methods()) {
                                 if (m.name().equals("valueOf") && m.getParameters().size() == 1 && m.getParameters().get(0).type().equals(FloatTypeDef.get())) {
@@ -6624,6 +6693,8 @@ public class SemanticProcessor {
                         return invokeStatic;
                 } else if (primitive.type() instanceof IntTypeDef) {
                         SClassDef integer = (SClassDef) getTypeWithName("java.lang.Integer", lineCol);
+                        assert integer != null;
+
                         SMethodDef valueOf = null;
                         for (SMethodDef m : integer.methods()) {
                                 if (m.name().equals("valueOf") && m.getParameters().size() == 1 && m.getParameters().get(0).type().equals(IntTypeDef.get())) {
@@ -6636,6 +6707,8 @@ public class SemanticProcessor {
                         return invokeStatic;
                 } else if (primitive.type() instanceof LongTypeDef) {
                         SClassDef aLong = (SClassDef) getTypeWithName("java.lang.Long", lineCol);
+                        assert aLong != null;
+
                         SMethodDef valueOf = null;
                         for (SMethodDef m : aLong.methods()) {
                                 if (m.name().equals("valueOf") && m.getParameters().size() == 1 && m.getParameters().get(0).type().equals(LongTypeDef.get())) {
@@ -6648,6 +6721,8 @@ public class SemanticProcessor {
                         return invokeStatic;
                 } else if (primitive.type() instanceof ShortTypeDef) {
                         SClassDef aShort = (SClassDef) getTypeWithName("java.lang.Short", lineCol);
+                        assert aShort != null;
+
                         SMethodDef valueOf = null;
                         for (SMethodDef m : aShort.methods()) {
                                 if (m.name().equals("valueOf") && m.getParameters().size() == 1 && m.getParameters().get(0).type().equals(ShortTypeDef.get())) {
@@ -7013,6 +7088,8 @@ public class SemanticProcessor {
                                 List<ElementType> checkTheseWhenFail) throws SyntaxException {
                 for (AST.Anno anno : annos) {
                         SAnnoDef annoType = (SAnnoDef) getTypeWithAccess(anno.anno, imports);
+                        assert annoType != null;
+
                         if (annoType.canPresentOn(type)) {
                                 SAnno s = new SAnno();
                                 s.setAnnoDef(annoType);
@@ -7206,9 +7283,10 @@ public class SemanticProcessor {
                 // add into class/interface
                 if (mode == PARSING_CLASS) {
                         ((SClassDef) type).fields().add(fieldDef);
-                } else if (mode == PARSING_INTERFACE) {
+                } else {
+                        // mode == PARSING_INTERFACE;
                         ((SInterfaceDef) type).fields().add(fieldDef);
-                } // no else
+                }
         }
 
         /**
@@ -7358,9 +7436,10 @@ public class SemanticProcessor {
                 // add into class/interface
                 if (mode == PARSING_CLASS) {
                         ((SClassDef) type).methods().add(methodDef);
-                } else if (mode == PARSING_INTERFACE) {
+                } else {
+                        // mode == PARSING_INTERFACE;
                         ((SInterfaceDef) type).methods().add(methodDef);
-                } // no else
+                }
         }
 
         /**
@@ -7381,7 +7460,7 @@ public class SemanticProcessor {
                         interfaceDefs.add((InterfaceDef) stmt);
                 } else {
                         err.UnexpectedTokenException("class/interface definition or import", stmt.toString(), stmt.line_col());
-                        return;
+                        // code won't reach here
                 }
         }
 
@@ -7474,7 +7553,9 @@ public class SemanticProcessor {
 
                                                         c.constructors().add(constructorDef);
                                                 }
-                                        } else if (typeDef instanceof SAnnoDef) {
+                                        } else {
+                                                // typeDef instanceof SAnnoDef;
+
                                                 SAnnoDef annoDef = (SAnnoDef) typeDef;
                                                 // parse anno fields
                                                 for (Method annoM : cls.getDeclaredMethods()) {
@@ -7827,7 +7908,7 @@ public class SemanticProcessor {
         private void putNameAndTypeDef(STypeDef type, LineCol lineCol) throws SyntaxException {
                 if (types.containsKey(type.fullName())) {
                         err.SyntaxException("duplicate type names " + type.fullName(), lineCol);
-                        return;
+                        // code won't reach here
                 } else {
                         types.put(type.fullName(), type);
                 }
