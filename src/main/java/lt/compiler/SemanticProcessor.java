@@ -622,55 +622,71 @@ public class SemanticProcessor {
 
                         // check whether overrides all methods from super
                         if (sTypeDef instanceof SClassDef) {
-                                // first mark all methods with possible override and overridden
                                 SClassDef c = (SClassDef) sTypeDef;
                                 if (c.modifiers().contains(SModifier.ABSTRACT)) continue;
 
-                                // parent class
+                                // check all abstract methods
+                                // record them
+                                List<SMethodDef> abstractMethods = new ArrayList<>();
+                                List<SMethodDef> visitedMethods = new ArrayList<>();
+                                Set<SInterfaceDef> visitedType = new HashSet<>();
+                                // record parent abstract methods
                                 SClassDef parent = c.parent();
-                                while (parent != null && parent.modifiers().contains(SModifier.ABSTRACT)) {
-                                        // is abstract
-                                        if (parent.parent() != null && parent.parent().modifiers().contains(SModifier.ABSTRACT)) {
-                                                checkOverride(parent);
-                                        }
-                                        parent = parent.parent();
-                                }
-
-                                // super interfaces
-                                Queue<SInterfaceDef> q = new ArrayDeque<>();
-                                q.addAll(c.superInterfaces());
-                                while (!q.isEmpty()) {
-                                        SInterfaceDef i = q.remove();
-                                        checkOverride(i);
-                                        q.addAll(i.superInterfaces());
-                                }
-
-                                // then check all abstract methods
-                                parent = c.parent();
                                 while (parent != null && parent.modifiers().contains(SModifier.ABSTRACT)) {
                                         for (SMethodDef m : parent.methods()) {
                                                 if (m.modifiers().contains(SModifier.ABSTRACT)) {
-                                                        if (m.overridden().isEmpty()) {
-                                                                err.SyntaxException(m + " is not overridden in " + c, c.line_col());
-                                                                return null;
+                                                        if (null == findMethodWithSameSignature(m, visitedMethods, true)) {
+                                                                abstractMethods.add(m);
+                                                        }
+                                                }
+                                                visitedMethods.add(m);
+                                        }
+                                        for (SInterfaceDef i : parent.superInterfaces()) {
+                                                if (visitedType.add(i)) {
+                                                        for (SMethodDef m : i.methods()) {
+                                                                if (m.modifiers().contains(SModifier.ABSTRACT)) {
+                                                                        if (null == findMethodWithSameSignature(m, visitedMethods, true)) {
+                                                                                abstractMethods.add(m);
+                                                                        }
+                                                                }
+                                                                visitedMethods.add(m);
                                                         }
                                                 }
                                         }
                                         parent = parent.parent();
                                 }
+
+                                Queue<SInterfaceDef> q = new ArrayDeque<>();
                                 q.clear();
                                 q.addAll(c.superInterfaces());
                                 while (!q.isEmpty()) {
                                         SInterfaceDef i = q.remove();
-                                        for (SMethodDef m : i.methods()) {
-                                                if (m.modifiers().contains(SModifier.ABSTRACT)) {
-                                                        if (m.overridden().isEmpty()) {
-                                                                err.SyntaxException(m + " is not overridden in " + c, c.line_col());
-                                                                return null;
+                                        if (visitedType.add(i)) {
+                                                for (SMethodDef m : i.methods()) {
+                                                        if (m.modifiers().contains(SModifier.ABSTRACT)) {
+                                                                if (null == findMethodWithSameSignature(m, visitedMethods, true)) {
+                                                                        abstractMethods.add(m);
+                                                                }
                                                         }
+                                                        visitedMethods.add(m);
+                                                }
+                                                q.addAll(i.superInterfaces());
+                                        }
+                                }
+
+                                // do check
+                                for (SMethodDef m : abstractMethods) {
+                                        boolean found = false;
+                                        for (SMethodDef overridden : m.overridden()) {
+                                                if (overridden.declaringType().equals(c)) {
+                                                        found = true;
+                                                        break;
                                                 }
                                         }
-                                        q.addAll(i.superInterfaces());
+                                        if (!found) {
+                                                err.SyntaxException(m + " is not overridden in " + c, c.line_col());
+                                                return null;
+                                        }
                                 }
                         }
                 }
@@ -6884,7 +6900,8 @@ public class SemanticProcessor {
         }
 
         /**
-         * check whether the overridden method is modified with final
+         * check whether the overridden method is modified with final.
+         * if not, the overridden/override list would be added with corresponding value
          *
          * @param method           method in current type
          * @param overriddenMethod method in super class/interface
@@ -6903,66 +6920,77 @@ public class SemanticProcessor {
         private Set<STypeDef> typesAlreadyDoneOverrideCheck = new HashSet<>();
 
         /**
+         * check whether the method overrides method in the class (and its parent classes and interfaces)
+         *
+         * @param method       method
+         * @param sClassDef    class
+         * @param visitedTypes types already visited
+         * @throws SyntaxException exception
+         */
+        private void checkOverride_class(SMethodDef method,
+                                         SClassDef sClassDef,
+                                         Set<STypeDef> visitedTypes) throws SyntaxException {
+                if (visitedTypes.contains(sClassDef)) return;
+                visitedTypes.add(sClassDef);
+
+                SMethodDef methodInSuper = findMethodWithSameSignature(method, sClassDef.methods(), false);
+                if (methodInSuper == null) {
+                        // check super class
+                        if (sClassDef.parent() != null) {
+                                checkOverride_class(method, sClassDef.parent(), visitedTypes);
+                        }
+                        // check super interfaces
+                        for (SInterfaceDef i : sClassDef.superInterfaces()) {
+                                checkOverride_interface(method, i, visitedTypes);
+                        }
+                } else {
+                        checkFinalAndOverride(method, methodInSuper);
+                }
+        }
+
+        /**
+         * check whether the method overrides method in the interface (and its super interfaces)
+         *
+         * @param method        method
+         * @param sInterfaceDef interface
+         * @param visitedTypes  types already visited
+         * @throws SyntaxException exception
+         */
+        private void checkOverride_interface(SMethodDef method,
+                                             SInterfaceDef sInterfaceDef,
+                                             Set<STypeDef> visitedTypes) throws SyntaxException {
+                if (visitedTypes.contains(sInterfaceDef)) return;
+                visitedTypes.add(sInterfaceDef);
+
+                SMethodDef methodInSuper = findMethodWithSameSignature(method, sInterfaceDef.methods(), false);
+                if (methodInSuper == null) {
+                        // check super interfaces
+                        for (SInterfaceDef i : sInterfaceDef.superInterfaces()) {
+                                checkOverride_interface(method, i, visitedTypes);
+                        }
+                } else {
+                        checkFinalAndOverride(method, methodInSuper);
+                }
+        }
+
+        /**
          * check whether the class already overrides all abstract methods in super class/interfaces
          *
          * @param sTypeDef type to be checked
          * @throws SyntaxException exception
          */
         private void checkOverride(STypeDef sTypeDef) throws SyntaxException {
-                if (typesAlreadyDoneOverrideCheck.contains(sTypeDef)) return;
-                typesAlreadyDoneOverrideCheck.add(sTypeDef);
-                // queue for BFS
-                Queue<SInterfaceDef> q = new ArrayDeque<>();
-                // check method override
                 if (sTypeDef instanceof SClassDef) {
-                        SClassDef c = ((SClassDef) sTypeDef);
-                        for (SMethodDef method : c.methods()) {
-                                SClassDef parent = c.parent();
-                                SMethodDef overriddenMethod = null;
-                                // try to find method from parent class
-                                while (parent != null) {
-                                        overriddenMethod = findMethodWithSameSignature(method, parent.methods(), false);
-                                        if (overriddenMethod == null) {
-                                                // check parent interfaces
-                                                q.clear();
-                                                q.addAll(parent.superInterfaces());
-                                                while (!q.isEmpty()) {
-                                                        SInterfaceDef i = q.remove();
-                                                        overriddenMethod = findMethodWithSameSignature(method, i.methods(), false);
-                                                        if (overriddenMethod != null) break;
-                                                        q.addAll(i.superInterfaces());
-                                                }
-                                        } else break;
-                                        parent = parent.parent();
-                                }
-                                if (overriddenMethod == null) {
-                                        Queue<SInterfaceDef> interfaceDefs = new ArrayDeque<>();
-                                        interfaceDefs.addAll(c.superInterfaces());
-                                        while (!interfaceDefs.isEmpty()) {
-                                                SInterfaceDef i = interfaceDefs.remove();
-                                                overriddenMethod = findMethodWithSameSignature(method, i.methods(), false);
-                                                if (overriddenMethod != null) {
-                                                        checkFinalAndOverride(method, overriddenMethod);
-                                                }
-                                                interfaceDefs.addAll(i.superInterfaces());
-                                        }
-                                } else {
-                                        checkFinalAndOverride(method, overriddenMethod);
+                        for (SMethodDef m : ((SClassDef) sTypeDef).methods()) {
+                                checkOverride_class(m, ((SClassDef) sTypeDef).parent(), new HashSet<>());
+                                for (SInterfaceDef i : ((SClassDef) sTypeDef).superInterfaces()) {
+                                        checkOverride_interface(m, i, new HashSet<>());
                                 }
                         }
                 } else if (sTypeDef instanceof SInterfaceDef) {
-                        SInterfaceDef i = ((SInterfaceDef) sTypeDef);
-
-                        for (SMethodDef method : i.methods()) {
-                                q.clear();
-                                q.addAll(i.superInterfaces());
-                                while (!q.isEmpty()) {
-                                        SInterfaceDef in = q.remove();
-                                        SMethodDef m = findMethodWithSameSignature(method, in.methods(), false);
-                                        if (m != null) {
-                                                checkFinalAndOverride(method, m);
-                                        }
-                                        q.addAll(in.superInterfaces());
+                        for (SMethodDef m : ((SInterfaceDef) sTypeDef).methods()) {
+                                for (SInterfaceDef i : ((SInterfaceDef) sTypeDef).superInterfaces()) {
+                                        checkOverride_interface(m, i, new HashSet<>());
                                 }
                         }
                 } else {
