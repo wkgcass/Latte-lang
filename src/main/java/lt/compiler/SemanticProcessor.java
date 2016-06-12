@@ -3077,17 +3077,11 @@ public class SemanticProcessor {
                         scope.getThis() == null ? FIND_MODE_STATIC : FIND_MODE_ANY,
                         false);
 
+                boolean isLocalVar = false;
                 if (field == null) {
                         // field is null, define local variable
                         if (scope.getLeftValue(variableDef.getName()) == null) {
-                                boolean canChange = true;
-                                for (Modifier m : variableDef.getModifiers()) {
-                                        if (m.modifier.equals(Modifier.Available.VAL)) {
-                                                canChange = false;
-                                        }
-                                }
-                                LocalVariable localVariable = new LocalVariable(type, canChange);
-                                scope.putLeftValue(variableDef.getName(), localVariable);
+                                isLocalVar = true;
                         } else {
                                 err.SyntaxException(variableDef.getName() + " is already defined", variableDef.line_col());
                                 return null;
@@ -3101,6 +3095,17 @@ public class SemanticProcessor {
                                 variableDef.getInit(),
                                 type,
                                 scope);
+
+                        if (isLocalVar) {
+                                boolean canChange = true;
+                                for (Modifier m : variableDef.getModifiers()) {
+                                        if (m.modifier.equals(Modifier.Available.VAL)) {
+                                                canChange = false;
+                                        }
+                                }
+                                LocalVariable localVariable = new LocalVariable(type, canChange);
+                                scope.putLeftValue(variableDef.getName(), localVariable);
+                        }
 
                         ValuePack pack = new ValuePack(true);
                         if (null != field) {
@@ -3670,9 +3675,11 @@ public class SemanticProcessor {
 
                 List<Value> args = new ArrayList<>();
                 assert method != null;
-                args.addAll(scope.getLeftValues(method.getParameters().size() - lambda.params.size())
-                        .stream()
-                        .map(l -> new Ins.TLoad(l, scope, LineCol.SYNTHETIC)).collect(Collectors.toList()));
+                args.addAll(
+                        scope.getLeftValues(method.getParameters().size() - lambda.params.size())
+                                .stream()
+                                .map(l -> new Ins.TLoad(l, scope, LineCol.SYNTHETIC)).collect(Collectors.toList())
+                );
 
                 // interface and current method is static
                 if (requiredType instanceof SInterfaceDef && scope.getThis() == null) {

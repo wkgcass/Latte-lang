@@ -890,6 +890,81 @@ public class TestDemo {
                 assertEquals(true, TestRational.getMethod("testEquals", Rational, Rational).invoke(null, r_1_2, con.newInstance(1, 2)));
         }
 
+
+        @Test
+        public void testList_Map() throws Exception {
+                InputStream is = TestDemo.class.getResourceAsStream("/lang-demo/list-map.lts");
+                StringBuilder sb = new StringBuilder();
+                sb.append("import lt::util::_\nclass list_map\n");
+                BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                String line;
+                while ((line = br.readLine()) != null) {
+                        sb.append("    ").append(line).append("\n");
+                }
+
+                Map<String, byte[]> map = generate(new BufferedReader(new StringReader(sb.toString())), "list-map.lts");
+
+                ClassLoader classLoader = new ClassLoader() {
+                        @Override
+                        protected Class<?> findClass(String name)
+                                throws ClassNotFoundException {
+                                byte[] bs = map.get(name);
+                                return defineClass(name, bs, 0, bs.length);
+                        }
+                };
+
+                Class<?> cls = classLoader.loadClass("list_map");
+                Object o = cls.newInstance();
+                // ls
+                Field ls = cls.getDeclaredField("ls");
+                ls.setAccessible(true);
+                assertEquals(Arrays.asList("z", "y", "x"), ls.get(o));
+                // list
+                Field list = cls.getDeclaredField("list");
+                list.setAccessible(true);
+                assertEquals(Arrays.asList("u", "v", "w", "b", "a"), list.get(o));
+                // concatRes
+                Field concatRes = cls.getDeclaredField("concatRes");
+                concatRes.setAccessible(true);
+                assertEquals(Arrays.asList("a", "b", "z", "y", "x"), concatRes.get(o));
+                // str
+                Field str = cls.getDeclaredField("str");
+                str.setAccessible(true);
+                assertEquals("a,b,w,v,u", str.get(o));
+                // str2
+                Field str2 = cls.getDeclaredField("str2");
+                str2.setAccessible(true);
+                assertEquals("u,v,w,b,a", str2.get(o));
+                // list2
+                Field list2 = cls.getDeclaredField("list2");
+                list2.setAccessible(true);
+                assertEquals(Arrays.asList("r", "s", "t", "v", "w", "b", "a"), list2.get(o));
+                // shiftResult
+                Field shiftResult = cls.getDeclaredField("shiftResult");
+                shiftResult.setAccessible(true);
+                assertEquals("u", shiftResult.get(o));
+                // sliceResult1
+                Field sliceResult1 = cls.getDeclaredField("sliceResult1");
+                sliceResult1.setAccessible(true);
+                assertEquals(Arrays.asList("w", "b"), sliceResult1.get(o));
+                // sliceResult2
+                Field sliceResult2 = cls.getDeclaredField("sliceResult2");
+                sliceResult2.setAccessible(true);
+                assertEquals(Arrays.asList("w", "b", "a"), sliceResult2.get(o));
+                // lengthResult
+                Field lengthResult = cls.getDeclaredField("lengthResult");
+                lengthResult.setAccessible(true);
+                assertEquals(7, lengthResult.get(o));
+                // list3
+                Field list3 = cls.getDeclaredField("list3");
+                list3.setAccessible(true);
+                assertEquals(Arrays.asList("a", "d", "c"), list3.get(o));
+                // indexRes
+                Field indexRes = cls.getDeclaredField("indexRes");
+                indexRes.setAccessible(true);
+                assertEquals("b", indexRes.get(o));
+        }
+
         @Test
         public void testScriptPass_Literals() throws Exception {
                 ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
@@ -900,5 +975,11 @@ public class TestDemo {
         public void testScriptPass_Statements() throws Exception {
                 ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 sc.compile("statements.lts", new InputStreamReader(TestDemo.class.getResourceAsStream("/lang-demo/statements.lts"))).run();
+        }
+
+        @Test
+        public void testScriptPass_List_map() throws Exception {
+                ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                sc.compile("list-map.lts", new InputStreamReader(TestDemo.class.getResourceAsStream("/lang-demo/list-map.lts"))).run();
         }
 }

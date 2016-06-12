@@ -16,8 +16,9 @@ public class SimpleTest {
                 ErrorManager err = new ErrorManager(true);
 
                 StringBuilder sb = new StringBuilder();
-                BufferedReader br = new BufferedReader(new InputStreamReader(SimpleTest.class.getResourceAsStream("/lang-demo/statements.lts")));
-                sb.append("class hehe\n");
+                BufferedReader br = new BufferedReader(new InputStreamReader(SimpleTest.class.getResourceAsStream("/lang-demo/list-map.lts")));
+                sb.append("import lt::util::_" +
+                        "\nclass hehe\n");
                 sb.append("    method(args:[]String)\n");
                 String base = "        ";
                 String s;

@@ -627,6 +627,8 @@ public class Scanner {
                                 args.currentCol += subCol;
                                 line = line.substring(subCol);
                                 args.multipleLineComment = false;
+                        } else {
+                                return;
                         }
                 }
 

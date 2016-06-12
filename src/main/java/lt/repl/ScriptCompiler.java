@@ -280,6 +280,7 @@ public class ScriptCompiler {
                 );
 
                 defsAndImports.add(classDef);
+                defsAndImports.add(new Import(new AST.PackageRef("lt::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("java::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));

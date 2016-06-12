@@ -25,8 +25,11 @@
 package lt.lang;
 
 import lt.lang.function.Function;
+import lt.lang.function.Function0;
 
 import java.lang.reflect.*;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * Defines Latte Runtime behavior.
@@ -102,6 +105,10 @@ public class LtRuntime {
          * or
          */
         public static final String or = "or";
+        /**
+         * the lambda function map. maps "required class" to "create the required object"
+         */
+        private static final Map<Class<?>, Function0> lambdaFunctionMap = new WeakHashMap<>();
 
         /**
          * Check whether the given type is {@link Integer} {@link Short}
@@ -155,7 +162,7 @@ public class LtRuntime {
 
                 if (o == null) {
                         if (targetType.isPrimitive()) {
-                                throw generateClassCastException(o, targetType);
+                                throw generateClassCastException(null, targetType);
                         } else {
                                 return null;
                         }
@@ -202,6 +209,10 @@ public class LtRuntime {
                                 return arr;
                         }
                 } else if (Dynamic.isFunctionalAbstractClass(targetType)) {
+                        if (lambdaFunctionMap.containsKey(targetType)) {
+                                return lambdaFunctionMap.get(targetType).apply();
+                        }
+
                         if (o instanceof Function) {
                                 Method method = Dynamic.findAbstractMethod(targetType);
                                 Method funcMethod = o.getClass().getDeclaredMethods()[0];
@@ -241,7 +252,9 @@ public class LtRuntime {
                                         @SuppressWarnings("unchecked")
                                         Class<?> cls = ((java.util.List<Class<?>>) Utils.eval(sb.toString())).get(0);
                                         Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
-                                        return con.newInstance(o);
+                                        Function0 func = () -> con.newInstance(o);
+                                        lambdaFunctionMap.put(targetType, func); // put into map
+                                        return func.apply();
                                 }
                         }
                 } else if (Dynamic.isFunctionalInterface(targetType)) {
