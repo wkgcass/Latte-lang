@@ -61,10 +61,14 @@ public class Dynamic {
 
         private static MethodHandle methodHandle;
 
+        private static MethodHandle constructorHandle;
+
         static {
                 try {
                         methodHandle = MethodHandles.lookup().findStatic(Dynamic.class, "invoke", MethodType.methodType(
                                 Object.class, Class.class, Object.class, Class.class, String.class, boolean[].class, Object[].class));
+                        constructorHandle = MethodHandles.lookup().findStatic(Dynamic.class, "construct", MethodType.methodType(
+                                Object.class, Class.class, Class.class, boolean[].class, Object[].class));
                 } catch (NoSuchMethodException | IllegalAccessException e) {
                         throw new RuntimeException(e);
                 }
@@ -77,11 +81,9 @@ public class Dynamic {
          * @param methodName method name
          * @param methodType methodType (class, object, arguments)
          * @return generated call site
-         * @throws NoSuchMethodException  exception
-         * @throws IllegalAccessException exception
          */
         @SuppressWarnings("unused")
-        public static CallSite bootstrap(MethodHandles.Lookup lookup, String methodName, MethodType methodType) throws NoSuchMethodException, IllegalAccessException {
+        public static CallSite bootstrap(MethodHandles.Lookup lookup, String methodName, MethodType methodType) {
                 boolean[] primitives = new boolean[methodType.parameterCount() - 2];
                 for (int i = 0; i < primitives.length; ++i) {
                         primitives[i] = methodType.parameterType(i + 2).isPrimitive();
@@ -94,8 +96,126 @@ public class Dynamic {
                 return mCallSite;
         }
 
-        private static void fillMethodCandidates(Class<?> c, Class<?> invoker, String method, Object[] args, List<Method> methodList, boolean onlyStatic) {
-                out:
+        /**
+         * the bootstrap method for constructing classes
+         *
+         * @param lookup     lookup
+         * @param methodName method name (this argument will be ignored)
+         * @param methodType methodType (class, arguments)
+         * @return generated call site
+         */
+        @SuppressWarnings("unused")
+        public static CallSite bootstrapConstructor(MethodHandles.Lookup lookup, String methodName, MethodType methodType) {
+                // method name will not be used. it can be any value.
+                // but usually it will be "_init_"
+
+                boolean[] primitives = new boolean[methodType.parameterCount()];
+                for (int i = 0; i < primitives.length; ++i) {
+                        primitives[i] = methodType.parameterType(i).isPrimitive();
+                }
+                MethodHandle mh = MethodHandles.insertArguments(constructorHandle, 0, methodType.returnType(), lookup.lookupClass(), primitives);
+                mh = mh.asCollector(Object[].class, methodType.parameterCount()).asType(methodType);
+
+                MutableCallSite mCallSite = new MutableCallSite(mh);
+                mCallSite.setTarget(mh);
+                return mCallSite;
+        }
+
+        /**
+         * check whether the parameters' declaring type can be candidate of invoking by these arguments.
+         *
+         * @param params parameters
+         * @param args   arguments
+         * @return true or false
+         */
+        private static boolean canBeCandidate(Class<?>[] params, Object[] args) {
+                for (int i = 0; i < args.length; ++i) {
+                        if (!params[i].isInstance(args[i]) &&
+                                (
+                                        // null can be assigned to any reference type
+                                        params[i].isPrimitive()
+                                                ||
+                                                args[i] != null
+                                )) {
+                                // is not instance
+                                // check primitive
+                                Class<?> cls = params[i];
+
+                                Object obj = args[i];
+                                if (null == obj) continue;
+
+                                if (cls.equals(int.class)) {
+                                        if (!(obj instanceof Integer)) return false;
+                                } else if (cls.equals(short.class)) {
+                                        if (!(obj instanceof Short)) return false;
+                                } else if (cls.equals(byte.class)) {
+                                        if (!(obj instanceof Byte)) return false;
+                                } else if (cls.equals(boolean.class)) {
+                                        if (!(obj instanceof Boolean)) return false;
+                                } else if (cls.equals(char.class)) {
+                                        if (!(obj instanceof Character)) return false;
+                                } else if (cls.equals(long.class)) {
+                                        if (!(obj instanceof Long)) return false;
+                                } else if (cls.equals(double.class)) {
+                                        if (!(obj instanceof Double)) return false;
+                                } else if (cls.equals(float.class)) {
+                                        if (!(obj instanceof Float)) return false;
+                                } else if (cls.isArray()) {
+                                        if (!(obj instanceof java.util.List)) return false;
+                                } else if (cls.isInterface() && isFunctionalInterface(cls)) {
+                                        if (!(obj instanceof Function)) return false;
+                                } else if (!cls.isAnnotation() && !cls.isAnonymousClass() && !cls.isArray() &&
+                                        !cls.isEnum() && !cls.isLocalClass() && !cls.isMemberClass()
+                                        && !cls.isPrimitive() && !cls.isSynthetic() &&
+                                        isFunctionalAbstractClass(cls)) {
+                                        if (!(obj instanceof Function)) return false;
+                                } else {
+                                        notFunctionalAbstractClass.put(cls, null);
+                                        notFunctionalInterfaces.put(cls, null);
+                                        return false;
+                                }
+                        }
+                }
+                return true;
+        }
+
+        /**
+         * retrieve package name of the class object.
+         * first try to get name from {@link Class#getPackage()}, if the result is null
+         * then extract the package name from the class name
+         *
+         * @param c class object
+         * @return package name
+         */
+        private static String getPackage(Class<?> c) {
+                if (c.getPackage() == null) {
+                        String clsName = c.getName();
+                        if (clsName.contains(".")) {
+                                return clsName.substring(clsName.lastIndexOf("."));
+                        } else {
+                                return "";
+                        }
+                } else {
+                        return c.getPackage().getName();
+                }
+        }
+
+        /**
+         * fill in method candidates
+         *
+         * @param c          class
+         * @param invoker    invoker
+         * @param method     method
+         * @param args       arguments
+         * @param methodList method list (fill into this list)
+         * @param onlyStatic only find static methods
+         */
+        private static void fillMethodCandidates(Class<?> c,
+                                                 Class<?> invoker,
+                                                 String method,
+                                                 Object[] args,
+                                                 List<Method> methodList,
+                                                 boolean onlyStatic) {
                 for (Method m : c.getDeclaredMethods()) {
                         if (!m.getName().equals(method)) continue;
                         if (m.getParameterCount() != args.length) continue;
@@ -106,10 +226,11 @@ public class Dynamic {
                                 if (!invoker.equals(c)) continue;
                         } else if (Modifier.isProtected(m.getModifiers())) {
                                 // protected
-                                if (!c.getPackage().equals(invoker.getPackage()) && !c.isAssignableFrom(invoker)) continue;
+                                if (!getPackage(c).equals(getPackage(invoker)) && !c.isAssignableFrom(invoker))
+                                        continue;
                         } else if (!Modifier.isPublic(m.getModifiers())) {
                                 // package access
-                                if (!c.getPackage().equals(invoker.getPackage())) continue;
+                                if (!getPackage(c).equals(getPackage(invoker))) continue;
                         }
 
                         if (onlyStatic) {
@@ -119,55 +240,9 @@ public class Dynamic {
                         // else public
                         // do nothing
 
-                        for (int i = 0; i < args.length; ++i) {
-                                if (!m.getParameterTypes()[i].isInstance(args[i]) &&
-                                        (
-                                                // null can be assigned to any reference type
-                                                m.getParameterTypes()[i].isPrimitive()
-                                                        ||
-                                                        args[i] != null
-                                        )) {
-                                        // is not instance
-                                        // check primitive
-                                        Class<?> cls = m.getParameterTypes()[i];
-
-                                        Object obj = args[i];
-                                        if (null == obj) continue;
-
-                                        if (cls.equals(int.class)) {
-                                                if (!(obj instanceof Integer)) continue out;
-                                        } else if (cls.equals(short.class)) {
-                                                if (!(obj instanceof Short)) continue out;
-                                        } else if (cls.equals(byte.class)) {
-                                                if (!(obj instanceof Byte)) continue out;
-                                        } else if (cls.equals(boolean.class)) {
-                                                if (!(obj instanceof Boolean)) continue out;
-                                        } else if (cls.equals(char.class)) {
-                                                if (!(obj instanceof Character)) continue out;
-                                        } else if (cls.equals(long.class)) {
-                                                if (!(obj instanceof Long)) continue out;
-                                        } else if (cls.equals(double.class)) {
-                                                if (!(obj instanceof Double)) continue out;
-                                        } else if (cls.equals(float.class)) {
-                                                if (!(obj instanceof Float)) continue out;
-                                        } else if (cls.isArray()) {
-                                                if (!(obj instanceof java.util.List)) continue out;
-                                        } else if (cls.isInterface() && isFunctionalInterface(cls)) {
-                                                if (!(obj instanceof Function)) continue out;
-                                        } else if (!cls.isAnnotation() && !cls.isAnonymousClass() && !cls.isArray() &&
-                                                !cls.isEnum() && !cls.isLocalClass() && !cls.isMemberClass()
-                                                && !cls.isPrimitive() && !cls.isSynthetic() &&
-                                                isFunctionalAbstractClass(cls)) {
-                                                if (!(obj instanceof Function)) continue out;
-                                        } else {
-                                                notFunctionalAbstractClass.put(cls, null);
-                                                notFunctionalInterfaces.put(cls, null);
-                                                continue out;
-                                        }
-                                }
+                        if (canBeCandidate(m.getParameterTypes(), args)) {
+                                methodList.add(m);
                         }
-
-                        methodList.add(m);
                 }
         }
 
@@ -201,6 +276,13 @@ public class Dynamic {
          */
         private static Map<Class<?>, Method> abstractMethod = new WeakHashMap<>();
 
+        /**
+         * check signature, whether they are the same.
+         *
+         * @param subM    the method in sub class
+         * @param parentM the method in super class
+         * @return true or false
+         */
         private static boolean signaturesAreTheSame(Method subM, Method parentM) {
                 String name = parentM.getName();
 
@@ -227,10 +309,13 @@ public class Dynamic {
                 return false;
         }
 
+        /**
+         * analyse the override relation of the methods in the class/interface
+         *
+         * @param c class object
+         */
         private static void analyseClassOverride(Class<?> c) {
                 if (classesDoneOverrideAnalysis.containsKey(c)) return;
-
-                classesDoneOverrideAnalysis.put(c, null);
 
                 if (!c.isInterface()) {
                         // classes should check super classes
@@ -261,8 +346,17 @@ public class Dynamic {
 
                         analyseClassOverride(i);
                 }
+
+                classesDoneOverrideAnalysis.put(c, null);
         }
 
+        /**
+         * check whether the method is overridden in the sub class
+         *
+         * @param parentM method in parent class
+         * @param sub     sub class
+         * @return true or false
+         */
         private static boolean isOverriddenInClass(Method parentM, Class<?> sub) {
                 Set<Method> methods = overriddenMethods.get(parentM);
                 if (methods == null) return false;
@@ -489,7 +583,13 @@ public class Dynamic {
                 throw new LtBug(required + " is not assignable from " + current);
         }
 
-
+        /**
+         * transform the argument into required types. the transformed object will replace elements in the argument array.
+         *
+         * @param args   arguments
+         * @param params required types
+         * @throws Exception exception
+         */
         private static void transToRequiredType(Object[] args, Class<?>[] params) throws Exception {
                 for (int i = 0; i < params.length; ++i) {
                         Class<?> c = params[i];
@@ -502,6 +602,166 @@ public class Dynamic {
                 }
         }
 
+        /**
+         * find best match.
+         *
+         * @param methodList method list (constructors or methods)
+         * @param args       arguments
+         * @param primitives whether the argument is a primitive
+         * @param <T>        {@link Constructor} or {@link Method}
+         * @return the found method
+         */
+        private static <T extends Executable> T findBestMatch(List<T> methodList, Object[] args, boolean[] primitives) {
+                // calculate every method's cast steps
+                Map<T, int[]> steps = new HashMap<>();
+                for (T m : methodList) {
+                        int[] step = new int[args.length];
+                        for (int i = 0; i < args.length; ++i) {
+                                Class<?> type = m.getParameterTypes()[i];
+                                if (primitives[i] && type.isPrimitive()) {
+                                        step[i] = 0;
+                                } else if (primitives[i]) {
+                                        // param is not primitive
+                                        step[i] = PRIMITIVE_BOX_CAST_BASE; // first cast to box type
+                                        step[i] += bfsSearch(args[i].getClass(), type);
+                                } else if (type.isPrimitive()) {
+                                        // arg is not primitive
+                                        step[i] = PRIMITIVE_BOX_CAST_BASE; // cast to primitive
+                                } else {
+                                        // both not primitive
+                                        // check null
+                                        if (args[i] == null) step[i] = 0;
+                                        else {
+                                                if (type.isAssignableFrom(args[i].getClass()))
+                                                        step[i] = bfsSearch(args[i].getClass(), type);
+                                                else {
+                                                        if (type.isArray()
+                                                                || isFunctionalAbstractClass(type)
+                                                                || isFunctionalInterface(type)) {
+                                                                step[i] = 1;
+                                                        } else throw new LtBug("unsupported type cast");
+                                                }
+                                        }
+                                }
+                        }
+                        steps.put(m, step);
+                }
+
+                // choose the best match
+                T methodToInvoke = null;
+                int[] step = null;
+                for (Map.Entry<T, int[]> entry : steps.entrySet()) {
+                        if (methodToInvoke == null) {
+                                methodToInvoke = entry.getKey();
+                                step = entry.getValue();
+                        } else {
+                                int[] newStep = entry.getValue();
+                                boolean isBetter = false;
+                                boolean isWorse = false;
+                                for (int i = 0; i < step.length; ++i) {
+                                        if (step[i] == newStep[i]) continue;
+                                        else if (step[i] > newStep[i]) isBetter = true;
+                                        else if (step[i] < newStep[i]) isWorse = true;
+
+                                        if (isBetter && isWorse)
+                                                throw new RuntimeException(
+                                                        "cannot decide which method to invoke:\n"
+                                                                + methodToInvoke + ":" + Arrays.toString(step) + "\n"
+                                                                + entry.getKey() + ":" + Arrays.toString(newStep));
+                                }
+
+                                if (isBetter) {
+                                        methodToInvoke = entry.getKey();
+                                        step = entry.getValue();
+                                }
+                        }
+                }
+
+                assert methodToInvoke != null;
+
+                return methodToInvoke;
+        }
+
+        /**
+         * construct an object.
+         *
+         * @param targetType the type to instantiate.
+         * @param invoker    from which class invokes the method
+         * @param primitives whether the argument is primitive
+         * @param args       arguments
+         * @return the constructed object
+         * @throws Throwable exceptions
+         */
+        public static Object construct(Class<?> targetType, Class<?> invoker, boolean[] primitives, Object[] args) throws Throwable {
+                if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
+
+                Constructor<?>[] constructors = targetType.getDeclaredConstructors();
+
+                // select candidates
+                List<Constructor<?>> candidates = new ArrayList<>();
+                for (Constructor<?> con : constructors) {
+                        if (Modifier.isPrivate(con.getModifiers())) {
+                                // private
+                                continue;
+                        } else if (Modifier.isProtected(con.getModifiers())) {
+                                // protected
+                                // targetType not assignable from invoker
+                                // and in different packages
+                                if (!targetType.isAssignableFrom(invoker) &&
+                                        !getPackage(targetType).equals(getPackage(invoker))) {
+                                        continue;
+                                }
+                        } else if (!Modifier.isPublic(con.getModifiers())) {
+                                // package access
+                                // in different packages
+                                if (!getPackage(targetType).equals(getPackage(invoker))) {
+                                        continue;
+                                }
+                        }
+
+                        if (con.getParameterCount() == args.length) {
+                                if (canBeCandidate(con.getParameterTypes(), args)) {
+                                        candidates.add(con);
+                                }
+                        }
+                }
+
+                if (candidates.isEmpty()) {
+                        StringBuilder sb = new StringBuilder().append(targetType.getName()).append("(");
+                        boolean isFirst = true;
+                        for (Object arg : args) {
+                                if (isFirst) isFirst = false;
+                                else sb.append(", ");
+                                sb.append(arg == null ? "null" : arg.getClass().getName());
+                        }
+                        sb.append(")");
+                        throw new RuntimeException("cannot find constructor " + sb.toString());
+                } else {
+                        Constructor<?> constructor = findBestMatch(candidates, args, primitives);
+                        transToRequiredType(args, constructor.getParameterTypes());
+
+                        constructor.setAccessible(true);
+
+                        try {
+                                return constructor.newInstance(args);
+                        } catch (InvocationTargetException e) {
+                                throw e.getTargetException();
+                        }
+                }
+        }
+
+        /**
+         * invoke a method.
+         *
+         * @param targetClass the method is in this class
+         * @param o           invoke the method on the object (or null if invoke static)
+         * @param invoker     from which class invokes the method
+         * @param method      method name
+         * @param primitives  whether the argument is primitive
+         * @param args        the arguments
+         * @return the method result (void methods' results are <tt>undefined</tt>)
+         * @throws Throwable exception
+         */
         public static Object invoke(Class<?> targetClass, Object o, Class<?> invoker, String method, boolean[] primitives, Object[] args) throws Throwable {
                 if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
                 List<Method> methodList = new ArrayList<>();
@@ -559,73 +819,9 @@ public class Dynamic {
                         throw new RuntimeException("cannot find method to invoke " + sb.toString());
                 }
 
-                // calculate every method's cast steps
-                Map<Method, int[]> steps = new HashMap<>();
-                for (Method m : methodList) {
-                        int[] step = new int[args.length];
-                        for (int i = 0; i < args.length; ++i) {
-                                Class<?> type = m.getParameterTypes()[i];
-                                if (primitives[i] && type.isPrimitive()) {
-                                        step[i] = 0;
-                                } else if (primitives[i]) {
-                                        // param is not primitive
-                                        step[i] = PRIMITIVE_BOX_CAST_BASE; // first cast to box type
-                                        step[i] += bfsSearch(args[i].getClass(), type);
-                                } else if (type.isPrimitive()) {
-                                        // arg is not primitive
-                                        step[i] = PRIMITIVE_BOX_CAST_BASE; // cast to primitive
-                                } else {
-                                        // both not primitive
-                                        // check null
-                                        if (args[i] == null) step[i] = 0;
-                                        else {
-                                                if (type.isAssignableFrom(args[i].getClass()))
-                                                        step[i] = bfsSearch(args[i].getClass(), type);
-                                                else {
-                                                        if (type.isArray()
-                                                                || isFunctionalAbstractClass(type)
-                                                                || isFunctionalInterface(type)) {
-                                                                step[i] = 1;
-                                                        } else throw new LtBug("unsupported type cast");
-                                                }
-                                        }
-                                }
-                        }
-                        steps.put(m, step);
-                }
-
-                // choose the best match
-                Method methodToInvoke = null;
-                int[] step = null;
-                for (Map.Entry<Method, int[]> entry : steps.entrySet()) {
-                        if (methodToInvoke == null) {
-                                methodToInvoke = entry.getKey();
-                                step = entry.getValue();
-                        } else {
-                                int[] newStep = entry.getValue();
-                                boolean isBetter = false;
-                                boolean isWorse = false;
-                                for (int i = 0; i < step.length; ++i) {
-                                        if (step[i] == newStep[i]) continue;
-                                        else if (step[i] > newStep[i]) isBetter = true;
-                                        else if (step[i] < newStep[i]) isWorse = true;
-
-                                        if (isBetter && isWorse)
-                                                throw new RuntimeException(
-                                                        "cannot decide which method to invoke:\n"
-                                                                + methodToInvoke + ":" + Arrays.toString(step) + "\n"
-                                                                + entry.getKey() + ":" + Arrays.toString(newStep));
-                                }
-
-                                if (isBetter) {
-                                        methodToInvoke = entry.getKey();
-                                        step = entry.getValue();
-                                }
-                        }
-                }
-
-                assert methodToInvoke != null;
-
+                // find best match
+                Method methodToInvoke = findBestMatch(methodList, args, primitives);
+                // trans to required type
                 transToRequiredType(args, methodToInvoke.getParameterTypes());
 
                 methodToInvoke.setAccessible(true);
@@ -639,6 +835,13 @@ public class Dynamic {
                 }
         }
 
+        /**
+         * primitive one variable operations.
+         *
+         * @param o  object
+         * @param op operator (not and negate)
+         * @return the result
+         */
         private static Object invokePrimitive(Object o, String op) {
                 switch (op) {
                         case "not":
@@ -706,6 +909,14 @@ public class Dynamic {
                 return 1;
         }
 
+        /**
+         * primitive two variable operations
+         *
+         * @param a  a
+         * @param op operator
+         * @param b  b
+         * @return the reusult
+         */
         private static Object invokePrimitive(Object a, String op, Object b) {
                 switch (op) {
                         case LtRuntime.add:
@@ -870,6 +1081,12 @@ public class Dynamic {
                 throw new RuntimeException("cannot invoke " + a + " " + op + " " + b);
         }
 
+        /**
+         * check whether the class is a box type
+         *
+         * @param cls class
+         * @return true or false
+         */
         private static boolean isBoxType(Class<?> cls) {
                 return cls.equals(Integer.class)
                         || cls.equals(Short.class)

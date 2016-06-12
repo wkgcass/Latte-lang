@@ -24,6 +24,8 @@
 
 package lt.util;
 
+import lt.lang.function.Function1;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -58,6 +60,16 @@ public class List extends LinkedList<Object> {
         }
 
         /**
+         * construct the list with a function
+         *
+         * @param initializer initializer (the argument is the list itself)
+         * @throws Exception exception
+         */
+        public List(Function1 initializer) throws Exception {
+                initializer.apply(this);
+        }
+
+        /**
          * concat one element and return a new List.
          * the current list will not be modified
          *
@@ -65,6 +77,8 @@ public class List extends LinkedList<Object> {
          * @return a new List containing elements in current list and the given element
          */
         public List concat(Object elem) {
+                if (elem instanceof Collection)
+                        return concat((Collection<?>) elem);
                 List newList = new List();
                 newList.addAll(this);
                 newList.add(elem);

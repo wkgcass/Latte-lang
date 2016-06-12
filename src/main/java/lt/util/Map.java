@@ -24,16 +24,36 @@
 
 package lt.util;
 
+import lt.lang.function.Function1;
+
 import java.util.LinkedHashMap;
 
 /**
  * map for <tt>Latte</tt>.
  */
 public class Map extends LinkedHashMap<Object, Object> {
+        /**
+         * construct an empty map
+         */
         public Map() {
         }
 
+        /**
+         * construct the map and fill with the existing map
+         *
+         * @param map map
+         */
         public Map(java.util.Map<?, ?> map) {
                 super(map);
+        }
+
+        /**
+         * construct and initialize the map
+         *
+         * @param initializer initializer
+         * @throws Exception exception
+         */
+        public Map(Function1 initializer) throws Exception {
+                initializer.apply(this);
         }
 }

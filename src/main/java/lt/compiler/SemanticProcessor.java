@@ -6351,6 +6351,11 @@ public class SemanticProcessor {
                                                 return aNew;
                                         }
                                 }
+                                // not found
+
+                                // add current class into arg list
+                                return new Ins.InvokeDynamic(getConstructBootstrapMethod(),
+                                        "_init_", argList, type, Dynamic.INVOKE_STATIC, invocation.line_col());
                         }
                 }
 
@@ -6625,6 +6630,35 @@ public class SemanticProcessor {
                         invokeDynamicBootstrapMethod = indyMethod;
                 }
                 return invokeDynamicBootstrapMethod;
+        }
+
+        private SMethodDef constructBootstrapMethod;
+
+        private SMethodDef getConstructBootstrapMethod() throws SyntaxException {
+                if (constructBootstrapMethod == null) {
+                        SClassDef indyType = (SClassDef) getTypeWithName("lt.lang.Dynamic", LineCol.SYNTHETIC);
+                        assert indyType != null;
+
+                        SMethodDef indyMethod = null;
+                        for (SMethodDef m : indyType.methods()) {
+                                if (m.name().equals("bootstrapConstructor") && m.getParameters().size() == 3) {
+                                        List<SParameter> parameters = m.getParameters();
+                                        if (parameters.get(0).type().fullName().equals("java.lang.invoke.MethodHandles$Lookup")
+                                                &&
+                                                parameters.get(1).type().fullName().equals("java.lang.String")
+                                                &&
+                                                parameters.get(2).type().fullName().equals("java.lang.invoke.MethodType")) {
+                                                // bootstrap method found
+                                                indyMethod = m;
+                                                break;
+                                        }
+                                }
+                        }
+                        if (indyMethod == null)
+                                throw new LtBug("bootstrap method should exist. lt.lang.Dynamic.bootstrapConstructor(java.lang.invoke.MethodHandles.Lookup, java.lang.String, java.lang.invoke.MethodType)");
+                        constructBootstrapMethod = indyMethod;
+                }
+                return constructBootstrapMethod;
         }
 
         /**
@@ -6916,8 +6950,6 @@ public class SemanticProcessor {
                 overriddenMethod.overridden().add(method);
                 method.overRide().add(overriddenMethod);
         }
-
-        private Set<STypeDef> typesAlreadyDoneOverrideCheck = new HashSet<>();
 
         /**
          * check whether the method overrides method in the class (and its parent classes and interfaces)

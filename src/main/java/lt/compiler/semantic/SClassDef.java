@@ -116,6 +116,12 @@ public class SClassDef extends STypeDef {
         @Override
         public boolean isAssignableFrom(STypeDef cls) {
                 if (super.isAssignableFrom(cls)) return true;
+
+                // java.lang.Object is assignable from all interface types
+                if (cls instanceof SInterfaceDef && this.fullName().equals("java.lang.Object")) {
+                        return true;
+                }
+
                 if (cls instanceof SClassDef) {
                         while (cls != null) {
                                 if (cls.equals(this)) return true;

@@ -1795,6 +1795,7 @@ public class TestCodeGen {
                         Arrays.asList(1, 2, 3),
                         method.invoke(null, new lt.util.List(Arrays.asList(1, 2)), Collections.singletonList(3))
                 );
+                assertEquals(Arrays.asList("a", "b", "c"), cls.getMethod("method2").invoke(null));
         }
 
         @Test
@@ -2128,5 +2129,21 @@ public class TestCodeGen {
                         , "TestIndexAccessAssign");
                 Method method = cls.getMethod("method", Object.class);
                 assertEquals(3, method.invoke(null, Arrays.asList(1, 2)));
+        }
+
+        @Test
+        public void testDynamicConstruct() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "import lt::util::List\n" +
+                                "class TestDynamicConstruct\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            a=[1]\n" +
+                                "            return List(a)"
+                        , "TestDynamicConstruct"
+                );
+                Method method = cls.getMethod("method");
+                assertEquals(Collections.singletonList(1), method.invoke(null));
         }
 }

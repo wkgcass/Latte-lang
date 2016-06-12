@@ -1,0 +1,50 @@
+; a demo about how collection works
+
+import lt::util::_
+
+; List
+; JSON Literal
+ls = ["z","y","x"]
+list = List()
+; add
+list.add("a")
+list + "b"         ; operator binding
+list.concat("c")
+list:::"d"         ; operator binding
+; addAll
+list.concat(ls)
+list.addAll(["w","v","u"])
+
+; build a string
+str = list.join(",")
+; the result is a,b,c,d,z,y,x,w,v,u
+
+; reverse() modifies and returns the list itself
+str2 = list.reverse().join(",")
+; the result is u,v,w,x,y,z,d,c,b,a
+
+list2 = List(list)
+shiftResult = list2.shift()
+; the result is u
+; and list2 will be [v,w,x,y,z,d,c,b,a]
+
+sliceResult1 = list2.slice(3,5)
+; the result is [y,z,d]
+
+sliceResult2 = list2.slice(3)
+; the result is [y,z,d,c,b,a]
+
+list2.unshift("t")
+; the list2 is [t,y,z,d,c,b,a]
+list2.unshift(["r","s"])
+; the list2 is [r,s,t,y,z,d,c,b,a]
+
+lengthResult = list2.length()
+; length is 9
+
+list3 = List(l->
+        l.add("a")
+        l.add("b")
+        l.add("c")
+)
+; list3 is [a,b,c]
