@@ -250,7 +250,7 @@ public class ScriptCompiler {
                         if (stmt instanceof ClassDef || stmt instanceof InterfaceDef || stmt instanceof Import) {
                                 defsAndImports.add(stmt);
                         } else if (stmt instanceof PackageDeclare) {
-                                throw new SyntaxException("scripts cannot have package declaration", stmt.line_col());
+                                err.SyntaxException("scripts cannot have package declaration", stmt.line_col());
                         } else {
                                 innerStatements.add(stmt);
                         }

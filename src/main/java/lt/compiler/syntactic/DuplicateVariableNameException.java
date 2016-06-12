@@ -31,7 +31,7 @@ import lt.compiler.SyntaxException;
  * duplicate variable name
  */
 public class DuplicateVariableNameException extends SyntaxException {
-        public DuplicateVariableNameException(String name, LineCol lineCol) {
-                super("duplicate name " + name, lineCol);
+        public DuplicateVariableNameException(String lineMsg, String name, LineCol lineCol) {
+                super(lineMsg, "duplicate name " + name, lineCol);
         }
 }

@@ -24,6 +24,7 @@
 
 package lt.compiler.semantic;
 
+import lt.compiler.ErrorManager;
 import lt.compiler.LineCol;
 import lt.compiler.SemanticScope;
 import lt.compiler.SyntaxException;
@@ -862,8 +863,9 @@ public class Ins {
                 private final Value obj;
                 private final LineCol lineCol;
 
-                public PutField(SFieldDef field, Value obj, Value value, LineCol lineCol) throws SyntaxException {
-                        if (field.alreadyAssigned() && !field.canChange()) throw new SyntaxException(field + " cannot be assigned", lineCol);
+                public PutField(SFieldDef field, Value obj, Value value, LineCol lineCol, ErrorManager err) throws SyntaxException {
+                        if (field.alreadyAssigned() && !field.canChange())
+                                err.SyntaxException(field + " cannot be assigned", lineCol);
 
                         this.field = field;
                         this.obj = obj;
@@ -899,8 +901,9 @@ public class Ins {
                 private final SFieldDef field;
                 private final LineCol lineCol;
 
-                public PutStatic(SFieldDef field, Value value, LineCol lineCol) throws SyntaxException {
-                        if (field.alreadyAssigned() && !field.canChange()) throw new SyntaxException(field + " cannot be assigned", lineCol);
+                public PutStatic(SFieldDef field, Value value, LineCol lineCol, ErrorManager err) throws SyntaxException {
+                        if (field.alreadyAssigned() && !field.canChange())
+                                err.SyntaxException(field + " cannot be assigned", lineCol);
 
                         this.field = field;
                         this.value = value;
@@ -1174,8 +1177,9 @@ public class Ins {
                 private final LineCol lineCol;
                 private final int index;
 
-                public TStore(LeftValue leftValue, Value newValue, SemanticScope scope, LineCol lineCol) throws SyntaxException {
-                        if (leftValue.alreadyAssigned() && !leftValue.canChange()) throw new SyntaxException(leftValue + " cannot be assigned", lineCol);
+                public TStore(LeftValue leftValue, Value newValue, SemanticScope scope, LineCol lineCol, ErrorManager err) throws SyntaxException {
+                        if (leftValue.alreadyAssigned() && !leftValue.canChange())
+                                err.SyntaxException(leftValue + " cannot be assigned", lineCol);
 
                         this.leftValue = leftValue;
                         this.lineCol = lineCol;

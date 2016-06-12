@@ -402,9 +402,9 @@ public class CompileUtil {
                 return -1;
         }
 
-        public static void expecting(String token, Node previous, Node got) throws UnexpectedTokenException, UnexpectedEndException {
+        public static void expecting(String token, Node previous, Node got, ErrorManager err) throws UnexpectedTokenException, UnexpectedEndException {
                 if (got == null) {
-                        throw new UnexpectedEndException(previous.getLineCol());
+                        err.UnexpectedEndException(previous.getLineCol());
                 } else if (!(got instanceof Element)) {
                         throw new UnexpectedTokenException(token, got.getClass().getSimpleName(), got.getLineCol());
                 } else if (!((Element) got).getContent().endsWith(token)) {

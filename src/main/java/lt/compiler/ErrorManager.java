@@ -213,9 +213,7 @@ public class ErrorManager {
          * @throws SyntaxException compiling error
          */
         public void SyntaxException(String msg, LineCol lineCol) throws SyntaxException {
-                msg = buildErrInfo(lineCol) + msg;
-
-                if (fastFail) throw new SyntaxException(msg, lineCol);
+                if (fastFail) throw new SyntaxException(buildErrInfo(lineCol), msg, lineCol);
                 error(msg + " at " + lineCol);
                 errorList.add(new CompilingError(msg, lineCol, CompilingError.Syntax));
         }
@@ -227,7 +225,7 @@ public class ErrorManager {
          * @throws UnexpectedEndException compiling error
          */
         public void UnexpectedEndException(LineCol lineCol) throws UnexpectedEndException {
-                if (fastFail) throw new UnexpectedEndException(lineCol);
+                if (fastFail) throw new UnexpectedEndException(buildErrInfo(lineCol), lineCol);
                 final String msg = "unexpected end";
                 error(msg + " at " + lineCol);
                 errorList.add(new CompilingError(msg, lineCol, CompilingError.UnexpectedEnd));
@@ -242,7 +240,7 @@ public class ErrorManager {
          * @throws UnexpectedTokenException compiling error
          */
         public void UnexpectedTokenException(String expected, String got, LineCol lineCol) throws UnexpectedTokenException {
-                if (fastFail) throw new UnexpectedTokenException(expected, got, lineCol);
+                if (fastFail) throw new UnexpectedTokenException(buildErrInfo(lineCol), expected, got, lineCol);
                 String msg = "expecting " + expected + ", but got " + got;
                 msg = buildErrInfo(lineCol) + msg;
 
@@ -259,7 +257,7 @@ public class ErrorManager {
          * @throws UnexpectedTokenException compiling error
          */
         public void UnexpectedTokenException(String token, LineCol lineCol) throws UnexpectedTokenException {
-                if (fastFail) throw new UnexpectedTokenException(token, lineCol);
+                if (fastFail) throw new UnexpectedTokenException(buildErrInfo(lineCol), token, lineCol);
                 String msg = "unexpected token " + token;
                 msg = buildErrInfo(lineCol) + msg;
 
@@ -275,7 +273,7 @@ public class ErrorManager {
          * @throws IllegalIndentationException compiling error
          */
         public void IllegalIndentationException(int expectedIndent, LineCol lineCol) throws IllegalIndentationException {
-                if (fastFail) throw new IllegalIndentationException(expectedIndent, lineCol);
+                if (fastFail) throw new IllegalIndentationException(buildErrInfo(lineCol), expectedIndent, lineCol);
                 String msg = "the indentation should be " + expectedIndent + " spaces";
                 msg = buildErrInfo(lineCol) + msg;
 
@@ -290,7 +288,7 @@ public class ErrorManager {
          * @throws UnexpectedNewLayerException compiling error
          */
         public void UnexpectedNewLayerException(LineCol lineCol) throws UnexpectedNewLayerException {
-                if (fastFail) throw new UnexpectedNewLayerException(lineCol);
+                if (fastFail) throw new UnexpectedNewLayerException(buildErrInfo(lineCol), lineCol);
                 String msg = "unexpected new layer";
                 msg = buildErrInfo(lineCol) + msg;
 
@@ -306,7 +304,7 @@ public class ErrorManager {
          * @throws UnknownTokenException compiling error
          */
         public void UnknownTokenException(String token, LineCol lineCol) throws UnknownTokenException {
-                if (fastFail) throw new UnknownTokenException(token, lineCol);
+                if (fastFail) throw new UnknownTokenException(buildErrInfo(lineCol), token, lineCol);
                 String msg = "unknown token " + token;
                 msg = buildErrInfo(lineCol) + msg;
 
@@ -315,7 +313,7 @@ public class ErrorManager {
         }
 
         public void DuplicateVariableNameException(String name, LineCol lineCol) throws DuplicateVariableNameException {
-                if (fastFail) throw new DuplicateVariableNameException(name, lineCol);
+                if (fastFail) throw new DuplicateVariableNameException(buildErrInfo(lineCol), name, lineCol);
                 String msg = "duplicate name " + name;
                 msg = buildErrInfo(lineCol) + msg;
 

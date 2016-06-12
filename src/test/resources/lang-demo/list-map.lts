@@ -1,9 +1,14 @@
 ; a demo about how collection works
 
-; List
+/*
+ * =================
+ *       List
+ * =================
+ */
 
 ; JSON Literal
-ls = ["z","y","x"]
+ls = ["z","y","x"] ; the list is [z,y,x]
+; empty list
 list = List()
 
 ; add
@@ -48,10 +53,11 @@ lengthResult = list2.length
 ; (length is not a field, it's a method with 0 parameters.)
 ; length is 7
 
-list3 = List((l)->
-        l.add("a")
-        l.add("b")
-        l.add("c")
+; init the list with a function
+list3 = List(($this)->
+        $this.add("a")
+        $this.add("b")
+        $this.add("c")
 )
 ; list3 is [a,b,c]
 
@@ -60,3 +66,40 @@ indexRes = list3[1]
 
 list3[1]="d"
 ; list3 is [a,d,c]
+
+/*
+ * =================
+ *        Map
+ * =================
+ */
+
+; Json Literal
+m = {
+    "a" : 1
+    "b" : 2
+}             ; the map is {a:1, b:2}
+; empty map
+map = Map()
+
+; put
+map.put("c",3)
+map["d"] = 4
+; the map is {c:3, d:4}
+
+; construct a map filled with existing map entries
+map2 = Map(m)
+map2.putAll(map)
+; map2 is {a:1, b:2, c:3, d:4}
+
+; get
+a_res = map2.get("a")    ; a_res is 1
+b_res = map2["b"]        ; b_res is 2
+c_res = map2.c           ; c_res is 3
+
+; initialize the map with a function
+map3 = Map(
+    ($this)->
+        $this["z"]=26
+        $this["y"]=25
+        $this["x"]=24
+)

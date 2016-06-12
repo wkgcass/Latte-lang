@@ -31,7 +31,7 @@ import lt.compiler.SyntaxException;
  * unexpected new layer. which means there's an unexpected ElementStartNode
  */
 public class UnexpectedNewLayerException extends SyntaxException {
-        public UnexpectedNewLayerException(LineCol lineCol) {
-                super("unexpected new layer", lineCol);
+        public UnexpectedNewLayerException(String lineMsg, LineCol lineCol) {
+                super(lineMsg, "unexpected new layer", lineCol);
         }
 }

@@ -102,7 +102,8 @@ public class Evaluator {
         }
 
         public Entry eval(String stmt) throws Exception {
-                if (null == stmt || stmt.trim().isEmpty()) throw new IllegalArgumentException("the input string cannot be empty or null");
+                if (null == stmt || stmt.trim().isEmpty())
+                        throw new IllegalArgumentException("the input string cannot be empty or null");
 
                 ErrorManager err = new ErrorManager(true);
                 Scanner scanner = new Scanner(evalFileName, new StringReader(stmt), new Scanner.Properties(), err);
@@ -156,7 +157,7 @@ public class Evaluator {
                                 defsAndImports.add(s);
                                 imports.add((Import) s);
                         } else if (s instanceof PackageDeclare) {
-                                throw new SyntaxException("scripts cannot have package declaration", s.line_col());
+                                err.SyntaxException("scripts cannot have package declaration", s.line_col());
                         } else if (s instanceof MethodDef) {
                                 recordedMethods.add((MethodDef) s);
                         } else {

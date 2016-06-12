@@ -30,15 +30,17 @@ package lt.compiler;
 public class SyntaxException extends CompileException {
         public final LineCol lineCol;
         public final String msg;
+        public final String lineMsg;
 
-        public SyntaxException(String msg, LineCol lineCol) {
-                super(msg +
+        public SyntaxException(String lineMsg, String msg, LineCol lineCol) {
+                super(lineMsg + msg +
                         (lineCol == LineCol.SYNTHETIC
                                 ? ""
                                 : (" at " + lineCol.fileName + "(" + lineCol.line + "," + lineCol.column + ")")) +
                         (lineCol.useDefine.isEmpty()
                                 ? ""
                                 : "\nThis line uses defined replacement (" + lineCol.useDefine + "), the column might not be precise"));
+                this.lineMsg = lineMsg;
                 this.msg = msg;
                 this.lineCol = lineCol;
         }

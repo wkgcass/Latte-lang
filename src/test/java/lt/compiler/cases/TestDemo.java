@@ -902,13 +902,13 @@ public class TestDemo {
                         sb.append("    ").append(line).append("\n");
                 }
 
-                Map<String, byte[]> map = generate(new BufferedReader(new StringReader(sb.toString())), "list-map.lts");
+                Map<String, byte[]> byteMap = generate(new BufferedReader(new StringReader(sb.toString())), "list-map.lts");
 
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
                                 throws ClassNotFoundException {
-                                byte[] bs = map.get(name);
+                                byte[] bs = byteMap.get(name);
                                 return defineClass(name, bs, 0, bs.length);
                         }
                 };
@@ -963,6 +963,49 @@ public class TestDemo {
                 Field indexRes = cls.getDeclaredField("indexRes");
                 indexRes.setAccessible(true);
                 assertEquals("b", indexRes.get(o));
+                // m
+                Field m = cls.getDeclaredField("m");
+                m.setAccessible(true);
+                Map<String, Integer> jm = new LinkedHashMap<>();
+                jm.put("a", 1);
+                jm.put("b", 2);
+                assertEquals(jm, m.get(o));
+                // map
+                Field map = cls.getDeclaredField("map");
+                map.setAccessible(true);
+                jm.clear();
+                jm.put("c", 3);
+                jm.put("d", 4);
+                assertEquals(jm, map.get(o));
+                // map2
+                Field map2 = cls.getDeclaredField("map2");
+                map2.setAccessible(true);
+                jm.clear();
+                jm.put("a", 1);
+                jm.put("b", 2);
+                jm.put("c", 3);
+                jm.put("d", 4);
+                assertEquals(jm, map2.get(o));
+                // a_res
+                Field a_res = cls.getDeclaredField("a_res");
+                a_res.setAccessible(true);
+                assertEquals(1, a_res.get(o));
+                // b_res
+                Field b_res = cls.getDeclaredField("b_res");
+                b_res.setAccessible(true);
+                assertEquals(2, b_res.get(o));
+                // c_res
+                Field c_res = cls.getDeclaredField("c_res");
+                c_res.setAccessible(true);
+                assertEquals(3, c_res.get(o));
+                // map3
+                Field map3 = cls.getDeclaredField("map3");
+                map3.setAccessible(true);
+                jm.clear();
+                jm.put("z", 26);
+                jm.put("y", 25);
+                jm.put("x", 24);
+                assertEquals(jm, map3.get(o));
         }
 
         @Test

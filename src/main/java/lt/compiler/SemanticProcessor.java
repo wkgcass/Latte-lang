@@ -849,7 +849,7 @@ public class SemanticProcessor {
                                         if (f == null) throw new LtBug("f should not be null");
 
                                         Ins.PutField putField = new Ins.PutField(f, constructorScope.getThis(),
-                                                new Ins.TLoad(param, constructorScope, LineCol.SYNTHETIC), LineCol.SYNTHETIC);
+                                                new Ins.TLoad(param, constructorScope, LineCol.SYNTHETIC), LineCol.SYNTHETIC, err);
                                         constructorToFillStatements.statements().add(putField);
                                 }
 
@@ -2081,7 +2081,7 @@ public class SemanticProcessor {
                         LocalVariable tmp = new LocalVariable(returnValue.type(), false);
                         scope.putLeftValue(scope.generateTempName(), tmp);
 
-                        Ins.TStore TStore = new Ins.TStore(tmp, returnValue, scope, LineCol.SYNTHETIC); // store the value
+                        Ins.TStore TStore = new Ins.TStore(tmp, returnValue, scope, LineCol.SYNTHETIC, err); // store the value
                         Ins.TLoad tLoad = new Ins.TLoad(tmp, scope, LineCol.SYNTHETIC); // retrieve the value
                         tReturn.setReturnValue(tLoad); // return the value
 
@@ -2340,7 +2340,7 @@ public class SemanticProcessor {
                         unwrapped,
                         invokeUnwrap,
                         catchScope,
-                        LineCol.SYNTHETIC
+                        LineCol.SYNTHETIC, err
                 );
                 insCatch.add(storeUnwrapped);
 
@@ -2562,7 +2562,7 @@ public class SemanticProcessor {
                 // aStore
                 LocalVariable localVariable = new LocalVariable(getTypeWithName("lt.lang.LtIterator", LineCol.SYNTHETIC), false);
                 scope.putLeftValue(scope.generateTempName(), localVariable);
-                Ins.TStore tStore = new Ins.TStore(localVariable, getIterator, scope, LineCol.SYNTHETIC);
+                Ins.TStore tStore = new Ins.TStore(localVariable, getIterator, scope, LineCol.SYNTHETIC, err);
                 instructions.add(tStore);
                 // aLoad
                 Ins.TLoad tLoad = new Ins.TLoad(localVariable, scope, LineCol.SYNTHETIC);
@@ -2580,7 +2580,7 @@ public class SemanticProcessor {
                 SemanticScope subScope = new SemanticScope(scope);
                 LocalVariable newLocal = new LocalVariable(getTypeWithName("java.lang.Object", LineCol.SYNTHETIC), true);
                 subScope.putLeftValue(aFor.name, newLocal);
-                Ins.TStore tStore1 = new Ins.TStore(newLocal, next, subScope, LineCol.SYNTHETIC);
+                Ins.TStore tStore1 = new Ins.TStore(newLocal, next, subScope, LineCol.SYNTHETIC, err);
                 instructions.add(tStore1); // name = it.next()
 
                 Ins.Nop nopForContinue = new Ins.Nop();
@@ -2873,10 +2873,10 @@ public class SemanticProcessor {
                                 ((Ins.GetField) assignTo).field(),
                                 ((Ins.GetField) assignTo).object(),
                                 cast(((Ins.GetField) assignTo).field().type(), assignFrom, ((Ins.GetField) assignTo).line_col()),
-                                lineCol));
+                                lineCol, err));
                 } else if (assignTo instanceof Ins.GetStatic) {
                         // static
-                        instructions.add(new Ins.PutStatic(((Ins.GetStatic) assignTo).field(), assignFrom, lineCol));
+                        instructions.add(new Ins.PutStatic(((Ins.GetStatic) assignTo).field(), assignFrom, lineCol, err));
                 } else if (assignTo instanceof Ins.TALoad) {
                         // arr[?]
                         Ins.TALoad TALoad = (Ins.TALoad) assignTo;
@@ -2963,7 +2963,7 @@ public class SemanticProcessor {
                                         assignTo.type(),
                                         assignFrom,
                                         lineCol),
-                                scope, lineCol));
+                                scope, lineCol, err));
                 } else if (assignTo instanceof Ins.InvokeStatic) {
                         // assignTo should be lt.lang.LtRuntime.getField(o,name)
                         // which means
@@ -3111,12 +3111,12 @@ public class SemanticProcessor {
                         if (null != field) {
                                 if (field.modifiers().contains(SModifier.STATIC)) {
                                         // putStatic
-                                        pack.instructions().add(new Ins.PutStatic(field, v, variableDef.line_col()));
+                                        pack.instructions().add(new Ins.PutStatic(field, v, variableDef.line_col(), err));
                                         Ins.GetStatic getStatic = new Ins.GetStatic(field, variableDef.line_col());
                                         pack.instructions().add(getStatic);
                                 } else {
                                         // putField
-                                        pack.instructions().add(new Ins.PutField(field, scope.getThis(), v, variableDef.line_col()));
+                                        pack.instructions().add(new Ins.PutField(field, scope.getThis(), v, variableDef.line_col(), err));
                                         Ins.GetField getField = new Ins.GetField(field, scope.getThis(), variableDef.line_col());
                                         pack.instructions().add(getField);
                                 }
@@ -3124,7 +3124,7 @@ public class SemanticProcessor {
                                 // else field not found
                                 // local variable
                                 LocalVariable localVariable = (LocalVariable) scope.getLeftValue(variableDef.getName());
-                                pack.instructions().add(new Ins.TStore(localVariable, v, scope, variableDef.line_col()));
+                                pack.instructions().add(new Ins.TStore(localVariable, v, scope, variableDef.line_col(), err));
                                 Ins.TLoad tLoad = new Ins.TLoad(localVariable, scope, variableDef.line_col());
                                 pack.instructions().add(tLoad);
                         }
@@ -3333,8 +3333,10 @@ public class SemanticProcessor {
                         SAnno anno = new SAnno();
                         AST.Anno astAnno = ((AST.AnnoExpression) exp).anno;
                         STypeDef type = getTypeWithAccess(astAnno.anno, imports);
-                        if (!(type instanceof SAnnoDef))
-                                throw new SyntaxException(type + " is not annotation type", astAnno.anno.line_col());
+                        if (!(type instanceof SAnnoDef)) {
+                                err.SyntaxException(type + " is not annotation type", astAnno.anno.line_col());
+                                return null;
+                        }
                         anno.setAnnoDef((SAnnoDef) type);
                         annotationRecorder.put(anno, astAnno);
                         parseAnnoValues(Collections.singleton(anno));
@@ -3386,7 +3388,7 @@ public class SemanticProcessor {
                 scope.putLeftValue(name, local);
 
                 Ins.New aNew = new Ins.New(con, invocation.line_col());
-                Ins.TStore store = new Ins.TStore(local, aNew, scope, invocation.line_col());
+                Ins.TStore store = new Ins.TStore(local, aNew, scope, invocation.line_col(), err);
                 valuePack.instructions().add(store);
 
                 for (Expression exp : invocation.args) {
@@ -3737,6 +3739,9 @@ public class SemanticProcessor {
                         // local
                         Ins.NewList newList = new Ins.NewList(getTypeWithName("java.util.LinkedList", LineCol.SYNTHETIC));
                         for (Value arg : args) {
+                                if (arg.type() instanceof PrimitiveTypeDef) {
+                                        arg = boxPrimitive(arg, LineCol.SYNTHETIC);
+                                }
                                 newList.initValues().add(arg);
                         }
                         consArgs.add(newList);
@@ -3852,7 +3857,7 @@ public class SemanticProcessor {
                         f1,
                         conScope.getThis(),
                         new Ins.TLoad(p1, conScope, LineCol.SYNTHETIC),
-                        LineCol.SYNTHETIC
+                        LineCol.SYNTHETIC, err
                 ));
                 // p2
                 if (!isStatic) {
@@ -3864,7 +3869,7 @@ public class SemanticProcessor {
                                 f2,
                                 conScope.getThis(),
                                 new Ins.TLoad(p2, conScope, LineCol.SYNTHETIC),
-                                LineCol.SYNTHETIC
+                                LineCol.SYNTHETIC, err
                         ));
                 }
                 // p3
@@ -3876,7 +3881,7 @@ public class SemanticProcessor {
                         f3,
                         conScope.getThis(),
                         new Ins.TLoad(p3, conScope, LineCol.SYNTHETIC),
-                        LineCol.SYNTHETIC
+                        LineCol.SYNTHETIC, err
                 ));
 
                 // method
@@ -3911,7 +3916,7 @@ public class SemanticProcessor {
                 LocalVariable localVariable = new LocalVariable(LinkedList_Type, false);
                 meScope.putLeftValue("list", localVariable);
                 theMethod.statements().add(
-                        new Ins.TStore(localVariable, aNew, meScope, LineCol.SYNTHETIC)
+                        new Ins.TStore(localVariable, aNew, meScope, LineCol.SYNTHETIC, err)
                 );
                 // add all params
                 SMethodDef LinkedList_add = null;
@@ -4258,7 +4263,7 @@ public class SemanticProcessor {
                 LocalVariable local = new LocalVariable(assignFrom.type(), false);
                 scope.putLeftValue(scope.generateTempName(), local);
 
-                Ins.TStore tStore = new Ins.TStore(local, assignFrom, scope, LineCol.SYNTHETIC);
+                Ins.TStore tStore = new Ins.TStore(local, assignFrom, scope, LineCol.SYNTHETIC, err);
                 pack.instructions().add(tStore);
 
                 Ins.TLoad tLoad = new Ins.TLoad(local, scope, LineCol.SYNTHETIC);
@@ -6060,8 +6065,10 @@ public class SemanticProcessor {
                 List<Value> argList = new ArrayList<>();
                 for (Expression arg : invocation.args) {
                         Value v = parseValueFromExpression(arg, null, scope);
-                        if (v == null)
-                                throw new SyntaxException(arg + " is not method argument", arg.line_col());
+                        if (v == null) {
+                                err.SyntaxException(arg + " is not method argument", arg.line_col());
+                                return null;
+                        }
                         argList.add(v);
                 }
 
