@@ -628,51 +628,7 @@ public class SemanticProcessor {
                                 // check all abstract methods
                                 // record them
                                 List<SMethodDef> abstractMethods = new ArrayList<>();
-                                List<SMethodDef> visitedMethods = new ArrayList<>();
-                                Set<SInterfaceDef> visitedType = new HashSet<>();
-                                // record parent abstract methods
-                                SClassDef parent = c.parent();
-                                while (parent != null && parent.modifiers().contains(SModifier.ABSTRACT)) {
-                                        for (SMethodDef m : parent.methods()) {
-                                                if (m.modifiers().contains(SModifier.ABSTRACT)) {
-                                                        if (null == findMethodWithSameSignature(m, visitedMethods, true)) {
-                                                                abstractMethods.add(m);
-                                                        }
-                                                }
-                                                visitedMethods.add(m);
-                                        }
-                                        for (SInterfaceDef i : parent.superInterfaces()) {
-                                                if (visitedType.add(i)) {
-                                                        for (SMethodDef m : i.methods()) {
-                                                                if (m.modifiers().contains(SModifier.ABSTRACT)) {
-                                                                        if (null == findMethodWithSameSignature(m, visitedMethods, true)) {
-                                                                                abstractMethods.add(m);
-                                                                        }
-                                                                }
-                                                                visitedMethods.add(m);
-                                                        }
-                                                }
-                                        }
-                                        parent = parent.parent();
-                                }
-
-                                Queue<SInterfaceDef> q = new ArrayDeque<>();
-                                q.clear();
-                                q.addAll(c.superInterfaces());
-                                while (!q.isEmpty()) {
-                                        SInterfaceDef i = q.remove();
-                                        if (visitedType.add(i)) {
-                                                for (SMethodDef m : i.methods()) {
-                                                        if (m.modifiers().contains(SModifier.ABSTRACT)) {
-                                                                if (null == findMethodWithSameSignature(m, visitedMethods, true)) {
-                                                                        abstractMethods.add(m);
-                                                                }
-                                                        }
-                                                        visitedMethods.add(m);
-                                                }
-                                                q.addAll(i.superInterfaces());
-                                        }
-                                }
+                                recordAbstractMethodsForOverrideCheck(c, abstractMethods);
 
                                 // do check
                                 for (SMethodDef m : abstractMethods) {
@@ -6945,6 +6901,93 @@ public class SemanticProcessor {
 
                         return arr;
                 } else throw new LtBug("cannot parse " + o + " into Value");
+        }
+
+        /**
+         * record abstract methods for override check. methods are retrieved from interfaces.
+         *
+         * @param i               the interface to retrieve method from
+         * @param abstractMethods record abstract methods
+         * @param visitedMethods  already visited methods
+         * @param visitedType     already visited types
+         * @throws SyntaxException exception
+         */
+        private void recordAbstractMethodsForOverrideCheck_interface(SInterfaceDef i,
+                                                                     List<SMethodDef> abstractMethods,
+                                                                     List<SMethodDef> visitedMethods,
+                                                                     Set<SInterfaceDef> visitedType) throws SyntaxException {
+                // check only when it's not visited
+                if (visitedType.add(i)) {
+                        for (SMethodDef m : i.methods()) {
+                                if (m.modifiers().contains(SModifier.ABSTRACT)) {
+                                        if (null == findMethodWithSameSignature(m, visitedMethods, true)) {
+                                                abstractMethods.add(m);
+                                        }
+                                }
+                                visitedMethods.add(m);
+                        }
+                        // check super interfaces
+                        for (SInterfaceDef ii : i.superInterfaces()) {
+                                recordAbstractMethodsForOverrideCheck_interface(
+                                        ii, abstractMethods, visitedMethods, visitedType
+                                );
+                        }
+                }
+        }
+
+        /**
+         * record abstract methods for override check. methods are retrieved from classes.
+         *
+         * @param c               the class to retrieve method from
+         * @param abstractMethods recorded abstract methods
+         * @param visitedMethods  already visited methods
+         * @param visitedType     already visited types
+         * @throws SyntaxException exception
+         */
+        private void recordAbstractMethodsForOverrideCheck_class(SClassDef c,
+                                                                 List<SMethodDef> abstractMethods,
+                                                                 List<SMethodDef> visitedMethods,
+                                                                 Set<SInterfaceDef> visitedType) throws SyntaxException {
+                if (c == null || !c.modifiers().contains(SModifier.ABSTRACT)) return;
+                // check the class
+                for (SMethodDef m : c.methods()) {
+                        if (m.modifiers().contains(SModifier.ABSTRACT)) {
+                                if (null == findMethodWithSameSignature(m, visitedMethods, true)) {
+                                        abstractMethods.add(m);
+                                }
+                        }
+                        visitedMethods.add(m);
+                }
+                // check parent class
+                recordAbstractMethodsForOverrideCheck_class(c.parent(), abstractMethods, visitedMethods, visitedType);
+                // check interfaces
+                for (SInterfaceDef i : c.superInterfaces()) {
+                        recordAbstractMethodsForOverrideCheck_interface(
+                                i, abstractMethods, visitedMethods, visitedType
+                        );
+                }
+        }
+
+        /**
+         * record abstract methods for override check.
+         *
+         * @param c               the base class
+         * @param abstractMethods record abstract methods
+         * @throws SyntaxException exception
+         */
+        private void recordAbstractMethodsForOverrideCheck(SClassDef c, List<SMethodDef> abstractMethods) throws SyntaxException {
+                List<SMethodDef> visitedMethods = new ArrayList<>();
+                Set<SInterfaceDef> visitedTypes = new HashSet<>();
+                recordAbstractMethodsForOverrideCheck_class(
+                        c.parent(),
+                        abstractMethods,
+                        visitedMethods,
+                        visitedTypes);
+                for (SInterfaceDef i : c.superInterfaces()) {
+                        recordAbstractMethodsForOverrideCheck_interface(
+                                i, abstractMethods, visitedMethods, visitedTypes
+                        );
+                }
         }
 
         /**

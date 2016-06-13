@@ -1725,9 +1725,13 @@ public class CodeGenerator {
                                         if (entry.getKey().name().equals("value")) {
                                                 Value v = entry.getValue();
                                                 if (v instanceof EnumValue) {
-                                                        if (v.type().fullName().equals("java.lang.annotation.RetentionPolicy")
-                                                                && ((EnumValue) v).enumStr().equals("RUNTIME"))
-                                                                return true;
+                                                        if (v.type().fullName().equals("java.lang.annotation.RetentionPolicy")) {
+                                                                if (((EnumValue) v).enumStr().equals("RUNTIME")) {
+                                                                        return true;
+                                                                } else {
+                                                                        return false;
+                                                                }
+                                                        }
                                                 }
                                                 throw new LtBug(
                                                         "value of java.lang.annotation.Retention.value() " +
