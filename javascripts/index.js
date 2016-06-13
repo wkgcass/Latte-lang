@@ -20,6 +20,8 @@ $(document).ready(function () {
 
     var app = angular.module('index', []);
     app.controller('controller', ['$scope', '$sce', function ($scope, $sce) {
+        var isZh=useZh();
+
         $scope.git_repo = common_git_repo();
 
         $scope.header = "The Latte Programming Language";
@@ -30,55 +32,63 @@ $(document).ready(function () {
 
         $scope.introduction = {
             title: "Latte",
-            content: $sce.trustAsHtml("Latte是一种可读,灵活,简单,易扩展的JVM编程语言. 正如它的名字一样,可以与java完美融合.")
+            content: $sce.trustAsHtml(
+                isZh
+                    ?"Latte是一种可读,灵活,简单,易扩展的JVM编程语言. 正如它的名字一样,可以与java完美融合."
+                    :"Latte is a readable, flexible, simple and extensive JVM programming language. It's 100% interoperable with Java."
+            )
         };
         $scope.feature = {
-            title: "特性",
+            title: isZh?"特性":"Features",
             features: [
                 {
-                    name: "运算符绑定"
+                    name: isZh?"运算符绑定":"Operator Binding"
                 },
                 {
                     name: "DSL"
                 },
                 {
-                    name: "预处理 define/undef"
+                    name: isZh?"预处理 define/undef":"Pre Processing define/undef"
                 },
                 {
-                    name: "内部方法"
+                    name: isZh?"内部方法":"inner methods"
                 },
                 {
                     name: "Lambda"
                 },
                 {
-                    name: "JSON 字面量"
+                    name: isZh?"JSON 字面量":"JSON Literals"
                 },
                 {
                     name: "REPL"
                 }
             ],
-            content: $sce.trustAsHtml("更多特性请查看 <a href='syntax.html'>语法</a>")
+            content: $sce.trustAsHtml(
+                isZh
+                    ?"更多特性请查看 <a href='syntax.html'>语法</a>"
+                    :"Please visit <a href='syntax.html'>Syntax</a> for more features"
+            )
         };
-        $scope.codes_head = "您可以在REPL中尝试大部分语句";
+        $scope.codes_head = isZh?"您可以在REPL中尝试大部分语句":"You can try out most of these statements in REPL";
         $scope.codes = [
             {
                 code: $sce.trustAsHtml(highlighting("example_1.lts", "" +
-                    "; 运算符绑定\n" +
+                    (isZh?"; 运算符绑定\n":"; Operator Binding\n") +
                     "list = ArrayList()\n" +
                     "list + 1\n" +
-                    "; 与 list.add(1) 相同\n" +
+                    (isZh?"; 与 list.add(1) 相同\n":"; same as list.add(1)\n") +
                     "list[0]\n" +
-                    "; 与 list.get(0) 相同\n" +
+                    (isZh?"; 与 list.get(0) 相同\n":"; same as list.get(0)\n") +
                     "\n" +
                     "a = BigInteger(\"1\")\n" +
                     "b = BigInteger(\"2\")\n" +
                     "\n" +
                     "addRes = a + b\n" +
-                    "; 相当于 a.add(b)\n" +
+                    (isZh?"; 相当于 a.add(b)\n":"; same as a.add(b)\n") +
                     "subRes = a - b\n" +
-                    "; 相当于 a.subtract(b)\n" +
+                    (isZh?"; 相当于 a.subtract(b)\n":"; same as a.subtract(b)\n") +
                     "a << 1\n" +
-                    "; 相当于 a.shiftLeft(1)"
+                    (isZh?"; 相当于 a.shiftLeft(1)":"; same as a.shiftLeft(1)")
                     , {}))
             },
             {
@@ -86,11 +96,12 @@ $(document).ready(function () {
                     "; Data Class\n" +
                     "data class User(id:int, name)\n" +
                     "/*\n" +
-                    "将会自动定义 一个无参构造函数\n" +
-                    "getId():int, getName(),\n" +
+                    (isZh?"将会自动定义 一个无参构造函数,\n":"a constructor with 0 params,\n") +
+                    "getId(), getName(), setId(id), setName(name)\n" +
                     "toString():String, equals(o), hashCode():int\n" +
+                    (isZh?"":"will be automatically defined\n") +
                     "*/\n" +
-                    "; 可以使用如下方式实例化\n" +
+                    (isZh?"; 可以使用如下方式实例化\n":"; Can be instantiated in this way\n") +
                     "User(id=1, name='cass')"
                     , {}))
             },
@@ -99,21 +110,21 @@ $(document).ready(function () {
                     "; DSL\n" +
                     "list = ArrayList()\n" +
                     "list add 'str'\n" +
-                    "; 与 list.add('str')相同\n" +
+                    (isZh?"; 与 list.add('str')相同\n":"; same as list.add('str')\n") +
                     "list set 0, 'string'\n" +
-                    "; 与 list.set(0, 'string')相同\n" +
+                    (isZh?"; 与 list.set(0, 'string')相同\n":"; same as list.set(0, 'string')\n") +
                     "list clear\n" +
-                    "; 与 list.clear()相同\n" +
+                    (isZh?"; 与 list.clear()相同\n":"; same as list.clear()\n") +
                     "\n" +
-                    "; DSL特性甚至允许您组成这样的表达式\n" +
+                    (isZh?"; DSL特性甚至允许您组成这样的表达式\n":"; DSL allow you to form an exp like this\n") +
                     "sql select user.id, user.name, user.age from user\n" +
-                    "; 将被转换为\n" +
+                    (isZh?"; 将被转换为\n":"; will be considered as\n") +
                     "sql.select(user.id, user.name, user.age).from(user)"
                     , {}))
             },
             {
                 code: $sce.trustAsHtml(highlighting("example_3.lts", "" +
-                    "; 预处理 define/undef\n" +
+                    (isZh?"; 预处理 define/undef\n":"; Pre Processing define/undef\n") +
                     "define 'CREATE TABLE' as 'class'\n" +
                     "define 'VARCHAR' as ': String'\n" +
                     "define 'NUMBER' as ': int'\n" +
@@ -122,53 +133,65 @@ $(document).ready(function () {
                     "    id NUMBER\n" +
                     "    name VARCHAR\n" +
                     ")\n" +
-                    "; 与如下定义功能一致\n" +
+                    (isZh?"; 与如下定义功能一致\n":"; same as the following definition\n") +
                     "class User(id : int, name : String)"
                     , {}))
             },
             {
                 code: $sce.trustAsHtml(highlighting("example_4.lts", "" +
-                    "; 内部方法\n" +
+                    (isZh?"; 内部方法\n":"inner methods\n") +
                     "class Test\n" +
                     "    outerMethod(i, j)\n" +
                     "        innerMethod(k)=i+j+k\n" +
-                    "        ; 定义了一个\"内部方法\", 可以访问局部变量\n" +
+                    (isZh
+                    ?"        ; 定义了一个\"内部方法\", 可以访问局部变量\n"
+                    :"        ; defines an inner method\n        ; which can capture the local variables\n"
+                    ) +
                     "        return innerMethod(3)\n" +
-                    "        ; 调用该内部方法并返回\n"
+                    (isZh
+                    ?"        ; 调用该内部方法并返回\n"
+                    :"        ; invoke the inner method and return\n"
+                    )
                     , {}))
             },
             {
                 code: $sce.trustAsHtml(highlighting("example_5.lts", "" +
                     "; Lambda\n" +
                     "func1 = (x)->x+2\n" +
-                    "; 默认的Lambda实现接口为lt::lang::function::FunctionX\n" +
-                    "; X有27个, 从0到26\n" +
+                    (isZh
+                    ?"; 默认的Lambda实现接口为lt::lang::function::FunctionX\n"
+                    :"; the default implemented interface of Lambda is\n; lt::lang::function::FunctionX\n"
+                    ) +
+                    (isZh?"; X有27个, 从0到26\n":"; X ranges from 0 to 26\n") +
                     "\n" +
                     "func2 : java::util::function::Function = (x)->x+3\n" +
                     "\n" +
-                    "; Lambda不光可以用在函数式接口上,还可以用在函数式抽象类上\n" +
+                    (isZh
+                    ?"; Lambda不光可以用在函数式接口上,还可以用在函数式抽象类上\n"
+                    :"; Lambda can work not only on functional interfaces\n; but also on functional abstract classes\n"
+                    ) +
                     "abstract class Func\n" +
-                    "    abstract apply()=...     ; ...是一个有效的符号,不是指省略\n" +
+                    "    abstract apply()=...\n" +
                     "func3 : Func = (x)->x+4"
                     , {}))
             },
             {
                 code: $sce.trustAsHtml(highlighting("example_6.lts", "" +
-                    "; JSON 字面量\n" +
+                    (isZh?"; JSON 字面量\n":"; JSON Literals\n") +
                     "map = {\n" +
                     "    'id' : 1,\n" +
                     "    'name' : 'cass',\n" +
                     "    'repo' : ['Latte', 'Pure.IoC']\n" +
                     "}\n" +
-                    "; map末尾的逗号也可以省略\n" +
+                    (isZh?"; map末尾的逗号也可以省略\n":"; comma at the end can be omitted.\n") +
                     "\n" +
                     "list = ['a', 'b', 'c']"
                     , {}))
             },
             {
                 code: $sce.trustAsHtml(highlighting("example_7.lts", "" +
-                    "; 类型定义\n" +
-                    "; 类\n" +
+                    (isZh?"; 类型定义\n":"; Type Definition\n") +
+                    (isZh?"; 类\n":"; classes\n") +
                     "class User(id,name)\n" +
                     "    getId()=id\n" +
                     "    getName()=name\n" +
@@ -176,37 +199,66 @@ $(document).ready(function () {
                     "    equals(o):bool\n" +
                     "        if o is type User\n" +
                     "            return id==o.id and name==o.name\n" +
-                    "        return false"
+                    "        return false\n" +
+                    (isZh?"; 接口\n":"; interfaces\n") +
+                    "interface AnInterface\n" +
+                    "    apply(o)=..."
                     , {}))
             }
         ];
 
         $scope.build = {
-            title: "如何Build",
-            contents: [
+            title: isZh?"如何Build":"How to Build",
+            contents:
+            isZh
+            ?[
                 $sce.trustAsHtml("Latte 只需要 <code>JRE 8</code>"),
-                $sce.trustAsHtml("建议以<code>lt.repl.REPL</code>为主类打包为jar"),
+                $sce.trustAsHtml("建议以<code>lt.repl.REPL</code>为主类打包为jar. 并复制 <code>src/main/resources/latte.sh</code> 或 <code>latte.bat</code> 到打包的目录"),
                 $sce.trustAsHtml("本工程通过Maven管理, 所以您也可以使用 <code>Maven 3</code> 进行自动Build"),
-                $sce.trustAsHtml("clone<a href='" + $scope.git_repo + "'>该仓库</a>, 然后执行 <code>mvn clean package</code> , 在 <code>target</code> 目录下将生成一个可执行的jar文件, 并且在跟目录生成批处理文件."),
+                $sce.trustAsHtml("clone <a href='" + $scope.git_repo + "'>该仓库</a>, 然后执行 <code>mvn clean package</code> , 在根目录会生成 <code>repl.jar</code> 和批处理文件."),
                 $sce.trustAsHtml("直接执行 <code>.&#47;latte</code> , REPL将启动")
+            ]
+            :[
+                $sce.trustAsHtml("Latte only requires <code>JRE 8</code>."),
+                $sce.trustAsHtml("It's recommended to package <code>lt.repl.REPL</code> as the main class. And copy <code>src/main/resources/latte.sh</code> or <code>latte.bat</code> to the jar directory."),
+                $sce.trustAsHtml("The project is managed by Maven, so you can use <code>Maven 3</code> to build automatically."),
+                $sce.trustAsHtml("clone <a href='" + $scope.git_repo + "'>the repository</a>, and run <code>mvn clean package</code> , then, <code>repl.jar</code> and batch procedure files will be generated at root directory."),
+                $sce.trustAsHtml("run <code>.&#47;latte</code> , and REPL will launch")
             ]
         };
         $scope.compile = {
-            title: "REPL 与 编译",
-            contents: [
+            title: isZh?"REPL 与 编译":"REPL and Compiling",
+            contents:
+            isZh
+            ?[
                 $sce.trustAsHtml("Latte提供一个REPL, 您可以运行自动Build后生成的jar包,或者直接执行 <code>lt.repl.REPL</code> 类以使用"),
                 $sce.trustAsHtml("REPL环境除去任何Latte代码都会执行的导入以外, 还会自动导入 <ul><li><code>lt::util::_</code></li><li><code>java::util::_</code></li><li><code>java::math::_</code></li><li><code>lt::repl::_</code></li></ul>"),
                 $sce.trustAsHtml("若需要编译Latte源代码文件(<code>*.lt</code>), 您可以在REPL环境下使用 <code>Compiler()</code> 构造一个 <code>lt::repl::Compiler</code> 对象. 您也可以在java代码中用类似的方式进行 <code>lt</code> 文件的编译"),
                 $sce.trustAsHtml(common_compile_highlighting())
+            ]
+            :[
+                $sce.trustAsHtml("Latte provides an REPL, you can run the jar generated via automatic building, or execute <code>lt.repl.REPL</code> class directly."),
+                $sce.trustAsHtml("Besides the importings of Latte, the REPL also imports : <ul><li><code>lt::util::_</code></li><li><code>java::util::_</code></li><li><code>java::math::_</code></li><li><code>lt::repl::_</code></li></ul>"),
+                $sce.trustAsHtml("If Latte source files (<code>*.lt</code>) are to be compiled, you can enter the REPL mode and use <code>Compiler()</code> to construct a <code>lt::repl::Compiler</code> object. You can compile <code>lt</code> files in similar way in java."),
+                $sce.trustAsHtml(common_compile_highlighting())
             ],
-            help: $sce.trustAsHtml("<a href=''>运算符绑定</a> 可能对您有帮助")
+            help: $sce.trustAsHtml(
+                isZh?"<a href=''>运算符绑定</a> 可能对您有帮助":"<a href=''>Operator Binding</a> may be helpful."
+            )
         };
         $scope.highlight = {
-            title: "Atom 语法高亮与IDE",
-            contents: [
+            title: isZh?"Atom 语法高亮与IDE":"Atom Highlighting and IDE",
+            contents:
+            isZh
+            ?[
                 $sce.trustAsHtml("针对Atom编辑器开发了<a target='_blank' href='https://atom.io/packages/Atom-Latte-Highlighting'>语法高亮</a>和" +
                     "<a target='_blank' href='https://atom.io/packages/atom-latte-ide'>IDE</a>"),
                 $sce.trustAsHtml("可以更加方便的编写Latte源代码")
+            ]
+            :[
+                $sce.trustAsHtml("a <a target='_blank' href='https://atom.io/packages/Atom-Latte-Highlighting'>Syntax Highlighting</a> and an " +
+                    "<a target='_blank' href='https://atom.io/packages/atom-latte-ide'>IDE</a> on Atom"),
+                $sce.trustAsHtml("which help you write Latte source code conveniently")
             ]
         }
     }]);
@@ -228,7 +280,7 @@ $(document).ready(function () {
         }
     }
 
-    setInterval(sw, 18000);
+    setInterval(sw, 25000);
 });
 
 function next() {

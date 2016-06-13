@@ -3,7 +3,7 @@
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-    <title>Latte lang - Tutorial</title>
+    <title>Latte lang - Intro</title>
     <link href="http://cdn.bootcss.com/semantic-ui/2.1.8/semantic.css" rel="stylesheet"/>
     <link href="stylesheets/style.css" rel="stylesheet"/>
     <link href="stylesheets/code.css" rel="stylesheet"/>
@@ -27,7 +27,8 @@
 </head>
 <body ng-app="tutorial" ng-controller="controller" class="pushable">
 <div class="ui large top fixed borderless menu">
-    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a>
+    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs"
+                                 class="item">{{nav.name}}</a>
 
         <div class="right menu">
             <div class="item"><a href="{{git_repo}}" class="ui teal button">Fork Me</a></div>
@@ -37,7 +38,8 @@
 <div class="ui vertical inverted sidebar menu left">
     <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a></div>
 <div class="pusher">
-    <div class="ui black big launch right attached fixed button"><a style="color:white" class="toc item"><i class="sidebar icon"></i></a></div>
+    <div class="ui black big launch right attached fixed button"><a style="color:white" class="toc item"><i
+            class="sidebar icon"></i></a></div>
     <div style="margin-top:60px;" class="ui container">
         <div>{{descr}}</div>
         <br>
@@ -58,8 +60,12 @@
                 </div>
             </div>
             <blockquote ng-bind-html="tutorial.note"></blockquote>
-            <h4 class="ui horizontal header divider" style="margin-bottom: 20px;" ng-show="$index!=(tutorials.length-1)">•</h4>
+            <h4 class="ui horizontal header divider" style="margin-bottom: 20px;"
+                ng-show="$index!=(tutorials.length-1)">•</h4>
         </div>
+
+        <br>
+        <br>
     </div>
 </div>
 </body>

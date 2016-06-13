@@ -17,7 +17,8 @@
 </head>
 <body ng-app="dev" ng-controller="controller" class="pushable">
 <div class="ui large top fixed borderless menu">
-    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a>
+    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs"
+                                 class="item">{{nav.name}}</a>
 
         <div class="right menu">
             <div class="item"><a href="{{git_repo}}" class="ui teal button">Fork Me</a></div>
@@ -27,15 +28,16 @@
 <div class="ui vertical inverted sidebar menu left">
     <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a></div>
 <div class="pusher">
-    <div class="ui black big launch right attached fixed button"><a style="color:white" class="toc item"><i class="sidebar icon"></i></a></div>
+    <div class="ui black big launch right attached fixed button"><a style="color:white" class="toc item"><i
+            class="sidebar icon"></i></a></div>
     <div style="margin-top:60px;" class="ui text container">
-        <h1>提交Issue</h1>
+        <h1 ng-bind="issue.title">提交Issue</h1>
 
-        <p>若发现任何BUG, 有更好的建议或是希望拥有的特性, 都可以在<a href="https://github.com/wkgcass/Latte-lang/issues">issue</a>中提出</p>
+        <p ng-bind-html="issue.content"></p>
 
         <h1>License</h1>
 
-        <p>Latte-Lang 采用 MIT LICENSE 发布.</p>
+        <p>MIT LICENSE</p>
 
         <div>
             <h1>{{compiler.title}}</h1>
@@ -49,18 +51,9 @@
         <div class="ui list">
             <div class="item">
                 <i class="folder icon"></i>
-
-                <div class="content">
-                    <div class="header">doc</div>
-                    <div class="description">html文档. 其中包含了HTML的语法高亮</div>
-                </div>
-            </div>
-            <div class="item">
-                <i class="folder icon"></i>
-
                 <div class="content">
                     <div class="header">src</div>
-                    <div class="description">工程源代码</div>
+                    <div class="description">source code of the project</div>
                     <div class="list">
                         <div class="item">
                             <i class="folder icon"></i>
@@ -73,7 +66,6 @@
 
                                         <div class="content">
                                             <div class="header">java</div>
-                                            <div class="description">主目录</div>
                                             <div class="list">
                                                 <div class="item">
                                                     <i class="folder icon"></i>
@@ -86,14 +78,17 @@
 
                                                                 <div class="content">
                                                                     <div class="header">compiler</div>
-                                                                    <div class="description">编译相关</div>
+                                                                    <div class="description">related to compilation
+                                                                    </div>
                                                                     <div class="list">
                                                                         <div class="item">
                                                                             <i class="folder icon"></i>
 
                                                                             <div class="content">
                                                                                 <div class="header">lexical</div>
-                                                                                <div class="description">词法分析相关</div>
+                                                                                <div class="description">lexical
+                                                                                    analysis
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -101,7 +96,9 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">semantic</div>
-                                                                                <div class="description">语义分析相关</div>
+                                                                                <div class="description">semantic
+                                                                                    analysis
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -109,23 +106,31 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">syntactic</div>
-                                                                                <div class="description">语法分析相关</div>
+                                                                                <div class="description">syntactic
+                                                                                    analysis
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
                                                                             <i class="file icon"></i>
 
                                                                             <div class="content">
-                                                                                <div class="header">CodeGenerator.java</div>
-                                                                                <div class="description">字节码生成</div>
+                                                                                <div class="header">CodeGenerator.java
+                                                                                </div>
+                                                                                <div class="description">byte code
+                                                                                    generator
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
                                                                             <i class="file icon"></i>
 
                                                                             <div class="content">
-                                                                                <div class="header">CompileUtil.java</div>
-                                                                                <div class="description">语言关键字, 符号等信息的定义</div>
+                                                                                <div class="header">CompileUtil.java
+                                                                                </div>
+                                                                                <div class="description">definition of
+                                                                                    keywords and symbols
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -133,7 +138,6 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">Parser.java</div>
-                                                                                <div class="description">语法分析器</div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -141,15 +145,15 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">Scanner.java</div>
-                                                                                <div class="description">词法分析器</div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
                                                                             <i class="file icon"></i>
 
                                                                             <div class="content">
-                                                                                <div class="header">SemanticProcessor.java</div>
-                                                                                <div class="description">语义分析器</div>
+                                                                                <div class="header">
+                                                                                    SemanticProcessor.java
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -159,15 +163,29 @@
                                                                 <i class="folder icon"></i>
 
                                                                 <div class="content">
+                                                                    <div class="header">dependencies</div>
+                                                                    <div class="description">
+                                                                        repackage of 3rd party libraries
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="item">
+                                                                <i class="folder icon"></i>
+
+                                                                <div class="content">
                                                                     <div class="header">lang</div>
-                                                                    <div class="description">Latte运行时策略 以及 语言相关类库</div>
+                                                                    <div class="description">Latte runtime and libraries
+                                                                        related to the language
+                                                                    </div>
                                                                     <div class="list">
                                                                         <div class="item">
                                                                             <i class="folder icon"></i>
 
                                                                             <div class="content">
                                                                                 <div class="header">function</div>
-                                                                                <div class="description">用于Lambda的函数式接口</div>
+                                                                                <div class="description">
+                                                                                    functional interfaces for Lambda
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -175,15 +193,21 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">Dynamic.java</div>
-                                                                                <div class="description">InvokeDynamic相关</div>
+                                                                                <div class="description">
+                                                                                    related to InvokeDynamic
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
                                                                             <i class="file icon"></i>
 
                                                                             <div class="content">
-                                                                                <div class="header">FunctionalAbstractClass</div>
-                                                                                <div class="description">注解,标记函数式抽象类</div>
+                                                                                <div class="header">
+                                                                                    FunctionalAbstractClass
+                                                                                </div>
+                                                                                <div class="description">Annotation,
+                                                                                    mark as functional abstract class
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -191,15 +215,8 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">Lang</div>
-                                                                                <div class="description">lang基础</div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="item">
-                                                                            <i class="folder icon"></i>
-
-                                                                            <div class="content">
-                                                                                <div class="header">List</div>
-                                                                                <div class="description"><code>[]</code>语义构造的列表</div>
+                                                                                <div class="description">bases of lang
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -207,7 +224,9 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">LtIterator</div>
-                                                                                <div class="description">用于for语句的Iterator</div>
+                                                                                <div class="description">
+                                                                                    iterator for the `for` statement
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -215,7 +234,10 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">RangeList.java</div>
-                                                                                <div class="description">用于<code>..</code>和<code>.:</code></div>
+                                                                                <div class="description">
+                                                                                    <code>..</code> and <code>.:</code>
+                                                                                    operator related
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -231,7 +253,10 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">Utils.java</div>
-                                                                                <div class="description">所有lt文件均导入该类静态方法</div>
+                                                                                <div class="description">
+                                                                                    all lt files import static methods
+                                                                                    from this class
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div class="item">
@@ -239,7 +264,10 @@
 
                                                                             <div class="content">
                                                                                 <div class="header">Wrapper.java</div>
-                                                                                <div class="description">抛出普通对象时的包装异常类</div>
+                                                                                <div class="description">wrap the
+                                                                                    non-throwable object when they are
+                                                                                    thrown
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -247,15 +275,57 @@
                                                             </div>
                                                             <div class="item">
                                                                 <i class="folder icon"></i>
-
                                                                 <div class="content">
                                                                     <div class="header">repl</div>
-                                                                    <div class="description">一个 Read Eval Print Loop 实现, 以及 REPL Compiler</div>
+                                                                    <div class="description">
+                                                                        Read Eval Print Loop and Script
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="item">
+                                                                <i class="folder icon"></i>
+                                                                <div class="content">
+                                                                    <div class="header">util</div>
+                                                                    <div class="description">
+                                                                        utilities
+                                                                    </div>
+
+                                                                    <div class="list">
+                                                                        <div class="item">
+                                                                            <i class="file icon"></i>
+
+                                                                            <div class="content">
+                                                                                <div class="header">List</div>
+                                                                                <div class="description">the List
+                                                                                    constructed via <code>[]</code>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="item">
+                                                                            <i class="file icon"></i>
+
+                                                                            <div class="content">
+                                                                                <div class="header">Map</div>
+                                                                                <div class="description">the Map
+                                                                                    constructed via <code>{}</code>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="item">
+                                        <i class="folder icon"></i>
+                                        <div class="content">
+                                            <div class="header">resources</div>
+                                            <div class="description">
+                                                libraries written in Latte and some files related to compilation
                                             </div>
                                         </div>
                                     </div>
@@ -267,14 +337,13 @@
 
                             <div class="content">
                                 <div class="header">test</div>
-                                <div class="description">测试目录</div>
                                 <div class="list">
                                     <div class="item">
                                         <i class="folder icon"></i>
 
                                         <div class="content">
                                             <div class="header">java</div>
-                                            <div class="description">测试用例</div>
+                                            <div class="description">test cases</div>
                                         </div>
                                     </div>
                                     <div class="item">
@@ -288,7 +357,9 @@
 
                                                     <div class="content">
                                                         <div class="header">lang-demo</div>
-                                                        <div class="description">描述Latte语法规则, 并用作测试依据</div>
+                                                        <div class="description">explains Latte syntax rules, and used
+                                                            as test cases
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -313,11 +384,22 @@
                 <i class="file icon"></i>
 
                 <div class="content">
+                    <div class="header">ltls.md</div>
+                    <div class="description">The Latte Language Specification</div>
+                </div>
+            </div>
+
+            <div class="item">
+                <i class="file icon"></i>
+
+                <div class="content">
                     <div class="header">pom.xml</div>
-                    <div class="description">Maven配置文件</div>
+                    <div class="description">Maven configureation file</div>
                 </div>
             </div>
         </div>
+        <br>
+        <br>
     </div>
 </div>
 </body>

@@ -1,35 +1,44 @@
+function useZh(){
+    var lang = navigator.language;
+    if(!lang) navigator.browserLanguage;
+    if(!lang) lang="en-us"
+    // return lang.length>2 && lang.toLowerCase().substring(0,2)=='zh';
+    return false;
+}
+
 function common_git_repo() {
     return "https://github.com/wkgcass/Latte-lang";
 }
 function common_navs() {
+    var isZh=useZh();
     return [
         {
-            name: "主页",
+            name: isZh?"主页":"Home",
             active: false,
             link: "index.html"
         },
         {
-            name: "下载",
+            name: isZh?"下载":"Download",
             active: false,
             link: "download.html"
         },
         {
-            name: "教程",
+            name: isZh?"教程":"Intro",
             active: false,
             link: "tutorial.html"
         },
         {
-            name: "语法",
+            name: isZh?"语法":"Syntax",
             active: false,
             link: "syntax.html"
         },
         {
-            name: "示例",
+            name: isZh?"示例":"Examples",
             active: false,
             link: "example.html"
         },
         {
-            name: "开发",
+            name: isZh?"开发":"Develop",
             active: false,
             link: "dev.html"
         }
