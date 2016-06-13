@@ -1098,7 +1098,7 @@ public class TestCodeGen {
                                 "                b.i+=2",
                         "TestAnnotation");
                 class Container {
-                        int i = 0;
+                        public int i = 0;
                 }
                 Method method = cls.getMethod("method", Object.class, Object.class);
                 Container a = new Container();
@@ -1153,7 +1153,7 @@ public class TestCodeGen {
                                 "                return 10",
                         "TestSynchronizedReturn");
                 class Container {
-                        int i = 0;
+                        public int i = 0;
                 }
                 Method method = cls.getMethod("method", Object.class, Object.class);
                 Container a = new Container();

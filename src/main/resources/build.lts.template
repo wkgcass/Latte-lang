@@ -33,6 +33,6 @@ Compiler() configure {
     }
 } compile filesInDirectory("${dir}", '.*\\.lt')
                              ; compile these files
-                             ; use filesInDirectory('...', true) to recursively
+                             ; use filesInDirectory('...', '.*\\.lt', true) to recursively
                              ; compile all `lt` files in children directories
 

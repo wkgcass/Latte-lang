@@ -1,6 +1,7 @@
 ; the file is divided into two parts
 ; 1. pre processing
 ; 2. code
+; the two parts can be mixed up
 
 ; the pre processing part contains "define" and "undef" command
 ; e.g.

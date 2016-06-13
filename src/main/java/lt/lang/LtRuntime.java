@@ -406,8 +406,10 @@ public class LtRuntime {
                 // try to get field
                 try {
                         Field f = o.getClass().getDeclaredField(fieldName);
-                        f.setAccessible(true);
-                        return f.get(o);
+                        if (haveAccess(f.getModifiers(), o.getClass(), callerClass)) {
+                                f.setAccessible(true);
+                                return f.get(o);
+                        }
                 } catch (Throwable ignore) {
                 }
                 // try to find `get(fieldName)`
@@ -441,6 +443,50 @@ public class LtRuntime {
         }
 
         /**
+         * retrieve package name of the class object.
+         * first try to get name from {@link Class#getPackage()}, if the result is null
+         * then extract the package name from the class name
+         *
+         * @param c class object
+         * @return package name
+         */
+        private static String getPackage(Class<?> c) {
+                if (c.getPackage() == null) {
+                        String clsName = c.getName();
+                        if (clsName.contains(".")) {
+                                return clsName.substring(clsName.lastIndexOf("."));
+                        } else {
+                                return "";
+                        }
+                } else {
+                        return c.getPackage().getName();
+                }
+        }
+
+        /**
+         * check whether the caller can have access to the class(or its members).
+         *
+         * @param modifiers modifiers
+         * @param target    target class
+         * @param caller    caller class
+         * @return true if can access, false otherwise
+         */
+        public static boolean haveAccess(int modifiers, Class<?> target, Class<?> caller) {
+                if (Modifier.isPrivate(modifiers)) {
+                        // private
+                        if (!caller.equals(target)) return false;
+                } else if (Modifier.isProtected(modifiers)) {
+                        // protected
+                        if (!getPackage(target).equals(getPackage(caller)) && !target.isAssignableFrom(caller))
+                                return false;
+                } else if (!Modifier.isPublic(modifiers)) {
+                        // package access
+                        if (!getPackage(target).equals(getPackage(caller))) return false;
+                }
+                return true;
+        }
+
+        /**
          * put field.<br>
          * if field not found , then the method would try to invoke set(fieldName, value)<br>
          * the method calls {@link Dynamic#invoke(Class, Object, Class, String, boolean[], Object[])}, and <code>set(fieldName,value)</code> may be changed to <code>put(fieldName, value)</code>
@@ -455,9 +501,11 @@ public class LtRuntime {
                 // try to put field
                 try {
                         Field f = o.getClass().getDeclaredField(fieldName);
-                        f.setAccessible(true);
-                        f.set(o, cast(value, f.getType()));
-                        return;
+                        if (haveAccess(f.getModifiers(), o.getClass(), callerClass)) {
+                                f.setAccessible(true);
+                                f.set(o, cast(value, f.getType()));
+                                return;
+                        }
                 } catch (Throwable ignore) {
                 }
                 // try `setFieldName(value)`

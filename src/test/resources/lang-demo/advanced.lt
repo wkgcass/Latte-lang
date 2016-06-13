@@ -17,8 +17,8 @@ class TestInnerMethod
 ; 2. inner methods don't have annotations and modifiers
 ; 3. inner method cannot be overwritten
 
-; Note That, the inner method can catch local variables,
-; and can change their values `inside` the inner method,
+; Note That, the inner method can capture local variables,
+; and can change the values `inside` the inner method,
 ; but it won't have effect on the outer method variables
 
 ; =========
@@ -31,7 +31,7 @@ class TestProcedure
               ; or more than one expression in the procedure
 ; the procedure allow you to write code anywhere
 ; e.g.
-; in java, you use boolValue?exp1:exp2, in Latte, you can use
+; in java, we use boolValue?exp1:exp2, in Latte, we can use
 ; (   if boolValue
 ;         return exp1
 ;     else
@@ -45,10 +45,10 @@ class TestProcedure
 ; ======
 ; lambda
 ; ======
-; java supports lambda for FunctionalInterface
-; Latte not only supports that, but also supports `FunctionalAbstractClass`
+; java supports lambda for FunctionalInterfaces
+; Latte not only supports that, but also supports `FunctionalAbstractClasses`
 ; a FunctionalAbstractClass means An abstract class with only one unimplemented
-; method and it has an accessible constructor with no parameters
+; method and it has a public constructor with no parameters
 ; e.g.
 @FunctionalAbstractClass
 abstract class Func
@@ -71,5 +71,4 @@ class TestLambda
     ).collect(java::util::stream::Collectors.toList())
 ; lambda is based on inner method
 ; it creates an inner method and retreive MethodHandle of the method
-; and uses LambdaMetaFactory or create a subclass,
-; at runtime, it basically invokes the generated method
+; and uses LambdaMetaFactory or create a subclass at runtime

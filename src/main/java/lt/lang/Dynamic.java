@@ -180,27 +180,6 @@ public class Dynamic {
         }
 
         /**
-         * retrieve package name of the class object.
-         * first try to get name from {@link Class#getPackage()}, if the result is null
-         * then extract the package name from the class name
-         *
-         * @param c class object
-         * @return package name
-         */
-        private static String getPackage(Class<?> c) {
-                if (c.getPackage() == null) {
-                        String clsName = c.getName();
-                        if (clsName.contains(".")) {
-                                return clsName.substring(clsName.lastIndexOf("."));
-                        } else {
-                                return "";
-                        }
-                } else {
-                        return c.getPackage().getName();
-                }
-        }
-
-        /**
          * fill in method candidates
          *
          * @param c          class
@@ -221,17 +200,7 @@ public class Dynamic {
                         if (m.getParameterCount() != args.length) continue;
 
                         // access check
-                        if (Modifier.isPrivate(m.getModifiers())) {
-                                // private
-                                if (!invoker.equals(c)) continue;
-                        } else if (Modifier.isProtected(m.getModifiers())) {
-                                // protected
-                                if (!getPackage(c).equals(getPackage(invoker)) && !c.isAssignableFrom(invoker))
-                                        continue;
-                        } else if (!Modifier.isPublic(m.getModifiers())) {
-                                // package access
-                                if (!getPackage(c).equals(getPackage(invoker))) continue;
-                        }
+                        if (!LtRuntime.haveAccess(m.getModifiers(), c, invoker)) continue;
 
                         if (onlyStatic) {
                                 if (!Modifier.isStatic(m.getModifiers())) continue;
@@ -700,24 +669,7 @@ public class Dynamic {
                 // select candidates
                 List<Constructor<?>> candidates = new ArrayList<>();
                 for (Constructor<?> con : constructors) {
-                        if (Modifier.isPrivate(con.getModifiers())) {
-                                // private
-                                continue;
-                        } else if (Modifier.isProtected(con.getModifiers())) {
-                                // protected
-                                // targetType not assignable from invoker
-                                // and in different packages
-                                if (!targetType.isAssignableFrom(invoker) &&
-                                        !getPackage(targetType).equals(getPackage(invoker))) {
-                                        continue;
-                                }
-                        } else if (!Modifier.isPublic(con.getModifiers())) {
-                                // package access
-                                // in different packages
-                                if (!getPackage(targetType).equals(getPackage(invoker))) {
-                                        continue;
-                                }
-                        }
+                        if (!LtRuntime.haveAccess(con.getModifiers(), targetType, invoker)) continue;
 
                         if (con.getParameterCount() == args.length) {
                                 if (canBeCandidate(con.getParameterTypes(), args)) {

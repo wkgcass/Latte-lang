@@ -10,6 +10,7 @@ arr=[1,2,3]
 res0=0
 for i in arr
     res0 += i
+; res0 is 6
 
 ; =====
 ; while
@@ -19,6 +20,7 @@ res1=0
 index=0
 while index<arr.size()
     res1 += arr[index++]
+; res1 is 6
 
 ; 2.logic branch
 ; ==
@@ -63,6 +65,8 @@ method_try_catch_finally(func)
     finally
         ++a
     return a
+; Latte can throw and catch any type. e.g. (throw "error-message")
+; As a result, Latte doesn't provide 'catch type', use if-else instead.
 
 ; =====
 ; throw
@@ -93,11 +97,14 @@ variable3 : int          ; type is int, with no initialize expression
 ; method invocation
 ; =================
 res3=method_if_elseif_else(true,false)
+; according to the method definition
+; res3 is 1
 
 ; ==================
 ; invoke constructor
 ; ==================
 res4 = Object()
+; Latte doesn't require `new` when constructing objects.
 
 ; ===
 ; DSL
@@ -129,9 +136,8 @@ list2 clear
 ; get field
 ; =========
 res5 = this.list1  ; get this.list
-; if field not found, the method invokes lt::lang::Lang.getField(o,fieldname,callerClass) to get field
-; first it checks all fields
-; if still not found, it tries to invoke get(String) on the object
+; if field not found, it invokes lt::lang::Lang.getField(o,fieldname,callerClass) to get field
+; the result will be undefined if field not found
 
 ; ============
 ; index access

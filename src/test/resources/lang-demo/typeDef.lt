@@ -9,7 +9,7 @@ class I_Have_Params(
     param2        ; it's java.lang.Object
 )
 
-; well, you can write params in the same line
+; you can write params in the same line
 class I_Have_Params_too(param1:int, param2)
 
 ; a class can have one and only one parent class

@@ -30,7 +30,7 @@ Compiler() configure {
     }
 } compile filesInDirectory('...', '.*\\.lt')
                           ; compile these files
-                          ; use filesInDirectory('...', true) to recursively
+                          ; use filesInDirectory('...', '.*\\.lt', true) to recursively
                           ; compile all `lt` files in children directories
 
 /*
@@ -42,6 +42,6 @@ you can run this script in REPL :
 
 or
 
-    java -jar repl.jar path-of-this-file
+    java -jar repl.jar -s path-of-this-file
 
 */
