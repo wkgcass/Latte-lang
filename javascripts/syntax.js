@@ -9,24 +9,28 @@ $(document).ready(function () {
 
         $scope.git_repo = common_git_repo();
 
-        files = {};
+        files = [];
         function getLtFile(name) {
             $.ajax({
                 url: 'https://raw.githubusercontent.com/wkgcass/Latte-lang/master/src/test/resources/lang-demo/' + name,
                 async: false,
                 dataType: 'text',
                 success: function (res) {
-                    files[name] = res;
+                    files.push({
+                        file: name,
+                        code: res
+                    });
                 }
             });
         }
 
-        getLtFile('advanced.lt');
-        getLtFile('literals.lts');
         getLtFile('ltFileStructure.lt');
-        getLtFile('operator.lt');
+        getLtFile('literals.lts');
         getLtFile('statements.lts');
         getLtFile('typeDef.lt');
+        getLtFile('operator.lt');
+        getLtFile('list-map.lts');
+        getLtFile('advanced.lt');
 
         $scope.descr = $sce.trustAsHtml("" +
             "如下语法规则示例代码直接通过ajax获取自" +

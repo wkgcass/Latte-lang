@@ -17,7 +17,8 @@
 </head>
 <body ng-app="syntax" ng-controller="controller" class="pushable">
 <div class="ui large top fixed borderless menu">
-    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a>
+    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs"
+                                 class="item">{{nav.name}}</a>
 
         <div class="right menu">
             <div class="item"><a href="{{git_repo}}" class="ui teal button">Fork Me</a></div>
@@ -27,15 +28,16 @@
 <div class="ui vertical inverted sidebar menu left">
     <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a></div>
 <div class="pusher">
-    <div class="ui black big launch right attached fixed button"><a style="color:white" class="toc item"><i class="sidebar icon"></i></a></div>
+    <div class="ui black big launch right attached fixed button"><a style="color:white" class="toc item"><i
+            class="sidebar icon"></i></a></div>
     <div style="margin-top:60px;" class="ui container">
         <span ng-bind-html="descr"></span>
         <br>
         <br>
 
-        <div ng-repeat="(file,code) in files">
-            <h1>{{file}}</h1>
-            <pre style="word-wrap: break-word" ng-bind-html="highlightLt(file, code)"></pre>
+        <div ng-repeat="file in files">
+            <h1>{{file.file}}</h1>
+            <pre style="word-wrap: break-word" ng-bind-html="highlightLt(file.file, file.code)"></pre>
         </div>
     </div>
 </div>
