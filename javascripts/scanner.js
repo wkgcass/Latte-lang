@@ -1,5 +1,6 @@
 var LAYER = ["->"];
 var SPLIT_X = [
+    ":::", // concat
     ".", // class positioning or method access
     ":", // type specification or generic extends
     "::", // package::package

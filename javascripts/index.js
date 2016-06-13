@@ -24,7 +24,7 @@ $(document).ready(function () {
 
         $scope.header = "The Latte Programming Language";
         $scope.header_descr = "100% interoperable with Java™";
-        $scope.header_button = "Fork me on Github";
+        $scope.header_button = "Download Latte";
         $scope.navs = common_navs();
         $scope.navs[0].active = true;
 
@@ -184,7 +184,7 @@ $(document).ready(function () {
         $scope.build = {
             title: "如何Build",
             contents: [
-                $sce.trustAsHtml("Latte只需要 <code>JRE 8</code>"),
+                $sce.trustAsHtml("Latte 只需要 <code>JRE 8</code>"),
                 $sce.trustAsHtml("建议以<code>lt.repl.REPL</code>为主类打包为jar"),
                 $sce.trustAsHtml("本工程通过Maven管理, 所以您也可以使用 <code>Maven 3</code> 进行自动Build"),
                 $sce.trustAsHtml("clone<a href='" + $scope.git_repo + "'>该仓库</a>, 然后执行 <code>mvn clean package</code> , 在 <code>target</code> 目录下将生成一个可执行的jar文件, 并且在跟目录生成批处理文件."),
@@ -195,7 +195,7 @@ $(document).ready(function () {
             title: "REPL 与 编译",
             contents: [
                 $sce.trustAsHtml("Latte提供一个REPL, 您可以运行自动Build后生成的jar包,或者直接执行 <code>lt.repl.REPL</code> 类以使用"),
-                $sce.trustAsHtml("REPL环境除去任何Latte代码都会执行的导入以外, 还会自动导入 <ul><li><code>java::util::_</code></li><li><code>java::math::_</code></li><li><code>lt::repl::_</code></li></ul>"),
+                $sce.trustAsHtml("REPL环境除去任何Latte代码都会执行的导入以外, 还会自动导入 <ul><li><code>lt::util::_</code></li><li><code>java::util::_</code></li><li><code>java::math::_</code></li><li><code>lt::repl::_</code></li></ul>"),
                 $sce.trustAsHtml("若需要编译Latte源代码文件(<code>*.lt</code>), 您可以在REPL环境下使用 <code>Compiler()</code> 构造一个 <code>lt::repl::Compiler</code> 对象. 您也可以在java代码中用类似的方式进行 <code>lt</code> 文件的编译"),
                 $sce.trustAsHtml(common_compile_highlighting())
             ],

@@ -21,7 +21,8 @@
         alt="Fork me on GitHub"/></a>
 
 <div class="ui large top fixed hidden menu">
-    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a>
+    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs"
+                                 class="item">{{nav.name}}</a>
 
         <div class="right menu">
             <div class="item"><a href="{{git_repo}}" class="ui teal button">Fork Me</a></div>
@@ -31,9 +32,11 @@
 <div class="ui vertical inverted sidebar menu left">
     <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a></div>
 <div class="pusher">
-    <div class="ui inverted vertical masthead center aligned segment">
+    <div class="ui inverted vertical masthead center aligned segment"
+         style="background:url('images/1.jpg')">
         <div class="ui container">
-            <div class="ui large secondary inverted pointing menu">
+            <div class="ui large secondary inverted pointing menu"
+                style="border:none">
                 <a class="toc item"><i class="sidebar icon"></i></a>
                 <a href="{{nav.link}}" ng-class="{'active':nav.active}"
                    ng-repeat="nav in navs" class="item">{{nav.name}}</a>
@@ -44,7 +47,10 @@
 
             <h2>{{header_descr}}</h2>
 
-            <div class="ui huge default button">{{header_button}}<i style="margin-left:15px;margin-right:0" class="github icon"></i></div>
+            <div
+                    onclick="window.location.href='download.html'"
+                    class="ui huge inverted download button">{{header_button}}<i style="margin-left:15px;margin-right:0"
+                                                                       class="github icon"></i></div>
         </div>
     </div>
     <div class="ui vertical stripe segment">
@@ -65,10 +71,15 @@
                     <div style="height:485px;width:100%;background-color:RGB(240,240,240);overflow:hidden;padding:20px">
                         <pre>; {{codes_head}}</pre>
                         <div class="ui buttons">
-                            <button class="ui labeled icon button" onclick="previous()"><i class="left chevron icon"></i>previous</button>
-                            <button class="ui right labeled icon button" onclick="next()"><i class="right chevron icon"></i>next</button>
+                            <button class="ui labeled icon button" onclick="previous()"><i
+                                    class="left chevron icon"></i>previous
+                            </button>
+                            <button class="ui right labeled icon button" onclick="next()"><i
+                                    class="right chevron icon"></i>next
+                            </button>
                         </div>
-                        <pre ng-repeat="code in codes" ng-style="{'display':(($index==0)?'block':'none')}" ng-bind-html="code.code" class="code play"></pre>
+                        <pre ng-repeat="code in codes" ng-style="{'display':(($index==0)?'block':'none')}"
+                             ng-bind-html="code.code" class="code play"></pre>
                     </div>
                 </div>
             </div>

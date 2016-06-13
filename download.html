@@ -44,7 +44,7 @@
                 <div style="padding-left:0px" class="seven wide column">
                     <h1>{{source_code.title}}</h1>
                 </div>
-                <div class="seven wide right floated column"><a href="{{source_code.link}}" class="ui grey button">{{source_code.download}}</a></div>
+                <div class="seven wide right floated column inline"><a href="{{source_code.link}}" class="ui grey button">{{source_code.download}}</a></div>
             </div>
         </div>
         <br/>
@@ -55,6 +55,12 @@
         <h1>{{build.title}}</h1>
 
         <p ng-bind-html="content" ng-repeat="content in build.contents"></p>
+
+        <h4 class="ui horizontal header divider">next</h4>
+
+        <h1>{{compile_original.title}}</h1>
+
+        <p ng-bind-html="content" ng-repeat="content in compile_original.contents"></p>
 
         <h4 class="ui horizontal header divider">next</h4>
 

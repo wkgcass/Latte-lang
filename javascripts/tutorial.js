@@ -63,7 +63,7 @@ $(document).ready(function () {
                     "    'name' : 'cass'\n" +
                     "    'age' : 22\n" +
                     "}"),
-                note: $sce.trustAsHtml("Latte是强弱类型结合的. 对于没有声明类型的变量将视为 <code>java.lang.Object</code>")
+                note: $sce.trustAsHtml("Latte是动态静态类型结合的. 对于没有声明类型的变量将视为 <code>java.lang.Object</code>")
             },
             {
                 title: "类型定义",

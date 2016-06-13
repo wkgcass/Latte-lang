@@ -13,7 +13,10 @@ $(document).ready(function () {
             title: "源代码",
             contents: [
                 $sce.trustAsHtml("Latte源代码托管于 <a href='" + common_git_repo() + "'>Github</a>"),
-                $sce.trustAsHtml("您可以下载整个 <code>master</code> 分支自行Build , 或者下载已经编译的 <code>jar</code> 文件")
+                $sce.trustAsHtml("您可以下载整个 <code>master</code> 分支自行Build , 或者下载已经编译的 <a href='"
+                    +
+                    "https://github.com/wkgcass/Latte-lang/releases/download/0.0.1-aplha/repl.jar"
+                    +"'><code>jar</code></a> 文件")
             ],
             download: "下载 Master 分支",
             link: "https://github.com/wkgcass/Latte-lang/archive/master.zip"
@@ -27,11 +30,11 @@ $(document).ready(function () {
                     "<li>自动Build还需 <code>Maven 3</code></li>" +
                     "</ul>"),
                 $sce.trustAsHtml("如果手动编译请编译 <code>/src/main/java</code> 目录"),
-                $sce.trustAsHtml("若需自动编译, 下载 Master 分支, 然后执行<code>mvn clean package</code>, 在生成的target目录下可以找到打包的 jar 文件, 并且在跟目录会生成批处理文件."),
+                $sce.trustAsHtml("若需自动编译, 下载 Master 分支, 然后执行<code>mvn clean package</code>, 在生成的target目录下可以找到打包的 jar 文件, 并且在根目录会生成批处理文件."),
                 $sce.trustAsHtml("执行 <code>.&#47;latte</code> 即可启动 REPL, 当然也可将jar文件引入到项目中使用")
             ]
         };
-        $scope.compile = {
+        $scope.compile_original = {
             title: "编译",
             contents: [
                 $sce.trustAsHtml("可以在REPL中, 也可以编写java代码进行编译"),
@@ -44,9 +47,11 @@ $(document).ready(function () {
                     "Compiler compiler=new Compiler();\n" +
                     "compiler.add(\"class-path\")\n" +
                     "    .shiftRight(\"output directory\")\n" +
-                    "    .compile(lt.lang.Utils.filesInDirectory(\"source file directory\"))" +
+                    "    .compile(lt.lang.Utils.filesInDirectory(\n" +
+                    "        \"source file directory\",\".*\\\\.lt\"\n" +
+                    "    ))" +
                     "</textarea>" +
-                    "<script>var editor = CodeMirror.fromTextArea(document.getElementById('compile_java'));editor.setSize('auto', '100px');</script>")
+                    "<script>var editor = CodeMirror.fromTextArea(document.getElementById('compile_java'));editor.setSize('auto', '150px');</script>")
             ]
         };
         $scope.compile = {
@@ -55,7 +60,7 @@ $(document).ready(function () {
                 $sce.trustAsHtml("Latte支持Script, 所以编译建议通过脚本完成"),
                 $sce.trustAsHtml(common_script_highlighting()),
                 $sce.trustAsHtml("可以使用如下方法运行脚本"),
-                $sce.trustAsHtml("<code>.&#47;latte script-file-path script-arguments</code>"),
+                $sce.trustAsHtml("<code>.&#47;latte -s script-file-path script-arguments</code>"),
                 $sce.trustAsHtml("或者进入REPL后, 输入"),
                 $sce.trustAsHtml("<code>:script script-path<br>" +
                     "script run<br>" +

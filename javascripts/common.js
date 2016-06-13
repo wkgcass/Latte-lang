@@ -41,11 +41,11 @@ function common_compile_highlighting() {
             "compiler = Compiler()\n" +
             "compiler + 'class-path'\n" +
             "compiler >> 'output directory'\n" +
-            "compiler compile filesInDirectory('source file directory')\n" +
+            "compiler compile filesInDirectory('source file directory', '.*\\\\.lt')\n" +
             "\n" +
             "; or you can chain these invocations up\n" +
             "\n" +
-            "Compiler() + 'class-path' >> 'output dir' compile filesInDirectory('source file directory')", {}) +
+            "Compiler() + 'class-path' >> 'output dir' compile filesInDirectory('source file directory', '.*\\\\.lt')", {}) +
         "</pre>";
 }
 
