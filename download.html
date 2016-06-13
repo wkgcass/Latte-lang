@@ -1,0 +1,80 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+    <title>Latte lang - Download</title>
+    <link href="http://cdn.bootcss.com/semantic-ui/2.1.8/semantic.css" rel="stylesheet"/>
+    <link href="stylesheets/style.css" rel="stylesheet"/>
+    <link href="stylesheets/code.css" rel="stylesheet"/>
+    <script src="http://cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+    <script src="http://cdn.bootcss.com/semantic-ui/2.1.8/semantic.js"></script>
+    <script src="javascripts/common.js"></script>
+    <script src="javascripts/download.js"></script>
+    <script src="javascripts/code.js"></script>
+    <script src="javascripts/scanner.js"></script>
+    <script src="http://cdn.bootcss.com/angular.js/1.3.20/angular.min.js"></script>
+
+    <!-- code mirror starts
+     only used for java highlighting
+     Latte highlighting is implemented via using `Latte scanner for javascript`
+     check javascripts/scanner.js for more info
+    -->
+    <script src="http://cdn.bootcss.com/codemirror/5.12.0/codemirror.min.js"></script>
+    <script src="http://cdn.bootcss.com/codemirror/5.12.0/mode/groovy/groovy.min.js"></script>
+    <link href="http://cdn.bootcss.com/codemirror/5.12.0/codemirror.min.css" rel="stylesheet">
+    <!-- code mirror ends-->
+</head>
+<body ng-app="download" ng-controller="controller" class="pushable">
+<div class="ui large top fixed borderless menu">
+    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a>
+
+        <div class="right menu">
+            <div class="item"><a href="{{git_repo}}" class="ui teal button">Fork Me</a></div>
+        </div>
+    </div>
+</div>
+<div class="ui vertical inverted sidebar menu left">
+    <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a></div>
+<div class="pusher">
+    <div class="ui black big launch right attached fixed button"><a style="color:white" class="toc item"><i class="sidebar icon"></i></a></div>
+    <div style="margin-top:60px;" class="ui text container">
+        <div class="ui middle aligned stackable grid container">
+            <div class="row">
+                <div style="padding-left:0px" class="seven wide column">
+                    <h1>{{source_code.title}}</h1>
+                </div>
+                <div class="seven wide right floated column"><a href="{{source_code.link}}" class="ui grey button">{{source_code.download}}</a></div>
+            </div>
+        </div>
+        <br/>
+
+        <p ng-bind-html="content" ng-repeat="content in source_code.contents"></p>
+        <h4 class="ui horizontal header divider">next</h4>
+
+        <h1>{{build.title}}</h1>
+
+        <p ng-bind-html="content" ng-repeat="content in build.contents"></p>
+
+        <h4 class="ui horizontal header divider">next</h4>
+
+        <h1>{{compile.title}}</h1>
+
+        <p ng-bind-html="content" ng-repeat="content in compile.contents"></p>
+
+        <h4 class="ui horizontal header divider">next</h4>
+
+        <h1>{{highlight.title}}</h1>
+
+        <p ng-bind-html="content" ng-repeat="content in highlight.contents"></p>
+
+        <h4 class="ui horizontal header divider">next</h4>
+
+        <h1>{{ide.title}}</h1>
+
+        <p ng-bind-html="content" ng-repeat="content in ide.contents"></p>
+        <br>
+    </div>
+</div>
+</body>
+</html>
