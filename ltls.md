@@ -1,4 +1,4 @@
-#The Latte Language Sepcification
+#The Latte Language Specification
 #Contents
 1. File Structure
 	1. indentation
