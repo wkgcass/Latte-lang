@@ -54,31 +54,12 @@ private class StringEscaper
             '"' : "&quot;"
             ' ' : "&nbsp;"
         }
-        wordEscapeMap = {
-            '\"' : "\\\"" ; \"
-            '\'' : "\\\'" ; \'
-            '\n' : "\\n"  ; \n
-            '\t' : "\\t"  ; \t
-            '\r' : "\\r"  ; \r
-            '\\' : "\\\\" ; \\
-        }
         escapeHtml(source:String):String
             sb = StringBuilder()
             arr:[]char = source.toCharArray()
             for i in 0.:arr.length
                 c:char = arr[i]
                 res = htmlEscapeMap[c]
-                if res
-                    sb append res
-                else
-                    sb append c
-            return sb.toString()
-        escapeWord(source:String):String
-            sb = StringBuilder()
-            arr:[]char = source.toCharArray()
-            for i in 0.:arr.length
-                c:char = arr[i]
-                res = wordEscapeMap[c]
                 if res
                     sb append res
                 else
@@ -101,13 +82,13 @@ abstract data class HTMLElement(cls)
         sb = StringBuilder()
         sb append "<" append this.getClass.getSimpleName.toLowerCase
         for entry in attrMap
-            sb append " " append entry.key append "='" append StringEscaper.escapeWord(entry.value) append "'"
+            sb append " " append entry.key append "='" append StringEscaper.escapeHtml(entry.value) append "'"
         if cls
             sb append " class='" append cls append "'"
 
         for entry in attrs
             if entry.value
-                sb append " " append entry.key append "='" append StringEscaper.escapeWord(entry.value) append "'"
+                sb append " " append entry.key append "='" append StringEscaper.escapeHtml(entry.value) append "'"
 
         sb append ">"
 

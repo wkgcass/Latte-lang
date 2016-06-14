@@ -15,6 +15,6 @@ class TestHtml
                 ]
             ]
         testHtmlEscape()
-            return Html(onload='\\\"\'\n\r\t') + [
+            return Html(onload='window.location.href="page"') + [
                 " ><&\""
             ]

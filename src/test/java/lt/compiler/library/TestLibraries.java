@@ -66,14 +66,14 @@ public class TestLibraries {
                         "</head>" +
                         "<body>" +
                         "<form>" +
-                        "<input value='hello world' type='text'>" +
+                        "<input value='hello&nbsp;world' type='text'>" +
                         "</form>" +
                         "</body>" +
                         "</html>", testHtmlFormat.invoke(null).toString());
 
                 Method testHtmlEscape = TestHtml.getMethod("testHtmlEscape");
                 assertEquals("" +
-                                "<html onload='\\\\\\\"\\'\\n\\r\\t'>" +
+                                "<html onload='window.location.href=&quot;page&quot;'>" +
                                 "&nbsp;&gt;&lt;&amp;&quot;" +
                                 "</html>"
                         , testHtmlEscape.invoke(null).toString());
