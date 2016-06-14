@@ -45,26 +45,69 @@ package lt::html
 
 import lt::util::_
 
+private class StringEscaper
+    static
+        htmlEscapeMap = {
+            '<' : "&lt;"
+            '>' : "&gt;"
+            '&' : "&amp;"
+            '"' : "&quot;"
+            ' ' : "&nbsp;"
+        }
+        wordEscapeMap = {
+            '\"' : "\\\"" ; \"
+            '\'' : "\\\'" ; \'
+            '\n' : "\\n"  ; \n
+            '\t' : "\\t"  ; \t
+            '\r' : "\\r"  ; \r
+            '\\' : "\\\\" ; \\
+        }
+        escapeHtml(source:String):String
+            sb = StringBuilder()
+            arr:[]char = source.toCharArray()
+            for i in 0.:arr.length
+                c:char = arr[i]
+                res = htmlEscapeMap[c]
+                if res
+                    sb append res
+                else
+                    sb append c
+            return sb.toString()
+        escapeWord(source:String):String
+            sb = StringBuilder()
+            arr:[]char = source.toCharArray()
+            for i in 0.:arr.length
+                c:char = arr[i]
+                res = wordEscapeMap[c]
+                if res
+                    sb append res
+                else
+                    sb append c
+            return sb.toString()
+
 /*
 The base of all DOM. the DOM provides 4 attributes : id, name, class, and style.
 The toString({}) method returns <simple-name-lower-case attr='value'>.
 It doesn't contain the closing tag
 Use class HTMLElementWithClosing if the closing tag is required
 */
-abstract data class HTMLElement(id, name, cls, style)
+abstract data class HTMLElement(cls)
+    attrMap={}
+    set(attrName:String, o):HTMLElement
+        attrMap[attrName] = o
+        return this
+
     toString(attrs):String
         sb = StringBuilder()
         sb append "<" append this.getClass.getSimpleName.toLowerCase
-        if id
-            sb append " id='" append id append "'"
-        if name
-            sb append " name='" append name append "'"
+        for entry in attrMap
+            sb append " " append entry.key append "='" append StringEscaper.escapeWord(entry.value) append "'"
         if cls
             sb append " class='" append cls append "'"
 
         for entry in attrs
             if entry.value
-                sb append " " append entry.key append "='" append entry.value append "'"
+                sb append " " append entry.key append "='" append StringEscaper.escapeWord(entry.value) append "'"
 
         sb append ">"
 
@@ -86,10 +129,19 @@ abstract data class HTMLElementWithClosing : HTMLElement
 
         if children
             for i in children
-                sb append i
+                if i is type String
+                    sb append StringEscaper.escapeHtml(i)
+                else
+                    sb append i
 
         sb append "</" append this.getClass.getSimpleName.toLowerCase append ">"
         return sb toString
+
+/*
+simply use the string as HTML without escaping.
+*/
+data class Element(elem:String) : HTMLElement
+    toString():String=elem
 
 ; <html>...</html>
 data class Html : HTMLElementWithClosing
@@ -100,16 +152,16 @@ data class Head : HTMLElementWithClosing
     toString():String = toString({})
 
 ; <meta http-equiv='' scheme=''>
-data class Meta(http_equiv, scheme) : HTMLElement
-    toString():String = toString({'http-equiv':http_equiv, 'scheme':scheme})
+data class Meta(http_equiv) : HTMLElement
+    toString():String = toString({'http-equiv':http_equiv})
 
 ; <script src='' type=''>...</script>
-data class Script(src, typ) : HTMLElementWithClosing
-    toString():String = toString({'scr':scr, 'type':typ})
+data class Script(typ) : HTMLElementWithClosing
+    toString():String = toString({'type':typ})
 
 ; <link rel='' type='' href=''>
-data class Link(rel, typ, href) : HTMLElement
-    toString():String = toString({'rel':rel, 'type':typ, 'href':href})
+data class Link(typ) : HTMLElement
+    toString():String = toString({'type':typ})
 
 ; <body>...</body>
 data class Body : HTMLElementWithClosing
@@ -117,7 +169,7 @@ data class Body : HTMLElementWithClosing
 
 ; <a href=''>...</a>
 data class A : HTMLElementWithClosing
-    toString():String = toString({'href':href})
+    toString():String = toString({})
 
 ; <br>
 data class Br : HTMLElement
@@ -164,24 +216,24 @@ data class Hr : HTMLElementWithClosing
     toString():String = toString({})
 
 ; <iframe src=''>...</iframe>
-data class IFrame(src) : HTMLElementWithClosing
-    toString():String = toString({'src':src})
+data class IFrame : HTMLElementWithClosing
+    toString():String = toString({})
 
 ; <img src=''>...</img>
-data class Img(src) : HTMLElementWithClosing
-    toString():String = toString({'src':src})
+data class Img : HTMLElementWithClosing
+    toString():String = toString({})
 
 ; <label>...</label>
 data class Label : HTMLElementWithClosing
     toString():String = toString({})
 
 ; <form action='' method=''></form>
-data class Form(action, method) : HTMLElementWithClosing
-    toString():String = toString({'action':action, 'method':method})
+data class Form : HTMLElementWithClosing
+    toString():String = toString({})
 
 ; <input type='' value=''>
-data class Input(typ, value) : HTMLElement
-    toString():String = toString({"type" : typ, "value" : value})
+data class Input(typ) : HTMLElement
+    toString():String = toString({"type" : typ})
 
 ; <textarea>...</textarea>
 data class TextArea : HTMLElementWithClosing
@@ -192,8 +244,8 @@ data class Select : HTMLElementWithClosing
     toString():String = toString({})
 
 ; <option value=''>...</option>
-data class Option(value) : HTMLElementWithClosing
-    toString():String = toString({'value':value})
+data class Option : HTMLElementWithClosing
+    toString():String = toString({})
 
 ; <nav>...</nav>
 data class Nav : HTMLElementWithClosing

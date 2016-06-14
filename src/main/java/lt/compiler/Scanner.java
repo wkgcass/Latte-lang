@@ -697,7 +697,11 @@ public class Scanner {
                                                 break;
                                         } else {
                                                 String c = String.valueOf(line.charAt(index - 1));
-                                                if (!ESCAPE.equals(c)) {
+                                                boolean isStringEnd = false;
+                                                // check
+                                                isStringEnd = !ESCAPE.equals(c) || checkStringEnd(line, index - 1);
+
+                                                if (isStringEnd) {
                                                         // the string starts at minIndex and ends at index
                                                         String s = line.substring(minIndex, index + 1);
 
@@ -777,6 +781,24 @@ public class Scanner {
                         // recursively parse
                         scan(line, args);
                 }
+        }
+
+        /**
+         * check whether it's the string end. count the `\`, check whether it%2==0
+         *
+         * @param line  the line
+         * @param index index of `\`
+         * @return true/false
+         */
+        private boolean checkStringEnd(String line, int index) {
+                int count = 0;
+                char[] arr = line.toCharArray();
+                for (int i = index; i > 0; --i) {
+                        char c = arr[i];
+                        if (c == '\\') ++count;
+                        else break;
+                }
+                return count % 2 == 0;
         }
 
         /**

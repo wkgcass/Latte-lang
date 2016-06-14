@@ -101,4 +101,9 @@ public class SArrayTypeDef extends STypeDef {
                 }
                 setFullName(sb.toString());
         }
+
+        @Override
+        public String toString() {
+                return fullName();
+        }
 }

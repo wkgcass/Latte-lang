@@ -14,3 +14,7 @@ class TestHtml
                     ]
                 ]
             ]
+        testHtmlEscape()
+            return Html(onload='\\\"\'\n\r\t') + [
+                " ><&\""
+            ]

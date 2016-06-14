@@ -3352,22 +3352,20 @@ public class SemanticProcessor {
                         Expression initValue = v.getInit();
 
                         String n = v.getName();
-                        String setterName = "set" + n.substring(0, 1).toUpperCase() + n.substring(1);
-
-                        // ?.setX(initValue)
-                        AST.Invocation i = new AST.Invocation(
+                        // ?.x = initValue
+                        AST.Assignment ass = new AST.Assignment(
                                 new AST.Access(
                                         new AST.Access(null, name, invocation.line_col()),
-                                        setterName,
-                                        invocation.line_col()
+                                        n,
+                                        LineCol.SYNTHETIC
                                 ),
-                                Collections.singletonList(initValue),
-                                false,
-                                invocation.line_col()
+                                "=",
+                                initValue,
+                                LineCol.SYNTHETIC
                         );
 
                         parseStatement(
-                                i, null, scope, valuePack.instructions(), null, null, null, false
+                                ass, null, scope, valuePack.instructions(), null, null, null, false
                         );
                 }
 
@@ -6248,7 +6246,7 @@ public class SemanticProcessor {
                                                         true);
                                                 if (methodsToInvoke.isEmpty()) {
                                                         List<Value> args = new ArrayList<>();
-                                                        args.add(new Ins.GetClass(scope.type(), (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                                                        args.add(new Ins.GetClass(type, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                                                         args.add(NullValue.get());
                                                         args.addAll(argList);
 

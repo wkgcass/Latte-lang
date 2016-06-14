@@ -930,14 +930,14 @@ public class Ins {
          * TALoad
          */
         public static class TALoad implements Value, Instruction, ReadOnly {
-                public static int Baload = 0;
-                public static int Saload = 0;
-                public static int Iaload = 0;
-                public static int Laload = 0;
-                public static int Faload = 0;
-                public static int Daload = 0;
-                public static int Caload = 0;
-                public static int Aaload = 0;
+                public static int Iaload = 0x2e;
+                public static int Laload = 0x2f;
+                public static int Faload = 0x30;
+                public static int Daload = 0x31;
+                public static int Aaload = 0x32;
+                public static int Baload = 0x33;
+                public static int Caload = 0x34;
+                public static int Saload = 0x35;
 
                 private final LineCol lineCol;
                 private final int mode;
@@ -949,15 +949,19 @@ public class Ins {
                         this.index = index;
                         this.lineCol = lineCol;
 
-                        STypeDef type = ((SArrayTypeDef) arr.type()).type();
-                        if (type instanceof BoolTypeDef || type instanceof ByteTypeDef) mode = Baload;
-                        else if (type instanceof ShortTypeDef) mode = Saload;
-                        else if (type instanceof IntTypeDef) mode = Iaload;
-                        else if (type instanceof LongTypeDef) mode = Laload;
-                        else if (type instanceof FloatTypeDef) mode = Faload;
-                        else if (type instanceof DoubleTypeDef) mode = Daload;
-                        else if (type instanceof CharTypeDef) mode = Caload;
-                        else mode = Aaload;
+                        if (((SArrayTypeDef) arr.type()).dimension() == 1) {
+                                STypeDef type = ((SArrayTypeDef) arr.type()).type();
+                                if (type instanceof BoolTypeDef || type instanceof ByteTypeDef) mode = Baload;
+                                else if (type instanceof ShortTypeDef) mode = Saload;
+                                else if (type instanceof IntTypeDef) mode = Iaload;
+                                else if (type instanceof LongTypeDef) mode = Laload;
+                                else if (type instanceof FloatTypeDef) mode = Faload;
+                                else if (type instanceof DoubleTypeDef) mode = Daload;
+                                else if (type instanceof CharTypeDef) mode = Caload;
+                                else mode = Aaload;
+                        } else {
+                                mode = Aaload;
+                        }
                 }
 
                 @Override
