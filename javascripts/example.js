@@ -354,6 +354,13 @@ $(document).ready(function () {
                     '<blockquote>Full html support can be found <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/lt/html.lt">here</a></blockquote>'
                     ))
                 )
+            },
+            {
+                title: zh?'使用 Vertx.x 或 Jetty':"Work with Vert.x or Jetty",
+                content: zh?$sce.trustAsHtml('' +
+                    '<p>Latte 可以与Java完美互通.所以Java能够使用的库, Latte都可以使用. 比如 <code>Vert.x</code> 或者 <code>Jetty</code></p>' +
+                    '<p>Vert.x 和 Jetty 都可以作为嵌入语言的服务端.</p>'
+                )
             }
         ];
         $scope.switchTo = function(i){
