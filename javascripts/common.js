@@ -23,36 +23,37 @@ function common_git_repo() {
 }
 function common_navs() {
     var isZh=useZh();
+    var suffix = "?useZh="+(isZh?"1":"0");
     return [
         {
             name: isZh?"主页":"Home",
             active: false,
-            link: "index.html"
+            link: "index.html"+suffix
         },
         {
             name: isZh?"下载":"Download",
             active: false,
-            link: "download.html"
+            link: "download.html"+suffix
         },
         {
             name: isZh?"教程":"Intro",
             active: false,
-            link: "tutorial.html"
+            link: "tutorial.html"+suffix
         },
         {
             name: isZh?"语法":"Syntax",
             active: false,
-            link: "syntax.html"
+            link: "syntax.html"+suffix
         },
         {
             name: isZh?"示例":"Examples",
             active: false,
-            link: "example.html"
+            link: "example.html"+suffix
         },
         {
             name: isZh?"开发":"Develop",
             active: false,
-            link: "dev.html"
+            link: "dev.html"+suffix
         },
         {
             name: "Switch Language",

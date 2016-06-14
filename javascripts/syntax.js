@@ -32,10 +32,15 @@ $(document).ready(function () {
         getLtFile('list-map.lts');
         getLtFile('advanced.lt');
 
+        var zh=useZh();
+
         $scope.descr = $sce.trustAsHtml("" +
-            "如下语法规则示例代码直接通过ajax获取自" +
+            (zh?"如下语法规则示例代码直接通过ajax获取自":"The following syntax examples are directly retrieved via ajax from ") +
             "<a href='https://github.com/wkgcass/Latte-lang/tree/master/src/test/resources/lang-demo/'>github</a>, " +
-            "并且它们也被视为<a href='https://github.com/wkgcass/Latte-lang/tree/master/src/test/java/lt/compiler/cases/TestDemo.java'>测试用例</a>");
+            (zh?"并且它们也被视为":"and they are considered as ") +
+                "<a href='https://github.com/wkgcass/Latte-lang/tree/master/src/test/java/lt/compiler/cases/TestDemo.java'>" +
+                    (zh?"测试用例":"test cases") +
+                "</a>");
 
         $scope.files = files;
 

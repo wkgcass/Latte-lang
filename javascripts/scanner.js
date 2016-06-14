@@ -651,7 +651,16 @@ function Scanner(filename, input, config) {
                     if (index == -1)
                         throw SyntaxException("end of string not found", args.generateLineCol());
                     var c = line[index - 1];
-                    if (ESCAPE != c) {
+                    function checkStringEnd($line, $index) {
+                        var $count = 0;
+                        for (var $i = $index; $i > 0; --$i) {
+                            var $c = $line[i];
+                            if ($c == '\\') ++$count;
+                                else break;
+                        }
+                        return $count % 2 == 0;
+                    }
+                    if (ESCAPE != c || checkStringEnd(line, index-1)) {
                         // the string starts at minIndex and ends at index
                         s = line.substring(minIndex, index + 1);
 
