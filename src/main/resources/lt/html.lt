@@ -121,8 +121,8 @@ abstract data class HTMLElementWithClosing : HTMLElement
 /*
 simply use the string as HTML without escaping.
 */
-data class Element(elem:String) : HTMLElement
-    toString():String=elem
+data class Plain(text:String) : HTMLElement
+    toString():String=text
 
 ; <html>...</html>
 data class Html : HTMLElementWithClosing
