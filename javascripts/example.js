@@ -357,9 +357,84 @@ $(document).ready(function () {
             },
             {
                 title: zh?'使用 Vertx.x 或 Jetty':"Work with Vert.x or Jetty",
-                content: zh?$sce.trustAsHtml('' +
-                    '<p>Latte 可以与Java完美互通.所以Java能够使用的库, Latte都可以使用. 比如 <code>Vert.x</code> 或者 <code>Jetty</code></p>' +
-                    '<p>Vert.x 和 Jetty 都可以作为嵌入语言的服务端.</p>'
+                content: $sce.trustAsHtml('' +
+                    (zh?(
+                    '<p>Latte 可以与Java完美互通.所以Java能够使用的库, Latte都可以使用. 比如 <code>Vert.x</code> 和 <code>Jetty</code></p>' +
+                    '<p>Vert.x 和 Jetty 都可以作为嵌入语言的服务端, 所以不需要额外的Servlet容器, 也无需编译, 直接在Latte脚本中编写即可构建一个服务端.</p>' +
+                    '<p>这篇示例将直接给出效果和代码:</p>' +
+                    '<h3>最终效果</h3>'):(
+                    '<p>Latte can work with Java perfectly. So all libraries that work on Java can also work on Latte. e.g. <code>Vert.x</code> and <code>Jetty</code></p>' +
+                    '<p>Vert.x and Jetty are both server embedded in program. Extra servlet containers are not required, and you can start a server with Latte scripts without compiling.</p>' +
+                    '<p>This example will show you code and result directly:</p>' +
+                    '<h3>The Result</h3>'
+                    )) +
+                    '<iframe src=\'example/vertx.html\' width=\'100%\' style=\'border:none;\'></iframe>' +
+                    '<h3>Vert.x</h3>' +
+                    '<pre>'+highlighting('','' +
+                    'import io::vertx::core::_\n' +
+                    '\n' +
+                    'import lt::html::_\n' +
+                    '\n' +
+                    'Vertx.vertx().createHttpServer().requestHandler(\n' +
+                    '    (req)->\n' +
+                    '        req.response().\n' +
+                    '        end(\n' +
+                    '            Html() + [\n' +
+                    '                Head() + [\n' +
+                    "                    Link(rel='stylesheet' , href='http://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css')\n" +
+                    '                ]\n' +
+                    '                Body() + [\n' +
+                    '                    Div(cls=\'container\') + [\n' +
+                    '                        H1() + ["Latte with Vert.x or Jetty"]\n' +
+                    "                        Button(cls='btn btn-lg btn-success' , onclick='window.open(\"http://latte-lang.org\")') + [\n" +
+                    '                            "Visit latte-lang.org"\n' +
+                    '                        ]\n' +
+                    '                    ]\n' +
+                    '                ]\n' +
+                    '            ] toString\n' +
+                    '        )\n' +
+                    ').listen(3000)'
+                    ,{})+'</pre>' +
+                    '<h3>Jetty (Servlet)</h3>' +
+                    '<pre>'+highlighting('',''+
+
+                    'import javax::servlet::http::_\n' +
+                    'import org::eclipse::jetty::server::_\n' +
+                    'import org::eclipse::jetty::server::handler::_\n' +
+                    'import org::eclipse::jetty::servlet::_\n' +
+                    '\n' +
+                    'import lt::html::_\n' +
+                    '\n' +
+                    'server = Server(3000)\n' +
+                    '\n' +
+                    'context = ServletContextHandler()\n' +
+                    'context addServlet ServletHolder(IndexServlet()), "/"\n' +
+                    '\n' +
+                    'server setHandler context\n' +
+                    'server start\n' +
+                    'server join\n' +
+                    '\n' +
+                    'class IndexServlet : HttpServlet\n' +
+                    '    @Override\n' +
+                    '    protected doGet(request : HttpServletRequest, response : HttpServletResponse):Unit\n' +
+                    '        response setContentType "text/html;charset=utf-8"\n' +
+                    '        response.writer.println(\n' +
+                    '            Html() + [\n' +
+                    '                Head() + [\n' +
+                    "                    Link(rel='stylesheet' , href='http://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css')\n" +
+                    '                ]\n' +
+                    '                Body() + [\n' +
+                    '                    Div(cls=\'container\') + [\n' +
+                    '                        H1() + ["Latte with Vert.x or Jetty"]\n' +
+                    "                        Button(cls='btn btn-lg btn-success' , onclick='window.open(\"http://latte-lang.org\")') + [\n" +
+                    '                            "Visit latte-lang.org"\n' +
+                    '                        ]\n' +
+                    '                    ]\n' +
+                    '                ]\n' +
+                    '            ]\n' +
+                    '        )'
+                    ,{})+'</pre>' +
+                    (zh?'<blockquote>记得把依赖项加入class-path</blockquote>':'Don\'t forget to add depended jars into class-path.')
                 )
             }
         ];
