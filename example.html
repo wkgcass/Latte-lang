@@ -3,7 +3,7 @@
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-    <title>Latte lang - Develop</title>
+    <title>Latte lang - Examples</title>
     <link href="http://cdn.bootcss.com/semantic-ui/2.1.8/semantic.css" rel="stylesheet"/>
     <link href="stylesheets/style.css" rel="stylesheet"/>
     <link href="stylesheets/code.css" rel="stylesheet"/>
@@ -28,12 +28,12 @@
     <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a></div>
 <div class="pusher">
     <div class="ui black big launch right attached fixed button"><a style="color:white" class="toc item"><i class="sidebar icon"></i></a></div>
-    <div style="margin-top:60px;" class="ui text container">
-        <div ng-repeat="ex in examples">
-            <h1>{{$index+1}}. {{ex.title}}</h1>
-
-            <div ng-bind-html="ex.content"></div>
-            <h4 class="ui horizontal header divider" style="margin-bottom: 20px;" ng-show="$index!=(examples.length-1)">•</h4>
+    <div style="margin-top:55px;" class="ui text container">
+        <div>
+            <button style="margin-top:5px;" class="ui button" ng-class="{'black':showExample==$index}" ng-repeat="ex in examples" ng-click="switchTo($index)">{{ex.title}}</button>
+        </div>
+        <div ng-bind-html="examples[showExample].content"
+            style="margin-top:40px;">
         </div>
     </div>
 </div>

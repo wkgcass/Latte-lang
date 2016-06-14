@@ -1,9 +1,21 @@
 function useZh(){
+    var paramUseZh=GetQueryString('useZh');
+    if(paramUseZh){
+        if(paramUseZh=='false' || paramUseZh=='no' || paramUseZh=='0') return false;
+        else return true;
+    }
+
     var lang = navigator.language;
     if(!lang) navigator.browserLanguage;
     if(!lang) lang="en-us"
-    // return lang.length>2 && lang.toLowerCase().substring(0,2)=='zh';
-    return false;
+    return lang.length>2 && lang.toLowerCase().substring(0,2)=='zh';
+}
+
+function GetQueryString(name)
+{
+     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+     var r = window.location.search.substr(1).match(reg);
+     if(r!=null)return  unescape(r[2]); return null;
 }
 
 function common_git_repo() {
@@ -41,6 +53,11 @@ function common_navs() {
             name: isZh?"开发":"Develop",
             active: false,
             link: "dev.html"
+        },
+        {
+            name: "Switch Language",
+            active: false,
+            link: "?useZh=" + (isZh?"false":"true")
         }
     ]
 }
