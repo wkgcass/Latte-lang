@@ -157,5 +157,15 @@ public class TestLibraries {
 
                 Method testAndOr = TestSQL.getMethod("testAndOr");
                 assertEquals("select User.name from User where (User.id > ? and User.name <> ?) or User.id < ?", testAndOr.invoke(null));
+
+                Method testAllQueries = TestSQL.getMethod("testAllQueries");
+                assertEquals(Arrays.asList(
+                        "select distinct User.name from User",
+                        "select count(User.name) from User",
+                        "select mid(User.name, 1) from User",
+                        "select mid(User.name, 1) as a from User",
+                        "select User.name from User union select User.name from User union select User.name from User",
+                        "select User.id into Tbl from User where User.name = ?"
+                ), testAllQueries.invoke(null));
         }
 }

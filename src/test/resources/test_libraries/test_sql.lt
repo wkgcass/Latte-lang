@@ -6,6 +6,9 @@ data class User
     id=Column(this, "id")
     name=Column(this, "name")
 
+data class Tbl
+    name=Column(this, "name")
+
 class TestSQL
     static
         init()
@@ -94,3 +97,29 @@ class TestSQL
             user = User()
 
             return (db.createStatement select user.name from user where user.id > 10 & user.name!:='abc' | user.id < 5) buildSQL
+
+        testAllQueries()
+            db = DB()
+            user = User()
+            tbl = Tbl()
+            s1 = db.createStatement
+            s2 = db.createStatement
+            s3 = db.createStatement
+            s4 = db.createStatement
+            s5 = db.createStatement
+            s6 = db.createStatement
+
+            return [
+                ; select_distinct
+                (s1 select_distinct user.name from user) buildSQL
+                ; count
+                (s2 select s2.count(user.name) from user) buildSQL
+                ; mid
+                (s3 select s3.mid(user.name, 1) from user) buildSQL
+                ; as
+                (s4 select (s4 mid user.name, 1 `as` "a") from user) buildSQL
+                ; union
+                (s5 select user.name from user) union (s5 select user.name from user) union (s5 select user.name from user) buildSQL
+                ; select into
+                (s6 select user.id into tbl from user where user.name =:= 'a') buildSQL
+            ]

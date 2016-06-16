@@ -95,6 +95,7 @@ data class Column(tbl_o, name:String):Selectable
     notEqual(o):Condition=Condition("<>", this, [o])
     between(a,b):Condition=Condition("between", this, [a,b])
     `in`(agg):Condition=Condition("in", this, [agg])
+    like(o):Condition=Condition("like", this, [o])
 
     assign(o):Assign=Assign(this, o)
 
@@ -105,7 +106,7 @@ data class Column(tbl_o, name:String):Selectable
 
     toString(context):String = context.surround + tbl + context.surround + "." + context.surround + name + context.surround
 
-data class As(col:Column, alias:String)
+data class As(col, alias:String):Selectable
     toString(context):String
         return col.toString(context) + " as " + alias
 
@@ -158,6 +159,24 @@ data class Order(col:Column, isAsc:bool)
             return "desc"
     )
 
+data class Fun(funcName:String, args:List):Selectable
+    `as`(name:String):As = As(this, name)
+    toString(context):String
+        sb = StringBuilder(funcName)
+        sb append "("
+        isFirst=true
+        for arg in args
+            if isFirst
+                isFirst=false
+            else
+                sb append ", "
+            try
+                sb append arg.toString(context)
+            catch ignore
+                sb append arg.toString
+        sb append ")"
+        return sb.toString
+
 data class Context(
     surround = ""                             ; surrounds table and columns
     argMap:Map = {}                           ; the map of position => arguments
@@ -165,16 +184,21 @@ data class Context(
 )
     putValue(o):String
         if o is type EndStatement
-            return objectToString(o)
+            return tableToString(o)
         else
             argMap[++count]=o
             return "?"
-    objectToString(o):String
+    tableToString(o):String
         if o is type EndStatement
             return "(" + o.buildSQL + ")"
         else
             return surround + o.getClass.simpleName + surround
 
+    select_distinct(col:Selectable):Select = select_distinct([col])
+    select_distinct(cols:List):Select
+        sb:StringBuilder = StringBuilder()
+        sb append "select distinct "
+        return Select(this, sb, cols)
     select(col:Selectable):Select = select([col])
     select(cols:List):Select
         sb:StringBuilder = StringBuilder()
@@ -190,8 +214,25 @@ data class Context(
         return Update(this, sb, tbl_o)
     delete_from(tbl_o):UpdateWhere
         sb:StringBuilder = StringBuilder()
-        sb append "delete from " append objectToString(tbl_o) append " where "
+        sb append "delete from " append tableToString(tbl_o) append " where "
         return UpdateWhere(this, sb)
+
+    count(o):Fun = Fun("count", [o])
+    count(os:List):Fun = Fun("count", os)
+    sum(o):Fun = Fun("sum", [o])
+    avg(o):Fun = Fun("avg", [o])
+    first(o):Fun = Fun("first", [o])
+    last(o):Fun = Fun("last", [o])
+    max(o):Fun = Fun("max", [o])
+    min(o):Fun = Fun("min", [o])
+    ucase(o):Fun = Fun("ucase", [o])
+    lcase(o):Fun = Fun("lcase", [o])
+    mid(o, start:int):Fun = Fun("mid", [o, start])
+    mid(o, start:int, length:int):Fun = Fun("mid", [o, start, length])
+    len(o):Fun = Fun("len", [o])
+    round(o, decimals:int):Fun = Fun("round", [o, decimals])
+    now():Fun = Fun("now", [])
+    format(o, f:String):Fun = Fun("format", [o, f])
 
     toStringWithContext(cols:List):String
         sb = StringBuilder()
@@ -207,11 +248,22 @@ data class Context(
 data class Select(context:Context, sb:StringBuilder, cols:List)
     sb append context.toStringWithContext(cols)
 
+    into(tbl_o):Select
+        sb append " into " append context.tableToString(tbl_o)
+        return this
+
     from(tbl_o):From
         return from([tbl_o])
     from(tbl_os:List):From
         sb append " from "
         return From(context, sb, tbl_os)
+
+data class Union(context:Context, unionType:String, s1:SQLBuilder, s2:SQLBuilder):SQLBuilder
+    buildSQL():String = s1.buildSQL + " " + unionType + " " + s2.buildSQL
+    arguments():Map = context.argMap
+
+    union(stmt:SQLBuilder) = Union(context, "union", this, stmt)
+    union_all(stmt:SQLBuilder) = Union(context, "union_all", this, stmt)
 
 abstract class EndStatement(context:Context, sb:StringBuilder):SQLBuilder
     orderBy(order:Order):EndStatement
@@ -234,8 +286,12 @@ abstract class EndStatement(context:Context, sb:StringBuilder):SQLBuilder
         sb append " limit " append context.putValue(start) append "," append context.putValue(length)
         return this
 
+    union(stmt:SQLBuilder):Union = Union(context, "union", this, stmt)
+    union_all(stmt:SQLBuilder):Union = Union(context, "union all", this, stmt)
+
     buildSQL():String = sb.toString
     arguments():Map = context.argMap
+    toString():String = buildSQL()
 
 class From(context:Context, sb:StringBuilder, tbls:List):EndStatement(context, sb)
     isFirst=true
@@ -244,18 +300,27 @@ class From(context:Context, sb:StringBuilder, tbls:List):EndStatement(context, s
             isFirst=false
         else
             sb append ", "
-        sb append context.objectToString(tbl)
+        sb append context.tableToString(tbl)
 
-    join(tbl_o):Join
+    private doJoin(str:String, tbl_o):Join
+        if !str.isEmpty
+            sb append " " append str
         sb append " join "
         return Join(context, sb, tbl_o, this)
+    join(tbl_o):Join = doJoin("", tbl_o)
+    left_join(tbl_o):Join = doJoin("left", tbl_o)
+    right_join(tbl_o):Join = doJoin("right", tbl_o)
+    inner_join(tbl_o):Join = doJoin("inner", tbl_o)
+    outer_join(tbl_o):Join = doJoin("outer", tbl_o)
+    full_join(tbl_o):Join = doJoin("full", tbl_o)
+    full_outer_join(tbl_o):Join = doJoin("full outer", tbl_o)
 
     where(con):QueryWhere
         sb append " where "
         return QueryWhere(context, sb, con)
 
 class Join(context:Context, sb:StringBuilder, tbl_o, from:From)
-    sb append context.objectToString(tbl_o)
+    sb append context.tableToString(tbl_o)
 
     on(con:Condition):From
         sb append " on " append con.toString(context)
@@ -265,7 +330,7 @@ class QueryWhere(context:Context, sb:StringBuilder, con):EndStatement(context, s
     sb append con.toString(context)
 
 class Insert(context:Context, sb:StringBuilder, tbl_o):SQLBuilder
-    sb append context.objectToString(tbl_o)
+    sb append context.tableToString(tbl_o)
 
     _(col:Column):Insert = _([col])
     _(cols:List):Insert
@@ -295,7 +360,7 @@ class Insert(context:Context, sb:StringBuilder, tbl_o):SQLBuilder
     arguments():Map = context.argMap
 
 class Update(context:Context, sb:StringBuilder, tbl_o)
-    sb append context.objectToString(tbl_o)
+    sb append context.tableToString(tbl_o)
 
     set(assign:Assign):UpdateWhere=set([assign])
     set(assigns:List):UpdateWhere
