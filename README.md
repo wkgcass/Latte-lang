@@ -1,6 +1,6 @@
 #Latte-Lang
 
-![](http://latte.cassite.net/images/highlight.png)
+![](http://latte-lang.org/images/highlight.png)
 
 Latte is a JVM language. It's highly readable and extensible.
 
