@@ -48,6 +48,9 @@ $(document).ready(function () {
                     name: "DSL"
                 },
                 {
+                    name: isZh?"`fun` 语法":"`fun` Syntax"
+                },
+                {
                     name: isZh?"预处理 define/undef":"Pre Processing define/undef"
                 },
                 {
@@ -103,6 +106,15 @@ $(document).ready(function () {
                     "*/\n" +
                     (isZh?"; 可以使用如下方式实例化\n":"; Can be instantiated in this way\n") +
                     "User(id=1, name='cass')"
+                    , {}))
+            },
+            {
+                code: $sce.trustAsHtml(highlighting("example_8.lts", "" +
+                    (isZh?"; `fun` 语法\n":"; `fun` Syntax\n") +
+                    "fun empty(o)\n" +
+                    "    return o.isEmpty\n" +
+                    "\n" +
+                    "['hello', 'world'].stream.filter(empty).count"
                     , {}))
             },
             {

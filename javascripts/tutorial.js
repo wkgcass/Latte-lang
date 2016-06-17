@@ -141,6 +141,18 @@ $(document).ready(function () {
                     "data class User(id:int, name:String)")
             },
             {
+                title: zh?"`fun` 语法":"`fun` Syntax",
+                java: "" +
+                "public class printElem implements java.util.function.Consumer {\n" +
+                "    public void accept(Object o) {\n" +
+                "        System.out.println(o);\n" +
+                "    }\n" +
+                "}",
+                latte: getLatteHtml("" +
+                    "fun printElem(o)\n" +
+                    "    println(o)")
+            },
+            {
                 title: zh?"运算符重载":"Operator Binding",
                 java: "" +
                 "BigInteger a = new BigInteger(\"16\");\n" +

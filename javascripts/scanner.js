@@ -166,7 +166,7 @@ var javaKeys = ["abstract", "assert", "boolean", "break", "byte", "case",
 
 var keys = ["is", "not", "bool", "yes", "no",
     "type", "as", "undefined", "in", "elseif",
-    "package", "import", "break", "continue", "return"];
+    "package", "import", "break", "continue", "return", "fun"];
 
 var modifiers = ["public", "protected", "private", "pkg", "data",
     "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp"];
