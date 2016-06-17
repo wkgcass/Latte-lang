@@ -26,7 +26,9 @@ package lt.util;
 
 import lt.lang.function.Function1;
 
+import java.util.AbstractMap;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
 /**
  * map for <tt>Latte</tt>.
@@ -55,5 +57,21 @@ public class Map extends LinkedHashMap<Object, Object> {
          */
         public Map(Function1 initializer) throws Exception {
                 initializer.apply(this);
+        }
+
+        /**
+         * create a new immutable map with current map entries.
+         *
+         * @return immutable map
+         */
+        public java.util.Map<Object, Object> immutable() {
+                return new AbstractMap<Object, Object>() {
+                        java.util.Map<Object, Object> map = new LinkedHashMap<>(Map.this);
+
+                        @Override
+                        public Set<Entry<Object, Object>> entrySet() {
+                                return map.entrySet();
+                        }
+                };
         }
 }

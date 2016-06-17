@@ -26,9 +26,7 @@ package lt.util;
 
 import lt.lang.function.Function1;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.*;
 
 /**
  * list for <tt>Latte</tt>.<br>
@@ -189,5 +187,27 @@ public class List extends LinkedList<Object> {
          */
         public int length() {
                 return size();
+        }
+
+        /**
+         * create a new immutable list with current list elements.
+         * The new list type is {@link java.util.List}
+         *
+         * @return immutable list
+         */
+        public java.util.List<Object> immutable() {
+                return new AbstractList<Object>() {
+                        java.util.List<Object> list = new ArrayList<>(List.this);
+
+                        @Override
+                        public Object get(int index) {
+                                return list.get(index);
+                        }
+
+                        @Override
+                        public int size() {
+                                return list.size();
+                        }
+                };
         }
 }

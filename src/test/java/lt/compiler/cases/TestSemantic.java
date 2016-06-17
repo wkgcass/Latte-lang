@@ -74,6 +74,32 @@ public class TestSemantic {
         }
 
         @Test
+        public void testFun() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "fun A(o):lt::lang::function::Function1\n" +
+                        "    return o");
+                Set<STypeDef> set = parse(map);
+                assertEquals(1, set.size());
+
+                SClassDef classDef = (SClassDef) set.iterator().next();
+                assertEquals("test.A", classDef.fullName());
+                assertEquals(1, classDef.constructors().size());
+                assertTrue(classDef.constructors().get(0).getParameters().isEmpty());
+                assertEquals(1, classDef.methods().size());
+                SMethodDef method = classDef.methods().get(0);
+                assertEquals("apply", method.name());
+                assertEquals(1, method.getParameters().size());
+                assertEquals(1, method.statements().size());
+                assertTrue(method.statements().get(0) instanceof Ins.TReturn);
+                Ins.TReturn r = (Ins.TReturn) method.statements().get(0);
+                assertEquals(Ins.TReturn.AReturn, r.returnIns());
+                assertTrue(r.value() instanceof Ins.TLoad);
+                assertEquals(1, ((Ins.TLoad) r.value()).getIndex());
+        }
+
+        @Test
         public void testClassExtends() throws Exception {
                 Map<String, String> map = new HashMap<>();
                 map.put("test", "" +
@@ -2589,5 +2615,38 @@ public class TestSemantic {
                 Map.Entry<SAnnoField, Value> entry2 = value.values().entrySet().iterator().next();
                 assertEquals("str", entry2.getKey().name());
                 assertEquals("a", ((StringConstantValue) entry2.getValue()).getStr());
+        }
+
+        @Test
+        public void testAccessType() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    static\n" +
+                        "        a=1\n" +
+                        "    b = 2\n" +
+                        "    A + 1\n" +
+                        "    A() + 1\n" +
+                        "    A.a + 1\n" +
+                        "    A().b + 1\n" +
+                        "    a + 1");
+                Set<STypeDef> set = parse(map);
+                assertEquals(1, set.size());
+
+                SClassDef classDef = (SClassDef) set.iterator().next();
+                SConstructorDef cons = classDef.constructors().get(0);
+
+                Ins.InvokeDynamic i2 = (Ins.InvokeDynamic) cons.statements().get(2);
+                Ins.InvokeDynamic i3 = (Ins.InvokeDynamic) cons.statements().get(3);
+                Ins.InvokeDynamic i4 = (Ins.InvokeDynamic) cons.statements().get(4);
+                Ins.InvokeDynamic i5 = (Ins.InvokeDynamic) cons.statements().get(5);
+                Ins.InvokeDynamic i6 = (Ins.InvokeDynamic) cons.statements().get(6);
+
+                assertTrue(i2.arguments().get(1) instanceof Ins.New);
+                assertTrue(i3.arguments().get(1) instanceof Ins.New);
+                assertTrue(i4.arguments().get(1) instanceof Ins.GetStatic);
+                assertTrue(i5.arguments().get(1) instanceof Ins.GetField);
+                assertTrue(i6.arguments().get(1) instanceof Ins.GetStatic);
         }
 }

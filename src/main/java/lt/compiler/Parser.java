@@ -25,10 +25,7 @@
 package lt.compiler;
 
 import lt.compiler.lexical.*;
-import lt.compiler.syntactic.def.ClassDef;
-import lt.compiler.syntactic.def.InterfaceDef;
-import lt.compiler.syntactic.def.MethodDef;
-import lt.compiler.syntactic.def.VariableDef;
+import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
@@ -392,6 +389,8 @@ public class Parser {
                                                 return parse_class();
                                         case "interface":
                                                 return parse_interface();
+                                        case "fun":
+                                                return parse_fun();
 
                                         case "try":
                                                 annosIsEmpty();
@@ -742,7 +741,7 @@ public class Parser {
         /**
          * annotation<br>
          * <code>
-         * <p>
+         * <p/>
          * &nbsp;@Anno<br>
          * &nbsp;@Anno()<br>
          * &nbsp;@Anno(exp)<br>
@@ -1196,6 +1195,59 @@ public class Parser {
                         err.debug("ignore this class definition");
                         throw new ParseFail();
                 }
+        }
+
+        /**
+         * parse function.<br>
+         * <code>
+         * fun FunctionName [(params,...)] : SuperType<br>
+         * &nbsp;&nbsp;&nbsp;&nbsp;...
+         * </code>
+         *
+         * @return FunDef
+         * @throws SyntaxException compiling error
+         */
+        private FunDef parse_fun() throws SyntaxException {
+                ClassDef classDef = parse_class();
+                if (classDef.superWithoutInvocation.isEmpty()) {
+                        classDef.superWithoutInvocation.add(
+                                new AST.Access(
+                                        new AST.PackageRef("lt::lang::function", LineCol.SYNTHETIC),
+                                        "Function" + classDef.params.size(),
+                                        LineCol.SYNTHETIC
+                                )
+                        );
+                }
+                if ((classDef.superWithInvocation != null) || classDef.superWithoutInvocation.size() != 1) {
+                        err.SyntaxException("function definitions should have one super type, which should be functional interface or functional abstract class",
+                                classDef.line_col());
+                        // if no super type defined, then assert it is lt::lang::FunctionX (X is parameter size)
+                        if (classDef.superWithoutInvocation.isEmpty()) {
+                                classDef.superWithoutInvocation.add(
+                                        new AST.Access(
+                                                new AST.PackageRef(
+                                                        "lt::lang::function", LineCol.SYNTHETIC
+                                                ),
+                                                "Function" + classDef.params.size(),
+                                                LineCol.SYNTHETIC
+                                        )
+                                );
+                        }
+                }
+                if (!classDef.modifiers.isEmpty()) {
+                        err.SyntaxException("function definitions do not have modifiers", classDef.line_col());
+                }
+
+                // transform into fun
+
+                return new FunDef(
+                        classDef.name,
+                        classDef.params,
+                        classDef.superWithoutInvocation.get(0),
+                        classDef.annos,
+                        classDef.statements,
+                        classDef.line_col()
+                );
         }
 
         /**

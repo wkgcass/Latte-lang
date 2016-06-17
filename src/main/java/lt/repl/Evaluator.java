@@ -29,10 +29,7 @@ import lt.compiler.Scanner;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Expression;
 import lt.compiler.syntactic.Statement;
-import lt.compiler.syntactic.def.ClassDef;
-import lt.compiler.syntactic.def.InterfaceDef;
-import lt.compiler.syntactic.def.MethodDef;
-import lt.compiler.syntactic.def.VariableDef;
+import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.pre.Import;
 import lt.compiler.syntactic.pre.PackageDeclare;
 
@@ -151,7 +148,7 @@ public class Evaluator {
                 List<Statement> defsAndImports = new ArrayList<>();
 
                 for (Statement s : statements) {
-                        if (s instanceof ClassDef || s instanceof InterfaceDef) {
+                        if (s instanceof ClassDef || s instanceof InterfaceDef || s instanceof FunDef) {
                                 defsAndImports.add(s);
                         } else if (s instanceof Import) {
                                 defsAndImports.add(s);
@@ -213,6 +210,7 @@ public class Evaluator {
 
                 // fill the eval class into the def list
                 defsAndImports.add(evalClass);
+                defsAndImports.add(new Import(new AST.PackageRef("lt::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("java::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));

@@ -27,10 +27,7 @@ package lt.compiler;
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
 import lt.compiler.syntactic.*;
-import lt.compiler.syntactic.def.ClassDef;
-import lt.compiler.syntactic.def.InterfaceDef;
-import lt.compiler.syntactic.def.MethodDef;
-import lt.compiler.syntactic.def.VariableDef;
+import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
@@ -87,10 +84,14 @@ public class SemanticProcessor {
          */
         private Map<String, List<Import>> fileNameToImport = new HashMap<>();
         /**
-         * a set of types that should be return value of {@link #parse()} method<br>
+         * a set of types that should be return value of {@link #parse()} method.<br>
          * these types are to be compiled into byte codes
          */
         private final Set<STypeDef> typeDefSet = new HashSet<>();
+        /**
+         * invokable =&gt; (the-invokable-to-invoke =&gt; the current default parameter).
+         */
+        private Map<SInvokable, Map<SInvokable, Expression>> defaultParamInvokable = new HashMap<>();
         /**
          * retrieve existing classes from this class loader
          */
@@ -99,6 +100,10 @@ public class SemanticProcessor {
          * error manager
          */
         private final ErrorManager err;
+        /**
+         * access which represents a type can be converted into instantiation
+         */
+        private boolean enableTypeAccess = true;
 
         /**
          * initialize the Processor
@@ -147,6 +152,7 @@ public class SemanticProcessor {
         public Set<STypeDef> parse() throws SyntaxException {
                 Map<String, List<ClassDef>> fileNameToClassDef = new HashMap<>();
                 Map<String, List<InterfaceDef>> fileNameToInterfaceDef = new HashMap<>();
+                Map<String, List<FunDef>> fileNameToFunctions = new HashMap<>();
                 Map<String, String> fileNameToPackageName = new HashMap<>();
                 for (String fileName : mapOfStatements.keySet()) {
                         List<Statement> statements = mapOfStatements.get(fileName);
@@ -160,11 +166,14 @@ public class SemanticProcessor {
                         List<ClassDef> classDefs = new ArrayList<>();
                         // interface definition
                         List<InterfaceDef> interfaceDefs = new ArrayList<>();
+                        // fun definition
+                        List<FunDef> funDefs = new ArrayList<>();
 
                         // put into map
                         fileNameToImport.put(fileName, imports);
                         fileNameToClassDef.put(fileName, classDefs);
                         fileNameToInterfaceDef.put(fileName, interfaceDefs);
+                        fileNameToFunctions.put(fileName, funDefs);
 
                         if (statementIterator.hasNext()) {
                                 Statement statement = statementIterator.next();
@@ -173,11 +182,11 @@ public class SemanticProcessor {
                                         pkg = p.pkg.pkg.replace("::", ".") + ".";
                                 } else {
                                         pkg = "";
-                                        select_import_class_interface(statement, imports, classDefs, interfaceDefs);
+                                        select_import_class_interface_fun(statement, imports, classDefs, interfaceDefs, funDefs);
                                 }
                                 while (statementIterator.hasNext()) {
                                         Statement stmt = statementIterator.next();
-                                        select_import_class_interface(stmt, imports, classDefs, interfaceDefs);
+                                        select_import_class_interface_fun(stmt, imports, classDefs, interfaceDefs, funDefs);
                                 }
                         } else {
                                 // no statements,then continue
@@ -232,7 +241,7 @@ public class SemanticProcessor {
                                         return null;
                                 }
 
-                                SClassDef sClassDef = new SClassDef(c.line_col());
+                                SClassDef sClassDef = new SClassDef(false, c.line_col());
                                 sClassDef.setFullName(className);
                                 sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
                                 sClassDef.modifiers().add(SModifier.PUBLIC);
@@ -293,6 +302,23 @@ public class SemanticProcessor {
                                 types.put(interfaceName, sInterfaceDef); // record the interface
                                 originalInterfaces.put(interfaceName, i);
                                 typeDefSet.add(sInterfaceDef);
+                        }
+                        for (FunDef f : funDefs) {
+                                String className = pkg + f.name;
+                                // check occurrence
+                                if (typeExists(className)) {
+                                        err.SyntaxException("duplicate type names " + className, f.line_col());
+                                        return null;
+                                }
+
+                                SClassDef sClassDef = new SClassDef(true, f.line_col());
+                                sClassDef.setFullName(className);
+                                sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
+                                sClassDef.modifiers().add(SModifier.PUBLIC);
+                                sClassDef.modifiers().add(SModifier.FINAL);
+
+                                types.put(className, sClassDef); // record the class
+                                typeDefSet.add(sClassDef);
                         }
 
                         // all classes occurred in the parsing process will be inside `types` map or is already defined
@@ -444,17 +470,10 @@ public class SemanticProcessor {
                                         sClassDef.constructors().add(constructor);
 
                                         if (lastConstructor != null) {
-                                                // invoke another constructor
-                                                Ins.InvokeSpecial invoke = new Ins.InvokeSpecial(new Ins.This(sClassDef), lastConstructor, LineCol.SYNTHETIC);
-                                                int count = 1;
-                                                for (SParameter p : constructor.getParameters()) {
-                                                        invoke.arguments().add(new Ins.TLoad(p, count++, LineCol.SYNTHETIC));
-                                                }
-                                                List<SParameter> paramsOfLast = lastConstructor.getParameters();
-                                                invoke.arguments().add(parseValueFromExpression(classDef.params.get(i).getInit(), paramsOfLast.get(paramsOfLast.size() - 1).type(),
-                                                        new SemanticScope(sClassDef)));
-
-                                                constructor.statements().add(invoke);
+                                                // record the constructor and expressions
+                                                Map<SInvokable, Expression> invoke = new HashMap<>();
+                                                invoke.put(lastConstructor, classDef.params.get(i).getInit());
+                                                defaultParamInvokable.put(constructor, invoke);
                                         }
                                         lastConstructor = constructor;
                                 }
@@ -618,32 +637,66 @@ public class SemanticProcessor {
                 }
                 // check override and overload with super methods
                 for (STypeDef sTypeDef : typeDefSet) {
-                        checkOverride(sTypeDef);
+                        checkOverrideAllMethods(sTypeDef);
+                }
 
-                        // check whether overrides all methods from super
-                        if (sTypeDef instanceof SClassDef) {
-                                SClassDef c = (SClassDef) sTypeDef;
-                                if (c.modifiers().contains(SModifier.ABSTRACT)) continue;
-
-                                // check all abstract methods
-                                // record them
-                                List<SMethodDef> abstractMethods = new ArrayList<>();
-                                recordAbstractMethodsForOverrideCheck(c, abstractMethods);
-
-                                // do check
-                                for (SMethodDef m : abstractMethods) {
-                                        boolean found = false;
-                                        for (SMethodDef overridden : m.overridden()) {
-                                                if (overridden.declaringType().equals(c)) {
-                                                        found = true;
-                                                        break;
-                                                }
-                                        }
-                                        if (!found) {
-                                                err.SyntaxException(m + " is not overridden in " + c, c.line_col());
-                                                return null;
-                                        }
+                // after the override check are done, try to get signatures of functions.
+                for (String fileName : mapOfStatements.keySet()) {
+                        List<Import> imports = fileNameToImport.get(fileName);
+                        String pkg = fileNameToPackageName.get(fileName);
+                        List<FunDef> functionDefs = fileNameToFunctions.get(fileName);
+                        for (FunDef fun : functionDefs) {
+                                // get super class/interface
+                                STypeDef type = getTypeWithAccess(fun.superType, imports);
+                                if (!(type instanceof SClassDef || type instanceof SInterfaceDef)) {
+                                        err.SyntaxException("function super type should be functional interfaces or functional abstract classes", fun.superType.line_col());
+                                        return null;
                                 }
+                                SConstructorDef[] zeroParamConstructor = new SConstructorDef[1];
+                                SMethodDef[] methodToOverride = new SMethodDef[1];
+                                if (!getMethodForLambda(type, zeroParamConstructor, methodToOverride)) {
+                                        err.SyntaxException("function super type should be functional interfaces or functional abstract classes", fun.superType.line_col());
+                                        return null;
+                                }
+
+                                // class and the annos, super class
+                                SClassDef sClassDef = (SClassDef) types.get(pkg + fun.name);
+                                parseAnnos(fun.annos, sClassDef, imports, ElementType.TYPE, Arrays.asList(ElementType.METHOD, ElementType.CONSTRUCTOR));
+                                if (zeroParamConstructor[0] == null) {
+                                        sClassDef.setParent(getObject_Class());
+                                        assert type instanceof SInterfaceDef;
+                                        sClassDef.superInterfaces().add((SInterfaceDef) type);
+                                } else {
+                                        sClassDef.setParent((SClassDef) zeroParamConstructor[0].declaringType());
+                                }
+
+                                // constructors (fill statements directly)
+                                SConstructorDef cons = new SConstructorDef(LineCol.SYNTHETIC);
+                                parseAnnos(fun.annos, cons, imports, ElementType.CONSTRUCTOR, Arrays.asList(ElementType.TYPE, ElementType.METHOD));
+                                cons.setDeclaringType(sClassDef);
+                                sClassDef.constructors().add(cons);
+                                if (zeroParamConstructor[0] == null) {
+                                        zeroParamConstructor[0] = getObject_Class().constructors().get(0);
+                                }
+                                cons.statements().add(new Ins.InvokeSpecial(new Ins.This(sClassDef), zeroParamConstructor[0], LineCol.SYNTHETIC));
+                                cons.modifiers().add(SModifier.PUBLIC);
+
+                                // method name, declaringType, return type, params
+                                SMethodDef method = new SMethodDef(LineCol.SYNTHETIC);
+                                method.setDeclaringType(sClassDef);
+                                method.setReturnType(methodToOverride[0].getReturnType());
+                                method.setName(methodToOverride[0].name());
+                                sClassDef.methods().add(method);
+                                parseAnnos(fun.annos, method, imports, ElementType.METHOD, Arrays.asList(ElementType.TYPE, ElementType.CONSTRUCTOR));
+                                method.modifiers().add(SModifier.PUBLIC);
+
+                                // fill parameters
+                                parseParameters(fun.params, fun.params.size(), method, imports, false);
+
+                                methodToStatements.put(method, fun.statements);
+
+                                // check signature
+                                checkOverrideAllMethods(sClassDef);
                         }
                 }
 
@@ -742,94 +795,99 @@ public class SemanticProcessor {
 
                                 parseAnnoValues(sClassDef.annos());
 
-                                // initiate scope
+                                // initiate the type scope
                                 SemanticScope scope = new SemanticScope(sTypeDef);
 
-                                // parse constructor
-                                // initiate constructor scope
-                                SConstructorDef constructorToFillStatements = null;
-                                for (SConstructorDef cons : sClassDef.constructors()) {
-                                        if (cons.statements().isEmpty()) constructorToFillStatements = cons;
-                                }
-                                assert constructorToFillStatements != null;
-                                SemanticScope constructorScope = new SemanticScope(scope);
-                                constructorScope.setThis(new Ins.This(sTypeDef)); // set `this`
-                                for (SParameter param : constructorToFillStatements.getParameters()) {
-                                        constructorScope.putLeftValue(param.name(), param);
-                                }
-
-                                // parse invoke super constructor statement
-                                SClassDef parent = sClassDef.parent();
-                                Ins.InvokeSpecial invokeConstructor = null;
-                                if (null == astClass.superWithInvocation) {
-                                        // invoke super();
-                                        for (SConstructorDef cons : parent.constructors()) {
-                                                if (cons.getParameters().size() == 0) {
-                                                        invokeConstructor = new Ins.InvokeSpecial(new Ins.This(sClassDef), cons,
-                                                                astClass.line_col());
-                                                        break;
-                                                }
+                                // parse constructors
+                                for (SConstructorDef constructorToFillStatements : sClassDef.constructors()) {
+                                        // if is not empty then continue
+                                        if (!constructorToFillStatements.statements().isEmpty())
+                                                continue;
+                                        // initiate constructor scope
+                                        SemanticScope constructorScope = new SemanticScope(scope);
+                                        constructorScope.setThis(new Ins.This(sTypeDef)); // set `this`
+                                        for (SParameter param : constructorToFillStatements.getParameters()) {
+                                                constructorScope.putLeftValue(param.name(), param);
                                         }
-                                } else {
-                                        // invoke super with args
-                                        for (SConstructorDef cons : parent.constructors()) {
-                                                if (cons.getParameters().size() == astClass.superWithInvocation.args.size()) {
-                                                        invokeConstructor = new Ins.InvokeSpecial(new Ins.This(sClassDef), cons,
-                                                                astClass.superWithInvocation.line_col());
 
-                                                        List<SParameter> parameters = cons.getParameters();
-                                                        List<Expression> args = astClass.superWithInvocation.args;
-                                                        for (int i = 0; i < parameters.size(); ++i) {
-                                                                Value v = parseValueFromExpression(args.get(i), parameters.get(i).type(), constructorScope);
-                                                                invokeConstructor.arguments().add(v);
+                                        if (defaultParamInvokable.containsKey(constructorToFillStatements)) {
+                                                fillDefaultParamMethod(constructorToFillStatements, constructorScope);
+                                        } else {
+                                                // parse invoke super constructor statement
+                                                SClassDef parent = sClassDef.parent();
+                                                Ins.InvokeSpecial invokeConstructor = null;
+                                                if (null == astClass.superWithInvocation) {
+                                                        // invoke super();
+                                                        for (SConstructorDef cons : parent.constructors()) {
+                                                                if (cons.getParameters().size() == 0) {
+                                                                        invokeConstructor = new Ins.InvokeSpecial(new Ins.This(sClassDef), cons,
+                                                                                astClass.line_col());
+                                                                        break;
+                                                                }
                                                         }
-                                                        break;
+                                                } else {
+                                                        // invoke super with args
+                                                        for (SConstructorDef cons : parent.constructors()) {
+                                                                if (cons.getParameters().size() == astClass.superWithInvocation.args.size()) {
+                                                                        invokeConstructor = new Ins.InvokeSpecial(new Ins.This(sClassDef), cons,
+                                                                                astClass.superWithInvocation.line_col());
+
+                                                                        List<SParameter> parameters = cons.getParameters();
+                                                                        List<Expression> args = astClass.superWithInvocation.args;
+                                                                        for (int i = 0; i < parameters.size(); ++i) {
+                                                                                Value v = parseValueFromExpression(args.get(i), parameters.get(i).type(), constructorScope);
+                                                                                invokeConstructor.arguments().add(v);
+                                                                        }
+                                                                        break;
+                                                                }
+                                                        }
+                                                }
+                                                if (null == invokeConstructor) {
+                                                        err.SyntaxException("no suitable super constructor to invoke in " + sClassDef, sClassDef.line_col());
+                                                        return null;
+                                                }
+                                                constructorToFillStatements.statements().add(invokeConstructor);
+
+                                                // put field
+                                                for (SParameter param : constructorToFillStatements.getParameters()) {
+                                                        SFieldDef f = null;
+                                                        for (SFieldDef field : sClassDef.fields()) {
+                                                                if (field.name().equals(param.name())) {
+                                                                        f = field;
+                                                                        break;
+                                                                }
+                                                        }
+                                                        if (f == null) throw new LtBug("f should not be null");
+
+                                                        Ins.PutField putField = new Ins.PutField(f, constructorScope.getThis(),
+                                                                new Ins.TLoad(param, constructorScope, LineCol.SYNTHETIC), LineCol.SYNTHETIC, err);
+                                                        constructorToFillStatements.statements().add(putField);
+                                                }
+
+                                                // a new constructor scope
+                                                // the parameters are ignored and all variables are fields
+                                                constructorScope = new SemanticScope(scope);
+                                                constructorScope.setThis(new Ins.This(sTypeDef)); // set `this`
+                                                for (SParameter param : constructorToFillStatements.getParameters()) {
+                                                        constructorScope.putLeftValue(constructorScope.generateTempName(), param);
+                                                }
+
+                                                // parse this constructor
+                                                for (Statement stmt : astClass.statements) {
+                                                        parseStatement(
+                                                                stmt,
+                                                                VoidType.get(),
+                                                                constructorScope,
+                                                                constructorToFillStatements.statements(),
+                                                                constructorToFillStatements.exceptionTables(),
+                                                                null, null,
+                                                                true);
                                                 }
                                         }
-                                }
-                                if (null == invokeConstructor) {
-                                        err.SyntaxException("no suitable super constructor to invoke in " + sClassDef, sClassDef.line_col());
-                                        return null;
-                                }
-                                constructorToFillStatements.statements().add(invokeConstructor);
-
-                                // put field
-                                for (SParameter param : constructorToFillStatements.getParameters()) {
-                                        SFieldDef f = null;
-                                        for (SFieldDef field : sClassDef.fields()) {
-                                                if (field.name().equals(param.name())) {
-                                                        f = field;
-                                                        break;
-                                                }
-                                        }
-                                        if (f == null) throw new LtBug("f should not be null");
-
-                                        Ins.PutField putField = new Ins.PutField(f, constructorScope.getThis(),
-                                                new Ins.TLoad(param, constructorScope, LineCol.SYNTHETIC), LineCol.SYNTHETIC, err);
-                                        constructorToFillStatements.statements().add(putField);
-                                }
-
-                                // a new constructor scope
-                                // the parameters are ignored and all variables are fields
-                                constructorScope = new SemanticScope(scope);
-                                constructorScope.setThis(new Ins.This(sTypeDef)); // set `this`
-                                for (SParameter param : constructorToFillStatements.getParameters()) {
-                                        constructorScope.putLeftValue(constructorScope.generateTempName(), param);
-                                }
-
-                                // parse this constructor
-                                for (Statement stmt : astClass.statements) {
-                                        parseStatement(
-                                                stmt,
-                                                VoidType.get(),
-                                                constructorScope,
-                                                constructorToFillStatements.statements(),
-                                                constructorToFillStatements.exceptionTables(),
-                                                null, null,
-                                                true);
                                 }
 
                                 // parse method
+                                // use traditional for loop because the method list might be modified
                                 int methodSize = sClassDef.methods().size();
                                 List<SMethodDef> methods = sClassDef.methods();
                                 for (int i = 0; i < methodSize; i++) {
@@ -838,20 +896,23 @@ public class SemanticProcessor {
                                         parseMethod(method, methodToStatements.get(method), scope);
                                 }
 
-                                // parse static
-                                SemanticScope staticScope = new SemanticScope(scope);
-                                for (Statement statement : astClass.statements) {
-                                        if (statement instanceof AST.StaticScope) {
-                                                AST.StaticScope sta = (AST.StaticScope) statement;
-                                                for (Statement stmt : sta.statements) {
-                                                        parseStatement(
-                                                                stmt,
-                                                                VoidType.get(),
-                                                                staticScope,
-                                                                sClassDef.staticStatements(),
-                                                                sClassDef.staticExceptionTable(),
-                                                                null, null,
-                                                                true);
+                                // astClass == null means it's function instead of normal class
+                                if (astClass != null) {
+                                        // parse static
+                                        SemanticScope staticScope = new SemanticScope(scope);
+                                        for (Statement statement : astClass.statements) {
+                                                if (statement instanceof AST.StaticScope) {
+                                                        AST.StaticScope sta = (AST.StaticScope) statement;
+                                                        for (Statement stmt : sta.statements) {
+                                                                parseStatement(
+                                                                        stmt,
+                                                                        VoidType.get(),
+                                                                        staticScope,
+                                                                        sClassDef.staticStatements(),
+                                                                        sClassDef.staticExceptionTable(),
+                                                                        null, null,
+                                                                        true);
+                                                        }
                                                 }
                                         }
                                 }
@@ -862,8 +923,13 @@ public class SemanticProcessor {
                                 parseAnnoValues(sInterfaceDef.annos());
 
                                 SemanticScope scope = new SemanticScope(sInterfaceDef);
+
                                 // parse method
-                                for (SMethodDef method : sInterfaceDef.methods()) {
+                                // use traditional for loop because the method list might be modified
+                                int methodSize = sInterfaceDef.methods().size();
+                                List<SMethodDef> methods = sInterfaceDef.methods();
+                                for (int i = 0; i < methodSize; ++i) {
+                                        SMethodDef method = methods.get(i);
                                         parseMethod(method, methodToStatements.get(method), scope);
                                 }
 
@@ -882,6 +948,93 @@ public class SemanticProcessor {
                         } else throw new LtBug("wrong STypeDefType " + sTypeDef.getClass());
                 }
                 return typeDefSet;
+        }
+
+        /**
+         * check whether overrides all methods from super
+         *
+         * @param sTypeDef sTypeDef
+         * @throws SyntaxException exception
+         */
+        private void checkOverrideAllMethods(STypeDef sTypeDef) throws SyntaxException {
+                checkOverride(sTypeDef);
+
+                // check whether overrides all methods from super
+                if (sTypeDef instanceof SClassDef) {
+                        SClassDef c = (SClassDef) sTypeDef;
+                        if (c.modifiers().contains(SModifier.ABSTRACT)) return;
+
+                        // check all abstract methods
+                        // record them
+                        List<SMethodDef> abstractMethods = new ArrayList<>();
+                        recordAbstractMethodsForOverrideCheck(c, abstractMethods);
+
+                        // do check
+                        for (SMethodDef m : abstractMethods) {
+                                boolean found = false;
+                                for (SMethodDef overridden : m.overridden()) {
+                                        if (overridden.declaringType().equals(c)) {
+                                                found = true;
+                                                break;
+                                        }
+                                }
+                                if (!found) {
+                                        err.SyntaxException(m + " is not overridden in " + c, c.line_col());
+                                        return;
+                                }
+                        }
+                }
+        }
+
+        /**
+         * fill statements into default param invokable.
+         *
+         * @param invokable the invokable to fill
+         * @param scope     the invokable scope
+         * @throws SyntaxException exception
+         */
+        private void fillDefaultParamMethod(SInvokable invokable, SemanticScope scope) throws SyntaxException {
+                Map<SInvokable, Expression> invokePair = defaultParamInvokable.get(invokable);
+                SInvokable methodToInvoke = invokePair.keySet().iterator().next();
+                Expression arg = invokePair.get(methodToInvoke);
+                if (invokable instanceof SConstructorDef) {
+                        // invoke another constructor
+                        Ins.InvokeSpecial invoke = new Ins.InvokeSpecial(scope.getThis(), methodToInvoke, LineCol.SYNTHETIC);
+                        int count = 1;
+                        for (SParameter p : invokable.getParameters()) {
+                                invoke.arguments().add(new Ins.TLoad(p, count++, LineCol.SYNTHETIC));
+                        }
+                        List<SParameter> paramsOfLast = methodToInvoke.getParameters();
+                        invoke.arguments().add(parseValueFromExpression(arg, paramsOfLast.get(paramsOfLast.size() - 1).type(),
+                                scope));
+
+                        invokable.statements().add(invoke);
+                } else {
+                        assert invokable instanceof SMethodDef;
+                        SMethodDef methodDef = (SMethodDef) invokable;
+                        SMethodDef lastMethod = (SMethodDef) methodToInvoke;
+                        boolean isStatic = lastMethod.modifiers().contains(SModifier.STATIC);
+
+                        Ins.Invoke invoke;
+                        if (lastMethod.modifiers().contains(SModifier.PRIVATE)) {
+                                invoke = new Ins.InvokeSpecial(new Ins.This(methodDef.declaringType()), lastMethod, LineCol.SYNTHETIC);
+                        } else if (isStatic) {
+                                invoke = new Ins.InvokeStatic(lastMethod, LineCol.SYNTHETIC);
+                        } else {
+                                invoke = new Ins.InvokeVirtual(new Ins.This(methodDef.declaringType()), lastMethod, LineCol.SYNTHETIC);
+                        }
+                        for (int ii = 0; ii < methodDef.getParameters().size(); ++ii) {
+                                // load arguments
+                                invoke.arguments().add(new Ins.TLoad(methodDef.getParameters().get(ii), ii + (isStatic ? 0 : 1), LineCol.SYNTHETIC));
+                        }
+                        List<SParameter> lastParams = lastMethod.getParameters();
+                        invoke.arguments().add(parseValueFromExpression(arg, lastParams.get(lastParams.size() - 1).type(), null));
+                        if (methodDef.getReturnType().equals(VoidType.get())) {
+                                methodDef.statements().add(invoke);
+                        } else {
+                                methodDef.statements().add(new Ins.TReturn(invoke, LineCol.SYNTHETIC));
+                        }
+                }
         }
 
         /**
@@ -1265,24 +1418,35 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         private void parseMethod(SMethodDef methodDef, List<Statement> statements, SemanticScope superScope) throws SyntaxException {
-                if (!methodDef.statements().isEmpty() || methodDef.modifiers().contains(SModifier.ABSTRACT)) return;
+                if (!methodDef.statements().isEmpty()) return;
+                if (methodDef.modifiers().contains(SModifier.ABSTRACT)) {
+                        if (!statements.isEmpty()) {
+                                err.SyntaxException("abstract method cannot contain statements", statements.get(0).line_col());
+                                return;
+                        }
+                }
                 SemanticScope scope = new SemanticScope(superScope);
                 if (!methodDef.modifiers().contains(SModifier.STATIC)) {
                         scope.setThis(new Ins.This(scope.type()));
                 }
-                for (SParameter p : methodDef.getParameters()) {
-                        scope.putLeftValue(p.name(), p);
-                }
-                // fill statements
-                for (Statement stmt : statements) {
-                        parseStatement(
-                                stmt,
-                                methodDef.getReturnType(),
-                                scope,
-                                methodDef.statements(),
-                                methodDef.exceptionTables(),
-                                null, null,
-                                false);
+
+                if (defaultParamInvokable.containsKey(methodDef)) {
+                        fillDefaultParamMethod(methodDef, scope);
+                } else {
+                        for (SParameter p : methodDef.getParameters()) {
+                                scope.putLeftValue(p.name(), p);
+                        }
+                        // fill statements
+                        for (Statement stmt : statements) {
+                                parseStatement(
+                                        stmt,
+                                        methodDef.getReturnType(),
+                                        scope,
+                                        methodDef.statements(),
+                                        methodDef.exceptionTables(),
+                                        null, null,
+                                        false);
+                        }
                 }
         }
 
@@ -3742,7 +3906,7 @@ public class SemanticProcessor {
                                                SInterfaceDef interfaceType,
                                                boolean isInterface) throws SyntaxException {
                 // class
-                SClassDef sClassDef = new SClassDef(LineCol.SYNTHETIC);
+                SClassDef sClassDef = new SClassDef(false, LineCol.SYNTHETIC);
                 typeDefSet.add(sClassDef);
                 SemanticScope scope = new SemanticScope(sClassDef);
 
@@ -5127,6 +5291,43 @@ public class SemanticProcessor {
         }
 
         /**
+         * parse value from access (the access represents a type).
+         *
+         * @param access      the type
+         * @param imports     imports
+         * @param currentType caller type
+         * @return New instruction
+         * @throws SyntaxException exception
+         */
+        private Ins.New parseValueFromAccessType(AST.Access access, List<Import> imports, STypeDef currentType) throws SyntaxException {
+                SClassDef type = (SClassDef) getTypeWithAccess(access, imports);
+                assert type != null;
+                SConstructorDef zeroParamCons = null;
+                for (SConstructorDef c : type.constructors()) {
+                        if (c.getParameters().isEmpty()) {
+                                if (c.modifiers().contains(SModifier.PRIVATE)) {
+                                        if (!type.equals(currentType)) continue;
+                                } else if (c.modifiers().contains(SModifier.PROTECTED)) {
+                                        if (!type.pkg().equals(currentType.pkg())
+                                                && !type.isAssignableFrom(currentType))
+                                                continue;
+                                } else if (!c.modifiers().contains(SModifier.PUBLIC)) {
+                                        if (!type.pkg().equals(currentType.pkg()))
+                                                continue;
+                                }
+                                zeroParamCons = c;
+                                break;
+                        }
+                }
+                if (zeroParamCons == null) {
+                        err.SyntaxException(type + " do not have zero parameter constructor", access.line_col());
+                        return null;
+                } else {
+                        return new Ins.New(zeroParamCons, access.line_col());
+                }
+        }
+
+        /**
          * parse value from access object<br>
          * the access object can be : (null,fieldName),(null,localVariableName),(this,fieldName),(Type,fieldName),((Type,this),fieldName),(exp,fieldName)
          *
@@ -5181,6 +5382,14 @@ public class SemanticProcessor {
                                 return new Ins.TLoad(v, scope, access.line_col());
                         }
 
+                        if (enableTypeAccess) {
+                                // check whether it's a type and construct a new object
+                                try {
+                                        return parseValueFromAccessType(access, imports, scope.type());
+                                } catch (Throwable ignore) {
+                                }
+                        }
+
                         // still not found
                         // check whether it's a non-static field
                         if (scope.getThis() == null) {
@@ -5226,6 +5435,11 @@ public class SemanticProcessor {
                                                 return null;
                                         }
                                 }
+                        } else if (access.exp instanceof AST.PackageRef && enableTypeAccess) {
+                                try {
+                                        return parseValueFromAccessType(access, imports, scope.type());
+                                } catch (Throwable ignore) {
+                                }
                         }
                         // other conditions
                         // the access.exp should be a Type or value
@@ -5236,7 +5450,9 @@ public class SemanticProcessor {
                         SyntaxException ex = null; // the exception would be recorded
                         // and would be thrown if `type` can not be found
                         try {
+                                enableTypeAccess = false;
                                 v = parseValueFromExpression(access.exp, null, scope);
+                                enableTypeAccess = true;
                                 if (null != v) isValue = true;
                         } catch (Throwable e) {
                                 if (e instanceof SyntaxException)
@@ -6168,7 +6384,9 @@ public class SemanticProcessor {
                                         boolean isValue = true;
                                         Throwable throwableWhenTryValue = null;
                                         try {
+                                                enableTypeAccess = false;
                                                 target = parseValueFromExpression(access.exp, null, scope);
+                                                enableTypeAccess = true;
                                         } catch (Throwable e) {
                                                 // parse from value failed
                                                 isValue = false;
@@ -7527,25 +7745,9 @@ public class SemanticProcessor {
                 }
 
                 if (null != lastMethod) {
-                        Ins.Invoke invoke;
-                        if (lastMethod.modifiers().contains(SModifier.PRIVATE)) {
-                                invoke = new Ins.InvokeSpecial(new Ins.This(methodDef.declaringType()), lastMethod, LineCol.SYNTHETIC);
-                        } else if (isStatic) {
-                                invoke = new Ins.InvokeStatic(lastMethod, LineCol.SYNTHETIC);
-                        } else {
-                                invoke = new Ins.InvokeVirtual(new Ins.This(methodDef.declaringType()), lastMethod, LineCol.SYNTHETIC);
-                        }
-                        for (int ii = 0; ii < methodDef.getParameters().size(); ++ii) {
-                                // load arguments
-                                invoke.arguments().add(new Ins.TLoad(methodDef.getParameters().get(ii), ii + (isStatic ? 0 : 1), LineCol.SYNTHETIC));
-                        }
-                        List<SParameter> lastParams = lastMethod.getParameters();
-                        invoke.arguments().add(parseValueFromExpression(m.params.get(i).getInit(), lastParams.get(lastParams.size() - 1).type(), null));
-                        if (methodDef.getReturnType().equals(VoidType.get())) {
-                                methodDef.statements().add(invoke);
-                        } else {
-                                methodDef.statements().add(new Ins.TReturn(invoke, LineCol.SYNTHETIC));
-                        }
+                        Map<SInvokable, Expression> invoke = new HashMap<>();
+                        invoke.put(lastMethod, m.params.get(i).getInit());
+                        defaultParamInvokable.put(methodDef, invoke);
                 }
 
                 // add into class/interface
@@ -7566,13 +7768,19 @@ public class SemanticProcessor {
          * @param interfaceDefs interfaceDef list
          * @throws UnexpectedTokenException the statement is not import/class/interface
          */
-        private void select_import_class_interface(Statement stmt, List<Import> imports, List<ClassDef> classDefs, List<InterfaceDef> interfaceDefs) throws UnexpectedTokenException {
+        private void select_import_class_interface_fun(Statement stmt,
+                                                       List<Import> imports,
+                                                       List<ClassDef> classDefs,
+                                                       List<InterfaceDef> interfaceDefs,
+                                                       List<FunDef> funDefs) throws UnexpectedTokenException {
                 if (stmt instanceof Import) {
                         imports.add((Import) stmt);
                 } else if (stmt instanceof ClassDef) {
                         classDefs.add((ClassDef) stmt);
                 } else if (stmt instanceof InterfaceDef) {
                         interfaceDefs.add((InterfaceDef) stmt);
+                } else if (stmt instanceof FunDef) {
+                        funDefs.add((FunDef) stmt);
                 } else {
                         err.UnexpectedTokenException("class/interface definition or import", stmt.toString(), stmt.line_col());
                         // code won't reach here
@@ -7625,7 +7833,7 @@ public class SemanticProcessor {
                                                 typeDef = i;
                                                 modifiers = i.modifiers();
                                         } else { // class
-                                                SClassDef c = new SClassDef(LineCol.SYNTHETIC);
+                                                SClassDef c = new SClassDef(false, LineCol.SYNTHETIC);
                                                 c.setFullName(clsName);
 
                                                 typeDef = c;

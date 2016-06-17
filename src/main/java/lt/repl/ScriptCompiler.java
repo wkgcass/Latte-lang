@@ -28,10 +28,7 @@ import lt.compiler.*;
 import lt.compiler.Scanner;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Statement;
-import lt.compiler.syntactic.def.ClassDef;
-import lt.compiler.syntactic.def.InterfaceDef;
-import lt.compiler.syntactic.def.MethodDef;
-import lt.compiler.syntactic.def.VariableDef;
+import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.pre.Import;
 import lt.compiler.syntactic.pre.PackageDeclare;
 
@@ -247,7 +244,7 @@ public class ScriptCompiler {
                 List<Statement> defsAndImports = new ArrayList<>();
 
                 for (Statement stmt : statements) {
-                        if (stmt instanceof ClassDef || stmt instanceof InterfaceDef || stmt instanceof Import) {
+                        if (stmt instanceof ClassDef || stmt instanceof InterfaceDef || stmt instanceof Import || stmt instanceof FunDef) {
                                 defsAndImports.add(stmt);
                         } else if (stmt instanceof PackageDeclare) {
                                 err.SyntaxException("scripts cannot have package declaration", stmt.line_col());

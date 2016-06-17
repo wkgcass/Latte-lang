@@ -28,10 +28,7 @@ import lt.compiler.*;
 import lt.compiler.Scanner;
 import lt.compiler.lexical.ElementStartNode;
 import lt.compiler.syntactic.*;
-import lt.compiler.syntactic.def.ClassDef;
-import lt.compiler.syntactic.def.InterfaceDef;
-import lt.compiler.syntactic.def.MethodDef;
-import lt.compiler.syntactic.def.VariableDef;
+import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
@@ -2053,5 +2050,43 @@ public class TestParser {
                                         LineCol.SYNTHETIC
                                 )), LineCol.SYNTHETIC)
                         , list.get(0));
+        }
+
+        @Test
+        public void testFun() throws Exception {
+                List<Statement> list = parse("" +
+                        "fun F(o):java::util::function::Function\n" +
+                        "    return o");
+                assertEquals(
+                        Collections.singletonList(
+                                new FunDef(
+                                        "F",
+                                        Collections.singletonList(
+                                                new VariableDef(
+                                                        "o", Collections.emptySet(),
+                                                        Collections.emptySet(),
+                                                        LineCol.SYNTHETIC
+                                                )
+                                        ),
+                                        new AST.Access(
+                                                new AST.PackageRef(
+                                                        "java::util::function",
+                                                        LineCol.SYNTHETIC
+                                                ),
+                                                "Function",
+                                                LineCol.SYNTHETIC
+                                        ),
+                                        Collections.emptySet(),
+                                        Collections.singletonList(
+                                                new AST.Return(
+                                                        new AST.Access(null, "o", LineCol.SYNTHETIC),
+                                                        LineCol.SYNTHETIC
+                                                )
+                                        ),
+                                        LineCol.SYNTHETIC
+                                )
+                        ),
+                        list
+                );
         }
 }

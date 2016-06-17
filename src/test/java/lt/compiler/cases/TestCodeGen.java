@@ -2146,4 +2146,46 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals(Collections.singletonList(1), method.invoke(null));
         }
+
+        @Test
+        public void testFun() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "fun TestFun(o):lt::compiler::F\n" +
+                                "    return o+1"
+                        , "TestFun"
+                );
+                F f = (F) cls.newInstance();
+                assertEquals(3, f.func(2));
+        }
+
+        @Test
+        public void testTypeAccess() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class A\n" +
+                                "    static\n" +
+                                "        a=1\n" +
+                                "    b = 2\n" +
+                                "    static\n" +
+                                "        m1()=A + 1\n" +
+                                "        m2()=A() + 1\n" +
+                                "        m3()=A.a + 1\n" +
+                                "        m4()=A().b + 1\n" +
+                                "        m5()=a + 1\n" +
+                                "\n" +
+                                "    add(o)=10+o"
+                        , "A");
+                Method m1 = cls.getMethod("m1");
+                Method m2 = cls.getMethod("m2");
+                Method m3 = cls.getMethod("m3");
+                Method m4 = cls.getMethod("m4");
+                Method m5 = cls.getMethod("m5");
+
+                assertEquals(11, m1.invoke(null));
+                assertEquals(11, m2.invoke(null));
+                assertEquals(2, m3.invoke(null));
+                assertEquals(3, m4.invoke(null));
+                assertEquals(2, m5.invoke(null));
+        }
 }
