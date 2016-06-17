@@ -6233,8 +6233,11 @@ public class SemanticProcessor {
         private Value parseValueFromInvocation(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
                 // parse args
                 List<Value> argList = new ArrayList<>();
+                boolean tmpEnableTypeAccess = enableTypeAccess;
                 for (Expression arg : invocation.args) {
+                        enableTypeAccess = true;
                         Value v = parseValueFromExpression(arg, null, scope);
+                        enableTypeAccess = tmpEnableTypeAccess;
                         if (v == null) {
                                 err.SyntaxException(arg + " is not method argument", arg.line_col());
                                 return null;
