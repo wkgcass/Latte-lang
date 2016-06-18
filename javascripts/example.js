@@ -245,12 +245,12 @@ $(document).ready(function () {
                     '<p>Our goal is : using the following code</p>'
                     ))+
                     '<pre>' + highlighting('html.lt',
-                        'Html() + [\n' +
-                        '    Head()\n' +
-                        '    Body() + [\n' +
-                        '        Form() + [\n' +
-                        '            Input(typ="text" value="value")\n' +
-                        '            Input(typ="submit" value="OK")\n' +
+                        'html + [\n' +
+                        '    head\n' +
+                        '    body + [\n' +
+                        '        form + [\n' +
+                        '            input(typ="text" value="value")\n' +
+                        '            input(typ="submit" value="OK")\n' +
                         '        ]\n' +
                         '    ]\n' +
                         '] toString', {}
@@ -285,7 +285,7 @@ $(document).ready(function () {
                     '<pre style="height: 360px;">' + highlighting('html.lt', '' +
                         'toString(attrs):String\n' +
                         '    sb = StringBuilder()\n' +
-                        '    sb append "<" append this.getClass.getSimpleName.toLowerCase\n' +
+                        '    sb append "<" append this.getClass.getSimpleName\n' +
                         '    if id\n' +
                         '        sb append " id=\'" append id append "\'"\n' +
                         '    if name\n' +
@@ -324,34 +324,34 @@ $(document).ready(function () {
                         '        for i in children\n' +
                         '            sb append i\n' +
                         '\n' +
-                        '    sb append "</" append this.getClass.getSimpleName.toLowerCase append ">"\n' +
+                        '    sb append "</" append this.getClass.getSimpleName append ">"\n' +
                         '    return sb toString', {}) +
                     '</pre>' +
                     (zh
                     ?'<p>可以看出,Latte中访问父类方法使用的是 <code>父类.this.方法(...)</code> . 这样,所有的节点都可以很方便的表示了</p>'
                     :'<p>We can see that invoking methods from super class is written as <code>SuperClass.this.method(...)</code> . Now, all tags are easily represented.</p>') +
                     '<pre>' + highlighting('html.lt', '' +
-                        'data class Html : HTMLElementWithClosing\n' +
+                        'data class html : HTMLElementWithClosing\n' +
                         '    toString():String = toString({})\n' +
                         '\n' +
-                        'data class Head : HTMLElementWithClosing\n' +
+                        'data class head : HTMLElementWithClosing\n' +
                         '    toString():String = toString({})\n' +
                         '\n' +
-                        'data class Body : HTMLElementWithClosing\n' +
+                        'data class body : HTMLElementWithClosing\n' +
                         '    toString():String = toString({})\n' +
                         '\n' +
-                        'data class Form(action, method) : HTMLElementWithClosing\n' +
-                        '    toString():String = toString({\'action\':action, \'method\':method})\n' +
+                        'data class form : HTMLElementWithClosing\n' +
+                        '    toString():String = toString({})\n' +
                         '\n' +
-                        'data class Input(typ, value) : HTMLElement\n' +
-                        '    toString():String = toString({"type" : typ, "value" : value})', {}) +
+                        'data class input(typ) : HTMLElement\n' +
+                        '    toString():String = toString({"type" : typ})', {}) +
                     '</pre>' +
                     (zh?(
                     '<p>现在就可以使用一开始提到的方式来书写HTML了!</p>' +
-                    '<blockquote>完整的html支持可以在 <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/lt/html.lt">这里</a> 找到</blockquote>'
+                    '<blockquote>完整的html支持和这个实现有些区别, 可以在 <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/lt/html.lt">这里</a> 找到</blockquote>'
                     ):(
                     '<p>Now we can use the method mentioned at the beginning to write HTML.</p>' +
-                    '<blockquote>Full html support can be found <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/lt/html.lt">here</a></blockquote>'
+                    '<blockquote>Full html support has some differences from this implementation, which can be found <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/lt/html.lt">here</a></blockquote>'
                     ))
                 )
             },
