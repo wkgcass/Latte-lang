@@ -4,10 +4,10 @@
 
 Latte is a JVM language. It's highly readable and extensible.
 
-Click [here](http://latte.cassite.net/#theVideo) to watch a video about Latte.
+Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about Latte.
 
 [Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)  
-[Latte WebSite](http://latte.cassite.net/)
+[Latte WebSite](http://latte-lang.org/)
 
 `Atom` Extensions :
 
@@ -116,16 +116,16 @@ or:
 #Syntax
 For Language Syntax Help, please visit the [Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)
 
-or visit the [Latte WebSite](http://latte.cassite.net/)
+or visit the [Latte WebSite](http://latte-lang.org/)
 
 #中文版 Chinese Version README
 
 Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
-点击 [这里](http://latte.cassite.net/#theVideo) 观看有关Latte的视频。
+点击 [这里](http://latte-lang.org/index.html#theVideo) 观看有关Latte的视频。
 
 [Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)  
-[Latte 主页](http://latte.cassite.net/)
+[Latte 主页](http://latte-lang.org/)
 
 `Atom`上的扩展插件:
 
@@ -232,4 +232,4 @@ clone这个仓库,然后执行
 
 [Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)
 
-[Latte 主页](http://latte.cassite.net/)
+[Latte 主页](http://latte-lang.org/)

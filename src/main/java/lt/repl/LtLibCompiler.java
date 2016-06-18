@@ -52,7 +52,7 @@ public class LtLibCompiler {
         /**
          * test whether the compiled lt files already been loaded.
          */
-        private static final String classToTest = "lt.html.HTMLElement";
+        private static final String classToTest = "lt.dsl.html.HTMLElement";
 
         /**
          * compile all lt files in <b>ltDir</b>

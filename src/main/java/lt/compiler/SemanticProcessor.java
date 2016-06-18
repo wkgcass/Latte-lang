@@ -6491,7 +6491,11 @@ public class SemanticProcessor {
                                                                         "but got " + invocation.access, access.exp.line_col());
                                                         return null;
                                                 } else {
-                                                        err.SyntaxException(throwableWhenTryValue.getMessage(), invocation.line_col());
+                                                        if (throwableWhenTryValue instanceof SyntaxException) {
+                                                                err.SyntaxException(((SyntaxException) throwableWhenTryValue).msg, ((SyntaxException) throwableWhenTryValue).lineCol);
+                                                        } else {
+                                                                err.SyntaxException(throwableWhenTryValue.getMessage(), invocation.line_col());
+                                                        }
                                                         return null;
                                                 }
                                         }

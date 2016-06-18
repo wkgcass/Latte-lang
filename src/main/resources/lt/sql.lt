@@ -23,11 +23,12 @@
  */
 
 /*
-This is a package that uses DSL to write SQLs. The SQLs can be executed directly
+This is a package that uses DSL to write SQLs.
+sql = SQL()
+(sql select [user.id, user.name] from user where user.name!:='abc' & user.id>10) toString
 */
-package lt::sql
+package lt::dsl::sql
 
-import java::sql::_
 import lt::util::_
 
 interface SQLBuilder
@@ -35,52 +36,6 @@ interface SQLBuilder
     arguments():Map
 
 interface Selectable
-
-; class that represents the database.
-data class DB(url:String, user:String, pwd:String)
-    conn:Connection
-
-    ; connect to the db
-    ; fill in a Connection object as the inside connection
-    ; if the conn is null, then the connection will be retrieved via
-    ; DriverManager#getConnection(url, user, pwd)
-    connect(conn:Connection=null):DB
-        if conn
-            this.conn=conn
-        else
-            this.conn = DriverManager.getConnection(url, user, pwd)
-        return this
-
-    private prepareStatement(sql:String, arguments:Map):PreparedStatement
-        prep = conn.prepareStatement(sql)
-        for entry in arguments
-            prep.setObject(entry.key, entry.value)
-        return prep
-
-    execUpdate(sql:String, arguments:Map):int = prepareStatement(sql, arguments).executeUpdate()
-    execQuery(sql:String, arguments:Map):List
-        rs:ResultSet = prepareStatement(sql, arguments).executeQuery()
-        rsmd:ResultSetMetaData = rs.getMetaData()
-        columnCount:int = rsmd.getColumnCount()
-        columnLabels = []
-        for i in 1..columnCount
-            columnLabels + rsmd.getColumnLabel(i)
-        result=[]
-        while rs.next()
-            record = {}
-            for i in 1..columnCount
-                record[columnLabels[i-1]] = rs.getObject(i)
-            result + record
-        return result
-
-    execUpdate(builder:SQLBuilder):int=execUpdate(builder.buildSQL, builder.arguments)
-    execQuery(builder:SQLBuilder):List=execQuery(builder.buildSQL, builder.arguments)
-
-    createStatement(surround=""):Context = Context(surround=surround)
-
-    close():Unit
-        if conn
-            conn.close()
 
 ; represents a Column.
 ; tbl_o is filled with Entity object and name is filled with the column's name
@@ -112,11 +67,11 @@ data class As(col, alias:String):Selectable
 
 ; assign to the column
 data class Assign(col:Column, o)
-    toString(context:Context):String = col.toString(context)+" = "+context.putValue(o)
+    toString(context:SQL):String = col.toString(context)+" = "+context.putValue(o)
 
 ; represents a Condition
 data class Condition(op:String, col:Column, ls:List)
-    toString(context:Context):String
+    toString(context:SQL):String
         sb = StringBuilder()
         sb append col.toString(context) append " " append op append " "
         if ls
@@ -134,7 +89,7 @@ data class Condition(op:String, col:Column, ls:List)
 data class AndOr(isAnd:bool, a, b)
     `and`(b):AndOr = AndOr(true, this, b)
     `or`(b):AndOr = AndOr(false, this, b)
-    toString(context:Context):String = (
+    toString(context:SQL):String = (
         if a is type AndOr
             return "(" + a.toString(context) + ")"
         else
@@ -177,11 +132,12 @@ data class Fun(funcName:String, args:List):Selectable
         sb append ")"
         return sb.toString
 
-data class Context(
+data class SQL(
     surround = ""                             ; surrounds table and columns
+)
     argMap:Map = {}                           ; the map of position => arguments
     count:int = 0                             ; count
-)
+
     putValue(o):String
         if o is type EndStatement
             return tableToString(o)
@@ -245,7 +201,7 @@ data class Context(
             sb append col.toString(this)
         return sb.toString
 
-data class Select(context:Context, sb:StringBuilder, cols:List)
+data class Select(context:SQL, sb:StringBuilder, cols:List)
     sb append context.toStringWithContext(cols)
 
     into(tbl_o):Select
@@ -258,14 +214,14 @@ data class Select(context:Context, sb:StringBuilder, cols:List)
         sb append " from "
         return From(context, sb, tbl_os)
 
-data class Union(context:Context, unionType:String, s1:SQLBuilder, s2:SQLBuilder):SQLBuilder
+data class Union(context:SQL, unionType:String, s1:SQLBuilder, s2:SQLBuilder):SQLBuilder
     buildSQL():String = s1.buildSQL + " " + unionType + " " + s2.buildSQL
     arguments():Map = context.argMap
 
     union(stmt:SQLBuilder) = Union(context, "union", this, stmt)
     union_all(stmt:SQLBuilder) = Union(context, "union_all", this, stmt)
 
-abstract class EndStatement(context:Context, sb:StringBuilder):SQLBuilder
+abstract class EndStatement(context:SQL, sb:StringBuilder):SQLBuilder
     orderBy(order:Order):EndStatement
         return orderBy([order])
     orderBy(orders:List):EndStatement
@@ -293,7 +249,7 @@ abstract class EndStatement(context:Context, sb:StringBuilder):SQLBuilder
     arguments():Map = context.argMap
     toString():String = buildSQL()
 
-class From(context:Context, sb:StringBuilder, tbls:List):EndStatement(context, sb)
+class From(context:SQL, sb:StringBuilder, tbls:List):EndStatement(context, sb)
     isFirst=true
     for tbl in tbls
         if isFirst
@@ -319,17 +275,17 @@ class From(context:Context, sb:StringBuilder, tbls:List):EndStatement(context, s
         sb append " where "
         return QueryWhere(context, sb, con)
 
-class Join(context:Context, sb:StringBuilder, tbl_o, from:From)
+class Join(context:SQL, sb:StringBuilder, tbl_o, from:From)
     sb append context.tableToString(tbl_o)
 
     on(con:Condition):From
         sb append " on " append con.toString(context)
         return from
 
-class QueryWhere(context:Context, sb:StringBuilder, con):EndStatement(context, sb)
+class QueryWhere(context:SQL, sb:StringBuilder, con):EndStatement(context, sb)
     sb append con.toString(context)
 
-class Insert(context:Context, sb:StringBuilder, tbl_o):SQLBuilder
+class Insert(context:SQL, sb:StringBuilder, tbl_o):SQLBuilder
     sb append context.tableToString(tbl_o)
 
     _(col:Column):Insert = _([col])
@@ -359,7 +315,7 @@ class Insert(context:Context, sb:StringBuilder, tbl_o):SQLBuilder
     buildSQL():String = sb.toString
     arguments():Map = context.argMap
 
-class Update(context:Context, sb:StringBuilder, tbl_o)
+class Update(context:SQL, sb:StringBuilder, tbl_o)
     sb append context.tableToString(tbl_o)
 
     set(assign:Assign):UpdateWhere=set([assign])
@@ -375,7 +331,7 @@ class Update(context:Context, sb:StringBuilder, tbl_o)
         sb append " where "
         return UpdateWhere(context, sb)
 
-class UpdateWhere(context:Context, sb:StringBuilder):SQLBuilder
+class UpdateWhere(context:SQL, sb:StringBuilder):SQLBuilder
     where(con):UpdateWhere
         sb append con.toString(context)
         return this

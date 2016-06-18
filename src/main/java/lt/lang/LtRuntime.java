@@ -412,9 +412,15 @@ public class LtRuntime {
                         }
                 } catch (Throwable ignore) {
                 }
-                // try to find `get(fieldName)`
+                // try to find `fieldName()`
                 try {
-                        return Dynamic.invoke(o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{fieldName});
+                        return Dynamic.invoke(o.getClass(), o, callerClass, fieldName, new boolean[0], new Object[0]);
+                } catch (Throwable ignore) {
+                }
+                // try to find `getFieldName()`
+                try {
+                        String getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+                        return Dynamic.invoke(o.getClass(), o, callerClass, getter, new boolean[0], new Object[0]);
                 } catch (Throwable ignore) {
                 }
                 // try _number
@@ -428,15 +434,9 @@ public class LtRuntime {
                         } catch (NumberFormatException ignore) {
                         }
                 }
-                // try to find `fieldName()`
+                // try to find `get(fieldName)`
                 try {
-                        return Dynamic.invoke(o.getClass(), o, callerClass, fieldName, new boolean[0], new Object[0]);
-                } catch (Throwable ignore) {
-                }
-                // try to find `getFieldName()`
-                try {
-                        String getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-                        return Dynamic.invoke(o.getClass(), o, callerClass, getter, new boolean[0], new Object[0]);
+                        return Dynamic.invoke(o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{fieldName});
                 } catch (Throwable ignore) {
                 }
                 return Undefined.get();

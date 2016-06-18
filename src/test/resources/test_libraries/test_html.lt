@@ -1,20 +1,20 @@
-package lt::html::test
+package lt::dsl::html::test
 
-import lt::html::_
+import lt::dsl::html::_
 
 class TestHtml
     static
-        testConstructHtml()=Html()
+        testConstructHtml()=html
         testHtmlFormat()
-            return Html() + [
-                Head()
-                Body() + [
-                    Form() + [
-                        Input(typ='text', value='hello world')
+            return html + [
+                head()
+                body() + [
+                    form() + [
+                        input(typ='text', value='hello world')
                     ]
                 ]
             ]
         testHtmlEscape()
-            return Html(onload='window.location.href="page"') + [
+            return html(onload='window.location.href="page"') + [
                 " ><&\""
             ]
