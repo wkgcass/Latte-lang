@@ -193,6 +193,18 @@ public class ScriptCompiler {
         }
 
         /**
+         * add source code
+         *
+         * @param sourceName source code name
+         * @param source     source
+         * @return the ScriptCompiler itself
+         */
+        public ScriptCompiler shiftLeft(String sourceName, Reader source) {
+                sources.put(sourceName, source);
+                return this;
+        }
+
+        /**
          * compile the script
          *
          * @param name   the script name
@@ -290,7 +302,7 @@ public class ScriptCompiler {
                 }}, theCompiledClasses, err);
                 CodeGenerator cg = new CodeGenerator(sp.parse());
                 Map<String, byte[]> map = cg.generate();
-                ClassLoader loader = new ClassLoader() {
+                ClassLoader loader = new ClassLoader(theCompiledClasses) {
                         @Override
                         protected Class<?> findClass(String name) throws ClassNotFoundException {
                                 if (map.containsKey(name)) {

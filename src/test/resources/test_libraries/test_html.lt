@@ -7,9 +7,9 @@ class TestHtml
         testConstructHtml()=html
         testHtmlFormat()
             return html + [
-                head()
-                body() + [
-                    form() + [
+                head
+                body + [
+                    form + [
                         input(typ='text', value='hello world')
                     ]
                 ]

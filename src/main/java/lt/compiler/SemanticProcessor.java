@@ -5444,35 +5444,41 @@ public class SemanticProcessor {
                         // other conditions
                         // the access.exp should be a Type or value
                         // SomeClass.fieldName or value.fieldName
-                        boolean isValue = false;
+
+                        // try to find type
+                        STypeDef type = null;
+                        // not value, then try to find type
+                        if (access.exp instanceof AST.Access) {
+                                try {
+                                        type = getTypeWithAccess((AST.Access) access.exp, imports);
+                                } catch (Throwable ignore) {
+                                        // type not found or wrong Access format
+                                }
+                        }
+
                         Value v = null;
                         // try to get value
                         SyntaxException ex = null; // the exception would be recorded
                         // and would be thrown if `type` can not be found
                         try {
-                                enableTypeAccess = false;
+                                if (type != null) {
+                                        // the access.exp can be type, so in this step firstly try not constructing the object
+                                        // if it cannot be type, the inner part of access.exp might need to construct.
+                                        enableTypeAccess = false;
+                                }
                                 v = parseValueFromExpression(access.exp, null, scope);
-                                enableTypeAccess = true;
-                                if (null != v) isValue = true;
                         } catch (Throwable e) {
                                 if (e instanceof SyntaxException)
                                         ex = (SyntaxException) e;
-                        }
-                        if (isValue && isGetFieldAtRuntime(v)) {
-                                isValue = false;
-                        }
-
-                        // try to find type
-                        STypeDef type = null;
-                        if (!isValue) { // not value, then try to find type
-                                if (access.exp instanceof AST.Access) {
-                                        try {
-                                                type = getTypeWithAccess((AST.Access) access.exp, imports);
-                                        } catch (Throwable ignore) {
-                                                // type not found or wrong Access format
-                                        }
+                        } finally {
+                                if (type != null) {
+                                        enableTypeAccess = true;
                                 }
                         }
+
+                        // value found, then ignore the `type`
+                        if (v != null && !isGetFieldAtRuntime(v))
+                                type = null;
 
                         // handle
                         if (type != null) {
@@ -5481,10 +5487,16 @@ public class SemanticProcessor {
                                 if (null != f) {
                                         return new Ins.GetStatic(f, access.line_col());
                                 } else {
-                                        err.SyntaxException("cannot find accessible static field `" + access.name + "` in " + type, access.line_col());
-                                        return null;
+                                        try {
+                                                assert scope != null;
+                                                v = parseValueFromAccessType((AST.Access) access.exp, imports, scope.type());
+                                        } catch (Throwable ignore) {
+                                                err.SyntaxException("cannot find accessible static field `" + access.name + "` in " + type, access.line_col());
+                                                return null;
+                                        }
                                 }
-                        } else if (v != null) {
+                        }
+                        if (v != null) {
                                 // value.fieldName -- getField
                                 // (exp,fieldName)
                                 if (v.type() instanceof SArrayTypeDef) {
@@ -5505,13 +5517,13 @@ public class SemanticProcessor {
                                                 return new Ins.GetField(f, v, access.line_col());
                                         }
                                 }
-                        } else {
-                                if (ex == null) {
-                                        err.SyntaxException("cannot parse " + access, access.line_col());
-                                        return null;
-                                } else
-                                        throw ex;
                         }
+                        // type and value are not found
+                        if (ex == null) {
+                                err.SyntaxException("cannot parse " + access, access.line_col());
+                                return null;
+                        } else
+                                throw ex;
                 }
         }
 
@@ -6236,8 +6248,12 @@ public class SemanticProcessor {
                 boolean tmpEnableTypeAccess = enableTypeAccess;
                 for (Expression arg : invocation.args) {
                         enableTypeAccess = true;
-                        Value v = parseValueFromExpression(arg, null, scope);
-                        enableTypeAccess = tmpEnableTypeAccess;
+                        Value v;
+                        try {
+                                v = parseValueFromExpression(arg, null, scope);
+                        } finally {
+                                enableTypeAccess = tmpEnableTypeAccess;
+                        }
                         if (v == null) {
                                 err.SyntaxException(arg + " is not method argument", arg.line_col());
                                 return null;
@@ -6382,35 +6398,65 @@ public class SemanticProcessor {
                                                 return null;
                                         }
                                 } else if (!(access.exp instanceof AST.PackageRef)) {
-                                        // assume value is value
+                                        // check whether access.exp is type
+                                        STypeDef type = null;
+                                        if (access.exp instanceof AST.Access) {
+                                                try {
+                                                        type = getTypeWithAccess((AST.Access) access.exp, imports);
+                                                } catch (Throwable ignore) {
+                                                }
+                                                if (type != null) {
+                                                        findMethodFromTypeWithArguments(
+                                                                access.line_col(),
+                                                                access.name,
+                                                                argList,
+                                                                scope.type(),
+                                                                type,
+                                                                FIND_MODE_STATIC,
+                                                                methodsToInvoke,
+                                                                true);
+                                                }
+                                        }
+                                        // then:
+                                        // assume access.exp is value
                                         // Access(value, methodName)
                                         boolean isValue = true;
                                         Throwable throwableWhenTryValue = null;
                                         try {
-                                                enableTypeAccess = false;
+                                                if (type != null) {
+                                                        enableTypeAccess = false;
+                                                }
                                                 target = parseValueFromExpression(access.exp, null, scope);
-                                                enableTypeAccess = true;
                                         } catch (Throwable e) {
                                                 // parse from value failed
                                                 isValue = false;
                                                 throwableWhenTryValue = e;
-                                        }
-
-                                        if (target == null) isValue = false;
-                                        else if (isGetFieldAtRuntime(target)) {
-                                                // get field at runtime
-                                                // try to get type from access.exp
-                                                if (access.exp instanceof AST.Access) {
-                                                        try {
-                                                                getTypeWithAccess((AST.Access) access.exp, imports);
-                                                                isValue = false; // parse Type
-                                                        } catch (Throwable ignore) {
-                                                                // not type or wrong format
-                                                        }
+                                        } finally {
+                                                if (type != null) {
+                                                        enableTypeAccess = true;
                                                 }
                                         }
 
+                                        if (target == null) {
+                                                if (type != null && methodsToInvoke.isEmpty()) {
+                                                        try {
+                                                                // try to instantiate the class
+                                                                target = parseValueFromAccessType(
+                                                                        (AST.Access) access.exp, imports, scope.type());
+                                                        } catch (Throwable t) {
+                                                                // failed then it's not a value
+                                                                isValue = false;
+                                                        }
+                                                } else {
+                                                        isValue = false;
+                                                }
+                                        } else if (isGetFieldAtRuntime(target)) {
+                                                if (type != null) isValue = false;
+                                        }
+
                                         if (isValue) {
+                                                methodsToInvoke.clear();
+                                                assert target != null;
                                                 if (target.type() instanceof SClassDef || target.type() instanceof SInterfaceDef) {
                                                         findMethodFromTypeWithArguments(
                                                                 access.line_col(),
@@ -6454,17 +6500,7 @@ public class SemanticProcessor {
                                                                 true);
                                                 } else throw new LtBug("type should not be " + target.type());
                                         } else if (access.exp instanceof AST.Access) {
-                                                // is type
-                                                STypeDef type = getTypeWithAccess((AST.Access) access.exp, imports);
-                                                findMethodFromTypeWithArguments(
-                                                        access.line_col(),
-                                                        access.name,
-                                                        argList,
-                                                        scope.type(),
-                                                        type,
-                                                        FIND_MODE_STATIC,
-                                                        methodsToInvoke,
-                                                        true);
+                                                // access.exp is type
                                                 if (methodsToInvoke.isEmpty()) {
                                                         List<Value> args = new ArrayList<>();
                                                         args.add(new Ins.GetClass(type, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));

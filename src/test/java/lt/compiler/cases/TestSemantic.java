@@ -2630,7 +2630,8 @@ public class TestSemantic {
                         "    A() + 1\n" +
                         "    A.a + 1\n" +
                         "    A().b + 1\n" +
-                        "    a + 1");
+                        "    a + 1\n" +
+                        "    A.toString");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -2642,11 +2643,13 @@ public class TestSemantic {
                 Ins.InvokeDynamic i4 = (Ins.InvokeDynamic) cons.statements().get(4);
                 Ins.InvokeDynamic i5 = (Ins.InvokeDynamic) cons.statements().get(5);
                 Ins.InvokeDynamic i6 = (Ins.InvokeDynamic) cons.statements().get(6);
+                Ins.InvokeStatic i7 = (Ins.InvokeStatic) cons.statements().get(7);
 
                 assertTrue(i2.arguments().get(1) instanceof Ins.New);
                 assertTrue(i3.arguments().get(1) instanceof Ins.New);
                 assertTrue(i4.arguments().get(1) instanceof Ins.GetStatic);
                 assertTrue(i5.arguments().get(1) instanceof Ins.GetField);
                 assertTrue(i6.arguments().get(1) instanceof Ins.GetStatic);
+                assertTrue(i7.arguments().get(0) instanceof Ins.New);
         }
 }
