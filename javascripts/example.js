@@ -373,20 +373,20 @@ $(document).ready(function () {
                     '<pre>'+highlighting('','' +
                     'import io::vertx::core::_\n' +
                     '\n' +
-                    'import lt::html::_\n' +
+                    'import lt::dsl::html::_\n' +
                     '\n' +
                     'Vertx.vertx().createHttpServer().requestHandler(\n' +
                     '    (req)->\n' +
                     '        req.response().\n' +
                     '        end(\n' +
-                    '            Html() + [\n' +
-                    '                Head() + [\n' +
-                    "                    Link(rel='stylesheet' , href='http://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css')\n" +
+                    '            html + [\n' +
+                    '                head + [\n' +
+                    "                    link(rel='stylesheet' , href='http://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css')\n" +
                     '                ]\n' +
-                    '                Body() + [\n' +
-                    '                    Div(cls=\'container\') + [\n' +
-                    '                        H1() + ["Latte with Vert.x or Jetty"]\n' +
-                    "                        Button(cls='btn btn-lg btn-success' , onclick='window.open(\"http://latte-lang.org\")') + [\n" +
+                    '                body + [\n' +
+                    '                    div(cls=\'container\') + [\n' +
+                    '                        h1 + ["Latte with Vert.x or Jetty"]\n' +
+                    "                        button(cls='btn btn-lg btn-success' , onclick='window.open(\"http://latte-lang.org\")') + [\n" +
                     '                            "Visit latte-lang.org"\n' +
                     '                        ]\n' +
                     '                    ]\n' +
@@ -403,7 +403,7 @@ $(document).ready(function () {
                     'import org::eclipse::jetty::server::handler::_\n' +
                     'import org::eclipse::jetty::servlet::_\n' +
                     '\n' +
-                    'import lt::html::_\n' +
+                    'import lt::dsl::html::_\n' +
                     '\n' +
                     'server = Server(3000)\n' +
                     '\n' +
@@ -419,14 +419,14 @@ $(document).ready(function () {
                     '    protected doGet(request : HttpServletRequest, response : HttpServletResponse):Unit\n' +
                     '        response setContentType "text/html;charset=utf-8"\n' +
                     '        response.writer.println(\n' +
-                    '            Html() + [\n' +
-                    '                Head() + [\n' +
-                    "                    Link(rel='stylesheet' , href='http://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css')\n" +
+                    '            html + [\n' +
+                    '                head + [\n' +
+                    "                    link(rel='stylesheet' , href='http://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css')\n" +
                     '                ]\n' +
-                    '                Body() + [\n' +
-                    '                    Div(cls=\'container\') + [\n' +
-                    '                        H1() + ["Latte with Vert.x or Jetty"]\n' +
-                    "                        Button(cls='btn btn-lg btn-success' , onclick='window.open(\"http://latte-lang.org\")') + [\n" +
+                    '                body + [\n' +
+                    '                    div(cls=\'container\') + [\n' +
+                    '                        h1 + ["Latte with Vert.x or Jetty"]\n' +
+                    "                        button(cls='btn btn-lg btn-success' , onclick='window.open(\"http://latte-lang.org\")') + [\n" +
                     '                            "Visit latte-lang.org"\n' +
                     '                        ]\n' +
                     '                    ]\n' +
