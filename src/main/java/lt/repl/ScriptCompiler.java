@@ -205,6 +205,17 @@ public class ScriptCompiler {
         }
 
         /**
+         * add source codes
+         *
+         * @param sources sources
+         * @return the ScriptCompiler itself
+         */
+        public ScriptCompiler shiftLeft(Map<String, Object> sources) {
+                this.sources.putAll(sources);
+                return this;
+        }
+
+        /**
          * compile the script
          *
          * @param name   the script name
