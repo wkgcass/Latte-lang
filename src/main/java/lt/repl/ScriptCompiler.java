@@ -210,7 +210,7 @@ public class ScriptCompiler {
          * @param sources sources
          * @return the ScriptCompiler itself
          */
-        public ScriptCompiler shiftLeft(Map<String, Object> sources) {
+        public ScriptCompiler shiftLeft(Map<String, ?> sources) {
                 this.sources.putAll(sources);
                 return this;
         }
