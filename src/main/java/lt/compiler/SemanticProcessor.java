@@ -6499,7 +6499,7 @@ public class SemanticProcessor {
                                                                 methodsToInvoke,
                                                                 true);
                                                 } else throw new LtBug("type should not be " + target.type());
-                                        } else if (access.exp instanceof AST.Access) {
+                                        } else if (access.exp instanceof AST.Access && type!=null) {
                                                 // access.exp is type
                                                 if (methodsToInvoke.isEmpty()) {
                                                         List<Value> args = new ArrayList<>();
@@ -6514,7 +6514,7 @@ public class SemanticProcessor {
                                                                 args,
                                                                 getTypeWithName("java.lang.Object", LineCol.SYNTHETIC),
                                                                 Dynamic.INVOKE_STATIC,
-                                                                LineCol.SYNTHETIC
+                                                                invocation.line_col()
                                                         );
                                                 }
                                         } else {

@@ -1758,7 +1758,7 @@ public class Parser {
                                                         annosIsEmpty();
                                                         modifiersIsEmpty();
 
-                                                        if (parsedExps.empty() || (isParsingMap && parsedExps.size() <= 1)) {
+                                                        if (parsedExps.empty()) {
                                                                 parse_array_exp();
                                                         } else {
                                                                 parse_index_access();
@@ -2184,6 +2184,10 @@ public class Parser {
                 nextNode(false); // =>
                 nextNode(false);
                 // (...)=>口
+
+                if (!(current instanceof ElementStartNode)) {
+                        err.UnexpectedTokenException("new layer", current.toString(), current.getLineCol());
+                }
 
                 List<Statement> stmts = parseElemStart((ElementStartNode) current, true, set, false);
                 if (stmts.size() == 1 && stmts.get(0) instanceof Expression) {

@@ -47,19 +47,33 @@ import lt::util::_
 
 private class StringEscaper
     static
-        htmlEscapeMap = {
+        val htmlEscapeMap = {
             '<' : "&lt;"
             '>' : "&gt;"
             '&' : "&amp;"
             '"' : "&quot;"
             ' ' : "&nbsp;"
-        }
+        }.immutable
+        val attrEscapeMap = {
+            '"' : "&quot;"
+        }.immutable
         escapeHtml(source:String):String
             sb = StringBuilder()
             arr:[]char = source.toCharArray()
             for i in 0.:arr.length
                 c:char = arr[i]
                 res = htmlEscapeMap[c]
+                if res
+                    sb append res
+                else
+                    sb append c
+            return sb.toString()
+        escapeAttr(attr:String):String
+            sb = StringBuilder()
+            arr:[]char = attr.toCharArray()
+            for i in 0.:arr.length
+                c:char = arr[i]
+                res = attrEscapeMap[c]
                 if res
                     sb append res
                 else
@@ -85,13 +99,13 @@ abstract data class HTMLElement(cls)
         sb append "<" append this.getClass.getSimpleName
 
         for entry in attrMap
-            sb append " " append entry.key append "='" append StringEscaper.escapeHtml(entry.value) append "'"
+            sb append " " append entry.key append "=\"" append StringEscaper.escapeAttr(entry.value) append "\""
         if cls
-            sb append " class='" append cls append "'"
+            sb append " class=\"" append StringEscaper.escapeAttr(cls) append "\""
 
         for entry in attrs
             if entry.value
-                sb append " " append entry.key append "='" append StringEscaper.escapeHtml(entry.value) append "'"
+                sb append " " append entry.key append "=\"" append StringEscaper.escapeAttr(entry.value) append "\""
 
         sb append ">"
 
@@ -215,6 +229,9 @@ data class label : HTMLElementWithClosing
 data class form : HTMLElementWithClosing
     toString():String = toString({})
 
+data class i : HTMLElementWithClosing
+    toString():String = toString({})
+
 ; <input type='' value=''>
 data class input(typ) : HTMLElement
     toString():String = toString({"type" : typ})
@@ -272,6 +289,9 @@ data class tbody : HTMLElementWithClosing
 
 ; <tfoot>...</tfoot>
 data class tfoot : HTMLElementWithClosing
+    toString():String = toString({})
+
+data class title : HTMLElementWithClosing
     toString():String = toString({})
 
 ; <tr>...</tr>

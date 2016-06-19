@@ -521,4 +521,28 @@ public class TestParserMix {
 
                 assertEquals(invocation, list.get(0));
         }
+
+        @Test
+        public void testMapIndexAccess() throws Exception {
+                List<Statement> list = parse(
+                        "" +
+                                "{\n" +
+                                "    'USER' : session['USER']\n" +
+                                "}"
+                );
+                assertEquals(
+                        Collections.singletonList(
+                                new AST.MapExp(new LinkedHashMap<Expression, Expression>() {{
+                                        put(new StringLiteral("'USER'", LineCol.SYNTHETIC),
+                                                new AST.Index(
+                                                        new AST.Access(null, "session", LineCol.SYNTHETIC),
+                                                        Collections.singletonList(
+                                                                new StringLiteral("'USER'", LineCol.SYNTHETIC)
+                                                        ), LineCol.SYNTHETIC
+                                                ));
+                                }}, LineCol.SYNTHETIC)
+                        ),
+                        list
+                );
+        }
 }

@@ -70,7 +70,7 @@ public class Dynamic {
                         constructorHandle = MethodHandles.lookup().findStatic(Dynamic.class, "construct", MethodType.methodType(
                                 Object.class, Class.class, Class.class, boolean[].class, Object[].class));
                 } catch (NoSuchMethodException | IllegalAccessException e) {
-                        throw new RuntimeException(e);
+                        throw new LtRuntimeException(e);
                 }
         }
 
@@ -341,7 +341,7 @@ public class Dynamic {
          *
          * @param c the class to retrieve method from
          * @return the retrieved abstract method
-         * @throws RuntimeException no abstract method found
+         * @throws LtRuntimeException no abstract method found
          */
         public static Method findAbstractMethod(Class<?> c) {
                 if (abstractMethod.containsKey(c)) return abstractMethod.get(c);
@@ -395,7 +395,7 @@ public class Dynamic {
                         Collections.addAll(interfaces, ii.getInterfaces());
                 }
 
-                throw new RuntimeException("cannot find abstract method in " + c);
+                throw new LtRuntimeException("cannot find abstract method in " + c);
         }
 
         /**
@@ -633,7 +633,7 @@ public class Dynamic {
                                         else if (step[i] < newStep[i]) isWorse = true;
 
                                         if (isBetter && isWorse)
-                                                throw new RuntimeException(
+                                                throw new LtRuntimeException(
                                                         "cannot decide which method to invoke:\n"
                                                                 + methodToInvoke + ":" + Arrays.toString(step) + "\n"
                                                                 + entry.getKey() + ":" + Arrays.toString(newStep));
@@ -687,7 +687,7 @@ public class Dynamic {
                                 sb.append(arg == null ? "null" : arg.getClass().getName());
                         }
                         sb.append(")");
-                        throw new RuntimeException("cannot find constructor " + sb.toString());
+                        throw new LtRuntimeException("cannot find constructor " + sb.toString());
                 } else {
                         Constructor<?> constructor = findBestMatch(candidates, args, primitives);
                         transToRequiredType(args, constructor.getParameterTypes());
@@ -768,7 +768,7 @@ public class Dynamic {
                                 sb.append(arg == null ? "null" : arg.getClass().getName());
                         }
                         sb.append(")");
-                        throw new RuntimeException("cannot find method to invoke " + sb.toString());
+                        throw new LtRuntimeException("cannot find method to invoke " + sb.toString());
                 }
 
                 // find best match
@@ -783,7 +783,7 @@ public class Dynamic {
                         if (methodToInvoke.getReturnType() == void.class) return Undefined.get();
                         else return res;
                 } catch (InvocationTargetException e) {
-                        throw e.getCause();
+                        throw e.getTargetException();
                 }
         }
 
@@ -811,9 +811,9 @@ public class Dynamic {
                                 if (o instanceof Double) return -((Number) o).doubleValue();
                                 break;
                         default:
-                                throw new RuntimeException("unknown one variable operation method " + op);
+                                throw new LtRuntimeException("unknown one variable operation method " + op);
                 }
-                throw new RuntimeException("cannot invoke " + o + "." + op);
+                throw new LtRuntimeException("cannot invoke " + o + "." + op);
         }
 
         /**
@@ -1028,9 +1028,9 @@ public class Dynamic {
                                 if (topType == 3) return ((Number) a).longValue() ^ ((Number) b).longValue();
                                 break;
                         default:
-                                throw new RuntimeException("unknown two-variable operation method " + op);
+                                throw new LtRuntimeException("unknown two-variable operation method " + op);
                 }
-                throw new RuntimeException("cannot invoke " + a + " " + op + " " + b);
+                throw new LtRuntimeException("cannot invoke " + a + " " + op + " " + b);
         }
 
         /**

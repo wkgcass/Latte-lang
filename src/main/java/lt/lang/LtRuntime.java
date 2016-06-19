@@ -24,6 +24,7 @@
 
 package lt.lang;
 
+import lt.compiler.LtBug;
 import lt.lang.function.Function;
 import lt.lang.function.Function0;
 
@@ -386,6 +387,10 @@ public class LtRuntime {
                 throw generateClassCastException(o, char.class);
         }
 
+        private static void throwNonRuntime(Throwable t) throws Throwable {
+                if (!(t instanceof LtRuntimeException)) throw t;
+        }
+
         /**
          * get field value.<br>
          * if field not found , then the method would try to invoke get(fieldName)<br>
@@ -395,8 +400,9 @@ public class LtRuntime {
          * @param fieldName   field name
          * @param callerClass caller class
          * @return the value or undefined
+         * @throws Throwable exceptions
          */
-        public static Object getField(Object o, String fieldName, Class<?> callerClass) {
+        public static Object getField(Object o, String fieldName, Class<?> callerClass) throws Throwable {
                 if (o.getClass().isArray()) {
                         if (fieldName.equals("length")) {
                                 return Array.getLength(o);
@@ -415,13 +421,15 @@ public class LtRuntime {
                 // try to find `fieldName()`
                 try {
                         return Dynamic.invoke(o.getClass(), o, callerClass, fieldName, new boolean[0], new Object[0]);
-                } catch (Throwable ignore) {
+                } catch (Throwable t) {
+                        throwNonRuntime(t);
                 }
                 // try to find `getFieldName()`
                 try {
                         String getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
                         return Dynamic.invoke(o.getClass(), o, callerClass, getter, new boolean[0], new Object[0]);
-                } catch (Throwable ignore) {
+                } catch (Throwable t) {
+                        throwNonRuntime(t);
                 }
                 // try _number
                 if (fieldName.startsWith("_")) {
@@ -429,7 +437,8 @@ public class LtRuntime {
                                 Integer i = Integer.parseInt(fieldName.substring(1));
                                 try {
                                         return Dynamic.invoke(o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{i});
-                                } catch (Throwable ignore) {
+                                } catch (Throwable t) {
+                                        throwNonRuntime(t);
                                 }
                         } catch (NumberFormatException ignore) {
                         }
@@ -437,7 +446,8 @@ public class LtRuntime {
                 // try to find `get(fieldName)`
                 try {
                         return Dynamic.invoke(o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{fieldName});
-                } catch (Throwable ignore) {
+                } catch (Throwable t) {
+                        throwNonRuntime(t);
                 }
                 return Undefined.get();
         }
@@ -512,7 +522,8 @@ public class LtRuntime {
                 try {
                         String setter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
                         Dynamic.invoke(o.getClass(), o, callerClass, setter, new boolean[]{false}, new Object[]{value});
-                } catch (Throwable ignore) {
+                } catch (Throwable t) {
+                        throwNonRuntime(t);
                         // try to find `set(fieldName,value)`
                         // invoke dynamic would try to find set then try to find put
                         Dynamic.invoke(o.getClass(), o, callerClass,
@@ -573,8 +584,9 @@ public class LtRuntime {
          * @param b           b
          * @param callerClass caller class
          * @return true/false
+         * @throws Throwable exceptions
          */
-        public static boolean is(Object a, Object b, Class<?> callerClass) {
+        public static boolean is(Object a, Object b, Class<?> callerClass) throws Throwable {
                 if (a == null && b == null) return true;
                 // not both a and b are null
                 if (a == null || b == null) return false;
@@ -585,7 +597,8 @@ public class LtRuntime {
                 // b is not class or (b is class and a not instanceof b)
                 try {
                         return castToBool(Dynamic.invoke(a.getClass(), a, callerClass, "is", new boolean[]{false}, new Object[]{b}));
-                } catch (Throwable ignore) {
+                } catch (Throwable t) {
+                        throwNonRuntime(t);
                 }
                 return false;
         }
@@ -597,8 +610,9 @@ public class LtRuntime {
          * @param b           b
          * @param callerClass caller class
          * @return true/false
+         * @throws Throwable exceptions
          */
-        public static boolean not(Object a, Object b, Class<?> callerClass) {
+        public static boolean not(Object a, Object b, Class<?> callerClass) throws Throwable {
                 if (a == null && b == null) return false;
                 // not both a and b are null
                 if (a == null || b == null) return true;
@@ -609,7 +623,8 @@ public class LtRuntime {
                 // b is not class or (b is class and a not instanceof b)
                 try {
                         return castToBool(Dynamic.invoke(a.getClass(), a, callerClass, "not", new boolean[]{false}, new Object[]{b}));
-                } catch (Throwable ignore) {
+                } catch (Throwable t) {
+                        throwNonRuntime(t);
                 }
                 return true;
         }
