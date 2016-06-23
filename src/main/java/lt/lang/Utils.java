@@ -39,31 +39,88 @@ public class Utils {
         private Utils() {
         }
 
+        /**
+         * print the object and new line
+         *
+         * @param o the object to print
+         */
         public static void println(Object o) {
                 System.out.println(o);
         }
 
+        /**
+         * print a new line
+         */
         public static void println() {
                 System.out.println();
         }
 
+        /**
+         * print the object
+         *
+         * @param o the object to print
+         */
         public static void print(Object o) {
                 System.out.print(o);
         }
 
+        /**
+         * evaluate the expression
+         *
+         * @param e expression or statement
+         * @return if the input defines types, then the result is a list of {@link Class} objects.
+         * otherwise, it's the evaluated result object.
+         * @throws Exception exception
+         */
         public static Object eval(String e) throws Exception {
-                Evaluator evaluator = new Evaluator(new ClassPathLoader());
+                return eval(ClassLoader.getSystemClassLoader(), e);
+        }
+
+        /**
+         * evaluate the expression
+         *
+         * @param loader the classloader
+         * @param e      expression or statement
+         * @return if the input defines types, then the result is a list of {@link Class} objects.
+         * otherwise, it's the evaluated result object.
+         * @throws Exception exception
+         */
+        public static Object eval(ClassLoader loader, String e) throws Exception {
+                Evaluator evaluator = new Evaluator(new ClassPathLoader(loader));
                 return evaluator.eval(e).result;
         }
 
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
+         * @param dir   the base directory
+         * @param regex file pattern
+         * @return a map.
+         */
         public static Map<String, File> filesInDirectory(String dir, String regex) {
                 return filesInDirectory(dir, regex, false);
         }
 
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
+         * @param dir         the base directory
+         * @param regex       file pattern
+         * @param recursively scan the children directories
+         * @return a map.
+         */
         public static Map<String, File> filesInDirectory(String dir, String regex, boolean recursively) {
                 return filesInDirectory(new File(dir), regex, recursively);
         }
 
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
+         * @param dir         the base directory
+         * @param regex       file pattern
+         * @param recursively scan the children directories
+         * @return a map.
+         */
         public static Map<String, File> filesInDirectory(File dir, String regex, boolean recursively) {
                 if (dir == null) throw new NullPointerException("dir is null");
                 Map<String, File> map = new LinkedHashMap<>();

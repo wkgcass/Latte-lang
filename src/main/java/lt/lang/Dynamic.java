@@ -703,18 +703,40 @@ public class Dynamic {
         }
 
         /**
-         * invoke a method.
+         * the invocation state.
+         */
+        public static class InvocationState {
+                /**
+                 * whether the method is found
+                 */
+                public boolean methodFound = false;
+                /**
+                 * the thrown exception or null if no exception thrown
+                 */
+                public Throwable exception = null;
+        }
+
+        /**
+         * invoke method with a invocationState.
          *
-         * @param targetClass the method is in this class
-         * @param o           invoke the method on the object (or null if invoke static)
-         * @param invoker     from which class invokes the method
-         * @param method      method name
-         * @param primitives  whether the argument is primitive
-         * @param args        the arguments
+         * @param invocationState invocationState
+         * @param targetClass     the method is in this class
+         * @param o               invoke the method on the object (or null if invoke static)
+         * @param invoker         from which class invokes the method
+         * @param method          method name
+         * @param primitives      whether the argument is primitive
+         * @param args            the arguments
          * @return the method result (void methods' results are <tt>undefined</tt>)
          * @throws Throwable exception
          */
-        public static Object invoke(Class<?> targetClass, Object o, Class<?> invoker, String method, boolean[] primitives, Object[] args) throws Throwable {
+        public static Object invoke(InvocationState invocationState,
+                                             Class<?> targetClass,
+                                             Object o,
+                                             Class<?> invoker,
+                                             String method,
+                                             boolean[] primitives,
+                                             Object[] args) throws Throwable {
+
                 if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
                 List<Method> methodList = new ArrayList<>();
 
@@ -754,6 +776,8 @@ public class Dynamic {
                                         return String.valueOf(o) + String.valueOf(args[0]);
                                 } else if (method.equals("set")) {
                                         return invoke(targetClass, o, invoker, "put", primitives, args);
+                                } else if (method.equals("logicNot") && args.length == 0) {
+                                        return !LtRuntime.castToBool(o);
                                 }
                         }
                         StringBuilder sb = new StringBuilder().append(
@@ -773,6 +797,7 @@ public class Dynamic {
 
                 // find best match
                 Method methodToInvoke = findBestMatch(methodList, args, primitives);
+                invocationState.methodFound = true;
                 // trans to required type
                 transToRequiredType(args, methodToInvoke.getParameterTypes());
 
@@ -783,8 +808,26 @@ public class Dynamic {
                         if (methodToInvoke.getReturnType() == void.class) return Undefined.get();
                         else return res;
                 } catch (InvocationTargetException e) {
+                        invocationState.exception = e.getTargetException();
                         throw e.getTargetException();
                 }
+        }
+
+        /**
+         * invoke a method.
+         *
+         * @param targetClass the method is in this class
+         * @param o           invoke the method on the object (or null if invoke static)
+         * @param invoker     from which class invokes the method
+         * @param method      method name
+         * @param primitives  whether the argument is primitive
+         * @param args        the arguments
+         * @return the method result (void methods' results are <tt>undefined</tt>)
+         * @throws Throwable exception
+         */
+        private static Object invoke(Class<?> targetClass, Object o, Class<?> invoker,
+                                     String method, boolean[] primitives, Object[] args) throws Throwable {
+                return invoke(new InvocationState(), targetClass, o, invoker, method, primitives, args);
         }
 
         /**
@@ -810,6 +853,8 @@ public class Dynamic {
                                 if (o instanceof Long) return -((Number) o).longValue();
                                 if (o instanceof Double) return -((Number) o).doubleValue();
                                 break;
+                        case "logicNot":
+                                return !LtRuntime.castToBool(o);
                         default:
                                 throw new LtRuntimeException("unknown one variable operation method " + op);
                 }

@@ -2158,7 +2158,7 @@ public class Parser {
                                 if (statement instanceof AST.Access) {
                                         AST.Access access = (AST.Access) statement;
                                         if (access.exp == null) {
-                                                VariableDef v = new VariableDef(access.name, Collections.emptySet(), annos, LineCol.SYNTHETIC);
+                                                VariableDef v = new VariableDef(access.name, Collections.emptySet(), annos, access.line_col());
                                                 annos.clear();
                                                 variableDefList.add(v);
 

@@ -24,6 +24,7 @@
 
 package lt.lang;
 
+import java.lang.reflect.Array;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
@@ -32,6 +33,27 @@ import java.util.Map;
  * iterable
  */
 public abstract class LtIterator implements Iterator {
+        static class PrimitiveArrayIt extends LtIterator {
+                final Object array;
+                final int len;
+                int index = 0;
+
+                PrimitiveArrayIt(Object array) {
+                        this.array = array;
+                        len = Array.getLength(array);
+                }
+
+                @Override
+                public boolean hasNext() {
+                        return index < len;
+                }
+
+                @Override
+                public Object next() {
+                        return Array.get(array, index++);
+                }
+        }
+
         static class ArrayIt extends LtIterator {
                 final Object[] array;
                 int index = 0;
@@ -89,7 +111,11 @@ public abstract class LtIterator implements Iterator {
 
         public static LtIterator getIterator(Object o) {
                 if (o.getClass().isArray()) {
-                        return new ArrayIt((Object[]) o);
+                        if (o.getClass().getComponentType().isPrimitive()) {
+                                return new PrimitiveArrayIt(o);
+                        } else {
+                                return new ArrayIt((Object[]) o);
+                        }
                 } else if (o instanceof Iterable) {
                         return new It(((Iterable) o).iterator());
                 } else if (o instanceof Iterator) {

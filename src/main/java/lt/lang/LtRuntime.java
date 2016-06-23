@@ -24,7 +24,6 @@
 
 package lt.lang;
 
-import lt.compiler.LtBug;
 import lt.lang.function.Function;
 import lt.lang.function.Function0;
 
@@ -251,7 +250,9 @@ public class LtRuntime {
                                         sb.append(")\n");
 
                                         @SuppressWarnings("unchecked")
-                                        Class<?> cls = ((java.util.List<Class<?>>) Utils.eval(sb.toString())).get(0);
+                                        Class<?> cls = ((java.util.List<Class<?>>) Utils.eval(
+                                                targetType.getClassLoader(),
+                                                sb.toString())).get(0);
                                         Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
                                         Function0 func = () -> con.newInstance(o);
                                         lambdaFunctionMap.put(targetType, func); // put into map
@@ -387,7 +388,8 @@ public class LtRuntime {
                 throw generateClassCastException(o, char.class);
         }
 
-        private static void throwNonRuntime(Throwable t) throws Throwable {
+        private static void throwNonRuntime(Dynamic.InvocationState state, Throwable t) throws Throwable {
+                if (state.methodFound && state.exception != null) throw state.exception;
                 if (!(t instanceof LtRuntimeException)) throw t;
         }
 
@@ -418,36 +420,39 @@ public class LtRuntime {
                         }
                 } catch (Throwable ignore) {
                 }
+
+                Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
+
                 // try to find `fieldName()`
                 try {
-                        return Dynamic.invoke(o.getClass(), o, callerClass, fieldName, new boolean[0], new Object[0]);
+                        return Dynamic.invoke(invocationState, o.getClass(), o, callerClass, fieldName, new boolean[0], new Object[0]);
                 } catch (Throwable t) {
-                        throwNonRuntime(t);
+                        throwNonRuntime(invocationState, t);
                 }
                 // try to find `getFieldName()`
                 try {
                         String getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-                        return Dynamic.invoke(o.getClass(), o, callerClass, getter, new boolean[0], new Object[0]);
+                        return Dynamic.invoke(invocationState, o.getClass(), o, callerClass, getter, new boolean[0], new Object[0]);
                 } catch (Throwable t) {
-                        throwNonRuntime(t);
+                        throwNonRuntime(invocationState, t);
                 }
                 // try _number
                 if (fieldName.startsWith("_")) {
                         try {
                                 Integer i = Integer.parseInt(fieldName.substring(1));
                                 try {
-                                        return Dynamic.invoke(o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{i});
+                                        return Dynamic.invoke(invocationState, o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{i});
                                 } catch (Throwable t) {
-                                        throwNonRuntime(t);
+                                        throwNonRuntime(invocationState, t);
                                 }
                         } catch (NumberFormatException ignore) {
                         }
                 }
                 // try to find `get(fieldName)`
                 try {
-                        return Dynamic.invoke(o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{fieldName});
+                        return Dynamic.invoke(invocationState, o.getClass(), o, callerClass, "get", new boolean[]{false}, new Object[]{fieldName});
                 } catch (Throwable t) {
-                        throwNonRuntime(t);
+                        throwNonRuntime(invocationState, t);
                 }
                 return Undefined.get();
         }
@@ -518,15 +523,18 @@ public class LtRuntime {
                         }
                 } catch (Throwable ignore) {
                 }
+
+                Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
+
                 // try `setFieldName(value)`
                 try {
                         String setter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-                        Dynamic.invoke(o.getClass(), o, callerClass, setter, new boolean[]{false}, new Object[]{value});
+                        Dynamic.invoke(invocationState, o.getClass(), o, callerClass, setter, new boolean[]{false}, new Object[]{value});
                 } catch (Throwable t) {
-                        throwNonRuntime(t);
+                        throwNonRuntime(invocationState, t);
                         // try to find `set(fieldName,value)`
                         // invoke dynamic would try to find set then try to find put
-                        Dynamic.invoke(o.getClass(), o, callerClass,
+                        Dynamic.invoke(invocationState, o.getClass(), o, callerClass,
                                 "set",
                                 new boolean[]{false, false},
                                 new Object[]{fieldName, value});
@@ -595,10 +603,13 @@ public class LtRuntime {
                 // a!=b and a.equals(b) is false
                 if (b instanceof Class) if (((Class) b).isInstance(a)) return true;
                 // b is not class or (b is class and a not instanceof b)
+
+                Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
+
                 try {
-                        return castToBool(Dynamic.invoke(a.getClass(), a, callerClass, "is", new boolean[]{false}, new Object[]{b}));
+                        return castToBool(Dynamic.invoke(invocationState, a.getClass(), a, callerClass, "is", new boolean[]{false}, new Object[]{b}));
                 } catch (Throwable t) {
-                        throwNonRuntime(t);
+                        throwNonRuntime(invocationState, t);
                 }
                 return false;
         }
@@ -621,10 +632,14 @@ public class LtRuntime {
                 // a!=b and a.equals(b) is false
                 if (b instanceof Class) if (((Class) b).isInstance(a)) return false;
                 // b is not class or (b is class and a not instanceof b)
+
+                Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
+
                 try {
-                        return castToBool(Dynamic.invoke(a.getClass(), a, callerClass, "not", new boolean[]{false}, new Object[]{b}));
+                        return castToBool(Dynamic.invoke(invocationState, a.getClass(), a,
+                                callerClass, "not", new boolean[]{false}, new Object[]{b}));
                 } catch (Throwable t) {
-                        throwNonRuntime(t);
+                        throwNonRuntime(invocationState, t);
                 }
                 return true;
         }

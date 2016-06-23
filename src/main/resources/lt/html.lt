@@ -57,7 +57,8 @@ private class StringEscaper
         val attrEscapeMap = {
             '"' : "&quot;"
         }.immutable
-        escapeHtml(source:String):String
+        escapeHtml(source):String
+            source = source.toString
             sb = StringBuilder()
             arr:[]char = source.toCharArray()
             for i in 0.:arr.length
@@ -68,7 +69,8 @@ private class StringEscaper
                 else
                     sb append c
             return sb.toString()
-        escapeAttr(attr:String):String
+        escapeAttr(attr):String
+            attr = attr.toString
             sb = StringBuilder()
             arr:[]char = attr.toCharArray()
             for i in 0.:arr.length
