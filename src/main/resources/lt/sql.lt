@@ -33,7 +33,7 @@ import lt::util::_
 
 interface SQLBuilder
     buildSQL():String
-    arguments():Map
+    arguments():List
 
 interface Selectable
 
@@ -215,7 +215,7 @@ data class Select(context:SQL, sb:StringBuilder, cols:List)
 
 data class Union(context:SQL, unionType:String, s1:SQLBuilder, s2:SQLBuilder):SQLBuilder
     buildSQL():String = s1.buildSQL + " " + unionType + " " + s2.buildSQL
-    arguments():Map = context.params
+    arguments():List = context.params
 
     union(stmt:SQLBuilder) = Union(context, "union", this, stmt)
     union_all(stmt:SQLBuilder) = Union(context, "union_all", this, stmt)
@@ -245,7 +245,7 @@ abstract class EndStatement(context:SQL, sb:StringBuilder):SQLBuilder
     union_all(stmt:SQLBuilder):Union = Union(context, "union all", this, stmt)
 
     buildSQL():String = sb.toString
-    arguments():Map = context.params
+    arguments():List = context.params
     toString():String = buildSQL()
 
 class From(context:SQL, sb:StringBuilder, tbls:List):EndStatement(context, sb)
@@ -312,7 +312,7 @@ class Insert(context:SQL, sb:StringBuilder, tbl_o):SQLBuilder
         sb append ")"
         return this
     buildSQL():String = sb.toString
-    arguments():Map = context.params
+    arguments():List = context.params
 
 class Update(context:SQL, sb:StringBuilder, tbl_o)
     sb append context.tableToString(tbl_o)
@@ -335,4 +335,4 @@ class UpdateWhere(context:SQL, sb:StringBuilder):SQLBuilder
         sb append con.toString(context)
         return this
     buildSQL():String =  sb.toString
-    arguments():Map = context.params
+    arguments():List = context.params

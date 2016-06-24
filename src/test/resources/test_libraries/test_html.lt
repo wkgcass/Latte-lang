@@ -18,3 +18,35 @@ class TestHtml
             return html(onload='window.location.href="page"') + [
                 " ><&\""
             ]
+        testHtmlPretty()
+            return (
+                html + [
+                    head + [
+                        link(rel="stylesheet", src="style.css")
+                        script(src="x.js")
+                    ]
+                    body + [
+                        form(method="post", action="x.do") + [
+                            input(typ="text", name="x")
+                            1
+                            button(typ="submit") + ["Submit"]
+                        ]
+                    ]
+                ]
+            ).pretty
+        testCss()
+            return (
+                css('body') + {
+                    'background-color':'#123456'
+                }
+            ).pretty
+        testHtmlAndCss()
+            return (
+                html + [
+                    style + [
+                        css('body') + {
+                            'background-color':'red'
+                        }
+                    ]
+                ]
+            ).pretty

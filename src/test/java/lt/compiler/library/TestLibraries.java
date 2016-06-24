@@ -77,6 +77,41 @@ public class TestLibraries {
                                 "&nbsp;&gt;&lt;&amp;&quot;" +
                                 "</html>"
                         , testHtmlEscape.invoke(null).toString());
+
+                Method testHtmlPretty = TestHtml.getMethod("testHtmlPretty");
+                assertEquals("" +
+                        "<html>\n" +
+                        "  <head>\n" +
+                        "    <link rel=\"stylesheet\" src=\"style.css\">\n" +
+                        "    <script src=\"x.js\">\n" +
+                        "    </script>\n" +
+                        "  </head>\n" +
+                        "  <body>\n" +
+                        "    <form method=\"post\" action=\"x.do\">\n" +
+                        "      <input name=\"x\" type=\"text\">\n" +
+                        "      1\n" +
+                        "      <button type=\"submit\">\n" +
+                        "        Submit\n" +
+                        "      </button>\n" +
+                        "    </form>\n" +
+                        "  </body>\n" +
+                        "</html>", testHtmlPretty.invoke(null));
+
+                Method testCss = TestHtml.getMethod("testCss");
+                assertEquals("" +
+                        "body {\n" +
+                        "  background-color : #123456;\n" +
+                        "}", testCss.invoke(null));
+
+                Method testHtmlAndCss = TestHtml.getMethod("testHtmlAndCss");
+                assertEquals("" +
+                        "<html>\n" +
+                        "  <style>\n" +
+                        "    body {\n" +
+                        "      background-color : red;\n" +
+                        "    }\n" +
+                        "  </style>\n" +
+                        "</html>", testHtmlAndCss.invoke(null));
         }
 
         @Test
