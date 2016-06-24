@@ -25,7 +25,7 @@
 package lt.lang;
 
 import lt.lang.function.Function;
-import lt.lang.function.Function0;
+import lt.lang.function.Function1;
 
 import java.lang.reflect.*;
 import java.util.Map;
@@ -108,7 +108,7 @@ public class LtRuntime {
         /**
          * the lambda function map. maps "required class" to "create the required object"
          */
-        private static final Map<Class<?>, Function0> lambdaFunctionMap = new WeakHashMap<>();
+        private static final Map<Class<?>, Function1> lambdaFunctionMap = new WeakHashMap<>();
 
         /**
          * Check whether the given type is {@link Integer} {@link Short}
@@ -210,7 +210,7 @@ public class LtRuntime {
                         }
                 } else if (Dynamic.isFunctionalAbstractClass(targetType)) {
                         if (lambdaFunctionMap.containsKey(targetType)) {
-                                return lambdaFunctionMap.get(targetType).apply();
+                                return lambdaFunctionMap.get(targetType).apply(o);
                         }
 
                         if (o instanceof Function) {
@@ -254,9 +254,9 @@ public class LtRuntime {
                                                 targetType.getClassLoader(),
                                                 sb.toString())).get(0);
                                         Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
-                                        Function0 func = () -> con.newInstance(o);
+                                        Function1 func = con::newInstance;
                                         lambdaFunctionMap.put(targetType, func); // put into map
-                                        return func.apply();
+                                        return func.apply(o);
                                 }
                         }
                 } else if (Dynamic.isFunctionalInterface(targetType)) {
