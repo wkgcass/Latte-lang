@@ -1009,19 +1009,19 @@ public class TestDemo {
         }
 
         @Test
-        public void testScriptPass_Literals() throws Exception {
+        public void testScriptPass_Literals() throws Throwable {
                 ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 sc.compile("literals.lts", new InputStreamReader(TestDemo.class.getResourceAsStream("/lang-demo/literals.lts"))).run();
         }
 
         @Test
-        public void testScriptPass_Statements() throws Exception {
+        public void testScriptPass_Statements() throws Throwable {
                 ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 sc.compile("statements.lts", new InputStreamReader(TestDemo.class.getResourceAsStream("/lang-demo/statements.lts"))).run();
         }
 
         @Test
-        public void testScriptPass_List_map() throws Exception {
+        public void testScriptPass_List_map() throws Throwable {
                 ScriptCompiler sc = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 sc.compile("list-map.lts", new InputStreamReader(TestDemo.class.getResourceAsStream("/lang-demo/list-map.lts"))).run();
         }

@@ -33,14 +33,14 @@ import static org.junit.Assert.*;
  */
 public class TestScript {
         @Test
-        public void testSimpleScript() throws Exception {
+        public void testSimpleScript() throws Throwable {
                 ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 ScriptCompiler.Script script = scriptCompiler.compile("script", "return 1");
                 assertEquals(1, script.run().getResult());
         }
 
         @Test
-        public void testScriptArgs() throws Exception {
+        public void testScriptArgs() throws Throwable {
                 ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 ScriptCompiler.Script script = scriptCompiler.compile("script", "return args");
                 assertArrayEquals(new String[0], (Object[]) script.run().getResult());

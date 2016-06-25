@@ -31,6 +31,7 @@ import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 import lt.lang.*;
 import lt.lang.function.Function1;
+import lt.repl.ScriptCompiler;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -2187,5 +2188,30 @@ public class TestCodeGen {
                 assertEquals(2, m3.invoke(null));
                 assertEquals(3, m4.invoke(null));
                 assertEquals(2, m5.invoke(null));
+        }
+
+        @Test
+        public void testGetFieldConsideringGlobal() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestGetFieldConsideringGlobal\n" +
+                                "    method()\n" +
+                                "        $GLOBALS['a']=100\n" +
+                                "        return a"
+                        , "TestGetFieldConsideringGlobal"
+                );
+                Method method = cls.getMethod("method");
+                assertEquals(100, method.invoke(cls.newInstance()));
+        }
+
+        @Test
+        public void testRequire() throws Throwable {
+                ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                ScriptCompiler.Script script = scriptCompiler.compile(
+                        "script",
+                        "return require('cp:test_require.lts')"
+                );
+                Object res = script.run().getResult();
+                assertEquals(2, res);
         }
 }

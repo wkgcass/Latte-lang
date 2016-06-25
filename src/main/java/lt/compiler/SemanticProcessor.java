@@ -3088,32 +3088,27 @@ public class SemanticProcessor {
                         // assignTo should be lt.lang.LtRuntime.getField(o,name)
                         // which means
                         Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) assignTo;
-                        if (invokeStatic.invokable() instanceof SMethodDef) {
-                                SMethodDef method = (SMethodDef) invokeStatic.invokable();
-                                if (method.declaringType().fullName().equals("lt.lang.LtRuntime")) {
-                                        if (method.name().equals("getField")) {
-                                                // dynamically get field
-                                                // invoke lt.lang.LtRuntime.putField(o,name,value)
-                                                SMethodDef putField = getLang_putField();
-                                                Ins.InvokeStatic invoke = new Ins.InvokeStatic(putField, lineCol);
-                                                invoke.arguments().add(invokeStatic.arguments().get(0));
-                                                invoke.arguments().add(invokeStatic.arguments().get(1));
+                        if (isGetFieldAtRuntime(invokeStatic)) {
+                                // dynamically get field
+                                // invoke lt.lang.LtRuntime.putField(o,name,value)
+                                SMethodDef putField = getLang_putField();
+                                Ins.InvokeStatic invoke = new Ins.InvokeStatic(putField, lineCol);
+                                invoke.arguments().add(invokeStatic.arguments().get(0));
+                                invoke.arguments().add(invokeStatic.arguments().get(1));
 
-                                                if (assignFrom.type() instanceof PrimitiveTypeDef) {
-                                                        assignFrom = boxPrimitive(assignFrom, LineCol.SYNTHETIC);
-                                                }
-
-                                                invoke.arguments().add(assignFrom);
-                                                invoke.arguments().add(
-                                                        new Ins.GetClass(scope.type(),
-                                                                (SClassDef) getTypeWithName("java.lang.Class", lineCol)));
-
-                                                // add into instructin list
-                                                instructions.add(invoke);
-
-                                                return;
-                                        }
+                                if (assignFrom.type() instanceof PrimitiveTypeDef) {
+                                        assignFrom = boxPrimitive(assignFrom, LineCol.SYNTHETIC);
                                 }
+
+                                invoke.arguments().add(assignFrom);
+                                invoke.arguments().add(
+                                        new Ins.GetClass(scope.type(),
+                                                (SClassDef) getTypeWithName("java.lang.Class", lineCol)));
+
+                                // add into instructin list
+                                instructions.add(invoke);
+
+                                return;
                         }
                         err.SyntaxException("cannot assign", lineCol);
                         // code won't reach here
@@ -3276,6 +3271,8 @@ public class SemanticProcessor {
          * <li>{@link lt.compiler.syntactic.AST.Procedure}</li>
          * <li>{@link lt.compiler.syntactic.AST.Lambda}</li>
          * <li>{@link lt.compiler.syntactic.AST.TypeOf} =&gt; {@link lt.compiler.semantic.Ins.GetClass}</li>
+         * <li>{@link lt.compiler.syntactic.AST.AnnoExpression}</li>
+         * <li>{@link lt.compiler.syntactic.AST.Require}</li>
          * </ul>
          *
          * @param exp          expression
@@ -3461,10 +3458,51 @@ public class SemanticProcessor {
                         annotationRecorder.put(anno, astAnno);
                         parseAnnoValues(Collections.singleton(anno));
                         v = anno;
+                } else if (exp instanceof AST.Require) {
+                        // invoke LtRuntime.require(?,?)
+                        SMethodDef method = getLang_require();
+                        Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, exp.line_col());
+                        // caller class
+                        invokeStatic.arguments().add(new Ins.GetClass(
+                                scope.type(),
+                                (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)
+                        ));
+                        // require file
+                        invokeStatic.arguments().add(parseValueFromExpression(
+                                ((AST.Require) exp).required,
+                                getTypeWithName("java.lang.String", ((AST.Require) exp).required.line_col()),
+                                scope));
+                        v = invokeStatic;
                 } else {
                         throw new LtBug("unknown expression " + exp);
                 }
                 return cast(requiredType, v, exp.line_col());
+        }
+
+        /**
+         * {@link LtRuntime#getField(Object, String, Class)}
+         */
+        private SMethodDef Lang_require = null;
+
+        /**
+         * @return {@link LtRuntime#getField(Object, String, Class)}
+         * @throws SyntaxException exception
+         */
+        private SMethodDef getLang_require() throws SyntaxException {
+                if (Lang_require == null) {
+                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert Lang != null;
+
+                        for (SMethodDef m : Lang.methods()) {
+                                if (m.name().equals("require")) {
+                                        Lang_require = m;
+                                        break;
+                                }
+                        }
+                }
+                if (Lang_require == null)
+                        throw new LtBug("lt.lang.LtRuntime.require(Class,String) should exist");
+                return Lang_require;
         }
 
         /**
@@ -5397,7 +5435,8 @@ public class SemanticProcessor {
                                 return null;
                         } else {
                                 // get field at runtime
-                                return invokeGetField(scope.getThis(), access.name, scope.type(), access.line_col());
+                                return invokeGetFieldConsideringGlobal(
+                                        scope.getThis(), access.name, scope.type(), access.line_col());
                         }
 
                 } else {
@@ -5549,6 +5588,29 @@ public class SemanticProcessor {
         }
 
         /**
+         * invoke {@link LtRuntime#getFieldConsideringGlobal(Object, String, Class)}
+         *
+         * @param target      1st arg
+         * @param name        2nd arg
+         * @param callerClass 3rd arg
+         * @param lineCol     line and column info
+         * @return InvokeStatic
+         * @throws SyntaxException exception
+         */
+        private Ins.InvokeStatic invokeGetFieldConsideringGlobal(Value target,
+                                                                 String name,
+                                                                 STypeDef callerClass, LineCol lineCol) throws SyntaxException {
+                SMethodDef m = getLang_getFieldConsideringGlobal();
+                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
+                invokeStatic.arguments().add(target);
+                StringConstantValue s = new StringConstantValue(name);
+                s.setType((SClassDef) getTypeWithName("java.lang.String", lineCol));
+                invokeStatic.arguments().add(s);
+                invokeStatic.arguments().add(new Ins.GetClass(callerClass, (SClassDef) getTypeWithName("java.lang.Class", lineCol)));
+                return invokeStatic;
+        }
+
+        /**
          * {@link LtRuntime#getField(Object, String, Class)}
          */
         private SMethodDef Lang_getField = null;
@@ -5569,8 +5631,35 @@ public class SemanticProcessor {
                                 }
                         }
                 }
-                if (Lang_getField == null) throw new LtBug("lt.lang.LtRuntime.getField(Object,String) should exist");
+                if (Lang_getField == null)
+                        throw new LtBug("lt.lang.LtRuntime.getField(Object,String,Class) should exist");
                 return Lang_getField;
+        }
+
+        /**
+         * {@link LtRuntime#getFieldConsideringGlobal(Object, String, Class)}
+         */
+        private SMethodDef Lang_getFieldConsideringGlobal = null;
+
+        /**
+         * @return {@link LtRuntime#getField(Object, String, Class)}
+         * @throws SyntaxException exception
+         */
+        private SMethodDef getLang_getFieldConsideringGlobal() throws SyntaxException {
+                if (Lang_getFieldConsideringGlobal == null) {
+                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert Lang != null;
+
+                        for (SMethodDef m : Lang.methods()) {
+                                if (m.name().equals("getFieldConsideringGlobal")) {
+                                        Lang_getFieldConsideringGlobal = m;
+                                        break;
+                                }
+                        }
+                }
+                if (Lang_getFieldConsideringGlobal == null)
+                        throw new LtBug("lt.lang.LtRuntime.getFieldConsideringGlobal(Object,String,Class) should exist");
+                return Lang_getFieldConsideringGlobal;
         }
 
         /**
@@ -6499,7 +6588,7 @@ public class SemanticProcessor {
                                                                 methodsToInvoke,
                                                                 true);
                                                 } else throw new LtBug("type should not be " + target.type());
-                                        } else if (access.exp instanceof AST.Access && type!=null) {
+                                        } else if (access.exp instanceof AST.Access && type != null) {
                                                 // access.exp is type
                                                 if (methodsToInvoke.isEmpty()) {
                                                         List<Value> args = new ArrayList<>();
@@ -6733,7 +6822,13 @@ public class SemanticProcessor {
                         Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) target;
                         if (invokeStatic.invokable() instanceof SMethodDef) {
                                 SMethodDef m = (SMethodDef) invokeStatic.invokable();
-                                if (m.name().equals("getField") && m.declaringType().fullName().equals("lt.lang.LtRuntime")) {
+                                if (
+                                        (
+                                                m.name().equals("getField")
+                                                        ||
+                                                        m.name().equals("getFieldConsideringGlobal")
+                                        )
+                                                && m.declaringType().fullName().equals("lt.lang.LtRuntime")) {
                                         return true;
                                 }
                         }

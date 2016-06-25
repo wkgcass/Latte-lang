@@ -87,11 +87,9 @@ public class ScriptCompiler {
                  * invoke {@link #scriptMethod} with a zero-length String array
                  *
                  * @return the Result object itself (invoke {@link #getResult()}) to get the return value
-                 * @throws InvocationTargetException exception
-                 * @throws IllegalAccessException    exception
-                 * @throws InstantiationException    exception
+                 * @throws Throwable throwable
                  */
-                public Script run() throws InvocationTargetException, IllegalAccessException, InstantiationException {
+                public Script run() throws Throwable {
                         return run(new String[0]);
                 }
 
@@ -100,12 +98,14 @@ public class ScriptCompiler {
                  *
                  * @param args arguments
                  * @return the Result object itself (invoke {@link #getResult()}) to get the return value
-                 * @throws InvocationTargetException exception
-                 * @throws IllegalAccessException    exception
-                 * @throws InstantiationException    exception
+                 * @throws Throwable throwable
                  */
-                public Script run(String[] args) throws InvocationTargetException, IllegalAccessException, InstantiationException {
-                        result = scriptMethod.invoke(scriptClass.newInstance(), new Object[]{args});
+                public Script run(String[] args) throws Throwable {
+                        try {
+                                result = scriptMethod.invoke(scriptClass.newInstance(), new Object[]{args});
+                        } catch (InvocationTargetException e) {
+                                throw e.getTargetException();
+                        }
                         return this;
                 }
 
@@ -238,6 +238,20 @@ public class ScriptCompiler {
                 return compile(scriptFile.getName(), new FileReader(scriptFile));
         }
 
+        private boolean scriptNameAlreadyUsed(ClassLoader loader, String name) {
+                try {
+                        Class.forName(name);
+                        return true;
+                } catch (ClassNotFoundException e) {
+                        try {
+                                loader.loadClass(name);
+                                return true;
+                        } catch (ClassNotFoundException e2) {
+                                return false;
+                        }
+                }
+        }
+
         /**
          * compile the script
          *
@@ -247,9 +261,11 @@ public class ScriptCompiler {
          * @throws Exception exception
          */
         public Script compile(String name, Reader scriptReader) throws Exception {
+                ClassLoader theCompiledClasses = compiler.compile(sources);
+
                 String nameForTheScript = "Script$Latte$";
                 int i = 0;
-                while (sources.containsKey(nameForTheScript + i)) ++i;
+                while (scriptNameAlreadyUsed(theCompiledClasses, nameForTheScript + i)) ++i;
 
                 nameForTheScript += i;
 
@@ -305,8 +321,6 @@ public class ScriptCompiler {
                 defsAndImports.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
                 defsAndImports.add(new Import(new AST.PackageRef("lt::repl", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-
-                ClassLoader theCompiledClasses = compiler.compile(sources);
 
                 SemanticProcessor sp = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                         put(name, defsAndImports);

@@ -26,8 +26,13 @@ package lt.lang;
 
 import lt.lang.function.Function;
 import lt.lang.function.Function1;
+import lt.repl.ScriptCompiler;
 
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.*;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -394,6 +399,23 @@ public class LtRuntime {
         }
 
         /**
+         * get field value or retrieve from global.<br>
+         *
+         * @param o           object
+         * @param fieldName   field name
+         * @param callerClass caller class
+         * @return the value or undefined
+         * @throws Throwable exceptions
+         */
+        public static Object getFieldConsideringGlobal(Object o, String fieldName, Class<?> callerClass) throws Throwable {
+                Object res = getField(o, fieldName, callerClass);
+                if (res == Undefined.get()) {
+                        if (Utils.$GLOBALS.containsKey(fieldName)) return Utils.$GLOBALS.get(fieldName);
+                        return Undefined.get();
+                } else return res;
+        }
+
+        /**
          * get field value.<br>
          * if field not found , then the method would try to invoke get(fieldName)<br>
          * or the method would return <tt>undefined</tt>
@@ -665,5 +687,57 @@ public class LtRuntime {
         public static int getHashCode(Object o) {
                 if (o == null) return 0;
                 return o.hashCode();
+        }
+
+        private static final Map<String, Object> requiredObjects = new HashMap<>();
+
+        /**
+         * run a script and retrieve the script result. One file would only be run for only once.
+         * The result value would be recorded, and the value would be retrieved when required.
+         *
+         * @param callerClass caller class
+         * @param file        file. use cp:xx to retrieve from ClassPath
+         * @return the script result
+         * @throws Throwable throwable
+         */
+        public static Object require(Class<?> callerClass, String file) throws Throwable {
+                ScriptCompiler sc = new ScriptCompiler(callerClass.getClassLoader());
+                file = file.trim();
+
+                Reader r;
+                if (file.startsWith("cp:")) {
+                        // process file string
+                        file = file.substring("cp:".length()).trim();
+                        if (!file.startsWith("/")) {
+                                file = "/" + file;
+                        }
+
+                        // get from recorder
+                        if (requiredObjects.containsKey("cp:" + file)) return requiredObjects.get("cp:" + file);
+
+                        // get reader
+                        r = new InputStreamReader(
+                                Utils.class.getResourceAsStream(file));
+                } else {
+                        // get from recorder
+                        if (requiredObjects.containsKey(file)) return requiredObjects.get(file);
+
+                        // get reader
+                        r = new FileReader(file);
+                }
+
+                // get script file name
+                if (file.contains("/")) {
+                        file = file.substring(file.indexOf("/") + 1);
+                }
+                if (file.contains("\\")) {
+                        file = file.substring(file.indexOf("\\") + 1);
+                }
+
+                // compile and run
+                Object o = sc.compile(file, r)
+                        .run().getResult();
+                requiredObjects.put(file, o);
+                return o;
         }
 }

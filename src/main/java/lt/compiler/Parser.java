@@ -45,6 +45,9 @@ import static lt.compiler.CompileUtil.*;
  * syntactic processor
  */
 public class Parser {
+        /**
+         * parse fail is used to skip current statement.
+         */
         private class ParseFail extends RuntimeException {
         }
 
@@ -1704,11 +1707,30 @@ public class Parser {
                                                         case "undefined":
 
                                                                 annosIsEmpty();
+                                                                modifiersIsEmpty();
+
                                                                 parsedExps.push(new AST.UndefinedExp(current.getLineCol()));
                                                                 nextNode(true);
                                                                 parse_expression();
 
                                                                 break;
+                                                        case "require":
+
+                                                                annosIsEmpty();
+                                                                modifiersIsEmpty();
+                                                                nextNode(false);
+                                                                lineCol = current.getLineCol();
+                                                                Expression exp = get_exp(false);
+                                                                if (!(exp instanceof StringLiteral)) {
+                                                                        err.UnexpectedTokenException("the required file path", exp.line_col());
+                                                                        throw new ParseFail();
+                                                                } else {
+                                                                        StringLiteral stringLiteral = (StringLiteral) exp;
+                                                                        parsedExps.push(new AST.Require(stringLiteral, lineCol));
+                                                                }
+                                                                parse_expression();
+                                                                break;
+
                                                         default:
                                                                 err.UnexpectedTokenException(content, current.getLineCol());
                                                                 // ignore

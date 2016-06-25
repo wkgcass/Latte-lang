@@ -26,6 +26,7 @@ package lt.compiler.syntactic;
 
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.def.VariableDef;
+import lt.compiler.syntactic.literal.StringLiteral;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -797,6 +798,24 @@ public class AST {
                 @Override
                 public String toString() {
                         return "(...)";
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return lineCol;
+                }
+        }
+
+        /**
+         * require a lt file
+         */
+        public static class Require implements Expression {
+                public final StringLiteral required;
+                private final LineCol lineCol;
+
+                public Require(StringLiteral required, LineCol lineCol) {
+                        this.required = required;
+                        this.lineCol = lineCol;
                 }
 
                 @Override

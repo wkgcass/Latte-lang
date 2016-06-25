@@ -224,10 +224,8 @@ public class REPL {
                                         String[] scriptArgs = new String[args.length - 2];
                                         System.arraycopy(args, 2, scriptArgs, 0, args.length - 2);
                                         script.run(scriptArgs);
-                                } catch (Exception e) {
-                                        if (e instanceof InvocationTargetException) {
-                                                e.getCause().printStackTrace();
-                                        } else if (e instanceof SyntaxException) {
+                                } catch (Throwable e) {
+                                        if (e instanceof SyntaxException) {
                                                 System.err.println("[ERROR] " + e.getMessage());
                                         } else {
                                                 e.printStackTrace();

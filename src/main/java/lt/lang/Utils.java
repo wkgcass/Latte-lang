@@ -27,7 +27,7 @@ package lt.lang;
 import lt.repl.Evaluator;
 import lt.repl.ClassPathLoader;
 
-import java.io.File;
+import java.io.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -36,6 +36,11 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public class Utils {
+        /**
+         * the global object holder.
+         */
+        public static final ValueContainer $GLOBALS = new ValueContainer();
+
         private Utils() {
         }
 
