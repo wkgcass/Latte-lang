@@ -730,12 +730,12 @@ public class Dynamic {
          * @throws Throwable exception
          */
         public static Object invoke(InvocationState invocationState,
-                                             Class<?> targetClass,
-                                             Object o,
-                                             Class<?> invoker,
-                                             String method,
-                                             boolean[] primitives,
-                                             Object[] args) throws Throwable {
+                                    Class<?> targetClass,
+                                    Object o,
+                                    Class<?> invoker,
+                                    String method,
+                                    boolean[] primitives,
+                                    Object[] args) throws Throwable {
 
                 if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
                 List<Method> methodList = new ArrayList<>();
@@ -758,11 +758,34 @@ public class Dynamic {
 
                 if (methodList.isEmpty()) {
                         if (c.isArray()) {
-                                if (method.equals("get") && args.length == 1 && args[0] instanceof Integer) {
-                                        return Array.get(o, (Integer) args[0]);
-                                } else if (method.equals("set") && args.length == 2 && args[0] instanceof Integer) {
-                                        Array.set(o, (Integer) args[0], args[1]);
-                                        return args[1];
+                                if (method.equals("get") && args.length >= 1 && args[0] instanceof Integer) {
+                                        Object res = Array.get(o, (Integer) args[0]);
+                                        if (args.length == 1) return res;
+
+                                        boolean[] bs = new boolean[primitives.length - 1];
+                                        Object[] as = new Object[args.length - 1];
+                                        for (int i = 1; i < args.length; ++i) {
+                                                bs[i - 1] = primitives[i];
+                                                as[i - 1] = args[i];
+                                        }
+
+                                        return invoke(invocationState, targetClass, res, invoker, "get", bs, as);
+                                } else if (method.equals("set") && args.length >= 2 && args[0] instanceof Integer) {
+                                        if (args.length == 2) {
+                                                Array.set(o, (Integer) args[0], args[1]);
+                                                return args[1];
+                                        } else {
+                                                Object elem = Array.get(o, (Integer) args[0]);
+
+                                                boolean[] bs = new boolean[primitives.length - 1];
+                                                Object[] as = new Object[args.length - 1];
+                                                for (int i = 1; i < args.length; ++i) {
+                                                        bs[i - 1] = primitives[i];
+                                                        as[i - 1] = args[i];
+                                                }
+
+                                                return invoke(invocationState, targetClass, elem, invoker, "set", bs, as);
+                                        }
                                 }
                         } else {
                                 if (args.length == 1 && isBoxType(c) && isBoxType(args[0].getClass())) {

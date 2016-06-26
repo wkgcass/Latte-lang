@@ -2214,4 +2214,64 @@ public class TestCodeGen {
                 Object res = script.run().getResult();
                 assertEquals(2, res);
         }
+
+        @Test
+        public void test3DArray() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class Test3DArray\n" +
+                                "    static\n" +
+                                "        get(o,i,j,k)=o[i,j,k]\n" +
+                                "        set(o,i,j,k,v)=o[i,j,k]=v"
+                        , "Test3DArray"
+                );
+
+                int[][][] arr = {
+                        {
+                                {1, 2, 3},
+                                {4, 5}
+                        },
+                        {
+                                {6, 7, 8, 9},
+                                {},
+                                {10}
+                        },
+                        {
+                                {},
+                                {11, 12}
+                        }
+                };
+
+                Method get = cls.getMethod("get", Object.class, Object.class, Object.class, Object.class);
+                assertEquals(5, get.invoke(null, arr, 0, 1, 1));
+                assertEquals(10, get.invoke(null, arr, 1, 2, 0));
+                assertEquals(11, get.invoke(null, arr, 2, 1, 0));
+                assertEquals(7, get.invoke(null, arr, 1, 0, 1));
+                Method set = cls.getMethod("set", Object.class, Object.class, Object.class, Object.class, Object.class);
+                set.invoke(null, arr, 0, 1, 1, 13);
+                assertEquals(13, arr[0][1][1]);
+
+                set.invoke(null, arr, 1, 2, 0, 14);
+                assertEquals(14, arr[1][2][0]);
+
+                set.invoke(null, arr, 2, 1, 0, 15);
+                assertEquals(15, arr[2][1][0]);
+
+                set.invoke(null, arr, 1, 0, 1, 16);
+                assertEquals(16, arr[1][0][1]);
+
+                Object[][] arr2 = {
+                        {new lt.util.List($this -> {
+                                List ls = (List) $this;
+                                ls.add(1);
+                                ls.add(2);
+                                ls.add(3);
+                                return null;
+                        })}
+                };
+
+                assertEquals(2, get.invoke(null, arr2, 0, 0, 1));
+                set.invoke(null, arr2, 0, 0, 1, 10);
+                assertEquals(10, get.invoke(null, arr2, 0, 0, 1));
+        }
 }

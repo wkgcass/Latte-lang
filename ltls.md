@@ -13,7 +13,7 @@
 	4. array
 	5. map
 3. Type System
-	1. Hybrid of Weak and Strong type
+	1. Hybrid of Static and Dynamic typing
 	2. Literal Default Types
 		1. number
 		2. string
@@ -43,8 +43,8 @@
 	11. annotation
 	12. method definition
 	13. class definition
-	14. interface defintion
-	15. modifiers
+	14. interface definition
+	15. fun definition
 6. Expressions
 	1. number literals
 	2. bool literals
@@ -64,6 +64,14 @@
 	16. procedure
 	17. lambda
 	18. type
+	19. AnnoExpression
+	20. require
+7. Language Related Libraries
+	1. global variables
+	2. repl and scripts
+8. Libraries
+	1. html
+	2. sql
 
 #§1 File Structure
 ##1.1 indentation
@@ -170,13 +178,13 @@ package declaration should be the first statement of the file
 
 	package lt::spec
 	
-the sub packages are separated with `::` instead of `.` 
+>the sub packages are separated by `::` instead of `.` 
 
-In this _Specification_ , packages / types are separated with `::` , so it might writes `java::util::LinkedList`, you should known that it's the same as `java.util.LinkedList` in java.
+In this _Specification_ , packages / types are separated by `::` , so it might writes `java::util::LinkedList`, you should known that it's the same as `java.util.LinkedList` in java.
 
 import can appear in any position where indentation is 0
 
-import supports importing
+import supports importing:
 
 * all types from a package
 * one specified type
@@ -188,7 +196,7 @@ e.g.
 	import java::util::List
 	import java::util::Collections._
 	
-these import statements means import all types from package `java::awt`, and import type `java::util::List` and import all static fields and methods from `java::util::Collections._`
+these import statements means import all types from package `java::awt`, and import type `java::util::List` and import all static fields and methods from `java::util::Collections`
 
 when trying to retrieve a type, it firstly tries to seek from import that specifies type simple name.
 
@@ -260,7 +268,7 @@ e.g.
 	]
 
 ##2.5 map
-map starts with `{` and ends with `}`, the containing entries are separated with `,` or `NewLine`. the entry key-value is separated with `:`
+map starts with `{` and ends with `}`, the containing entries are separated by `,` or `NewLine`. the entry key-value is separated by `:`
 
 e.g.
 
@@ -279,8 +287,8 @@ e.g.
 	}
 	
 #§3 TypeSystem
-##3.1 Hybrid of Weak and Strong type
-`Latte` is a hybrid of weak and strong type language.
+##3.1 Hybrid of Static and Dynamic typing
+`Latte` is a hybrid of Static and Dynamic typing.
 
 you can specify the type/return type with `:` when defining variables and methods, or use `as` to cast primitives/references.
 
@@ -297,7 +305,7 @@ e.g.
 this design let Latte be able to extend java classes, implement java interfaces and use any java library.
 
 ##3.2 Literal Default Types
-If rquired type is not set, literals are parsed into their default values.
+If required type is not set, literals are parsed into their default values.
 
 ###3.2.1 number
 numbers without a dot are parsed into `int`  
@@ -315,8 +323,8 @@ e.g.
 
 * `'a'` -- `char`
 * `"a"` -- `java::lang::String`
-* `''` -- `java::lang::String`
-* `""` -- `java::lang::String`
+* `''` (empty string) -- `java::lang::String`
+* `""` (empty string) -- `java::lang::String`
 * `'str'` -- `java::lang::String`
 * `"str"` -- `java::lang::String`
 
@@ -324,24 +332,27 @@ e.g.
 bools are parsed into java `boolean`
 
 ###3.2.4. array
-arrays are parsed into `lt::lang::List`
+arrays are parsed into `lt::util::List`
 
 the `List` extends `java::util::LinkedList` and provides functions that look like `Array` in `JavaScript`
 
 ###3.2.5. map
-maps are parsed into `java::util::LinkedHashMap`
+maps are parsed into `lt::util::Map`
 
 ##3.3 Requiring Type
 if required types are set, then the literals would be parsed into corresponding types.
 
-if the required type and literal tuple not recorded in the following table, a cast would be performed and might cause compiling error, or `java.lang.ClassCastException` at runtime.
+if the required type and literal entry not recorded in the following table, a compiling error would be thrown.
 
-Required Type | Literal Type   | Parsed Type or Method Invocation |
+>Casting on Literals are very strict, but it's loose when casting a variable.  
+>The casting on variables are not recorded in this table.
+
+Required Type | Literal Type   | Constant pool or Method Invocation |
 ------------- | :-------------:| -------------------------------- |
 int           | integer number | constant pool int                |
 short   | integer number | constant pool int and convert to short |
-byte    | integer number | constant pool int and convert to byte |
-char    | integer number/char string | constant pool int and convert to char|
+byte    | integer number | constant pool int and convert to byte  |
+char          | char string    | constant pool int and convert to char|
 boolean       | bool           | constant pool int 1 or 0         |
 long          | integer number | constant pool long               |
 float         | any number     | constant pool float              |
@@ -349,13 +360,15 @@ double        | any number     | constant pool double             |
 Integer       | integer number | Integer.valueOf(number as int)   |
 Short         | integer number | Short.valueOf(number as short)   |
 Byte          | integer number | Byte.valueOf(number as byte)     |
-Character |integer number/char string| Character.valueOf(literal) |
+Character     | char string    | Character.valueOf(literal)       |
 Boolean       | bool           | Boolean.valueOf(bool)            |
 Long          | integer number | Long.valueOf(number as long)     |
 Float         | any number     | Float.valueOf(number as float)   |
 Double        | any number     | Double.valueOf(number as double) |
 String        | any string     | String constant pool             |
 array type    | array          | array                            |
+List          | array          | List     |
+Map           | map            | Map      |
 
 >reference types in the table also contain their super classes/implemented interfaces
 
@@ -445,16 +458,20 @@ in `interface` :
 ##3.6 Cast
 `number` , `string` and `bool` literals can only be parsed into limited types, and might produce a compiling error. In other circumstances, `Latte` supports a large range of type casting methods when compiling and at runtime.
 
+literals only support:
+
 * `number` without dot can be `int`, `long`, `short`, `byte`, `double`, `float` and their boxing types
 * `number` with dot can be `double`, `float` and their boxing types
 * `string` can be `java::lang::String` or `char`
 * `bool` can be java `boolean` or `Boolean`
+* `array` can be `array types` or `List`
+* `map` can be `Map`
 
 ###Compile
 Compiling only supports auto boxing. other casts are done at Runtime
 
 ###Runtime
-all cast for reference types to reference types are defined in `lt::lang::Lang.cast(o, targetType)`
+all cast for reference types to reference types are defined in `lt::lang::LtRuntime.cast(o, targetType, callerClass)`
 
 all cast for reference types to primitive types are defined as "castToX", such as `castToInt`, `castToShort` ...
 
@@ -532,7 +549,6 @@ CharSequence   | char                     | length is 1 and charAt(0)
 ###references
 type           | required type            | method
 ---------------|--------------------------|-----------
-java::util::List | array                  | cast every element into component type
 Function       | functional interface     | param length should be the same and use Proxy to generate new object
 Function       | functional abstract class | param length should be the same and use `Latte` compiler to generate new object
 
@@ -547,7 +563,7 @@ the `void` can also be written as `Unit`, and `Undefined` is defined as `lt::lan
 
 `void` (or `Unit`) can only be used on method return types, which represents that the method doesn't have a return value
 
-An `undefined` appears when trying to retrieve non-exist fields or use invocation of a `void` method as value
+An `undefined` appears when trying to retrieve non-exist fields or trying to get return value of a `void` method
 
 ###values
 the following values are defined as default
@@ -555,7 +571,7 @@ the following values are defined as default
 * null
 * undefined
 
-`null` can be assigned to any type, and `undefined` is used as a symbol of non-exist fields or `void` methods return
+`null` can be assigned to any type, and `undefined` is used as a symbol of non-exist fields or `void` methods' return value. The type of `undefined` is `Undefined`.
 
 #§4 Keywords
 all java keywords are `Latte` keywords :
@@ -571,13 +587,14 @@ all java keywords are `Latte` keywords :
 there're a few more keywords defined in `Latte` :
 
 	"is", "not", "bool", "yes", "no", "type", "as",
-	"undefined", "in", "elseif", "Unit", "data", "val"
+	"undefined", "in", "elseif", "Unit", "data", "val",
+	"fun", "require"
 	
 note that `define` and `undef` are not keywords, they only enables if the first characters of the line is `define` or `undef`.
 
 `boolean` is a keyword, but invalid in `Latte`, use `bool` instead.
 
-write
+Write
 
 	`valid java name`
 
@@ -594,14 +611,16 @@ e.g.
 
 `data` only modifies `class`, generates some methods to build a java bean.
 
+Here are all `Latte` modifiers:
+
 	"public", "protected", "private", "pkg", "data",
 	"abstract", "val", "native", "synchronized", "transient", 
 	"volatile", "strictfp"
 	
 ###access modifiers
-`public` `private` `protected` `pkg` are access modifiers
-
 At most one access modifier can exist on one object
+
+`public` `private` `protected` `pkg` are access modifiers
 
 * `public` means any member can visit this object
 * `private` means only the type itself can have access to the object
@@ -642,7 +661,8 @@ At most one access modifier can exist on one object
 11. annotation
 12. method definition
 13. class definition
-14. interface defintion
+14. interface definition
+15. fun definition
 
 ##5.1 (...)
 The symbol `...` means "do nothing".
@@ -694,7 +714,7 @@ if the input is
 		while tmp.hasNext
 		    variable = tmp.next
 		    
-`Latte` doesn't support traditional C-like for statement. Instead, use `range list` instead
+`Latte` doesn't support traditional C-like for statement, use `range list` instead.
 
 ##5.3 while / do-while
 
@@ -859,12 +879,44 @@ The class definitions can be found in chapter 3.5
 	class ClassName(params):ParentClass
 	class ClassName(params):ParentClass(args)
 	class ClassName(params):ParentClass(args),Interface1,Interface2
+	
+The static fields and methods are defined as:
 
-##5.14 interface defintion
+	class ClassName
+	    static
+	        ... ; fields and methods
+
+##5.14 interface definition
 The interface definitions can be found in chapter 3.5
 
 	class InterfaceName
 	class InterfaceName:SuperInterface1,SuperInterface2
+
+The static fields and methods are defined in the same way that class does.
+
+##5.15 fun definition
+`fun` means function. It's a simple way of implementing a functional interface/abstract class.
+
+e.g.
+
+	@FunctionalInterface
+	interface Function1
+	    apply(o)=...
+	    
+if you want to build a class `Fun1Impl` which implements the interface, you can write:
+
+	fun Fun1Impl(o):Function1
+	    ...
+	    return xxx
+
+The `:Function1` can be omitted. The implemented type is `lt::lang::function::FunctionX` as default where `X` is arguments count. It can be assigned to any places requires a lambda with the support for casting from Functions to required functional types.
+
+e.g.
+
+	fun printElem(o)
+	    println(o)
+
+	[1,2,3].forEach(printElem)
 
 #§6 Expressions
 `Latte` supports the following expressions
@@ -887,6 +939,8 @@ The interface definitions can be found in chapter 3.5
 16. procedure
 17. lambda
 18. type
+19. AnnoExpression
+20. require
 
 ##6.1 number literals
 chapter 3.2.1
@@ -918,16 +972,17 @@ If the variable is defined in direct sub layer of a class or an interface, it's 
 
 defines a class `User` with one Field `id`, and the field type is `int`
 
-If the variable is defined in a method, it's considered as a local variable. The variable must have a initial value.
+If the variable is defined in a method, it's considered as a local variable. The local variable __must__ have a initial value.
 
 ##6.5 invocation
-Invoke a method or an inner method.
+Invoke a method or an inner method. Or construct a new object.
 
 * `method(args)`
 	
 	invoke a method of the current object (non-static)  
 	invoke a method of the current Type (static)  
-	invoke a method from `import static`
+	invoke a method from `import static`  
+	construct a new object
 	
 * `this.method(args)`
 
@@ -952,7 +1007,7 @@ For literals, the cast may produce an error when compiling. Check chapter 3.2 fo
 In other circumstances, the cast may be done when compiling or at runtime. However, `bool` can never be cast to other __primitive__ types. Check chapter 3.3 for avaliable type conversions.
 
 ##6.7 access
-accesses a variable.
+Accesses a variable. or Construct a new object.
 
 	variable
 	Type.field
@@ -960,16 +1015,23 @@ accesses a variable.
 
 get value of the variable or field.
 
-if the variable is not found, the runtime tries:
+if the variable/field is not found, the compiler checks whether the input is a type. If it's a type and constructor without parameters can be accessed, then the compiler parse the expression as _constructing a new object_.
+
+if still not correctly parsed, then it's handled by the runtime:
 
 1. get field via reflection
-2. invoke `o.get(name)`
-3. invoke `o.name()`
-4. invoke `o.getName()`
+2. invoke `o.name()`
+3. invoke `o.getName()`
+4. invoke `o.get(name)`
+5. check global variables.
+
+>Note that, global variables would only be checked if the `access` is simply a name. e.g. `this.xxx` is _NOT_ a name, global variable check won't be perfomed.
 
 if the variable is still not found, an `undefined` would be returned.
 
 For arrays, `arr.length` result is the length of the array.
+
+Check chapter 7.1 for more info about `global variables`.
 
 ##6.8 index
 
@@ -979,7 +1041,22 @@ get array element value at index `i`
 
 if `arr` is not an array __OR__ `i` is not integer, then invoke `get(i)` on `arr`.
 
-NOTE THAT in `Latte`, the `i` might not be integer when compiling, but might be integer at runtime. So, when meets `get(int/Integer)` invocation, if the `arr` is array, the expression is still considered as getting array element value.
+Also, you can write `arr[i,j,k]`, which means `arr.get(i,j,k)`. If the `arr` is an array and `i` is integer, it's converted into `arr[i][j,k]`. If `arr[i]` is array and `j` is integer, it's converted into `(arr[i][j])[k]`, and so on.
+
+e.g.
+
+	arr:[][][]int = 
+	[
+	    [
+	        [1,2,3]
+	        [4,5,6]
+	    ]
+	    [
+	        [7,8,9]
+	    ]
+	]
+	
+the value of `arr[0,1,2]` is `6`.
 
 ##6.9 one variable operation
 `Latte` supports the following one variable operators
@@ -1039,6 +1116,7 @@ it's the same for `--` operator
 	{"|"},
 	{"&&", "and"},
 	{"||", "or"}
+	{":="}
 	
 A higher priority operator would reduce to a value faster than a low priority one.
 
@@ -1125,5 +1203,8 @@ e1 is firstly evaluated. if e1 is `false`, then the expression result would be `
 	e1 || e2
 	
 e1 is firstly evaluated. if e1 is `true`, then the expression result would be `true`, e2 would not be evaluated.
+
+###assign
+`:=` is bond to method `assign(o)`.
 
 ##6.11 assignment
