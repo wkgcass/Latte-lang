@@ -42,6 +42,7 @@
 	10. throw
 	11. annotation
 	12. method definition
+		* inner method
 	13. class definition
 	14. interface definition
 	15. fun definition
@@ -68,7 +69,7 @@
 	20. require
 7. Language Related Libraries
 	1. global variables
-	2. repl and scripts
+	2. evaluator and script
 8. Libraries
 	1. html
 	2. sql
@@ -871,6 +872,20 @@ NOTE THAT `abstract` method should be defined as :
 	
 if the `one statement` method's expression is `...`, it means the method body is empty
 
+### inner method
+An inner method means a method defined inside another method.
+
+`Latte` inner method can capture local variables, and the values _inside the inner method_ can be modified, but the modifications won't have effect on the outer local variables.
+
+e.g.
+
+	outer(a)
+		b = 1
+		inner(c)
+			return a+b+c
+		d = 2
+		return inner(3) + d
+
 ##5.13 class definition
 The class definitions can be found in chapter 3.5
 
@@ -1208,3 +1223,172 @@ e1 is firstly evaluated. if e1 is `true`, then the expression result would be `t
 `:=` is bond to method `assign(o)`.
 
 ##6.11 assignment
+Assignment writes
+
+	variable = value
+	
+assign the `value` to the `variable`. The variable may look like accessing a field, e.g. `o.fieldName`. The compiler checks whether field exists. If it exists, then assign the field directly. In other circumstances, it tries to assign the field at runtime, then invoke `setFieldName(value)`, then `set(fieldName, value)`, then `put(fieldName, value)`.
+
+e.g.
+
+	class C
+	    public f
+	    setG(o)=...
+	
+	c = C ; construct an object
+	c.f = 1
+	
+	c.g = 2
+
+	map = {
+	    "a" : 1
+	}
+	map.a = 3
+	
+where :
+
+* `c.f = 1` directly assign the field with given value.
+* `c.g = 2` means `c.setG(2)`.
+* `map.a = 3` means `map.put("a", 3)`.
+
+if the `variable` accesses index, e.g. `arr[i] = 1`, the compiler checks whether `arr` is an array. If it's an array, then the `i th` element would be set to `1`. Otherwise, it tries to invoke `arr.set(i, 1)`, then `arr.put(i, 1)` at runtime.
+
+##6.12 undefined
+It's a pre defined value. Check chapter 3.7.
+
+##6.13 null
+It's a pre defined value. Check chapter 3.7.
+
+##6.14 array expression
+chapter 3.2.4.
+
+##6.15 map expression
+chapter 3.2.5.
+
+##6.16 procedure
+`procedure` is a list of statements that returns a value (or null as default).
+
+The `procedure` should have _at least one statement_ or _at least two expressions_.
+
+The `procedure` is surrounded by `(` and `)`.
+
+	; one statement in same line
+	(return value)
+	
+	; one statement in a new line
+	(
+	    return value
+	)
+	
+	; two expressions
+	(
+	    exp1()
+	    exp2()
+	)
+
+The `procedure` is a `value`, so it can appear anywhere that requires a value.
+
+e.g.
+
+	"User(" + (
+	    if id
+	    	return "id=" + id
+	    else
+	    	return ""
+	) + ")"
+	
+it's used to generate a string `"User(...)"`, and only when id is not null, the `id=?` would be filled into `...`.
+
+##6.17 lambda
+`Latte` supports lambda on `Functional Interfaces` and `Functional Abstract Classes`.
+
+`Functional Abstract Class` means an abstract class with a public constructor whose parameter count is 0, and it have only one unimplemented method and the method is accessible.
+
+The lambda writes:
+
+	(x)-> ...
+	
+	(x)->
+	    ...
+	    
+	(x,y,z)-> ...
+	
+	(x,y,z)->
+	    ...
+	    
+You can specify a type for these lambdas, e.g.
+
+	list forEach (
+	    ((x)->println(x)) as java::util::function::Consumer
+	)
+
+	func : java::util::function::Function = (x) -> x+1
+	
+The type can be omitted, the default type would be `lt::lang::function::FunctionX`, where `X` is parameter count.  
+The lambda would be converted into right type at runtime. So you can directly write :
+
+	list.forEach((x)-> println(x))
+
+The lambda in Latte is almost the same as in Java, but it supports functional abstract classes.
+
+##6.18 type
+
+	type TypeName
+
+retrieve the `Class` object of the `TypeName`, it's the same as `TypeName.class` in Java. It appears frequently when using Reflection Library.
+
+e.g.
+
+	(type List).getMethods()
+
+##6.19 AnnoExpression
+It's used on annotations.
+
+e.g.
+
+	@SomeAnno(value=@AnotherAnno)
+	
+where `AnotherAnno` is an `AnnoExpression`.
+
+##6.20 require
+It have similar effect as Node.js `require(...)`.
+
+	require 'script-file'
+	
+	require 'cp:script-in-class-path'
+	
+The require returns a value, it's retrieved from the script.
+
+The script may write:
+
+	return 1+1
+	
+save the script as `demo.lts`, then the result of `require 'demo.lts'` is `2`.
+
+Each script would be performed only once, the result would be recorded and would be directly retrieved when called twice.
+
+When using `cp:...`, the script file would be retrieved using `XX.class.getResourceAsStream(...)`, and a `/` would be added to the most front place of the script path string if it doesn't start with `/`.
+
+#7 Language Related Libraries
+##7.1 global variables
+The global variables can be assigned with
+	
+	GLOBALS['name'] = value
+	
+and retrieved with
+
+	GLOBALS['name']
+	; or use the method described in chapter 6.7
+	
+The `GLOBALS` is a `public static` field defined in `lt::lang::Utils`, which is automatically imported into any latte files.
+
+##7.2 evaluator and script
+You can write `eval('...')` in `Latte`, which is backed up by `lt::repl::Evaluator`.  
+The `eval` method is defined in `lt::lang::Utils`, which is automatically imported into any latte files.
+
+Also, scripts are supported, and you can `require` any scripts in `Latte`.  
+`require` uses `lt::repl::ScriptCompiler` to run scripts and retrieve results.
+
+#8 Libraries
+##8.1 html
+##8.2 sql
