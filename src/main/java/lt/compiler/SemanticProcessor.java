@@ -30,6 +30,7 @@ import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
+import lt.compiler.syntactic.literal.RegexLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
 import lt.compiler.syntactic.operation.OneVariableOperation;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
@@ -3473,10 +3474,71 @@ public class SemanticProcessor {
                                 getTypeWithName("java.lang.String", ((AST.Require) exp).required.line_col()),
                                 scope));
                         v = invokeStatic;
+                } else if (exp instanceof RegexLiteral) {
+                        // regex
+                        v = parseValueFromRegex((RegexLiteral) exp);
                 } else {
                         throw new LtBug("unknown expression " + exp);
                 }
                 return cast(requiredType, v, exp.line_col());
+        }
+
+        private SMethodDef Pattern_compile;
+
+        private SMethodDef getPattern_compile() throws SyntaxException {
+                if (Pattern_compile == null) {
+                        SClassDef Pattern = (SClassDef) getTypeWithName("java.util.regex.Pattern", LineCol.SYNTHETIC);
+                        for (SMethodDef m : Pattern.methods()) {
+                                if (m.name().equals("compile")
+                                        && m.getParameters().size() == 1
+                                        && m.getParameters().get(0).type().fullName().equals("java.lang.String")) {
+                                        Pattern_compile = m;
+                                        break;
+                                }
+                        }
+                }
+                if (Pattern_compile == null) throw new LtBug("java.util.regex.Pattern.compile(String) should exist");
+                return Pattern_compile;
+        }
+
+        /**
+         * parse value from regex
+         *
+         * @param exp regex literal
+         * @return invokes Pattern.compile('str')
+         */
+        private Value parseValueFromRegex(RegexLiteral exp) throws SyntaxException {
+                SMethodDef compile = getPattern_compile();
+                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(
+                        compile, exp.line_col()
+                );
+
+                String rawRegex = exp.literal();
+                rawRegex = rawRegex.substring(2);
+                rawRegex = rawRegex.substring(0, rawRegex.length() - 2);
+                char[] raw = rawRegex.toCharArray();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < raw.length; ++i) {
+                        char c = raw[i];
+                        if (c == '\\' && i < raw.length - 2) {
+                                char one = raw[i + 1];
+                                if (one == '/') {
+                                        char two = raw[i + 2];
+                                        if (two == '/') {
+                                                sb.append("//");
+                                                i += 2;
+                                                continue;
+                                        }
+                                }
+                        }
+                        sb.append(c);
+                }
+
+                StringConstantValue theRegex = new StringConstantValue(sb.toString());
+                theRegex.setType((SClassDef) getTypeWithName("java.lang.String", LineCol.SYNTHETIC));
+                invokeStatic.arguments().add(theRegex);
+
+                return invokeStatic;
         }
 
         /**

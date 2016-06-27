@@ -116,7 +116,7 @@ public class Scanner {
          * symbols that let the scanner know the following input should be scanned as a string<br>
          * a string starts with one of these symbols and ends with the same symbol.
          */
-        public final static Set<String> STRING = new HashSet<>(Arrays.asList("\"", "'", "`"));
+        public final static Set<String> STRING = new HashSet<>(Arrays.asList("\"", "'", "`", "//"));
         /**
          * the escape character.
          */
@@ -682,7 +682,7 @@ public class Scanner {
                                 // string literal
                                 int lastIndex = minIndex;
                                 while (true) {
-                                        int index = line.indexOf(token, lastIndex + 1);
+                                        int index = line.indexOf(token, lastIndex + token.length());
                                         if (line.length() <= 1 || index == -1) {
                                                 err.SyntaxException("end of string not found", args.generateLineCol());
                                                 // assume that the end is line end
@@ -697,17 +697,16 @@ public class Scanner {
                                                 break;
                                         } else {
                                                 String c = String.valueOf(line.charAt(index - 1));
-                                                boolean isStringEnd = false;
                                                 // check
-                                                isStringEnd = !ESCAPE.equals(c) || checkStringEnd(line, index - 1);
+                                                boolean isStringEnd = !ESCAPE.equals(c) || checkStringEnd(line, index - 1);
 
                                                 if (isStringEnd) {
                                                         // the string starts at minIndex and ends at index
-                                                        String s = line.substring(minIndex, index + 1);
+                                                        String s = line.substring(minIndex, index + token.length());
 
                                                         args.previous = new Element(args, s, getTokenType(s, args.generateLineCol()));
                                                         args.currentCol += (index - minIndex);
-                                                        line = line.substring(index + 1);
+                                                        line = line.substring(index + token.length());
                                                         break;
                                                 }
 
@@ -850,6 +849,7 @@ public class Scanner {
                 if (CompileUtil.isBoolean(str)) return TokenType.BOOL;
                 if (CompileUtil.isModifier(str)) return TokenType.MODIFIER;
                 if (CompileUtil.isNumber(str)) return TokenType.NUMBER;
+                if (CompileUtil.isRegex(str)) return TokenType.REGEX;
                 if (CompileUtil.isString(str)) return TokenType.STRING;
                 if (CompileUtil.isKey(str))
                         return TokenType.KEY; // however in/is/not are two variable operators, they are marked as keys

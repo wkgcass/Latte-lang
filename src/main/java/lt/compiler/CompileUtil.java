@@ -60,6 +60,10 @@ public class CompileUtil {
                 return str.equals("true") || str.equals("false") || str.equals("yes") || str.equals("no");
         }
 
+        public static boolean isRegex(String str) {
+                return str.startsWith("//") && str.endsWith("//") && str.length() > 3;
+        }
+
         /**
          * check the given string is a string literal
          *
@@ -67,7 +71,9 @@ public class CompileUtil {
          * @return true/false
          */
         public static boolean isString(String str) {
-                return (str.startsWith("\"") && str.endsWith("\"")) || (str.startsWith("'") && str.endsWith("'"));
+                return (
+                        (str.startsWith("\"") && str.endsWith("\"")) || (str.startsWith("'") && str.endsWith("'"))
+                ) && str.length() > 1;
         }
 
         private static Set<String> keys = new HashSet<>(Arrays.asList(

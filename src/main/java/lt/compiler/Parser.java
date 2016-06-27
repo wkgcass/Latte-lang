@@ -28,6 +28,7 @@ import lt.compiler.lexical.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
+import lt.compiler.syntactic.literal.RegexLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
 import lt.compiler.syntactic.pre.Import;
@@ -1650,6 +1651,16 @@ public class Parser {
                                                 StringLiteral stringLiteral = new StringLiteral(content, current.getLineCol());
 
                                                 parsedExps.push(stringLiteral);
+                                                nextNode(true);
+                                                parse_expression();
+
+                                        } else if (current.getTokenType() == TokenType.REGEX) {
+                                                annosIsEmpty();
+                                                modifiersIsEmpty();
+
+                                                RegexLiteral regexLiteral = new RegexLiteral(content, current.getLineCol());
+
+                                                parsedExps.push(regexLiteral);
                                                 nextNode(true);
                                                 parse_expression();
 

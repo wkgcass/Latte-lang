@@ -31,6 +31,7 @@ import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
+import lt.compiler.syntactic.literal.RegexLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
 import lt.compiler.syntactic.operation.OneVariableOperation;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
@@ -2111,5 +2112,15 @@ public class TestParser {
                                         ), null, Collections.emptyList(), Collections.emptySet(),
                                         Collections.emptyList(), LineCol.SYNTHETIC)
                         ), list);
+        }
+
+        @Test
+        public void testRegex() throws Exception {
+                List<Statement> list = parse("//abc//");
+                assertEquals(
+                        Collections.singletonList(
+                                new RegexLiteral("//abc//", LineCol.SYNTHETIC)
+                        ), list
+                );
         }
 }

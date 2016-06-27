@@ -2652,4 +2652,26 @@ public class TestSemantic {
                 assertTrue(i6.arguments().get(1) instanceof Ins.GetStatic);
                 assertTrue(i7.arguments().get(0) instanceof Ins.New);
         }
+
+        @Test
+        public void testRegex() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    a=//xyz\\//op\\bq//\n" +
+                        "    b=//abc//");
+                Set<STypeDef> set = parse(map);
+
+                assertEquals(1, set.size());
+
+                SClassDef classDef = (SClassDef) set.iterator().next();
+                SConstructorDef cons = classDef.constructors().get(0);
+
+                Ins.InvokeStatic i1 = (Ins.InvokeStatic) ((Ins.PutField) ((ValuePack) cons.statements().get(1)).instructions().get(0)).value();
+                Ins.InvokeStatic i2 = (Ins.InvokeStatic) ((Ins.PutField) ((ValuePack) cons.statements().get(2)).instructions().get(0)).value();
+
+                assertEquals("xyz//op\\bq", ((StringConstantValue) i1.arguments().get(0)).getStr());
+                assertEquals("abc", ((StringConstantValue) i2.arguments().get(0)).getStr());
+        }
 }

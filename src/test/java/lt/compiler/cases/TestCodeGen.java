@@ -42,6 +42,7 @@ import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
@@ -2259,5 +2260,26 @@ public class TestCodeGen {
                 assertEquals(2, get.invoke(null, arr2, 0, 0, 1));
                 set.invoke(null, arr2, 0, 0, 1, 10);
                 assertEquals(10, get.invoke(null, arr2, 0, 0, 1));
+        }
+
+        @Test
+        public void testRegex() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestRegex\n" +
+                                "    static\n" +
+                                "        method1()\n" +
+                                "            return //a\\bc//\n" +
+                                "        method2()\n" +
+                                "            return //a\\//b//"
+                        , "TestRegex"
+                );
+                Method method1 = cls.getMethod("method1");
+                Pattern pattern1 = (Pattern) method1.invoke(null);
+                assertEquals("a\\bc", pattern1.pattern());
+
+                Method method2 = cls.getMethod("method2");
+                Pattern pattern2 = (Pattern) method2.invoke(null);
+                assertEquals("a//b", pattern2.pattern());
         }
 }

@@ -33,6 +33,7 @@ public abstract class Literal implements Expression {
         public static final int NUMBER = 0;
         public static final int STRING = 1;
         public static final int BOOL = 2;
+        public static final int REGEX = 3;
 
         private int type;
         private String literal;

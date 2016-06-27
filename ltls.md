@@ -12,6 +12,7 @@
 	3. bool
 	4. array
 	5. map
+	6. regex
 3. Type System
 	1. Hybrid of Static and Dynamic typing
 	2. Literal Default Types
@@ -20,6 +21,7 @@
 		3. bool
 		4. array
 		5. map
+		6. regex
 	3. Requiring Type
 	4. Variable/Return Type
 	5. Type Definition
@@ -67,9 +69,11 @@
 	18. type
 	19. AnnoExpression
 	20. require
-7. Language Related Libraries
+	21. regex
+7. Features
+8. Language Related Libraries
 	1. evaluator and script
-8. Libraries
+9. Libraries
 	1. html
 	2. sql
 
@@ -210,6 +214,7 @@ Latte supports 5 kinds of literals
 3. bool
 4. array
 5. map
+6. regex
 
 ##2.1 number
 number is divided into integer number and float number
@@ -286,6 +291,13 @@ e.g.
 	    'c':3
 	}
 	
+##2.6 regex
+regular expressions start with `//` and ends with `//`. use `\//` to represent `//`
+
+	//regex here// ; the expression is (regex here)
+	
+	//a\bc\//d//   ; the expression is (a\bc//d)
+	
 #§3 TypeSystem
 ##3.1 Hybrid of Static and Dynamic typing
 `Latte` is a hybrid of Static and Dynamic typing.
@@ -338,6 +350,9 @@ the `List` extends `java::util::LinkedList` and provides functions that look lik
 
 ###3.2.5. map
 maps are parsed into `lt::util::Map`
+
+###3.2.6 regex
+regular expressions are parsed into `java::util::regex::Pattern`
 
 ##3.3 Requiring Type
 if required types are set, then the literals would be parsed into corresponding types.
@@ -1365,14 +1380,157 @@ When using `cp:...`, the script file would be retrieved using `XX.class.getResou
 
 The require can receive an expression, e.g. `require 'demo'+'.lts'`, it's the same as `require 'demo.lts'`. The expression would be calculated and cast into `String`.
 
-#7 Language Related Libraries
-##7.1 evaluator and script
+##6.21 regex
+chapter 2.6 and 3.2.6.
+
+#7 Features
+
+#8 Language Related Libraries
+##8.1 evaluator and script
 You can write `eval('...')` in `Latte`, which is backed up by `lt::repl::Evaluator`.  
 The `eval` method is defined in `lt::lang::Utils`, which is automatically imported into any latte files.
 
 Also, scripts are supported, and you can `require` any scripts in `Latte`.  
 `require` uses `lt::repl::ScriptCompiler` to run scripts and retrieve results.
 
-#8 Libraries
-##8.1 html
-##8.2 sql
+#9 Libraries
+##9.1 html
+The html library is defined in `lt::dsl::html`, import all classes from this package to use the library. You can write html or css with this library using `Latte`.
+
+###html
+The html library helps you write html with `Latte DSL`.
+
+e.g.
+
+You can write the Latte code:
+
+	(
+	    html + [
+	        head + [
+	            link(rel='stylesheet', href='style.css')
+	        ]
+	        body + [
+	            form + [
+	                input(typ='text', value='hello')
+	            ]
+	        ]
+	    ]
+	) pretty
+
+to generate the html string:
+
+	<html>
+	   <head>
+	      <link rel="stylesheet" href="style.css">
+	   </head>
+	   <body>
+	      <form>
+	         <input type="text" value="hello">
+	      </form>
+	   </body>
+	</html>
+
+Use `toString` to generate html string without new lines.
+
+The library supports
+
+	html,head,meta,script,link,
+	body,a,br,button,code,div,
+	h1-6,hr,iframe,img,label,
+	form,i,input,textarea,
+	select,span,option,nav,
+	ol,ul,li,p,pre,style,table,
+	thead,tbody,tfoot,title,
+	tr,td
+	
+Sometimes you might want to define your own tag, simply extend the `HTMLElement` or `HTMLElementWithClosing`, and override the `pretty` method.
+
+You can write in the same way as this template:
+
+	pretty(indentation:int=0):String = pretty({'attr':value}, indentation)
+	
+where `attr` means attribute name, and value is the attribute's value.
+
+Sometimes you might want to add some attributes, if the attribute name is valid Latte name, you can write the attribute inside the parentheses.
+
+e.g.
+
+	label(role='label')
+	
+If the parameter name is invalid in Latte but valid in Java, you can write:
+
+	label(`var`='x')
+	
+If the parameter name is invalid in both Latte and Java, you can use
+
+	label().attr('some-thing', value)
+	
+	; or
+	
+	label().set('some-thing', value)
+
+to set the attribute.
+
+The attributes specified by standard are defined in valid latte variable name. e.g.
+
+	typ  -->  type
+	http_equiv  -->  http-equiv
+
+###css
+You can write css in this way:
+
+	(
+	    css('body') + {
+	        'background-color' : 'grey'
+	    }
+	) pretty
+
+which generates the css string:
+
+	body {
+		background-color:grey;
+	}
+	
+Use `toString` to generate css string without new lines.
+
+##9.2 sql
+The sql library is defined in `lt::dsl::sql`, import `lt::dsl::sql::SQL` to write sql, and import `lt::dsl::sql::Column` to define data classes.
+
+To use this library, you should define some data classes first. e.g. a `User` has `id` and `name`, you can write:
+
+	data class User
+	    id = Column(this, "id")
+	    name = Column(this, "name")
+
+The class definition requires that the table structure in database should be 
+
+	User-------------------------+
+	|     |    id    |    name   |
+	+-----+----------+-----------+
+	|  1  |    ...   |    ...    |
+	+-----+----------+-----------+
+	... ... ... ... ... ... ... ...
+
+Write sql in this way:
+
+	user = User
+	sql = SQL
+	(sql select [user.id, user.name] from user where user.id>5 &
+	user.name!:='someone') buildSQL
+	
+The result is
+
+	select user.id, user.name from user where user.id>? and user.name<>?
+
+The built sql doesn't contain values, they are replaced with `?`. Fill them with jdbc.
+
+use sql.params or sql.arguments to retrieve the parameters. It's a `lt::util::List`.
+
+When using `vert.x`, you can write
+
+	connection.updateWithParams(
+	    (sql insert_into ... ... ...) buildSQL
+	    JsonArray(sql.params)
+	    (res) ->
+	        ...
+	)

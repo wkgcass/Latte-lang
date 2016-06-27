@@ -30,6 +30,7 @@ import lt.repl.ClassPathLoader;
 import java.io.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * automatically import static this class
@@ -105,6 +106,17 @@ public class Utils {
         /**
          * get files in the directory. the result would be a fileName =&gt; File map.
          *
+         * @param dir   the base directory
+         * @param regex file pattern
+         * @return a map.
+         */
+        public static Map<String, File> filesInDirectory(String dir, Pattern regex) {
+                return filesInDirectory(dir, regex, false);
+        }
+
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
          * @param dir         the base directory
          * @param regex       file pattern
          * @param recursively scan the children directories
@@ -122,7 +134,31 @@ public class Utils {
          * @param recursively scan the children directories
          * @return a map.
          */
+        public static Map<String, File> filesInDirectory(String dir, Pattern regex, boolean recursively) {
+                return filesInDirectory(new File(dir), regex, recursively);
+        }
+
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
+         * @param dir         the base directory
+         * @param regex       file pattern
+         * @param recursively scan the children directories
+         * @return a map.
+         */
         public static Map<String, File> filesInDirectory(File dir, String regex, boolean recursively) {
+                return filesInDirectory(dir, Pattern.compile(regex), recursively);
+        }
+
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
+         * @param dir         the base directory
+         * @param regex       file name pattern
+         * @param recursively scan the children directories
+         * @return a map.
+         */
+        public static Map<String, File> filesInDirectory(File dir, Pattern regex, boolean recursively) {
                 if (dir == null) throw new NullPointerException("dir is null");
                 Map<String, File> map = new LinkedHashMap<>();
                 if (dir.isDirectory()) {
@@ -130,7 +166,7 @@ public class Utils {
                         if (listFiles != null) {
                                 for (File f : listFiles) {
                                         if (f.isFile()) {
-                                                if (f.getName().matches(regex)) {
+                                                if (regex.matcher(f.getName()).matches()) {
                                                         map.put(f.getName(), f);
                                                 }
                                         } else if (f.isDirectory() && recursively) {
