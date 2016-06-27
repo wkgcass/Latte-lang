@@ -36,10 +36,6 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public class Utils {
-        /**
-         * the global object holder.
-         */
-        public static final ValueContainer $GLOBALS = new ValueContainer();
 
         private Utils() {
         }

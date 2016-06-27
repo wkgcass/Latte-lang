@@ -2089,4 +2089,27 @@ public class TestParser {
                         list
                 );
         }
+
+        @Test
+        public void testVar() throws Exception {
+                List<Statement> list = parse("" +
+                        "var a\n" +
+                        "var b = 1\n" +
+                        "class X(var a, var b)");
+
+                VariableDef b = new VariableDef("b", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                b.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
+
+                assertEquals(
+                        Arrays.asList(
+                                new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC),
+                                b,
+                                new ClassDef("X", Collections.emptySet(),
+                                        Arrays.asList(
+                                                new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC),
+                                                new VariableDef("b", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
+                                        ), null, Collections.emptyList(), Collections.emptySet(),
+                                        Collections.emptyList(), LineCol.SYNTHETIC)
+                        ), list);
+        }
 }

@@ -810,10 +810,10 @@ public class AST {
          * require a lt file
          */
         public static class Require implements Expression {
-                public final StringLiteral required;
+                public final Expression required;
                 private final LineCol lineCol;
 
-                public Require(StringLiteral required, LineCol lineCol) {
+                public Require(Expression required, LineCol lineCol) {
                         this.required = required;
                         this.lineCol = lineCol;
                 }

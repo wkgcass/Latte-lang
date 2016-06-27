@@ -68,8 +68,7 @@
 	19. AnnoExpression
 	20. require
 7. Language Related Libraries
-	1. global variables
-	2. evaluator and script
+	1. evaluator and script
 8. Libraries
 	1. html
 	2. sql
@@ -589,7 +588,7 @@ there're a few more keywords defined in `Latte` :
 
 	"is", "not", "bool", "yes", "no", "type", "as",
 	"undefined", "in", "elseif", "Unit", "data", "val",
-	"fun", "require"
+	"fun", "require", "var"
 	
 note that `define` and `undef` are not keywords, they only enables if the first characters of the line is `define` or `undef`.
 
@@ -616,7 +615,7 @@ Here are all `Latte` modifiers:
 
 	"public", "protected", "private", "pkg", "data",
 	"abstract", "val", "native", "synchronized", "transient", 
-	"volatile", "strictfp"
+	"volatile", "strictfp", "var"
 	
 ###access modifiers
 At most one access modifier can exist on one object
@@ -632,7 +631,7 @@ At most one access modifier can exist on one object
 `abstract` `val` `data` and all access modifiers
 
 ###class parameter
-`val` and all access modifiers
+`val` `var` and all access modifiers
 
 ###interface
 `abstract` and `public`
@@ -641,10 +640,10 @@ At most one access modifier can exist on one object
 `abstract` `val` and all access modifiers
 
 ###method parameter
-`val`
+`val` `var`
 
 ###local variable
-`val`
+`val` `var`
 
 #§5 Statements
 `Latte` support the following statements
@@ -1038,15 +1037,10 @@ if still not correctly parsed, then it's handled by the runtime:
 2. invoke `o.name()`
 3. invoke `o.getName()`
 4. invoke `o.get(name)`
-5. check global variables.
-
->Note that, global variables would only be checked if the `access` is simply a name. e.g. `this.xxx` is _NOT_ a name, global variable check won't be perfomed.
 
 if the variable is still not found, an `undefined` would be returned.
 
 For arrays, `arr.length` result is the length of the array.
-
-Check chapter 7.1 for more info about `global variables`.
 
 ##6.8 index
 
@@ -1369,20 +1363,10 @@ Each script would be performed only once, the result would be recorded and would
 
 When using `cp:...`, the script file would be retrieved using `XX.class.getResourceAsStream(...)`, and a `/` would be added to the most front place of the script path string if it doesn't start with `/`.
 
+The require can receive an expression, e.g. `require 'demo'+'.lts'`, it's the same as `require 'demo.lts'`. The expression would be calculated and cast into `String`.
+
 #7 Language Related Libraries
-##7.1 global variables
-The global variables can be assigned with
-	
-	GLOBALS['name'] = value
-	
-and retrieved with
-
-	GLOBALS['name']
-	; or use the method described in chapter 6.7
-	
-The `GLOBALS` is a `public static` field defined in `lt::lang::Utils`, which is automatically imported into any latte files.
-
-##7.2 evaluator and script
+##7.1 evaluator and script
 You can write `eval('...')` in `Latte`, which is backed up by `lt::repl::Evaluator`.  
 The `eval` method is defined in `lt::lang::Utils`, which is automatically imported into any latte files.
 

@@ -29,6 +29,7 @@ import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.pre.Modifier;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -44,6 +45,16 @@ public class VariableDef implements Definition, Expression {
         private final LineCol lineCol;
 
         public VariableDef(String name, Set<Modifier> modifiers, Set<AST.Anno> annos, LineCol lineCol) {
+                // remove var from modifiers
+                Iterator<Modifier> it = modifiers.iterator();
+                while (it.hasNext()) {
+                        Modifier m = it.next();
+                        if (m.modifier.equals(Modifier.Available.VAR)) {
+                                it.remove();
+                                break;
+                        }
+                }
+
                 this.name = name;
                 this.lineCol = lineCol;
                 this.modifiers = new HashSet<>(modifiers);

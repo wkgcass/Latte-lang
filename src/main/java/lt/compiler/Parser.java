@@ -1721,13 +1721,7 @@ public class Parser {
                                                                 nextNode(false);
                                                                 lineCol = current.getLineCol();
                                                                 Expression exp = get_exp(false);
-                                                                if (!(exp instanceof StringLiteral)) {
-                                                                        err.UnexpectedTokenException("the required file path", exp.line_col());
-                                                                        throw new ParseFail();
-                                                                } else {
-                                                                        StringLiteral stringLiteral = (StringLiteral) exp;
-                                                                        parsedExps.push(new AST.Require(stringLiteral, lineCol));
-                                                                }
+                                                                parsedExps.push(new AST.Require(exp, lineCol));
                                                                 parse_expression();
                                                                 break;
 

@@ -169,7 +169,7 @@ public class CompileUtil {
         private static Set<String> modifiers = new HashSet<>(Arrays.asList(
                 "public", "protected", "private", "pkg",
                 "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp",
-                "data"
+                "data", "var"
         ));
 
         private static Set<String> accessModifiers = new HashSet<>(Arrays.asList(
@@ -200,7 +200,10 @@ public class CompileUtil {
                                                 || m.modifier.equals(Modifier.Available.PKG))
                                 )
                                 || (mod.equals(Modifier.Available.VAL) && m.modifier.equals(Modifier.Available.ABSTRACT))
-                                || (mod.equals(Modifier.Available.ABSTRACT) && m.modifier.equals(Modifier.Available.VAL)))
+                                || (mod.equals(Modifier.Available.ABSTRACT) && m.modifier.equals(Modifier.Available.VAL))
+                                || (mod.equals(Modifier.Available.VAL) && m.modifier.equals(Modifier.Available.VAR))
+                                || (mod.equals(Modifier.Available.VAR) && m.modifier.equals(Modifier.Available.VAL))
+                                )
                                 return false;
                 }
                 return true;
@@ -232,6 +235,8 @@ public class CompileUtil {
                                 return Modifier.Available.STRICTFP;
                         case "data":
                                 return Modifier.Available.DATA;
+                        case "var":
+                                return Modifier.Available.VAR;
                         default:
                                 throw new LtBug("invalid modifier " + str);
                 }

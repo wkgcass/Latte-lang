@@ -2191,25 +2191,11 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testGetFieldConsideringGlobal() throws Exception {
-                Class<?> cls = retrieveClass(
-                        "" +
-                                "class TestGetFieldConsideringGlobal\n" +
-                                "    method()\n" +
-                                "        $GLOBALS['a']=100\n" +
-                                "        return a"
-                        , "TestGetFieldConsideringGlobal"
-                );
-                Method method = cls.getMethod("method");
-                assertEquals(100, method.invoke(cls.newInstance()));
-        }
-
-        @Test
         public void testRequire() throws Throwable {
                 ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 ScriptCompiler.Script script = scriptCompiler.compile(
                         "script",
-                        "return require('cp:test_require.lts')"
+                        "return require('cp:test_require'+'.lts')"
                 );
                 Object res = script.run().getResult();
                 assertEquals(2, res);

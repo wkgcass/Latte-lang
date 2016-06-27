@@ -5435,8 +5435,7 @@ public class SemanticProcessor {
                                 return null;
                         } else {
                                 // get field at runtime
-                                return invokeGetFieldConsideringGlobal(
-                                        scope.getThis(), access.name, scope.type(), access.line_col());
+                                return invokeGetField(scope.getThis(), access.name, scope.type(), access.line_col());
                         }
 
                 } else {
@@ -5588,29 +5587,6 @@ public class SemanticProcessor {
         }
 
         /**
-         * invoke {@link LtRuntime#getFieldConsideringGlobal(Object, String, Class)}
-         *
-         * @param target      1st arg
-         * @param name        2nd arg
-         * @param callerClass 3rd arg
-         * @param lineCol     line and column info
-         * @return InvokeStatic
-         * @throws SyntaxException exception
-         */
-        private Ins.InvokeStatic invokeGetFieldConsideringGlobal(Value target,
-                                                                 String name,
-                                                                 STypeDef callerClass, LineCol lineCol) throws SyntaxException {
-                SMethodDef m = getLang_getFieldConsideringGlobal();
-                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
-                invokeStatic.arguments().add(target);
-                StringConstantValue s = new StringConstantValue(name);
-                s.setType((SClassDef) getTypeWithName("java.lang.String", lineCol));
-                invokeStatic.arguments().add(s);
-                invokeStatic.arguments().add(new Ins.GetClass(callerClass, (SClassDef) getTypeWithName("java.lang.Class", lineCol)));
-                return invokeStatic;
-        }
-
-        /**
          * {@link LtRuntime#getField(Object, String, Class)}
          */
         private SMethodDef Lang_getField = null;
@@ -5634,32 +5610,6 @@ public class SemanticProcessor {
                 if (Lang_getField == null)
                         throw new LtBug("lt.lang.LtRuntime.getField(Object,String,Class) should exist");
                 return Lang_getField;
-        }
-
-        /**
-         * {@link LtRuntime#getFieldConsideringGlobal(Object, String, Class)}
-         */
-        private SMethodDef Lang_getFieldConsideringGlobal = null;
-
-        /**
-         * @return {@link LtRuntime#getField(Object, String, Class)}
-         * @throws SyntaxException exception
-         */
-        private SMethodDef getLang_getFieldConsideringGlobal() throws SyntaxException {
-                if (Lang_getFieldConsideringGlobal == null) {
-                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
-                        assert Lang != null;
-
-                        for (SMethodDef m : Lang.methods()) {
-                                if (m.name().equals("getFieldConsideringGlobal")) {
-                                        Lang_getFieldConsideringGlobal = m;
-                                        break;
-                                }
-                        }
-                }
-                if (Lang_getFieldConsideringGlobal == null)
-                        throw new LtBug("lt.lang.LtRuntime.getFieldConsideringGlobal(Object,String,Class) should exist");
-                return Lang_getFieldConsideringGlobal;
         }
 
         /**
@@ -6825,8 +6775,6 @@ public class SemanticProcessor {
                                 if (
                                         (
                                                 m.name().equals("getField")
-                                                        ||
-                                                        m.name().equals("getFieldConsideringGlobal")
                                         )
                                                 && m.declaringType().fullName().equals("lt.lang.LtRuntime")) {
                                         return true;

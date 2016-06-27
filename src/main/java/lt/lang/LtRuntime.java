@@ -399,23 +399,6 @@ public class LtRuntime {
         }
 
         /**
-         * get field value or retrieve from global.<br>
-         *
-         * @param o           object
-         * @param fieldName   field name
-         * @param callerClass caller class
-         * @return the value or undefined
-         * @throws Throwable exceptions
-         */
-        public static Object getFieldConsideringGlobal(Object o, String fieldName, Class<?> callerClass) throws Throwable {
-                Object res = getField(o, fieldName, callerClass);
-                if (res == Undefined.get()) {
-                        if (Utils.$GLOBALS.containsKey(fieldName)) return Utils.$GLOBALS.get(fieldName);
-                        return Undefined.get();
-                } else return res;
-        }
-
-        /**
          * get field value.<br>
          * if field not found , then the method would try to invoke get(fieldName)<br>
          * or the method would return <tt>undefined</tt>

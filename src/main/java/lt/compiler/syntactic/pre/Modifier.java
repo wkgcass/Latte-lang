@@ -33,7 +33,8 @@ import lt.compiler.syntactic.Pre;
 public class Modifier implements Pre {
         public enum Available {
                 PRIVATE, PUBLIC, PROTECTED, PKG, SYNCHRONIZED, VAL,
-                NATIVE, ABSTRACT, TRANSIENT, VOLATILE, STRICTFP, DATA
+                NATIVE, ABSTRACT, TRANSIENT, VOLATILE, STRICTFP, DATA,
+                VAR
         }
 
         public final Available modifier;
