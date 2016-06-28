@@ -162,7 +162,7 @@ public class LtRuntime {
          * @throws Exception maybe {@link ClassCastException} if the cast fails,
          *                   or some errors when casting.
          */
-        public static Object cast(Object o, Class<?> targetType) throws Exception {
+        public static Object cast(Object o, Class<?> targetType) throws Throwable {
                 if (targetType.isInstance(o)) return o;
 
                 if (o == null) {
@@ -365,13 +365,26 @@ public class LtRuntime {
          * @param o the object to cast.
          * @return bool value.
          */
-        public static boolean castToBool(Object o) {
+        public static boolean castToBool(Object o) throws Throwable {
                 // check null and undefined
                 if (o == null || o instanceof Undefined) return false;
                 // check Boolean object
                 if (o instanceof Boolean) return (Boolean) o;
                 // check number not 0
                 if (o instanceof Number) return ((Number) o).doubleValue() != 0;
+                // check `isEmpty()`
+                try {
+                        Method m = o.getClass().getMethod("isEmpty");
+                        if (m.getReturnType().equals(boolean.class) || m.getReturnType().equals(Boolean.class)) {
+                                try {
+                                        Object res = m.invoke(o);
+                                        return res != null && !(boolean) res;
+                                } catch (InvocationTargetException e) {
+                                        throw e.getTargetException();
+                                }
+                        }
+                } catch (NoSuchMethodException ignore) {
+                }
                 // otherwise return true
                 return true;
         }

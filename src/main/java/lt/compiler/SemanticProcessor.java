@@ -50,6 +50,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 /**
@@ -325,9 +327,26 @@ public class SemanticProcessor {
                         // all classes occurred in the parsing process will be inside `types` map or is already defined
                 }
 
-                // ======= step 2 =======
-                // build fields,methods,constructors,parameters,parent-classes,super-interfaces,annotations.
-                // but no details (annotation's values|method statements|constructor statements won't be parsed)
+                step2(fileNameToClassDef, fileNameToInterfaceDef, fileNameToPackageName);
+                step3(fileNameToPackageName, fileNameToFunctions);
+                step4();
+
+                return typeDefSet;
+        }
+
+        /**
+         * ======= step 2 =======
+         * build fields,methods,constructors,parameters,parent-classes,super-interfaces,annotations.
+         * but no details (annotation's values|method statements|constructor statements won't be parsed)
+         *
+         * @param fileNameToClassDef     file name to class defintion
+         * @param fileNameToInterfaceDef file name to interface definition
+         * @param fileNameToPackageName  file name to package name
+         * @throws SyntaxException exception
+         */
+        private void step2(Map<String, List<ClassDef>> fileNameToClassDef,
+                           Map<String, List<InterfaceDef>> fileNameToInterfaceDef,
+                           Map<String, String> fileNameToPackageName) throws SyntaxException {
                 for (String fileName : mapOfStatements.keySet()) {
                         List<Import> imports = fileNameToImport.get(fileName);
                         List<ClassDef> classDefs = fileNameToClassDef.get(fileName);
@@ -359,7 +378,7 @@ public class SemanticProcessor {
                                                 } else {
                                                         err.SyntaxException(mightBeClassAccess.toString() + " is not class or interface",
                                                                 mightBeClassAccess.line_col());
-                                                        return null;
+                                                        return;
                                                 }
                                         }
                                 } else {
@@ -371,7 +390,7 @@ public class SemanticProcessor {
                                         } else {
                                                 err.SyntaxException(access.toString() + " is not class or interface",
                                                         access.line_col());
-                                                return null;
+                                                return;
                                         }
                                         superWithoutInvocationAccess = classDef.superWithoutInvocation.iterator();
                                 }
@@ -384,7 +403,7 @@ public class SemanticProcessor {
                                         } else {
                                                 err.SyntaxException(interfaceAccess.toString() + " is not interface",
                                                         interfaceAccess.line_col());
-                                                return null;
+                                                return;
                                         }
                                 }
 
@@ -460,7 +479,7 @@ public class SemanticProcessor {
                                                                 break; // pkg don't need to sign modifier
                                                         default:
                                                                 err.UnexpectedTokenException("valid constructor modifier (public|private|protected|pkg)", m.toString(), m.line_col());
-                                                                return null;
+                                                                return;
                                                 }
                                         }
 
@@ -580,7 +599,7 @@ public class SemanticProcessor {
                                                 staticScopes.add((AST.StaticScope) stmt);
                                         } else {
                                                 err.SyntaxException("interfaces don't have initiators", stmt.line_col());
-                                                return null;
+                                                return;
                                         }
                                 }
                                 for (AST.StaticScope staticScope : staticScopes) {
@@ -607,15 +626,24 @@ public class SemanticProcessor {
 
                                                 } else {
                                                         err.SyntaxException("interfaces don't have initiators", stmt.line_col());
-                                                        return null;
+                                                        return;
                                                 }
                                         }
                                 }
                         }
                 }
+        }
 
-                // ========step 3========
-                // check circular inheritance
+        /**
+         * ========step 3========
+         * check circular inheritance
+         *
+         * @param fileNameToPackageName file name to package name
+         * @param fileNameToFunctions   file name to functions
+         * @throws SyntaxException exception
+         */
+        private void step3(Map<String, String> fileNameToPackageName,
+                           Map<String, List<FunDef>> fileNameToFunctions) throws SyntaxException {
                 for (STypeDef sTypeDef : typeDefSet) {
                         if (sTypeDef instanceof SClassDef) {
                                 List<STypeDef> circularRecorder = new ArrayList<>();
@@ -624,7 +652,7 @@ public class SemanticProcessor {
                                         circularRecorder.add(parent);
                                         if (parent.equals(sTypeDef)) {
                                                 err.SyntaxException("circular inheritance " + circularRecorder, LineCol.SYNTHETIC);
-                                                return null;
+                                                return;
                                         }
                                         parent = parent.parent();
                                 }
@@ -651,13 +679,13 @@ public class SemanticProcessor {
                                 STypeDef type = getTypeWithAccess(fun.superType, imports);
                                 if (!(type instanceof SClassDef || type instanceof SInterfaceDef)) {
                                         err.SyntaxException("function super type should be functional interfaces or functional abstract classes", fun.superType.line_col());
-                                        return null;
+                                        return;
                                 }
                                 SConstructorDef[] zeroParamConstructor = new SConstructorDef[1];
                                 SMethodDef[] methodToOverride = new SMethodDef[1];
                                 if (!getMethodForLambda(type, zeroParamConstructor, methodToOverride)) {
                                         err.SyntaxException("function super type should be functional interfaces or functional abstract classes", fun.superType.line_col());
-                                        return null;
+                                        return;
                                 }
 
                                 // class and the annos, super class
@@ -709,22 +737,22 @@ public class SemanticProcessor {
                                         if (typeDef instanceof SInterfaceDef) {
                                                 if (!getMethodForLambda(typeDef, new SConstructorDef[1], new SMethodDef[1])) {
                                                         err.SyntaxException(msg, typeDef.line_col());
-                                                        return null;
+                                                        return;
                                                 }
                                         } else {
                                                 err.SyntaxException(msg, typeDef.line_col());
-                                                return null;
+                                                return;
                                         }
                                 } else if (anno.type().fullName().equals("lt.lang.FunctionalAbstractClass")) {
                                         final String msg = typeDef + " is not a functional abstract class";
                                         if (typeDef instanceof SClassDef) {
                                                 if (!getMethodForLambda(typeDef, new SConstructorDef[1], new SMethodDef[1])) {
                                                         err.SyntaxException(msg, typeDef.line_col());
-                                                        return null;
+                                                        return;
                                                 }
                                         } else {
                                                 err.SyntaxException(msg, typeDef.line_col());
-                                                return null;
+                                                return;
                                         }
                                 }
                         }
@@ -737,7 +765,7 @@ public class SemanticProcessor {
                                         if (anno.type().fullName().equals("java.lang.Override")) {
                                                 if (method.overRide().isEmpty()) {
                                                         err.SyntaxException(method + " doesn't override any method", method.line_col());
-                                                        return null;
+                                                        return;
                                                 }
                                         }
                                 }
@@ -753,10 +781,16 @@ public class SemanticProcessor {
                                 }
                         }
                 }
+        }
 
-                // ========step 4========
-                // first parse anno types
-                // the annotations presented on these anno types will also be parsed
+        /**
+         * ========step 4========
+         * first parse anno types
+         * the annotations presented on these anno types will also be parsed
+         *
+         * @throws SyntaxException exception
+         */
+        private void step4() throws SyntaxException {
                 for (STypeDef typeDef : types.values()) {
                         if (typeDef instanceof SAnnoDef) {
                                 SAnnoDef annoDef = (SAnnoDef) typeDef;
@@ -845,7 +879,7 @@ public class SemanticProcessor {
                                                 }
                                                 if (null == invokeConstructor) {
                                                         err.SyntaxException("no suitable super constructor to invoke in " + sClassDef, sClassDef.line_col());
-                                                        return null;
+                                                        return;
                                                 }
                                                 constructorToFillStatements.statements().add(invokeConstructor);
 
@@ -948,7 +982,6 @@ public class SemanticProcessor {
                                 }
                         } else throw new LtBug("wrong STypeDefType " + sTypeDef.getClass());
                 }
-                return typeDefSet;
         }
 
         /**
@@ -3488,6 +3521,7 @@ public class SemanticProcessor {
         private SMethodDef getPattern_compile() throws SyntaxException {
                 if (Pattern_compile == null) {
                         SClassDef Pattern = (SClassDef) getTypeWithName("java.util.regex.Pattern", LineCol.SYNTHETIC);
+                        assert Pattern != null;
                         for (SMethodDef m : Pattern.methods()) {
                                 if (m.name().equals("compile")
                                         && m.getParameters().size() == 1
@@ -3534,7 +3568,16 @@ public class SemanticProcessor {
                         sb.append(c);
                 }
 
-                StringConstantValue theRegex = new StringConstantValue(sb.toString());
+                String regexStr = sb.toString();
+                Pattern p;
+                try {
+                        p = Pattern.compile(regexStr);
+                } catch (PatternSyntaxException e) {
+                        err.SyntaxException("Invalid regular expression " + regexStr + " : " + e.getMessage(), exp.line_col());
+                        return null;
+                }
+
+                StringConstantValue theRegex = new StringConstantValue(p.pattern());
                 theRegex.setType((SClassDef) getTypeWithName("java.lang.String", LineCol.SYNTHETIC));
                 invokeStatic.arguments().add(theRegex);
 

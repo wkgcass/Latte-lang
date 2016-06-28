@@ -559,7 +559,7 @@ public class Dynamic {
          * @param params required types
          * @throws Exception exception
          */
-        private static void transToRequiredType(Object[] args, Class<?>[] params) throws Exception {
+        private static void transToRequiredType(Object[] args, Class<?>[] params) throws Throwable {
                 for (int i = 0; i < params.length; ++i) {
                         Class<?> c = params[i];
                         if (c.isPrimitive()) continue;
@@ -860,7 +860,7 @@ public class Dynamic {
          * @param op operator (not and negate)
          * @return the result
          */
-        private static Object invokePrimitive(Object o, String op) {
+        private static Object invokePrimitive(Object o, String op) throws Throwable {
                 switch (op) {
                         case "not":
                                 o = prepareNumber(o);

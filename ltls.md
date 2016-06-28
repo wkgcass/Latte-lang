@@ -70,12 +70,16 @@
 	19. AnnoExpression
 	20. require
 	21. regex
-7. Features
-8. Language Related Libraries
-	1. evaluator and script
-9. Libraries
-	1. html
-	2. sql
+7. Other
+	1. Features
+		1. DSL
+	1. Language Related Libraries
+		1. evaluator and script
+	1. Libraries
+		1. html
+			* html
+			* css
+		2. sql
 
 #§1 File Structure
 ##1.1 indentation
@@ -553,7 +557,23 @@ Number         | double                   | number.doubleValue()
 type           | required type            | method
 ---------------|--------------------------|-----------
 Number         | bool                     | number.doubleValue()!=0
-Reference      | bool                     | o not null and o not undefined
+Reference      | bool                     | specified below:
+
+Any type can be cast to bool. The cast checks:
+
+1. whether the give object is null or undefined (->false)
+2. the given object is bool (->return the bool object)
+3. the given object is number (0->false, other->true)
+4. check whether the object has public `isEmpty():bool/Boolean` method
+	* if has the method : invoke the method and get result (null/true->false, false->true)
+5. return true
+
+e.g.
+
+	a : bool = {}
+	b : bool = {'a':1}
+
+`a` is `false` and `b` is `true`.
 
 ###char
 type           | required type            | method
@@ -776,6 +796,10 @@ the `do-while` statement executes the statements at least once. only when the `b
 `elseif` and `else` can be omitted
 
 `elseif` can NOT appear after `else`
+
+The boolValues might not be `bool`, they could be any type or null.
+
+The boolValues are cast to bool. Check chapter 3.6 for info about casting to bool.
 
 ##5.7 return
 
@@ -1383,18 +1407,43 @@ The require can receive an expression, e.g. `require 'demo'+'.lts'`, it's the sa
 ##6.21 regex
 chapter 2.6 and 3.2.6.
 
-#7 Features
+#7 Other
+##7.1 Features
+###7.1.1 DSL
+DSL Syntax allow you to write method invocations in a way similar to using operators. Also, the DSL Syntax helps you write less (if not non) parentheses and dots.
 
-#8 Language Related Libraries
-##8.1 evaluator and script
+The DSL Syntax works on syntactic level, which converts DSL Syntax into method invocation. e.g.
+
+	sql select user.id from user
+	
+is converted into:
+
+	sql.select(user.id).from(user)
+	
+The `select` and `from` is similar to _operators_.  
+The `select` operator links `sql` and `user.id`, and transforms the expression into `sql.select(user.id)`.  
+The `from` operator links `(sql select user.id)` and `user`, and transforms the expression into `sql.select(user.id).from(user)`.
+
+>All DSL operators are two variable operators, and their priorities are the same and are the lowest.
+
+You can separate the arguments with a comma. e.g.
+
+	map put "a", 1
+	
+is converted into:
+
+	map.put("a", 1)
+
+##7.2 Language Related Libraries
+###7.2.1 evaluator and script
 You can write `eval('...')` in `Latte`, which is backed up by `lt::repl::Evaluator`.  
 The `eval` method is defined in `lt::lang::Utils`, which is automatically imported into any latte files.
 
 Also, scripts are supported, and you can `require` any scripts in `Latte`.  
 `require` uses `lt::repl::ScriptCompiler` to run scripts and retrieve results.
 
-#9 Libraries
-##9.1 html
+#7.3 Libraries
+##7.3.1 html
 The html library is defined in `lt::dsl::html`, import all classes from this package to use the library. You can write html or css with this library using `Latte`.
 
 ###html
@@ -1493,7 +1542,7 @@ which generates the css string:
 	
 Use `toString` to generate css string without new lines.
 
-##9.2 sql
+##7.3.2 sql
 The sql library is defined in `lt::dsl::sql`, import `lt::dsl::sql::SQL` to write sql, and import `lt::dsl::sql::Column` to define data classes.
 
 To use this library, you should define some data classes first. e.g. a `User` has `id` and `name`, you can write:
