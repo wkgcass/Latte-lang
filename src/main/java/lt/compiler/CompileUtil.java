@@ -264,6 +264,14 @@ public class CompileUtil {
                 }
         }
 
+        /**
+         * check whether the element starts a lambda.
+         * The element may be (...)-&gt; or xxx-&gt;
+         *
+         * @param elem elem
+         * @return true / false
+         * @throws UnexpectedEndException syntax error
+         */
         public static boolean isLambda(Element elem) throws UnexpectedEndException {
                 if (elem.getContent().equals("(")) {
                         Node n = get_next_node(elem);
@@ -276,6 +284,13 @@ public class CompileUtil {
                                         if (n instanceof Element && ((Element) n).getContent().equals("->")) {
                                                 return true;
                                         }
+                                }
+                        }
+                } else if (elem.getTokenType() == TokenType.VALID_NAME) {
+                        Node n = get_next_node(elem);
+                        if (n instanceof Element) {
+                                if (((Element) n).getContent().equals("->")) {
+                                        return true;
                                 }
                         }
                 }

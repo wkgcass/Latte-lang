@@ -144,10 +144,32 @@ Use class HTMLElementWithClosing if the closing tag is required
 abstract data class HTMLElement(cls)
     attrMap={}
     set(attrName:String, o):HTMLElement
-        attrMap[attrName] = o
+        str = (
+            if o==null || o==undefined
+                return ""
+            else
+                return o
+        )
+        attrMap[attrName.replace("_", "-")] = str
         return this
     attr(attrName:String, o):HTMLElement
-        return set(attrName, o)
+        attrMap[attrName] = (
+            if o==null || o==undefined
+                return ""
+            else
+                return o
+        )
+        return this
+    /*
+    add class to the element. the input '_' would be replaced with '-'.
+    */
+    get(className:String):HTMLElement
+        className = className.replace("_", "-")
+        if attrMap["class"]
+            attrMap['class'] = attrMap['class'].toString()+" "+className
+        else
+            attrMap['class'] = className
+        return this
 
     toString(attrs):String
         sb = StringBuilder()
@@ -233,9 +255,9 @@ data class head : HTMLElementWithClosing
     pretty(indentation:int=0):String = pretty({}, indentation)
 
 ; <meta http-equiv='' scheme=''>
-data class meta(http_equiv) : HTMLElement
-    toString():String = toString({'http-equiv':http_equiv})
-    pretty(indentation:int=0):String = pretty({'http-equiv':http_equiv}, indentation)
+data class meta : HTMLElement
+    toString():String = toString({})
+    pretty(indentation:int=0):String = pretty({}, indentation)
 
 ; <script src='' type=''>...</script>
 data class script(typ) : HTMLElementWithClosing

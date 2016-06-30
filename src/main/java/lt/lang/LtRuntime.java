@@ -364,6 +364,7 @@ public class LtRuntime {
          *
          * @param o the object to cast.
          * @return bool value.
+         * @throws Throwable exceptions
          */
         public static boolean castToBool(Object o) throws Throwable {
                 // check null and undefined

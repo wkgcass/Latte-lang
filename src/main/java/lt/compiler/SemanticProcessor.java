@@ -3622,7 +3622,13 @@ public class SemanticProcessor {
          * @throws SyntaxException compiling error
          */
         private ValuePack parseValueFromInvocationWithNames(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
-                STypeDef theType = getTypeWithAccess(invocation.access, fileNameToImport.get(invocation.line_col().fileName));
+                STypeDef theType;
+                try {
+                        theType = getTypeWithAccess(invocation.access, fileNameToImport.get(invocation.line_col().fileName));
+                } catch (Throwable t) {
+                        err.SyntaxException(invocation.access + " is not a type", invocation.access.line_col());
+                        return null;
+                }
                 if (theType instanceof SInterfaceDef) {
                         err.SyntaxException("cannot instantiate interfaces", invocation.line_col());
                         return null;
@@ -4067,6 +4073,8 @@ public class SemanticProcessor {
                 sClassDef.setFullName(className);
                 types.put(className, sClassDef);
 
+                sClassDef.modifiers().add(SModifier.PUBLIC);
+
                 // fields
                 // methodHandle
                 SFieldDef f1 = new SFieldDef(LineCol.SYNTHETIC);
@@ -4109,6 +4117,7 @@ public class SemanticProcessor {
                                 LineCol.SYNTHETIC
                         ));
                 }
+                con.modifiers().add(SModifier.PUBLIC);
                 // p1
                 SParameter p1 = new SParameter();
                 p1.setType(getMethodHandle_Class());
@@ -6674,7 +6683,7 @@ public class SemanticProcessor {
                                                         if (throwableWhenTryValue instanceof SyntaxException) {
                                                                 err.SyntaxException(((SyntaxException) throwableWhenTryValue).msg, ((SyntaxException) throwableWhenTryValue).lineCol);
                                                         } else {
-                                                                err.SyntaxException(throwableWhenTryValue.getMessage(), invocation.line_col());
+                                                                throw new LtBug(throwableWhenTryValue);
                                                         }
                                                         return null;
                                                 }

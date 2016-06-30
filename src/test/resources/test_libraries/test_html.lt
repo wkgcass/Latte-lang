@@ -22,6 +22,7 @@ class TestHtml
             return (
                 html + [
                     head + [
+                        meta(http_equiv="Pragma", content='no-cache')
                         link(rel="stylesheet", src="style.css")
                         script(src="x.js")
                     ]
@@ -50,3 +51,5 @@ class TestHtml
                     ]
                 ]
             ).pretty
+        testHtmlClass()
+            return button(typ='submit').btn.btn_default toString

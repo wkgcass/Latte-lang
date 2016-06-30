@@ -998,6 +998,28 @@ public class TestParser {
         }
 
         @Test
+        public void testLambda_only_name() throws Exception {
+                List<Statement> list = parse("a->a+1");
+
+                assertEquals(1, list.size());
+                Statement stmt = list.get(0);
+
+                AST.Lambda l = new AST.Lambda(
+                        Collections.singletonList(
+                                new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
+                        ),
+                        Collections.singletonList(
+                                new AST.Return(
+                                        new TwoVariableOperation("+",
+                                                new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                                new NumberLiteral("1", LineCol.SYNTHETIC), LineCol.SYNTHETIC),
+                                        LineCol.SYNTHETIC)),
+                        LineCol.SYNTHETIC);
+
+                assertEquals(l, stmt);
+        }
+
+        @Test
         public void testStatic1() throws Exception {
                 List<Statement> list = parse("static a=1");
 

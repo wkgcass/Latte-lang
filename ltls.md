@@ -73,9 +73,11 @@
 7. Other
 	1. Features
 		1. DSL
-	1. Language Related Libraries
+	2. Language Related Libraries
 		1. evaluator and script
-	1. Libraries
+		2. List
+		3. Map
+	3. Libraries
 		1. html
 			* html
 			* css
@@ -1339,11 +1341,24 @@ it's used to generate a string `"User(...)"`, and only when id is not null, the 
 
 The lambda writes:
 
+*one statement*
+
 	(x)-> ...
+	
+*multiple line statements*
 	
 	(x)->
 	    ...
 	    
+*omit the parentheses*
+	    
+	x -> ...
+	
+	x ->
+	    ...
+	    
+*more than one parameter*
+
 	(x,y,z)-> ...
 	
 	(x,y,z)->
@@ -1352,15 +1367,15 @@ The lambda writes:
 You can specify a type for these lambdas, e.g.
 
 	list forEach (
-	    ((x)->println(x)) as java::util::function::Consumer
+	    (x -> println(x)) as java::util::function::Consumer
 	)
 
-	func : java::util::function::Function = (x) -> x+1
+	func : java::util::function::Function = x -> x+1
 	
 The type can be omitted, the default type would be `lt::lang::function::FunctionX`, where `X` is parameter count.  
 The lambda would be converted into right type at runtime. So you can directly write :
 
-	list.forEach((x)-> println(x))
+	list.forEach(x -> println(x))
 
 The lambda in Latte is almost the same as in Java, but it supports functional abstract classes.
 
@@ -1441,6 +1456,76 @@ The `eval` method is defined in `lt::lang::Utils`, which is automatically import
 
 Also, scripts are supported, and you can `require` any scripts in `Latte`.  
 `require` uses `lt::repl::ScriptCompiler` to run scripts and retrieve results.
+
+###7.2.2 List
+The List is defined as `lt::util::List`. It extends `java::util::LinkedList`.
+
+You can construct the list with `array literal` : 
+
+	[1,2,3]
+	
+or construct a `List` object and `add` elements into the list :
+
+	list = List
+	list add 1
+	list add 2
+	list add 3
+	
+or construct the `List` with a function that modifies the list :
+
+	list = List(
+	    $this ->
+		    $this add 1
+		    $this add 2
+		    $this add 3
+	)
+	
+There are some functions defined in `List` that allow you to use the `List` like `JavaScript`.
+
+| Method             |  Whether modifies the list itself |
+|--------------------|-----------------------------------|
+| list.concat(o)     | no
+| list.concat(list)  | no
+| list.join(s)       | no
+| list.reverse()     | yes
+| list.shift()       | yes
+| list.slice(fromIndex, toIndex)  | no
+| list.slice(fromIndex)           | no
+| list.unshift(o)    | yes
+| list.unshift(list) | yes
+| list.length()      | no
+
+Also, the list supports a method named `immutable()`, which transforms the list into an immutable list.
+
+	list.immutable()
+	
+###7.2.3 Map
+The Map is defined as `lt::util::Map`. It extends `java::util::LinkedHashMap`.
+
+You can construct the map with `map literal` :
+
+	{
+	    "a":1
+	    "b":2
+	}
+	
+or construct a `Map` object and `put` entries into the map :
+
+	map = Map
+	map put "a", 1
+	map put "b", 2
+
+or construct the `Map` with a function that modifies the map :
+
+	map = Map(
+	    $this ->
+	        $this.put("a", 1)
+	        $this.put("b", 2)
+	)
+	
+Also, the map supports a method named `immutable()`, which transforms the map into an immutable map.
+
+	map.immutable()
 
 #7.3 Libraries
 ##7.3.1 html
@@ -1524,6 +1609,16 @@ The attributes specified by standard are defined in valid latte variable name. e
 
 	typ  -->  type
 	http_equiv  -->  http-equiv
+	
+You can also generate `class` attribute in this way:
+
+	button.btn.btn_default  -->  button(class="btn btn-default")
+
+The `_` is automatically transformed to `-`
+
+But note that if other attributes are specified, you should write `.classAttr` after the `)`. e.g.
+
+	button(typ='submit').btn.btn_default  -->  button(class="btn btn-default" type="submit")
 
 ###css
 You can write css in this way:

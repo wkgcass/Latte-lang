@@ -82,6 +82,7 @@ public class TestLibraries {
                 assertEquals("" +
                         "<html>\n" +
                         "  <head>\n" +
+                        "    <meta http-equiv=\"Pragma\" content=\"no-cache\">\n"+
                         "    <link rel=\"stylesheet\" src=\"style.css\">\n" +
                         "    <script src=\"x.js\">\n" +
                         "    </script>\n" +
@@ -112,6 +113,11 @@ public class TestLibraries {
                         "    }\n" +
                         "  </style>\n" +
                         "</html>", testHtmlAndCss.invoke(null));
+
+                Method testHtmlClass = TestHtml.getMethod("testHtmlClass");
+                assertEquals(
+                        "<button class=\"btn btn-default\" type=\"submit\"></button>", testHtmlClass.invoke(null)
+                );
         }
 
         @Test

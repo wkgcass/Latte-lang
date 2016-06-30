@@ -1899,7 +1899,9 @@ public class Parser {
                                                         nextNode(true);
                                                 }
                                         } else if (current.getTokenType() == TokenType.VALID_NAME) {
-                                                if (isPackage((Element) current)) {
+                                                if (isLambda((Element) current)) {
+                                                        parse_lambda();
+                                                } else if (isPackage((Element) current)) {
                                                         annosIsEmpty();
                                                         modifiersIsEmpty();
 
@@ -2176,41 +2178,49 @@ public class Parser {
         private void parse_lambda() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
 
-                nextNode(false);
                 List<VariableDef> variableDefList = new ArrayList<>();
                 Set<String> set = new HashSet<>();
-                if (current instanceof ElementStartNode) {
-                        List<Statement> list = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false);
-                        for (Statement statement : list) {
-                                if (statement instanceof AST.Access) {
-                                        AST.Access access = (AST.Access) statement;
-                                        if (access.exp == null) {
-                                                VariableDef v = new VariableDef(access.name, Collections.emptySet(), annos, access.line_col());
-                                                annos.clear();
+                if (((Element) current).getContent().equals("(")) {
+                        nextNode(false);
+                        if (current instanceof ElementStartNode) {
+                                List<Statement> list = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false);
+                                for (Statement statement : list) {
+                                        if (statement instanceof AST.Access) {
+                                                AST.Access access = (AST.Access) statement;
+                                                if (access.exp == null) {
+                                                        VariableDef v = new VariableDef(access.name, Collections.emptySet(), annos, access.line_col());
+                                                        annos.clear();
+                                                        variableDefList.add(v);
+
+                                                        set.add(access.name);
+                                                } else {
+                                                        err.UnexpectedTokenException("variable", access.exp.toString(), access.exp.line_col());
+                                                        err.debug("ignore the variable");
+                                                }
+                                        } else if (statement instanceof VariableDef) {
+                                                VariableDef v = (VariableDef) statement;
                                                 variableDefList.add(v);
 
-                                                set.add(access.name);
+                                                set.add(v.getName());
                                         } else {
-                                                err.UnexpectedTokenException("variable", access.exp.toString(), access.exp.line_col());
+                                                err.UnexpectedTokenException("variable", statement.toString(), statement.line_col());
                                                 err.debug("ignore the variable");
                                         }
-                                } else if (statement instanceof VariableDef) {
-                                        VariableDef v = (VariableDef) statement;
-                                        variableDefList.add(v);
-
-                                        set.add(v.getName());
-                                } else {
-                                        err.UnexpectedTokenException("variable", statement.toString(), statement.line_col());
-                                        err.debug("ignore the variable");
                                 }
-                        }
 
-                        nextNode(false);
+                                nextNode(false);
+                        }
+                } else {
+                        // it's a valid name
+                        assert isValidName(((Element) current).getContent());
+                        String name = ((Element) current).getContent();
+                        set.add(name);
+                        variableDefList.add(new VariableDef(name, Collections.emptySet(), Collections.emptySet(), current.getLineCol()));
                 }
 
-                nextNode(false); // =>
+                nextNode(false); // ->
                 nextNode(false);
-                // (...)=>口
+                // (...)->口
 
                 if (!(current instanceof ElementStartNode)) {
                         err.UnexpectedTokenException("new layer", current.toString(), current.getLineCol());

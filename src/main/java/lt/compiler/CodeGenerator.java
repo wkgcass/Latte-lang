@@ -1726,11 +1726,7 @@ public class CodeGenerator {
                                                 Value v = entry.getValue();
                                                 if (v instanceof EnumValue) {
                                                         if (v.type().fullName().equals("java.lang.annotation.RetentionPolicy")) {
-                                                                if (((EnumValue) v).enumStr().equals("RUNTIME")) {
-                                                                        return true;
-                                                                } else {
-                                                                        return false;
-                                                                }
+                                                                return ((EnumValue) v).enumStr().equals("RUNTIME");
                                                         }
                                                 }
                                                 throw new LtBug(
