@@ -18,7 +18,7 @@ var SPLIT_X = [
     "..", ".:", // list generator
     "..." // pass
 ];
-var STRING = ["\"", "'", "`"];
+var STRING = ["\"", "'", "`", "//"];
 var ESCAPE = "\\";
 var NO_RECORD = [" "];
 var ENDING = ",";
@@ -169,7 +169,7 @@ var keys = ["is", "not", "bool", "yes", "no",
     "package", "import", "break", "continue", "return", "fun"];
 
 var modifiers = ["public", "protected", "private", "pkg", "data",
-    "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp"];
+    "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp", "var"];
 
 var oneVarOperatorsPost = ["++", "--"];
 
@@ -215,6 +215,7 @@ var TYPE_VALID_NAME = 6;
 var TYPE_MODIFIER = 7;
 var TYPE_KEY = 8;
 var TYPE_SYMBOL = 9;
+var TYPE_REGEX = 10;
 
 function isNumber(s) {
     var res = s.match(/(\b[0-9]+\.[0-9]+\b|\b[0-9]+\b)/);
@@ -233,7 +234,12 @@ function isModifier(str) {
     return modifiers.contains(str);
 }
 function isString(str) {
-    return (str.startsWith("\"") && str.endsWith("\"")) || (str.startsWith("'") && str.endsWith("'"));
+    return (
+        (str.startsWith("\"") && str.endsWith("\"")) || (str.startsWith("'") && str.endsWith("'"))
+       ) && str.length>1;
+}
+function isRegex(str){
+    return str.startsWith("//") && str.endsWith("//") && str.length>3;
 }
 function isKey(str) {
     return keys.contains(str);
@@ -582,6 +588,7 @@ function Scanner(filename, input, config) {
         if (isBoolean(str)) return TYPE_BOOL;
         if (isModifier(str)) return TYPE_MODIFIER;
         if (isNumber(str)) return TYPE_NUMBER;
+        if (isRegex(str)) return TYPE_REGEX;
         if (isString(str)) return TYPE_STRING;
         if (isKey(str)) return TYPE_KEY; // however in/is/not are two variable operators, they are marked as keys
         if (isSymbol(str)) return TYPE_SYMBOL;
@@ -650,7 +657,7 @@ function Scanner(filename, input, config) {
                     index = line.indexOf(token, lastIndex + 1);
                     if (index == -1)
                         throw SyntaxException("end of string not found", args.generateLineCol());
-                    var c = line[index - 1];
+                    var c = line[index - token.length];
                     function checkStringEnd($line, $index) {
                         var $count = 0;
                         for (var $i = $index; $i > 0; --$i) {
@@ -662,11 +669,11 @@ function Scanner(filename, input, config) {
                     }
                     if (ESCAPE != c || checkStringEnd(line, index-1)) {
                         // the string starts at minIndex and ends at index
-                        s = line.substring(minIndex, index + 1);
+                        s = line.substring(minIndex, index + token.length);
 
                         args.previous = new Node(args, getTokenType(s, args.generateLineCol()), undefined, s);
                         args.currentCol += (index - minIndex);
-                        line = line.substring(index + 1);
+                        line = line.substring(index + token.length);
                         break;
                     }
 

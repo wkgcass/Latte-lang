@@ -71,6 +71,13 @@ $(document).ready(function () {
                         :$sce.trustAsHtml("Latte is a hybrid of dynamic and static typing. The variables without type declarations are considered as <code>java.lang.Object</code>")
             },
             {
+                title: zh?"正则表达式":"Regular Expression",
+                java: "" +
+                "Pattern pattern = Pattern.compile(\"\\\\d+\")",
+                latte: getLatteHtml("" +
+                "var pattern = //\\d+//")
+            },
+            {
                 title: zh?"类型定义":"Type Definition",
                 java: "" +
                 "public class User {\n" +

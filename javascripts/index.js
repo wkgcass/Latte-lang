@@ -45,6 +45,9 @@ $(document).ready(function () {
                     name: isZh?"运算符绑定":"Operator Binding"
                 },
                 {
+                    name : isZh?"正则表达式":"Regular Expression"
+                },
+                {
                     name: "DSL"
                 },
                 {
@@ -115,6 +118,13 @@ $(document).ready(function () {
                     "    return o.isEmpty\n" +
                     "\n" +
                     "['hello', 'world'].stream.filter(empty).count"
+                    , {}))
+            },
+            {
+                code: $sce.trustAsHtml(highlighting("example_9.lts", "" +
+                    (isZh?"; 正则表达式\n":"; Regular Expression\n") +
+                    "pattern = //\\b+//\n"+
+                    "pattern.matcher('123').matches()"
                     , {}))
             },
             {

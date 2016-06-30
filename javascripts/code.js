@@ -100,6 +100,7 @@ function highlighting(file, code, config) {
         if (type == TYPE_SYMBOL)
             return 'symbol';
         if (type == TYPE_VALID_NAME) return 'valid';
+        if (type == TYPE_REGEX) return 'regex';
         throw "unknown type " + type;
     }
 

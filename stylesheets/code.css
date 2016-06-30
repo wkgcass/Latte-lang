@@ -26,6 +26,10 @@
     color: black;
 }
 
+.regex {
+    color: #F29F3F;
+}
+
 pre {
     color: grey;
     font-size: 16px;
