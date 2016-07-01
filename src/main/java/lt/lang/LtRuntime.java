@@ -408,8 +408,7 @@ public class LtRuntime {
         }
 
         private static void throwNonRuntime(Dynamic.InvocationState state, Throwable t) throws Throwable {
-                if (state.methodFound && state.exception != null) throw state.exception;
-                if (!(t instanceof LtRuntimeException)) throw t;
+                if (state.methodFound && !(t instanceof LtRuntimeException)) throw t;
         }
 
         /**

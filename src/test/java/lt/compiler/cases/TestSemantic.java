@@ -2081,7 +2081,7 @@ public class TestSemantic {
                 Instruction i14 = con.statements().get(14); // invokeVirtual (normal finally)
                 assertEquals(15, con.statements().size());
 
-                assertTrue(i1 instanceof Ins.InvokeVirtual);
+                assertTrue(((ValueAnotherType) i1).value() instanceof Ins.InvokeVirtual);
                 assertTrue(i2 instanceof Ins.Goto);
                 assertTrue(i3 instanceof Ins.ExStore);
                 assertTrue(i4 instanceof Ins.TStore);
@@ -2092,9 +2092,9 @@ public class TestSemantic {
                 assertTrue(i9 instanceof Ins.Nop);
                 assertTrue(i10 instanceof Ins.Goto);
                 assertTrue(i11 instanceof Ins.ExStore);
-                assertTrue(i12 instanceof Ins.InvokeVirtual);
+                assertTrue(((ValueAnotherType) i12).value() instanceof Ins.InvokeVirtual);
                 assertTrue(i13 instanceof Ins.AThrow);
-                assertTrue(i14 instanceof Ins.InvokeVirtual);
+                assertTrue(((ValueAnotherType) i14).value() instanceof Ins.InvokeVirtual);
 
                 assertEquals(i14, ((Ins.Goto) i2).gotoIns());
                 assertEquals(i8, ((Ins.IfEq) i5).gotoIns());

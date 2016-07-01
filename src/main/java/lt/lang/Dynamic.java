@@ -710,10 +710,6 @@ public class Dynamic {
                  * whether the method is found
                  */
                 public boolean methodFound = false;
-                /**
-                 * the thrown exception or null if no exception thrown
-                 */
-                public Throwable exception = null;
         }
 
         /**
@@ -757,6 +753,8 @@ public class Dynamic {
                 }
 
                 if (methodList.isEmpty()) {
+                        invocationState.methodFound = true; // set to true, if method not found then set this to false
+
                         if (c.isArray()) {
                                 if (method.equals("get") && args.length >= 1 && args[0] instanceof Integer) {
                                         Object res = Array.get(o, (Integer) args[0]);
@@ -803,19 +801,46 @@ public class Dynamic {
                                         return !LtRuntime.castToBool(o);
                                 }
                         }
-                        StringBuilder sb = new StringBuilder().append(
-                                o == null
-                                        ? targetClass.getName()
-                                        : o.getClass().getName()
-                        ).append("#").append(method).append("(");
-                        boolean isFirst = true;
-                        for (Object arg : args) {
-                                if (isFirst) isFirst = false;
-                                else sb.append(", ");
-                                sb.append(arg == null ? "null" : arg.getClass().getName());
+
+                        invocationState.methodFound = false; // method still not found
+
+                        Method call = null;
+                        try {
+                                Class<?> cc = targetClass;
+                                if (o != null) {
+                                        cc = o.getClass();
+                                }
+                                call = cc.getMethod("call", Object.class, String.class, boolean[].class, Object[].class);
+                                if (Modifier.isStatic(call.getModifiers()) && !call.getReturnType().equals(void.class)) {
+                                        invocationState.methodFound = true;
+                                }
+                        } catch (NoSuchMethodException ignore) {
                         }
-                        sb.append(")");
-                        throw new LtRuntimeException("cannot find method to invoke " + sb.toString());
+
+                        if (invocationState.methodFound) {
+                                assert call != null;
+                                try {
+                                        return call.invoke(null, o, method, primitives, args);
+                                } catch (InvocationTargetException e) {
+                                        throw e.getTargetException();
+                                }
+                        } else {
+                                // method not found
+                                // build exception message
+                                StringBuilder sb = new StringBuilder().append(
+                                        o == null
+                                                ? targetClass.getName()
+                                                : o.getClass().getName()
+                                ).append("#").append(method).append("(");
+                                boolean isFirst = true;
+                                for (Object arg : args) {
+                                        if (isFirst) isFirst = false;
+                                        else sb.append(", ");
+                                        sb.append(arg == null ? "null" : arg.getClass().getName());
+                                }
+                                sb.append(")");
+                                throw new LtRuntimeException("cannot find method to invoke " + sb.toString());
+                        }
                 }
 
                 // find best match
@@ -831,7 +856,6 @@ public class Dynamic {
                         if (methodToInvoke.getReturnType() == void.class) return Undefined.get();
                         else return res;
                 } catch (InvocationTargetException e) {
-                        invocationState.exception = e.getTargetException();
                         throw e.getTargetException();
                 }
         }

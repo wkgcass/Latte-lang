@@ -4,9 +4,47 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+    <name>Latte-lang</name>
+    <description>A JVM Programming Language.</description>
+    <url>http://latte-lang.org</url>
+
+    <developers>
+        <developer>
+            <name>wkgcass</name>
+            <email>wkgcass@hotmail.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>
+            scm:git:https://github.com/wkgcass/Latte-lang.git
+        </connection>
+        <developerConnection>
+            scm:git:https://github.com/wkgcass/Latte-lang.git
+        </developerConnection>
+        <url>https://github.com/wkgcass/Latte-lang</url>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>MIT LICENSE</name>
+            <url>https://github.com/wkgcass/Latte-lang/blob/master/LICENSE/</url>
+        </license>
+    </licenses>
+
     <groupId>org.latte-lang</groupId>
     <artifactId>latte-lang</artifactId>
-    <version>0.0.3-ALPHA</version>
+    <version>0.0.3-ALPHA-PRE-RELEASE</version>
 
     <build>
         <plugins>
@@ -130,6 +168,22 @@
                 </executions>
             </plugin>
             <!-- compile -->
+            <!-- oss -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- oss -->
         </plugins>
     </build>
     <dependencies>

@@ -73,6 +73,7 @@
 7. Other
 	1. Features
 		1. DSL
+		2. Dynamic Method Invocation
 	2. Language Related Libraries
 		1. evaluator and script
 		2. List
@@ -1448,6 +1449,35 @@ You can separate the arguments with a comma. e.g.
 is converted into:
 
 	map.put("a", 1)
+
+###7.1.2 Dynamic Method Invocation
+When methods cannot be found, the runtime will try to find
+
+	static call($this:Object, methodName:String, primitives:[]bool, arguments:[]Object)
+	
+This method's arguments are
+
+* `$this -` The object to invoke from, or null if it's invoke static.
+* `methodName -` the method name
+* `primitives -` whether the argument is primitive
+* `arguments -` the arguments
+
+e.g.
+
+	class Call
+	    static
+	        call(o, methodName:String, primitives:[]bool, arguments:[]Object)
+	            ...
+	
+	c = Call
+	c.run(1, 1.2, 'abc')
+	
+The `call` method's arguments would be
+
+1. the object `c`
+2. run
+3. [true, true, false]
+4. [1, 1.2, 'abc']
 
 ##7.2 Language Related Libraries
 ###7.2.1 evaluator and script

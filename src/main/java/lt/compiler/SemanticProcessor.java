@@ -4664,7 +4664,10 @@ public class SemanticProcessor {
                 } else {
                         FIND_MODE = FIND_MODE_NON_STATIC;
                 }
-                findMethodFromTypeWithArguments(lineCol, methodName, args, scope.type(), invokeOn.type(), FIND_MODE, methods, true);
+                if (targetType.equals(NullTypeDef.get())) {
+                        targetType = getTypeWithName("java.lang.Object", LineCol.SYNTHETIC);
+                }
+                findMethodFromTypeWithArguments(lineCol, methodName, args, scope.type(), targetType, FIND_MODE, methods, true);
                 if (methods.isEmpty()) {
                         // invoke dynamic
                         args.add(0, new Ins.GetClass(targetType, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
@@ -5379,6 +5382,27 @@ public class SemanticProcessor {
         }
 
         /**
+         * get arguments
+         *
+         * @param args  args(expression)
+         * @param scope scope
+         * @return list
+         * @throws SyntaxException exception
+         */
+        private List<Value> parseArguments(List<Expression> args, SemanticScope scope) throws SyntaxException {
+                List<Value> list = new ArrayList<>();
+                for (Expression exp : args) {
+                        Value a = parseValueFromExpression(exp, null, scope);
+                        if (a == null) {
+                                err.SyntaxException(exp + " is not method argument", exp.line_col());
+                                return null;
+                        }
+                        list.add(a);
+                }
+                return list;
+        }
+
+        /**
          * parse value from Index<br>
          * <code>arr[i]</code>
          *
@@ -5391,11 +5415,9 @@ public class SemanticProcessor {
                 Value v = parseValueFromExpression(index.exp, null, scope);
                 assert v != null;
 
-                List<Value> list = new ArrayList<>();
-                for (Expression exp : index.args) {
-                        list.add(parseValueFromExpression(exp, null, scope));
-                }
+                List<Value> list = parseArguments(index.args, scope);
 
+                assert list != null;
                 if (v.type() instanceof SArrayTypeDef && list.size() == 1) {
                         try {
                                 Value i = cast(IntTypeDef.get(), list.get(0), index.args.get(0).line_col());
@@ -5847,162 +5869,157 @@ public class SemanticProcessor {
                         requiredType.equals(v.type()) // requiredType is v.type
                         ) return v;
                 Value resultVal;
-                // undefined
-                if (v.type().fullName().equals("lt.lang.Undefined")) {
-                        resultVal = v;
-                } else {
-                        if (requiredType instanceof PrimitiveTypeDef) {
-                                // requiredType is primitive
-                                if (v.type() instanceof PrimitiveTypeDef) {
-                                        if (v.type().equals(IntTypeDef.get())
-                                                || v.type().equals(ShortTypeDef.get())
-                                                || v.type().equals(ByteTypeDef.get())
-                                                || v.type().equals(CharTypeDef.get())) {
+                if (requiredType instanceof PrimitiveTypeDef) {
+                        // requiredType is primitive
+                        if (v.type() instanceof PrimitiveTypeDef) {
+                                if (v.type().equals(IntTypeDef.get())
+                                        || v.type().equals(ShortTypeDef.get())
+                                        || v.type().equals(ByteTypeDef.get())
+                                        || v.type().equals(CharTypeDef.get())) {
 
-                                                if (requiredType.equals(IntTypeDef.get())) {
-                                                        // int
-                                                        return new ValueAnotherType(requiredType, v);
-                                                } else if (requiredType.equals(ShortTypeDef.get())) {
-                                                        // to short
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
-                                                } else if (requiredType.equals(ByteTypeDef.get())) {
-                                                        // to byte
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
-                                                } else if (requiredType.equals(CharTypeDef.get())) {
-                                                        // to char
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
-                                                } else if (requiredType instanceof LongTypeDef) {
-                                                        // int to long
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_LONG, lineCol);
-                                                } else if (requiredType instanceof FloatTypeDef) {
-                                                        // int to float
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_FLOAT, lineCol);
-                                                } else if (requiredType instanceof DoubleTypeDef) {
-                                                        // int to double
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_DOUBLE, lineCol);
-                                                } else if (requiredType instanceof BoolTypeDef) {
-                                                        return castObjToPrimitive(
-                                                                BoolTypeDef.get(),
-                                                                boxPrimitive(
-                                                                        v,
-                                                                        lineCol),
-                                                                lineCol);
-                                                } else
-                                                        throw new LtBug("unknown primitive requiredType " + requiredType);
-                                        } else if (v.type().equals(LongTypeDef.get())) {
-                                                if (requiredType instanceof IntTypeDef) {
-                                                        // long to int
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
-                                                } else if (requiredType instanceof ShortTypeDef) {
-                                                        // long to int and int to short
-                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
-                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
-                                                } else if (requiredType instanceof ByteTypeDef) {
-                                                        // long to int and int to byte
-                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
-                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
-                                                } else if (requiredType instanceof CharTypeDef) {
-                                                        // long to int and int to char
-                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
-                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
-                                                } else if (requiredType instanceof FloatTypeDef) {
-                                                        // long to float
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_FLOAT, lineCol);
-                                                } else if (requiredType instanceof DoubleTypeDef) {
-                                                        // long to double
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_DOUBLE, lineCol);
-                                                } else if (requiredType instanceof BoolTypeDef) {
-                                                        return castObjToPrimitive(
-                                                                BoolTypeDef.get(),
-                                                                boxPrimitive(
-                                                                        v,
-                                                                        lineCol),
-                                                                lineCol);
-                                                } else
-                                                        throw new LtBug("unknown primitive requiredType " + requiredType);
-                                        } else if (v.type().equals(FloatTypeDef.get())) {
-                                                if (requiredType instanceof IntTypeDef) {
-                                                        // float to int
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
-                                                } else if (requiredType instanceof ShortTypeDef) {
-                                                        // float to int and int to short
-                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
-                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
-                                                } else if (requiredType instanceof ByteTypeDef) {
-                                                        // float to int and int to byte
-                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
-                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
-                                                } else if (requiredType instanceof CharTypeDef) {
-                                                        // float to int and int to char
-                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
-                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
-                                                } else if (requiredType instanceof LongTypeDef) {
-                                                        // float to long
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_LONG, lineCol);
-                                                } else if (requiredType instanceof DoubleTypeDef) {
-                                                        // float to double
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_DOUBLE, lineCol);
-                                                } else if (requiredType instanceof BoolTypeDef) {
-                                                        return castObjToPrimitive(
-                                                                BoolTypeDef.get(),
-                                                                boxPrimitive(
-                                                                        v,
-                                                                        lineCol),
-                                                                lineCol);
-                                                } else
-                                                        throw new LtBug("unknown primitive requiredType " + requiredType);
-                                        } else if (v.type().equals(DoubleTypeDef.get())) {
-                                                if (requiredType instanceof IntTypeDef) {
-                                                        // double to int
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
-                                                } else if (requiredType instanceof ShortTypeDef) {
-                                                        // double to int and int to short
-                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
-                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
-                                                } else if (requiredType instanceof ByteTypeDef) {
-                                                        // double to int and int to byte
-                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
-                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
-                                                } else if (requiredType instanceof CharTypeDef) {
-                                                        // double to int and int to char
-                                                        Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
-                                                        return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
-                                                } else if (requiredType instanceof FloatTypeDef) {
-                                                        // double to float
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_FLOAT, lineCol);
-                                                } else if (requiredType instanceof LongTypeDef) {
-                                                        // double to long
-                                                        return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_LONG, lineCol);
-                                                } else if (requiredType instanceof BoolTypeDef) {
-                                                        return castObjToPrimitive(
-                                                                BoolTypeDef.get(),
-                                                                boxPrimitive(
-                                                                        v,
-                                                                        lineCol),
-                                                                lineCol);
-                                                } else
-                                                        throw new LtBug("unknown primitive requiredType " + requiredType);
-                                        } else if (v.type().equals(BoolTypeDef.get())) {
-                                                err.SyntaxException("cannot cast from boolean to other primitives", lineCol);
-                                                return null;
-                                        } else throw new LtBug("unknown primitive value " + v);
-                                } else {
-                                        // cast obj to primitive
-                                        return castObjToPrimitive((PrimitiveTypeDef) requiredType, v, lineCol);
-                                }
+                                        if (requiredType.equals(IntTypeDef.get())) {
+                                                // int
+                                                return new ValueAnotherType(requiredType, v, lineCol);
+                                        } else if (requiredType.equals(ShortTypeDef.get())) {
+                                                // to short
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
+                                        } else if (requiredType.equals(ByteTypeDef.get())) {
+                                                // to byte
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
+                                        } else if (requiredType.equals(CharTypeDef.get())) {
+                                                // to char
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
+                                        } else if (requiredType instanceof LongTypeDef) {
+                                                // int to long
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_LONG, lineCol);
+                                        } else if (requiredType instanceof FloatTypeDef) {
+                                                // int to float
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_FLOAT, lineCol);
+                                        } else if (requiredType instanceof DoubleTypeDef) {
+                                                // int to double
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_INT_TO_DOUBLE, lineCol);
+                                        } else if (requiredType instanceof BoolTypeDef) {
+                                                return castObjToPrimitive(
+                                                        BoolTypeDef.get(),
+                                                        boxPrimitive(
+                                                                v,
+                                                                lineCol),
+                                                        lineCol);
+                                        } else
+                                                throw new LtBug("unknown primitive requiredType " + requiredType);
+                                } else if (v.type().equals(LongTypeDef.get())) {
+                                        if (requiredType instanceof IntTypeDef) {
+                                                // long to int
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
+                                        } else if (requiredType instanceof ShortTypeDef) {
+                                                // long to int and int to short
+                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
+                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
+                                        } else if (requiredType instanceof ByteTypeDef) {
+                                                // long to int and int to byte
+                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
+                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
+                                        } else if (requiredType instanceof CharTypeDef) {
+                                                // long to int and int to char
+                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_LONG_TO_INT, lineCol);
+                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
+                                        } else if (requiredType instanceof FloatTypeDef) {
+                                                // long to float
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_FLOAT, lineCol);
+                                        } else if (requiredType instanceof DoubleTypeDef) {
+                                                // long to double
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_LONG_TO_DOUBLE, lineCol);
+                                        } else if (requiredType instanceof BoolTypeDef) {
+                                                return castObjToPrimitive(
+                                                        BoolTypeDef.get(),
+                                                        boxPrimitive(
+                                                                v,
+                                                                lineCol),
+                                                        lineCol);
+                                        } else
+                                                throw new LtBug("unknown primitive requiredType " + requiredType);
+                                } else if (v.type().equals(FloatTypeDef.get())) {
+                                        if (requiredType instanceof IntTypeDef) {
+                                                // float to int
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
+                                        } else if (requiredType instanceof ShortTypeDef) {
+                                                // float to int and int to short
+                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
+                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
+                                        } else if (requiredType instanceof ByteTypeDef) {
+                                                // float to int and int to byte
+                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
+                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
+                                        } else if (requiredType instanceof CharTypeDef) {
+                                                // float to int and int to char
+                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_FLOAT_TO_INT, lineCol);
+                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
+                                        } else if (requiredType instanceof LongTypeDef) {
+                                                // float to long
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_LONG, lineCol);
+                                        } else if (requiredType instanceof DoubleTypeDef) {
+                                                // float to double
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_FLOAT_TO_DOUBLE, lineCol);
+                                        } else if (requiredType instanceof BoolTypeDef) {
+                                                return castObjToPrimitive(
+                                                        BoolTypeDef.get(),
+                                                        boxPrimitive(
+                                                                v,
+                                                                lineCol),
+                                                        lineCol);
+                                        } else
+                                                throw new LtBug("unknown primitive requiredType " + requiredType);
+                                } else if (v.type().equals(DoubleTypeDef.get())) {
+                                        if (requiredType instanceof IntTypeDef) {
+                                                // double to int
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
+                                        } else if (requiredType instanceof ShortTypeDef) {
+                                                // double to int and int to short
+                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
+                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_SHORT, lineCol);
+                                        } else if (requiredType instanceof ByteTypeDef) {
+                                                // double to int and int to byte
+                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
+                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_BYTE, lineCol);
+                                        } else if (requiredType instanceof CharTypeDef) {
+                                                // double to int and int to char
+                                                Ins.Cast c1 = new Ins.Cast(IntTypeDef.get(), v, Ins.Cast.CAST_DOUBLE_TO_INT, lineCol);
+                                                return new Ins.Cast(requiredType, c1, Ins.Cast.CAST_INT_TO_CHAR, lineCol);
+                                        } else if (requiredType instanceof FloatTypeDef) {
+                                                // double to float
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_FLOAT, lineCol);
+                                        } else if (requiredType instanceof LongTypeDef) {
+                                                // double to long
+                                                return new Ins.Cast(requiredType, v, Ins.Cast.CAST_DOUBLE_TO_LONG, lineCol);
+                                        } else if (requiredType instanceof BoolTypeDef) {
+                                                return castObjToPrimitive(
+                                                        BoolTypeDef.get(),
+                                                        boxPrimitive(
+                                                                v,
+                                                                lineCol),
+                                                        lineCol);
+                                        } else
+                                                throw new LtBug("unknown primitive requiredType " + requiredType);
+                                } else if (v.type().equals(BoolTypeDef.get())) {
+                                        err.SyntaxException("cannot cast from boolean to other primitives", lineCol);
+                                        return null;
+                                } else throw new LtBug("unknown primitive value " + v);
                         } else {
-                                // requiredType is not primitive
-                                if (v.type() instanceof PrimitiveTypeDef) {
-                                        // v is primitive
-                                        v = boxPrimitive(v, lineCol);
-                                        // box then check cast
-                                        if (requiredType.isAssignableFrom(v.type())) return v;
-                                        // invoke cast(Object)
-                                        resultVal = castObjToObj(requiredType, v, lineCol);
-                                } else {
-                                        // cast object to object
-                                        resultVal = castObjToObj(requiredType, v, lineCol);
-                                }
+                                // cast obj to primitive
+                                return castObjToPrimitive((PrimitiveTypeDef) requiredType, v, lineCol);
+                        }
+                } else {
+                        // requiredType is not primitive
+                        if (v.type() instanceof PrimitiveTypeDef) {
+                                // v is primitive
+                                v = boxPrimitive(v, lineCol);
+                                // box then check cast
+                                if (requiredType.isAssignableFrom(v.type())) return v;
+                                // invoke cast(Object)
+                                resultVal = castObjToObj(requiredType, v, lineCol);
+                        } else {
+                                // cast object to object
+                                resultVal = castObjToObj(requiredType, v, lineCol);
                         }
                 }
                 return new Ins.CheckCast(resultVal, requiredType, lineCol);
@@ -6608,8 +6625,9 @@ public class SemanticProcessor {
                                         }
 
                                         if (isValue) {
-                                                methodsToInvoke.clear();
                                                 assert target != null;
+
+                                                methodsToInvoke.clear();
                                                 if (target.type() instanceof SClassDef || target.type() instanceof SInterfaceDef) {
                                                         findMethodFromTypeWithArguments(
                                                                 access.line_col(),
@@ -6651,7 +6669,9 @@ public class SemanticProcessor {
                                                                 FIND_MODE_NON_STATIC,
                                                                 methodsToInvoke,
                                                                 true);
-                                                } else throw new LtBug("type should not be " + target.type());
+                                                } else {
+                                                        throw new LtBug("type should not be " + target.type());
+                                                }
                                         } else if (access.exp instanceof AST.Access && type != null) {
                                                 // access.exp is type
                                                 if (methodsToInvoke.isEmpty()) {
@@ -6834,6 +6854,13 @@ public class SemanticProcessor {
 
                                 invoke.arguments().addAll(leftValues.stream().map(v -> new Ins.TLoad(v, scope, LineCol.SYNTHETIC)).collect(Collectors.toList()));
                                 invoke.arguments().addAll(values);
+
+                                if (invoke.type().equals(VoidType.get()))
+                                        return new ValueAnotherType(
+                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                invoke, invoke.line_col()
+                                        );
+
                                 return invoke;
                         } else {
                                 argList = castArgsForMethodInvoke(argList, methodToInvoke.getParameters(), invocation.line_col());
@@ -6842,6 +6869,13 @@ public class SemanticProcessor {
                                         // invoke static
                                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(methodToInvoke, invocation.line_col());
                                         invokeStatic.arguments().addAll(argList);
+
+                                        if (invokeStatic.type().equals(VoidType.get()))
+                                                return new ValueAnotherType(
+                                                        getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                        invokeStatic, invokeStatic.line_col()
+                                                );
+
                                         return invokeStatic;
                                 } else if (methodToInvoke.declaringType() instanceof SInterfaceDef || methodToInvoke.declaringType() instanceof SAnnoDef) {
                                         // invoke interface
@@ -6851,6 +6885,13 @@ public class SemanticProcessor {
                                         }
                                         Ins.InvokeInterface invokeInterface = new Ins.InvokeInterface(target, methodToInvoke, invocation.line_col());
                                         invokeInterface.arguments().addAll(argList);
+
+                                        if (invokeInterface.type().equals(VoidType.get()))
+                                                return new ValueAnotherType(
+                                                        getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                        invokeInterface, invokeInterface.line_col()
+                                                );
+
                                         return invokeInterface;
                                 } else if (doInvokeSpecial || methodToInvoke.modifiers().contains(SModifier.PRIVATE)) {
                                         // invoke special
@@ -6860,6 +6901,13 @@ public class SemanticProcessor {
                                         }
                                         Ins.InvokeSpecial invokeSpecial = new Ins.InvokeSpecial(target, methodToInvoke, invocation.line_col());
                                         invokeSpecial.arguments().addAll(argList);
+
+                                        if (invokeSpecial.type().equals(VoidType.get()))
+                                                return new ValueAnotherType(
+                                                        getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                        invokeSpecial, invokeSpecial.line_col()
+                                                );
+
                                         return invokeSpecial;
                                 } else {
                                         // invoke virtual
@@ -6869,6 +6917,13 @@ public class SemanticProcessor {
                                         }
                                         Ins.InvokeVirtual invokeVirtual = new Ins.InvokeVirtual(target, methodToInvoke, invocation.line_col());
                                         invokeVirtual.arguments().addAll(argList);
+
+                                        if (invokeVirtual.type().equals(VoidType.get()))
+                                                return new ValueAnotherType(
+                                                        getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                        invokeVirtual, invokeVirtual.line_col()
+                                                );
+
                                         return invokeVirtual;
                                 }
                         }

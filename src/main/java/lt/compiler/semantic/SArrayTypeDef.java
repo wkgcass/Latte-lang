@@ -94,7 +94,7 @@ public class SArrayTypeDef extends STypeDef {
                         } else if (type() instanceof ShortTypeDef) {
                                 sb.append("S");
                         } else if (type() instanceof BoolTypeDef) {
-                                sb.append("B");
+                                sb.append("Z");
                         }
                 } else {
                         sb.append("L").append(type().fullName()).append(";");
