@@ -700,20 +700,26 @@ public class LtRuntime {
                 ScriptCompiler sc = new ScriptCompiler(callerClass.getClassLoader());
                 file = file.trim();
 
+                String tmp = file;
+
+                // `file` format
+                if (file.startsWith("cp:")) {
+                        tmp = tmp.substring("cp:".length()).trim();
+                        if (!tmp.startsWith("/")) {
+                                tmp = "/" + tmp;
+                        }
+                        file = "cp:" + tmp;
+                }
+
+                // get reader
                 Reader r;
                 if (file.startsWith("cp:")) {
-                        // process file string
-                        file = file.substring("cp:".length()).trim();
-                        if (!file.startsWith("/")) {
-                                file = "/" + file;
-                        }
-
                         // get from recorder
-                        if (requiredObjects.containsKey("cp:" + file)) return requiredObjects.get("cp:" + file);
+                        if (requiredObjects.containsKey(file)) return requiredObjects.get(file);
 
                         // get reader
                         r = new InputStreamReader(
-                                Utils.class.getResourceAsStream(file));
+                                Utils.class.getResourceAsStream(file.substring("cp:".length())));
                 } else {
                         // get from recorder
                         if (requiredObjects.containsKey(file)) return requiredObjects.get(file);
@@ -723,15 +729,15 @@ public class LtRuntime {
                 }
 
                 // get script file name
-                if (file.contains("/")) {
-                        file = file.substring(file.indexOf("/") + 1);
+                if (tmp.contains("/")) {
+                        tmp = tmp.substring(file.indexOf("/") + 1);
                 }
                 if (file.contains("\\")) {
-                        file = file.substring(file.indexOf("\\") + 1);
+                        tmp = tmp.substring(file.indexOf("\\") + 1);
                 }
 
                 // compile and run
-                Object o = sc.compile(file, r)
+                Object o = sc.compile(tmp, r)
                         .run().getResult();
                 requiredObjects.put(file, o);
                 return o;

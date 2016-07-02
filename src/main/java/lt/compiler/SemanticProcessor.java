@@ -3161,7 +3161,7 @@ public class SemanticProcessor {
                                 while (it.hasNext()) list.add(it.next());
                                 list.add(assignFrom);
 
-                                instructions.add(invokeMethodWithArgs(
+                                instructions.add((Instruction) invokeMethodWithArgs(
                                         lineCol,
                                         cls.targetType(),
                                         target,
@@ -3182,7 +3182,7 @@ public class SemanticProcessor {
                                         List<Value> list = new ArrayList<>();
                                         list.addAll(invoke.arguments());
                                         list.add(assignFrom);
-                                        instructions.add(invokeMethodWithArgs(
+                                        instructions.add((Instruction) invokeMethodWithArgs(
                                                 lineCol,
                                                 invoke.target().type(),
                                                 invoke.target(),
@@ -4656,7 +4656,7 @@ public class SemanticProcessor {
          * @return a subclass of {@link lt.compiler.semantic.Ins.Invoke}
          * @throws SyntaxException compile error
          */
-        private Ins.Invoke invokeMethodWithArgs(LineCol lineCol, STypeDef targetType, Value invokeOn, String methodName, List<Value> args, SemanticScope scope) throws SyntaxException {
+        private Value invokeMethodWithArgs(LineCol lineCol, STypeDef targetType, Value invokeOn, String methodName, List<Value> args, SemanticScope scope) throws SyntaxException {
                 List<SMethodDef> methods = new ArrayList<>();
                 int FIND_MODE;
                 if (invokeOn.equals(NullValue.get())) {
@@ -4685,21 +4685,53 @@ public class SemanticProcessor {
                                 // invoke static
                                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                                 invokeStatic.arguments().addAll(args);
+
+                                if (invokeStatic.type().equals(VoidType.get())) {
+                                        return new ValueAnotherType(
+                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                invokeStatic, invokeStatic.line_col()
+                                        );
+                                }
+
                                 return invokeStatic;
                         } else if (method.modifiers().contains(SModifier.PRIVATE)) {
                                 // invoke special
                                 Ins.InvokeSpecial invokeSpecial = new Ins.InvokeSpecial(invokeOn, method, lineCol);
                                 invokeSpecial.arguments().addAll(args);
+
+                                if (invokeSpecial.type().equals(VoidType.get())) {
+                                        return new ValueAnotherType(
+                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                invokeSpecial, invokeSpecial.line_col()
+                                        );
+                                }
+
                                 return invokeSpecial;
                         } else if (method.declaringType() instanceof SInterfaceDef) {
                                 // invoke interface
                                 Ins.InvokeInterface invokeInterface = new Ins.InvokeInterface(invokeOn, method, lineCol);
                                 invokeInterface.arguments().addAll(args);
+
+                                if (invokeInterface.type().equals(VoidType.get())) {
+                                        return new ValueAnotherType(
+                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                invokeInterface, invokeInterface.line_col()
+                                        );
+                                }
+
                                 return invokeInterface;
                         } else {
                                 // invoke virtual
                                 Ins.InvokeVirtual invokeVirtual = new Ins.InvokeVirtual(invokeOn, method, lineCol);
                                 invokeVirtual.arguments().addAll(args);
+
+                                if (invokeVirtual.type().equals(VoidType.get())) {
+                                        return new ValueAnotherType(
+                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                invokeVirtual, invokeVirtual.line_col()
+                                        );
+                                }
+
                                 return invokeVirtual;
                         }
                 }
@@ -5449,16 +5481,40 @@ public class SemanticProcessor {
                                 // invoke special
                                 Ins.InvokeSpecial invokeSpecial = new Ins.InvokeSpecial(v, methodDef, index.line_col());
                                 invokeSpecial.arguments().addAll(list);
+
+                                if (invokeSpecial.type().equals(VoidType.get())) {
+                                        return new ValueAnotherType(
+                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                invokeSpecial, invokeSpecial.line_col()
+                                        );
+                                }
+
                                 return invokeSpecial;
                         } else if (methodDef.declaringType() instanceof SInterfaceDef) {
                                 // invoke interface
                                 Ins.InvokeInterface invokeInterface = new Ins.InvokeInterface(v, methodDef, index.line_col());
                                 invokeInterface.arguments().addAll(list);
+
+                                if (invokeInterface.type().equals(VoidType.get())) {
+                                        return new ValueAnotherType(
+                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                invokeInterface, invokeInterface.line_col()
+                                        );
+                                }
+
                                 return invokeInterface;
                         } else {
                                 // invoke virtual
                                 Ins.InvokeVirtual invokeVirtual = new Ins.InvokeVirtual(v, methodDef, index.line_col());
                                 invokeVirtual.arguments().addAll(list);
+
+                                if (invokeVirtual.type().equals(VoidType.get())) {
+                                        return new ValueAnotherType(
+                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                invokeVirtual, invokeVirtual.line_col()
+                                        );
+                                }
+
                                 return invokeVirtual;
                         }
                 }

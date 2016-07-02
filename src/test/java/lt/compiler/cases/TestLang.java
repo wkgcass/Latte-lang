@@ -24,6 +24,7 @@
 
 package lt.compiler.cases;
 
+import lt.lang.LtRuntime;
 import lt.lang.RangeList;
 import org.junit.Test;
 
@@ -61,5 +62,12 @@ public class TestLang {
 
                 RangeList list2 = new RangeList(1, 1, false);
                 assertEquals(Collections.emptyList(), list2);
+        }
+
+        @Test
+        public void testRequire() throws Throwable {
+                Object o1 = LtRuntime.require(this.getClass(), "cp:test_require2.lts");
+                Object o2 = LtRuntime.require(this.getClass(), "cp:test_require2.lts");
+                assertTrue(o1 == o2);
         }
 }
