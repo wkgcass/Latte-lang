@@ -2660,7 +2660,8 @@ public class TestSemantic {
                         "package test\n" +
                         "class A\n" +
                         "    a=//xyz\\//op\\bq//\n" +
-                        "    b=//abc//");
+                        "    b=//abc//\n" +
+                        "    c=///////");
                 Set<STypeDef> set = parse(map);
 
                 assertEquals(1, set.size());
@@ -2670,9 +2671,11 @@ public class TestSemantic {
 
                 Ins.InvokeStatic i1 = (Ins.InvokeStatic) ((Ins.PutField) ((ValuePack) cons.statements().get(1)).instructions().get(0)).value();
                 Ins.InvokeStatic i2 = (Ins.InvokeStatic) ((Ins.PutField) ((ValuePack) cons.statements().get(2)).instructions().get(0)).value();
+                Ins.InvokeStatic i3 = (Ins.InvokeStatic) ((Ins.PutField) ((ValuePack) cons.statements().get(3)).instructions().get(0)).value();
 
                 assertEquals("xyz//op\\bq", ((StringConstantValue) i1.arguments().get(0)).getStr());
                 assertEquals("abc", ((StringConstantValue) i2.arguments().get(0)).getStr());
+                assertEquals("///", ((StringConstantValue) i3.arguments().get(0)).getStr());
         }
 
         @Test

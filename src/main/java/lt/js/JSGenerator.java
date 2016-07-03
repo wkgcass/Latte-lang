@@ -320,13 +320,20 @@ public class JSGenerator {
                         sb.append("}");
                 } else if (exp instanceof AST.MapExp) {
                         sb.append("{\n");
+                        boolean isFirst = true;
                         for (Map.Entry<Expression, Expression> entry : ((AST.MapExp) exp).map.entrySet()) {
+                                if (isFirst) {
+                                        isFirst = false;
+                                } else {
+                                        sb.append(",\n");
+                                }
                                 buildIndentation(sb, indentation + INDENT);
                                 buildExpression(sb, entry.getKey(), indentation + INDENT);
                                 sb.append(" : ");
                                 buildExpression(sb, entry.getValue(), indentation + INDENT);
-                                sb.append("\n");
                         }
+                        sb.append("\n");
+                        buildIndentation(sb, indentation);
                         sb.append("}");
                 } else if (exp instanceof AST.New) {
                         sb.append("new ");
@@ -454,7 +461,6 @@ public class JSGenerator {
          */
         private void buildFun(StringBuilder sb, FunDef funDef, int indentation) throws SyntaxException {
                 assertNoAnno(funDef.annos);
-                assertNoType(funDef.superType);
 
                 // function xxx(
                 buildIndentation(sb, indentation);

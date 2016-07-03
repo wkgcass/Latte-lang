@@ -29,6 +29,7 @@ import lt.compiler.cases.*;
 import lt.compiler.err_rec.TestParserErrorRecovery;
 import lt.compiler.err_rec.TestScannerErrorRecovery;
 import lt.compiler.library.TestLibraries;
+import lt.js.TestJsSupport;
 import lt.repl.TestBugsInEval;
 import lt.repl.TestEvaluator;
 import lt.repl.TestScript;
@@ -52,7 +53,8 @@ import org.junit.runner.RunWith;
         TestParserErrorRecovery.class,
         TestScript.class,
         TestLibraries.class,
-        TestAnnotations.class
+        TestAnnotations.class,
+        TestJsSupport.class
 })
 public class Suite extends TestSuite {
 }

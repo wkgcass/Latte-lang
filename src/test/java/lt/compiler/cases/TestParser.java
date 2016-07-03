@@ -2147,6 +2147,17 @@ public class TestParser {
         }
 
         @Test
+        public void testRegex2() throws Exception {
+                List<Statement> list = parse("//abc///\n////////");
+                assertEquals(
+                        Arrays.asList(
+                                new RegexLiteral("//abc///", LineCol.SYNTHETIC),
+                                new RegexLiteral("////////", LineCol.SYNTHETIC)
+                        ), list
+                );
+        }
+
+        @Test
         public void testNew() throws Exception {
                 List<Statement> list = parse("" +
                         "new X()\n" +

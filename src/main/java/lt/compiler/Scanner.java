@@ -683,6 +683,15 @@ public class Scanner {
                                 int lastIndex = minIndex;
                                 while (true) {
                                         int index = line.indexOf(token, lastIndex + token.length());
+                                        if (token.equals("//")) {
+                                                while (line.length() > index + 2) {
+                                                        if (line.charAt(index + 2) == '/') {
+                                                                ++index;
+                                                        } else {
+                                                                break;
+                                                        }
+                                                }
+                                        }
                                         if (line.length() <= 1 || index == -1) {
                                                 err.SyntaxException("end of string not found", args.generateLineCol());
                                                 // assume that the end is line end
