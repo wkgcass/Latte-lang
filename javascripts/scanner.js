@@ -655,6 +655,15 @@ function Scanner(filename, input, config) {
                 var lastIndex = minIndex;
                 while (true) {
                     index = line.indexOf(token, lastIndex + 1);
+                    if (token == "//") {
+                        while (line.length > index + 2) {
+                            if (line[index + 2] == '/') {
+                                ++index;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
                     if (index == -1)
                         throw SyntaxException("end of string not found", args.generateLineCol());
                     var c = line[index - token.length];
