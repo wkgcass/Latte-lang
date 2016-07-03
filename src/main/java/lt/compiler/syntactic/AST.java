@@ -26,7 +26,6 @@ package lt.compiler.syntactic;
 
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.def.VariableDef;
-import lt.compiler.syntactic.literal.StringLiteral;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -703,6 +702,39 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+        }
+
+        /**
+         * new
+         */
+        public static class New implements Expression {
+                public final Invocation invocation;
+                private final LineCol lineCol;
+
+                public New(Invocation invocation, LineCol lineCol) {
+                        this.invocation = invocation;
+                        this.lineCol = lineCol;
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return lineCol;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+
+                        New aNew = (New) o;
+
+                        return invocation.equals(aNew.invocation);
+                }
+
+                @Override
+                public int hashCode() {
+                        return invocation.hashCode();
                 }
         }
 

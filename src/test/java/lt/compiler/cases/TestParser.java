@@ -2145,4 +2145,22 @@ public class TestParser {
                         ), list
                 );
         }
+
+        @Test
+        public void testNew() throws Exception {
+                List<Statement> list = parse("" +
+                        "new X()\n" +
+                        "new X");
+                AST.New aNew = new AST.New(
+                        new AST.Invocation(
+                                new AST.Access(null, "X", LineCol.SYNTHETIC),
+                                Collections.emptyList(),
+                                false,
+                                LineCol.SYNTHETIC
+                        ),
+                        LineCol.SYNTHETIC
+                );
+                assertEquals(aNew, list.get(0));
+                assertEquals(aNew, list.get(1));
+        }
 }

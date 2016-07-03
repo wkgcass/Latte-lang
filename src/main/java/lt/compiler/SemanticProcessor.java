@@ -3510,10 +3510,38 @@ public class SemanticProcessor {
                 } else if (exp instanceof RegexLiteral) {
                         // regex
                         v = parseValueFromRegex((RegexLiteral) exp);
+                } else if (exp instanceof AST.New) {
+                        v = parseValueFromNew((AST.New) exp, scope);
                 } else {
                         throw new LtBug("unknown expression " + exp);
                 }
                 return cast(requiredType, v, exp.line_col());
+        }
+
+        /**
+         * parse value from new
+         *
+         * @param aNew new
+         * @return constructing a new object
+         */
+        private Value parseValueFromNew(AST.New aNew, SemanticScope scope) throws SyntaxException {
+                SClassDef type;
+                try {
+                        type = (SClassDef) getTypeWithAccess(aNew.invocation.access, fileNameToImport.get(aNew.line_col().fileName));
+                } catch (Throwable t) {
+                        err.SyntaxException(aNew.invocation.access + " is not a class", aNew.line_col());
+                        return null;
+                }
+                assert type != null;
+                if (type.modifiers().contains(SModifier.ABSTRACT)) {
+                        err.SyntaxException("abstract class cannot be instantiated", aNew.line_col());
+                        return null;
+                }
+                List<Value> argList = new ArrayList<>();
+                for (Expression e : aNew.invocation.args) {
+                        argList.add(parseValueFromExpression(e, null, scope));
+                }
+                return constructingNewInst(type, argList, aNew.line_col());
         }
 
         private SMethodDef Pattern_compile;
@@ -3547,28 +3575,7 @@ public class SemanticProcessor {
                         compile, exp.line_col()
                 );
 
-                String rawRegex = exp.literal();
-                rawRegex = rawRegex.substring(2);
-                rawRegex = rawRegex.substring(0, rawRegex.length() - 2);
-                char[] raw = rawRegex.toCharArray();
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < raw.length; ++i) {
-                        char c = raw[i];
-                        if (c == '\\' && i < raw.length - 2) {
-                                char one = raw[i + 1];
-                                if (one == '/') {
-                                        char two = raw[i + 2];
-                                        if (two == '/') {
-                                                sb.append("//");
-                                                i += 2;
-                                                continue;
-                                        }
-                                }
-                        }
-                        sb.append(c);
-                }
-
-                String regexStr = sb.toString();
+                String regexStr = CompileUtil.getRegexStr(exp.literal());
                 Pattern p;
                 try {
                         p = Pattern.compile(regexStr);
@@ -6451,6 +6458,53 @@ public class SemanticProcessor {
         }
 
         /**
+         * constructing new instances
+         *
+         * @param classDef class definition
+         * @param argList  argument list
+         * @param lineCol  line col
+         * @return {@link lt.compiler.semantic.Ins.New} or {@link lt.compiler.semantic.Ins.InvokeDynamic}
+         * @throws SyntaxException exception
+         */
+        private Value constructingNewInst(SClassDef classDef, List<Value> argList, LineCol lineCol) throws SyntaxException {
+                out:
+                for (SConstructorDef con : classDef.constructors()) {
+                        // foreach constructor, check its parameters
+                        List<SParameter> params = con.getParameters();
+                        if (argList.size() == params.size()) {
+                                // length match
+                                for (int i = 0; i < argList.size(); ++i) {
+                                        Value v = argList.get(i);
+                                        SParameter param = params.get(i);
+
+                                        if (!param.type().isAssignableFrom(v.type())) {
+                                                // not assignable
+                                                // see whether the v.type is primitive
+                                                if (!(param.type() instanceof PrimitiveTypeDef)
+                                                        &&
+                                                        v.type() instanceof PrimitiveTypeDef) {
+                                                        v = boxPrimitive(v, LineCol.SYNTHETIC);
+                                                        if (!param.type().isAssignableFrom(v.type())) {
+                                                                continue out;
+                                                        }
+                                                } else continue out;
+                                        }
+                                }
+                                // all matches
+                                Ins.New aNew = new Ins.New(con, lineCol);
+                                argList = castArgsForMethodInvoke(argList, con.getParameters(), lineCol);
+                                aNew.args().addAll(argList);
+                                return aNew;
+                        }
+                }
+                // not found
+
+                // add current class into arg list
+                return new Ins.InvokeDynamic(getConstructBootstrapMethod(),
+                        "_init_", argList, classDef, Dynamic.INVOKE_STATIC, lineCol);
+        }
+
+        /**
          * get value from Invocation<br>
          * the Invocation may<br>
          * <ol>
@@ -6779,41 +6833,7 @@ public class SemanticProcessor {
                         }
                         if (type instanceof SClassDef) {
                                 // only SClassDef have constructors
-                                out:
-                                for (SConstructorDef con : ((SClassDef) type).constructors()) {
-                                        // foreach constructor, check its parameters
-                                        List<SParameter> params = con.getParameters();
-                                        if (argList.size() == params.size()) {
-                                                // length match
-                                                for (int i = 0; i < argList.size(); ++i) {
-                                                        Value v = argList.get(i);
-                                                        SParameter param = params.get(i);
-
-                                                        if (!param.type().isAssignableFrom(v.type())) {
-                                                                // not assignable
-                                                                // see whether the v.type is primitive
-                                                                if (!(param.type() instanceof PrimitiveTypeDef)
-                                                                        &&
-                                                                        v.type() instanceof PrimitiveTypeDef) {
-                                                                        v = boxPrimitive(v, LineCol.SYNTHETIC);
-                                                                        if (!param.type().isAssignableFrom(v.type())) {
-                                                                                continue out;
-                                                                        }
-                                                                } else continue out;
-                                                        }
-                                                }
-                                                // all matches
-                                                Ins.New aNew = new Ins.New(con, invocation.line_col());
-                                                argList = castArgsForMethodInvoke(argList, con.getParameters(), invocation.line_col());
-                                                aNew.args().addAll(argList);
-                                                return aNew;
-                                        }
-                                }
-                                // not found
-
-                                // add current class into arg list
-                                return new Ins.InvokeDynamic(getConstructBootstrapMethod(),
-                                        "_init_", argList, type, Dynamic.INVOKE_STATIC, invocation.line_col());
+                                return constructingNewInst((SClassDef) type, argList, invocation.line_col());
                         }
                 }
 

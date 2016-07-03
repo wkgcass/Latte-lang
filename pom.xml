@@ -44,7 +44,7 @@
 
     <groupId>org.latte-lang</groupId>
     <artifactId>latte-lang</artifactId>
-    <version>0.0.3-ALPHA-PRE-RELEASE</version>
+    <version>0.0.3-ALPHA</version>
 
     <build>
         <plugins>

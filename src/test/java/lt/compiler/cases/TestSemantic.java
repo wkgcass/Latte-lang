@@ -2674,4 +2674,37 @@ public class TestSemantic {
                 assertEquals("xyz//op\\bq", ((StringConstantValue) i1.arguments().get(0)).getStr());
                 assertEquals("abc", ((StringConstantValue) i2.arguments().get(0)).getStr());
         }
+
+        @Test
+        public void testNew() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A(x:int=1)\n" +
+                        "    a = new A\n" +
+                        "    b = new A(2)\n" +
+                        "    something:Object = 1\n" +
+                        "    c = new A(something)");
+                Set<STypeDef> set = parse(map);
+
+                assertEquals(1, set.size());
+
+                SClassDef classDef = (SClassDef) set.iterator().next();
+                SConstructorDef cons = classDef.constructors().get(0);
+
+                ValuePack valuePack1 = (ValuePack) cons.statements().get(2);
+                ValuePack valuePack2 = (ValuePack) cons.statements().get(3);
+                ValuePack valuePack3 = (ValuePack) cons.statements().get(5);
+
+                Ins.PutField p1 = (Ins.PutField) valuePack1.instructions().get(0);
+                Ins.PutField p2 = (Ins.PutField) valuePack2.instructions().get(0);
+                Ins.PutField p3 = (Ins.PutField) valuePack3.instructions().get(0);
+
+                assertTrue(p1.value() instanceof Ins.New);
+                assertEquals(0, ((Ins.New) p1.value()).args().size());
+                assertTrue(p2.value() instanceof Ins.New);
+                assertEquals(1, ((Ins.New) p2.value()).args().size());
+                assertTrue(p3.value() instanceof Ins.InvokeDynamic);
+                assertEquals(1, ((Ins.InvokeDynamic) p3.value()).arguments().size());
+        }
 }

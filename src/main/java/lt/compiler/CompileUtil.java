@@ -43,6 +43,7 @@ public class CompileUtil {
          */
         public static boolean isNumber(String str) {
                 try {
+                        //noinspection ResultOfMethodCallIgnored
                         Double.parseDouble(str);
                         return true;
                 } catch (NumberFormatException ignore) {
@@ -79,7 +80,8 @@ public class CompileUtil {
         private static Set<String> keys = new HashSet<>(Arrays.asList(
                 "is", "not", "bool", "yes", "no", "type", "as",
                 "undefined", "in", "elseif", "package", "import",
-                "break", "continue", "return", "fun", "require"
+                "break", "continue", "return", "fun", "require",
+                "new"
         ));
 
         private static Set<String> javaKeys = new HashSet<>(Arrays.asList(
@@ -486,5 +488,29 @@ public class CompileUtil {
                         || isOneVariableOperatorPreMustCheckExps(str)
                         || isOneVariableOperatorPreWithoutCheckingExps(str)
                         || isAssign(str);
+        }
+
+        public static String getRegexStr(String rawRegex) {
+                rawRegex = rawRegex.substring(2);
+                rawRegex = rawRegex.substring(0, rawRegex.length() - 2);
+                char[] raw = rawRegex.toCharArray();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < raw.length; ++i) {
+                        char c = raw[i];
+                        if (c == '\\' && i < raw.length - 2) {
+                                char one = raw[i + 1];
+                                if (one == '/') {
+                                        char two = raw[i + 2];
+                                        if (two == '/') {
+                                                sb.append("//");
+                                                i += 2;
+                                                continue;
+                                        }
+                                }
+                        }
+                        sb.append(c);
+                }
+
+                return sb.toString();
         }
 }

@@ -2321,4 +2321,31 @@ public class TestCodeGen {
                 cls.getConstructors();
                 // compiling pass
         }
+
+        @Test
+        public void testKeyNew() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class C(public i:int=1)\n" +
+                                "" +
+                                "class TestKeyNew\n" +
+                                "    static\n" +
+                                "        test1()=new C\n" +
+                                "        test2()=new C(2)\n" +
+                                "        test3(o)=new C(o)"
+                        , "TestKeyNew");
+                Method test1 = cls.getMethod("test1");
+                Object test1obj = test1.invoke(null);
+                assertEquals("C", test1obj.getClass().getName());
+                Field i = test1obj.getClass().getField("i");
+                assertEquals(1, i.getInt(test1obj));
+
+                Method test2 = cls.getMethod("test2");
+                Object test2obj = test2.invoke(null);
+                assertEquals(2, i.getInt(test2obj));
+
+                Method test3 = cls.getMethod("test3", Object.class);
+                Object test3obj = test3.invoke(null, 3);
+                assertEquals(3, i.getInt(test3obj));
+        }
 }

@@ -1735,6 +1735,41 @@ public class Parser {
                                                                 parsedExps.push(new AST.Require(exp, lineCol));
                                                                 parse_expression();
                                                                 break;
+                                                        case "new":
+                                                                annosIsEmpty();
+                                                                modifiersIsEmpty();
+
+                                                                // new
+                                                                lineCol = current.getLineCol();
+
+                                                                Expression next = next_exp(false);
+                                                                AST.New aNew;
+                                                                if (next instanceof AST.Invocation) {
+                                                                        if (((AST.Invocation) next).invokeWithNames) {
+                                                                                err.SyntaxException("constructing an object does not support invokeWithNames", next.line_col());
+                                                                                // assume it's not invokeWithNames
+                                                                        }
+                                                                        aNew = new AST.New((AST.Invocation) next, lineCol);
+                                                                } else if (next instanceof AST.Access) {
+                                                                        aNew = new AST.New(
+                                                                                new AST.Invocation(
+                                                                                        (AST.Access) next,
+                                                                                        Collections.emptyList(),
+                                                                                        false,
+                                                                                        next.line_col()
+                                                                                ),
+                                                                                lineCol
+                                                                        );
+                                                                } else {
+                                                                        err.UnexpectedTokenException(
+                                                                                "invoking a constructor",
+                                                                                next.toString(), next.line_col());
+                                                                        // ignore the exp
+                                                                        throw new ParseFail();
+                                                                }
+                                                                parsedExps.push(aNew);
+                                                                parse_expression();
+                                                                break;
 
                                                         default:
                                                                 err.UnexpectedTokenException(content, current.getLineCol());
