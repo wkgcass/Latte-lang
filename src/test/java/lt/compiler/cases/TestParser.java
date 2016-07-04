@@ -2174,4 +2174,36 @@ public class TestParser {
                 assertEquals(aNew, list.get(0));
                 assertEquals(aNew, list.get(1));
         }
+
+        @Test
+        public void testGeneratorSpec() throws Exception {
+                List<Statement> list = parse("" +
+                        "#lt::generator::JSGenerator\n" +
+                        "#lt::generator::JSGenerator\n" +
+                        "    a=1\n" +
+                        "(" +
+                        "    #lt::generator::JSGenerator\n" +
+                        "        a=1).charAt(0)");
+                VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
+                AST.GeneratorSpec gs2 = new AST.GeneratorSpec(
+                        new AST.Access(new AST.PackageRef("lt::generator", LineCol.SYNTHETIC), "JSGenerator", LineCol.SYNTHETIC),
+                        Collections.singletonList(v),
+                        LineCol.SYNTHETIC
+                );
+                assertEquals(
+                        Arrays.asList(
+                                new AST.GeneratorSpec(
+                                        new AST.Access(new AST.PackageRef("lt::generator", LineCol.SYNTHETIC), "JSGenerator", LineCol.SYNTHETIC),
+                                        Collections.emptyList(),
+                                        LineCol.SYNTHETIC
+                                ), gs2,
+                                new AST.Invocation(new AST.Access(
+                                        gs2, "charAt", LineCol.SYNTHETIC),
+                                        Collections.singletonList(new NumberLiteral("0", LineCol.SYNTHETIC)),
+                                        false, LineCol.SYNTHETIC)
+                        )
+                        , list
+                );
+        }
 }

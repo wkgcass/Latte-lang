@@ -2710,4 +2710,26 @@ public class TestSemantic {
                 assertTrue(p3.value() instanceof Ins.InvokeDynamic);
                 assertEquals(1, ((Ins.InvokeDynamic) p3.value()).arguments().size());
         }
+
+        @Test
+        public void testGeneratorSpec() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    a = #lt::generator::JSGenerator\n" +
+                        "        a=1");
+                Set<STypeDef> set = parse(map);
+
+                assertEquals(1, set.size());
+
+                SClassDef classDef = (SClassDef) set.iterator().next();
+                SConstructorDef cons = classDef.constructors().get(0);
+
+                ValuePack valuePack1 = (ValuePack) cons.statements().get(1);
+                Ins.PutField p1 = (Ins.PutField) valuePack1.instructions().get(0);
+                assertTrue(p1.value() instanceof StringConstantValue);
+                String str = ((StringConstantValue) p1.value()).getStr();
+                assertEquals("var a = 1;", str);
+        }
 }

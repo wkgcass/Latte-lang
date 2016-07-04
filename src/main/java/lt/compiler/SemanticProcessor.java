@@ -38,6 +38,7 @@ import lt.compiler.syntactic.operation.UnaryOneVariableOperation;
 import lt.compiler.syntactic.pre.Import;
 import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
+import lt.generator.SourceGenerator;
 import lt.lang.Dynamic;
 import lt.lang.LtRuntime;
 import lt.lang.LtIterator;
@@ -3512,10 +3513,64 @@ public class SemanticProcessor {
                         v = parseValueFromRegex((RegexLiteral) exp);
                 } else if (exp instanceof AST.New) {
                         v = parseValueFromNew((AST.New) exp, scope);
+                } else if (exp instanceof AST.GeneratorSpec) {
+                        v = parseValueFromGeneratorSpec((AST.GeneratorSpec) exp);
                 } else {
                         throw new LtBug("unknown expression " + exp);
                 }
                 return cast(requiredType, v, exp.line_col());
+        }
+
+        private Value parseValueFromGeneratorSpec(AST.GeneratorSpec gs) throws SyntaxException {
+                STypeDef type = getTypeWithAccess(gs.type, fileNameToImport.get(gs.line_col().fileName));
+                if (type instanceof SClassDef && !((SClassDef) type).modifiers().contains(SModifier.ABSTRACT)) {
+                        Class<?> c;
+                        try {
+                                c = loadClass(type.fullName());
+                        } catch (ClassNotFoundException e) {
+                                err.SyntaxException(type.fullName() + " has not been compiled", gs.type.line_col());
+                                return null;
+                        }
+                        if (!SourceGenerator.class.isAssignableFrom(c)) {
+                                err.SyntaxException(type.fullName() + " is not implementation of lt::generator::SourceGenerator", gs.type.line_col());
+                                return null;
+                        }
+                        Constructor<?> con;
+                        try {
+                                con = c.getConstructor();
+                        } catch (NoSuchMethodException e) {
+                                err.SyntaxException("cannot find constructor : " + type.fullName() + "()", gs.type.line_col());
+                                return null;
+                        }
+                        Method init;
+                        Method generate;
+                        try {
+                                init = SourceGenerator.class.getMethod("init", List.class, ErrorManager.class);
+                                generate = SourceGenerator.class.getMethod("generate");
+                        } catch (NoSuchMethodException e) {
+                                throw new LtBug(e);
+                        }
+                        String src;
+                        try {
+                                Object o = c.newInstance();
+                                init.invoke(o, gs.ast, err);
+                                src = (String) generate.invoke(o);
+                        } catch (InvocationTargetException t) {
+                                if (t.getTargetException() instanceof SyntaxException) {
+                                        throw (SyntaxException) t.getTargetException();
+                                } else {
+                                        throw new LtBug("caught exception in generator", t);
+                                }
+                        } catch (Throwable e) {
+                                throw new LtBug("caught exception in generator", e);
+                        }
+                        StringConstantValue v = new StringConstantValue(src);
+                        v.setType((SClassDef) getTypeWithName("java.lang.String", LineCol.SYNTHETIC));
+                        return v;
+                } else {
+                        err.SyntaxException("Generator should be a class", gs.line_col());
+                        return null;
+                }
         }
 
         /**

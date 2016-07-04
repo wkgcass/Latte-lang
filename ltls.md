@@ -27,6 +27,7 @@
 	5. Type Definition
 		1. class
 		2. interface
+		3. fun
 	6. Cast
 	7. Pre Defined
 4. Keywords
@@ -70,6 +71,7 @@
 	19. AnnoExpression
 	20. require
 	21. regex
+	22. generator specifying
 7. Other
 	1. Features
 		1. DSL
@@ -78,6 +80,7 @@
 		1. evaluator and script
 		2. List
 		3. Map
+		4. SourceGenerator
 	3. Libraries
 		1. html
 			* html
@@ -476,6 +479,23 @@ in `interface` :
 
 * fields' default access modifier is `public`
 * methods' default access modifier is `public`
+
+###fun
+`fun` means 'function'. It defines a class, which is sub-class of functional abstract class or implementation of functional interface.
+
+The definition writes:
+
+	fun TypeName(methodParameters) [: functional type]
+	    ... ; method statements
+
+if the `functional type` is not specified, it's replaced with `lt::lang::function::FunctionX` where `X` is `methodParameters'` count.
+    
+e.g.
+
+	fun printElem(e)
+	    println(e)
+	    
+	[1, 2, 3].forEach(printElem)
 
 ##3.6 Cast
 `number` , `string` and `bool` literals can only be parsed into limited types, and might produce a compiling error. In other circumstances, `Latte` supports a large range of type casting methods when compiling and at runtime.
@@ -1423,6 +1443,33 @@ The require can receive an expression, e.g. `require 'demo'+'.lts'`, it's the sa
 ##6.21 regex
 chapter 2.6 and 3.2.6.
 
+##6.22 generator specifying
+`Latte` allows you to generate strings from `AST`.
+
+	# generator-type
+	    ; Latte codes
+
+e.g.
+
+	# lt::generator::JSGenerator
+	    add(a,b)
+	        return a+b
+
+will generate the following string:
+
+	function add(a, b) {
+	    return a + b;
+	}
+
+The generator should implement `lt::generator::SourceGenerator`, which has two methods to override:
+
+	void init(List<Statement> ast, ErrorManager err);
+	String generate() throws SyntaxException;
+	
+The string is generated during compilation, so the `SourceGenerator` should be already compiled and loaded.
+
+>Check classes in `lt::compiler::syntactic` for info about `AST`.
+
 #7 Other
 ##7.1 Features
 ###7.1.1 DSL
@@ -1556,6 +1603,19 @@ or construct the `Map` with a function that modifies the map :
 Also, the map supports a method named `immutable()`, which transforms the map into an immutable map.
 
 	map.immutable()
+	
+##7.2.4 SourceGenerator
+It's defined as `lt::generator::SourceGenerator`, which is the base of `generator specifying`.
+
+Two methods should be overridden:
+	
+	void init(List<Statement> ast, ErrorManager err);
+	String generate() throws SyntaxException;
+	
+The first method initiates the generator with AST and ErrorManager.  
+The second method generates source codes.
+
+Note that exceptions should be thrown by ErrorManager, which can give you info about the error line.
 
 #7.3 Libraries
 ##7.3.1 html

@@ -1845,6 +1845,25 @@ public class Parser {
                                                                 annos.clear();
                                                         }
 
+                                                } else if (content.equals("#")) {
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
+
+                                                        LineCol lineCol = current.getLineCol();
+                                                        Expression theType = next_exp(true);
+                                                        if (theType instanceof AST.Access) {
+                                                                List<Statement> ast;
+                                                                if (current instanceof ElementStartNode) {
+                                                                        ast = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false);
+                                                                        nextNode(true);
+                                                                } else {
+                                                                        ast = Collections.emptyList();
+                                                                }
+                                                                parsedExps.push(new AST.GeneratorSpec((AST.Access) theType, ast, lineCol));
+                                                        } else {
+                                                                err.UnexpectedTokenException("a type", theType.toString(), theType.line_col());
+                                                        }
+
                                                 } else if (content.equals("(")) {
                                                         annosIsEmpty();
                                                         modifiersIsEmpty();

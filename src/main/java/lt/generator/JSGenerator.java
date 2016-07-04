@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package lt.js;
+package lt.generator;
 
 import lt.compiler.CompileUtil;
 import lt.compiler.ErrorManager;
@@ -44,44 +44,28 @@ import java.util.*;
 /**
  * transform latte AST into javascript code
  */
-public class JSGenerator {
+public class JSGenerator implements SourceGenerator {
         private static final int INDENT = 4;
 
-        private final Map<String, List<Statement>> fileToStatements;
-        private final ErrorManager err;
+        private List<Statement> ast;
+        private ErrorManager err;
 
-        /**
-         * construct the generator
-         *
-         * @param fileToStatements fileName to latte AST
-         * @param err              error manager
-         */
-        public JSGenerator(Map<String, List<Statement>> fileToStatements, ErrorManager err) {
-                this.fileToStatements = fileToStatements;
+        @Override
+        public void init(List<Statement> ast, ErrorManager err) {
+                this.ast = ast;
                 this.err = err;
         }
 
         /**
          * start the generation process
          *
-         * @return a map of fileName =&gt; js code
+         * @return js code
          * @throws SyntaxException exception
          */
-        public Map<String, String> generate() throws SyntaxException {
-                Map<String, String> result = new HashMap<>();
-
-                for (Map.Entry<String, List<Statement>> entry : fileToStatements.entrySet()) {
-                        String file = entry.getKey();
-                        List<Statement> ast = entry.getValue();
-
-                        StringBuilder sb = new StringBuilder();
-
-                        buildStatements(sb, ast, 0);
-
-                        result.put(file, sb.toString());
-                }
-
-                return result;
+        public String generate() throws SyntaxException {
+                StringBuilder sb = new StringBuilder();
+                buildStatements(sb, ast, 0);
+                return sb.toString().trim();
         }
 
         /**
@@ -94,7 +78,6 @@ public class JSGenerator {
          */
         private void buildStatements(StringBuilder sb, List<Statement> statements, int indentation) throws SyntaxException {
                 for (Statement stmt : statements) {
-                        buildIndentation(sb, indentation);
                         buildStatement(sb, stmt, indentation);
                         if (sb.charAt(sb.length() - 1) != '\n') {
                                 sb.append(";\n");
@@ -170,6 +153,7 @@ public class JSGenerator {
                 } else if (stmt instanceof Pre) {
                         err.SyntaxException("JavaScript don't support " + stmt, stmt.line_col());
                 } else if (stmt instanceof Expression) {
+                        buildIndentation(sb, indentation);
                         buildExpression(sb, (Expression) stmt, indentation);
                 } else if (stmt instanceof AST.Anno) {
                         err.SyntaxException("JavaScript don't support annotations", stmt.line_col());
@@ -179,48 +163,86 @@ public class JSGenerator {
                         buildIf(sb, (AST.If) stmt, indentation);
                 } else if (stmt instanceof AST.Pass) {
                         // do nothing
+                        buildIndentation(sb, indentation);
                         sb.append("/* pass */");
                 } else if (stmt instanceof AST.Return) {
+                        buildIndentation(sb, indentation);
                         sb.append("return ");
+
                         buildExpression(sb, ((AST.Return) stmt).exp, indentation);
                 } else if (stmt instanceof AST.StaticScope) {
                         err.SyntaxException("JavaScript don't support static", stmt.line_col());
+
+                        buildIndentation(sb, indentation);
                         sb.append("function static() {\n");
+
                         buildStatements(sb, ((AST.StaticScope) stmt).statements, indentation + INDENT);
+
+                        buildIndentation(sb, indentation);
                         sb.append("}\n");
                 } else if (stmt instanceof AST.Synchronized) {
                         err.SyntaxException("JavaScript don't support synchronized", stmt.line_col());
+
+                        buildIndentation(sb, indentation);
                         sb.append("function synchronized() {\n");
+
                         buildStatements(sb, ((AST.Synchronized) stmt).statements, indentation + INDENT);
+
+                        buildIndentation(sb, indentation);
                         sb.append("}\n");
                 } else if (stmt instanceof AST.Throw) {
+                        buildIndentation(sb, indentation);
                         sb.append("throw ");
+
                         buildExpression(sb, ((AST.Throw) stmt).exp, indentation);
                 } else if (stmt instanceof AST.Try) {
+
+                        buildIndentation(sb, indentation);
                         sb.append("try {\n");
+
                         buildStatements(sb, ((AST.Try) stmt).statements, indentation + INDENT);
+
+                        buildIndentation(sb, indentation);
                         sb.append("} catch (").append(((AST.Try) stmt).varName).append(") {\n");
+
                         buildStatements(sb, ((AST.Try) stmt).catchStatements, indentation + INDENT);
+
+                        buildIndentation(sb, indentation);
                         sb.append("} finally {\n");
+
                         buildStatements(sb, ((AST.Try) stmt).fin, indentation + INDENT);
+
+                        buildIndentation(sb, indentation);
                         sb.append("}\n");
                 } else if (stmt instanceof AST.While) {
                         if (((AST.While) stmt).doWhile) {
+                                buildIndentation(sb, indentation);
                                 sb.append("do {\n");
+
                                 buildStatements(sb, ((AST.While) stmt).statements, indentation + INDENT);
+
+                                buildIndentation(sb, indentation);
                                 sb.append("} while (");
+
                                 buildExpression(sb, ((AST.While) stmt).condition, indentation);
+
                                 sb.append(");\n");
                         } else {
+                                buildIndentation(sb, indentation);
                                 sb.append("while (");
+
                                 buildExpression(sb, ((AST.While) stmt).condition, indentation);
                                 sb.append(") {\n");
                                 buildStatements(sb, ((AST.While) stmt).statements, indentation + INDENT);
+
+                                buildIndentation(sb, indentation);
                                 sb.append("}\n");
                         }
                 } else if (stmt instanceof AST.Continue) {
+                        buildIndentation(sb, indentation);
                         sb.append("continue");
                 } else if (stmt instanceof AST.Break) {
+                        buildIndentation(sb, indentation);
                         sb.append("break");
                 } else throw new LtBug("unknown token " + stmt);
         }
@@ -291,6 +313,8 @@ public class JSGenerator {
                         buildExpression(sb, ((AST.Assignment) exp).assignTo, indentation);
                         sb.append(" = ");
                         buildExpression(sb, ((AST.Assignment) exp).assignFrom, indentation);
+                } else if (exp instanceof AST.GeneratorSpec) {
+                        err.SyntaxException("JavaScript don't support generator specifying", exp.line_col());
                 } else if (exp instanceof AST.AsType) {
                         err.SyntaxException("JavaScript don't support type", exp.line_col());
                 } else if (exp instanceof AST.Procedure) {
@@ -468,6 +492,7 @@ public class JSGenerator {
                 // parameters
                 buildParameters(sb, funDef.params);
                 // ) {
+                buildIndentation(sb, indentation);
                 sb.append(") {\n");
                 // statements
                 buildStatements(sb, funDef.statements, indentation + INDENT);

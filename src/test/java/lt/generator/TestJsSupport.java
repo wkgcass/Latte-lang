@@ -22,19 +22,16 @@
  * SOFTWARE.
  */
 
-package lt.js;
+package lt.generator;
 
 import lt.compiler.ErrorManager;
 import lt.compiler.Parser;
 import lt.compiler.Scanner;
 import lt.compiler.SyntaxException;
-import lt.compiler.syntactic.Statement;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashMap;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -46,10 +43,9 @@ public class TestJsSupport {
                 ErrorManager err = new ErrorManager(true);
                 Scanner scanner = new Scanner("test-js.ltjs", new StringReader(source), new Scanner.Properties(), err);
                 Parser parser = new Parser(scanner.scan(), err);
-                JSGenerator js = new JSGenerator(new HashMap<String, List<Statement>>() {{
-                        put("test-js.ltjs", parser.parse());
-                }}, err);
-                return js.generate().get("test-js.ltjs").trim();
+                JSGenerator js = new JSGenerator();
+                js.init(parser.parse(), err);
+                return js.generate();
         }
 
         @Test

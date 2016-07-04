@@ -35,4 +35,8 @@ public class LtBug extends Error {
         public LtBug(Throwable t) {
                 super(t);
         }
+
+        public LtBug(String message, Throwable cause) {
+                super(message, cause);
+        }
 }

@@ -401,6 +401,45 @@ public class AST {
         }
 
         /**
+         * specifying a generator
+         */
+        public static class GeneratorSpec implements Expression {
+                public final Access type;
+                public final List<Statement> ast;
+                private final LineCol lineCol;
+
+                public GeneratorSpec(Access type, List<Statement> ast, LineCol lineCol) {
+                        this.type = type;
+                        this.ast = ast;
+                        this.lineCol = lineCol;
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return lineCol;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+
+                        GeneratorSpec that = (GeneratorSpec) o;
+
+                        if (!type.equals(that.type)) return false;
+                        //
+                        return ast.equals(that.ast);
+                }
+
+                @Override
+                public int hashCode() {
+                        int result = type.hashCode();
+                        result = 31 * result + ast.hashCode();
+                        return result;
+                }
+        }
+
+        /**
          * if exp
          */
         public static class If implements Statement {

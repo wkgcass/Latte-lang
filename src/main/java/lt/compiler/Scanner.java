@@ -110,7 +110,8 @@ public class Scanner {
                 "..", ".:", // list generator
                 "...", // pass
                 ":::", // concat
-                ":=" // assign
+                ":=", // assign
+                "#" // generator
         ));
         /**
          * symbols that let the scanner know the following input should be scanned as a string<br>

@@ -13,6 +13,7 @@ import java.util.Set;
  */
 public class SimpleTest {
         public static void main(String[] args) throws Exception {
+                /*
                 ErrorManager err = new ErrorManager(true);
 
                 StringBuilder sb = new StringBuilder();
@@ -40,5 +41,9 @@ public class SimpleTest {
                 fos.write(b);
                 fos.flush();
                 fos.close();
+                */
+
+                char[] c = new char[]{'h', 'e', 'l', 'l', 'o'};
+                System.out.println(c);
         }
 }

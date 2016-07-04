@@ -2348,4 +2348,27 @@ public class TestCodeGen {
                 Object test3obj = test3.invoke(null, 3);
                 assertEquals(3, i.getInt(test3obj));
         }
+
+        @Test
+        public void testGeneratorSpec() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestGeneratorSpec\n" +
+                                "    static\n" +
+                                "        method1()=#lt::generator::JSGenerator\n" +
+                                "            a=1\n" +
+                                "            b=2\n" +
+                                "        method2(i)=(\n" +
+                                "            #lt::generator::JSGenerator\n" +
+                                "                a=1\n" +
+                                "        ).charAt(i)"
+                        , "TestGeneratorSpec");
+                Method method1 = cls.getMethod("method1");
+                assertEquals("var a = 1;\nvar b = 2;", method1.invoke(null));
+
+                Method method2 = cls.getMethod("method2", Object.class);
+                assertEquals('v', (char) method2.invoke(null, 0));
+                assertEquals('a', (char) method2.invoke(null, 1));
+                assertEquals('r', (char) method2.invoke(null, 2));
+        }
 }

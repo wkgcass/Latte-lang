@@ -47,6 +47,19 @@ public class Utils {
          * @param o the object to print
          */
         public static void println(Object o) {
+                if (o instanceof char[]) {
+                        System.out.println((char[]) o);
+                } else {
+                        System.out.println(o);
+                }
+        }
+
+        /**
+         * print the char array and new line
+         *
+         * @param o the char array to print
+         */
+        public static void println(char[] o) {
                 System.out.println(o);
         }
 

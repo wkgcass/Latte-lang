@@ -22,39 +22,31 @@
  * SOFTWARE.
  */
 
-package lt;
+package lt.generator;
 
-import junit.framework.TestSuite;
-import lt.compiler.cases.*;
-import lt.compiler.err_rec.TestParserErrorRecovery;
-import lt.compiler.err_rec.TestScannerErrorRecovery;
-import lt.compiler.library.TestLibraries;
-import lt.generator.TestJsSupport;
-import lt.repl.TestBugsInEval;
-import lt.repl.TestEvaluator;
-import lt.repl.TestScript;
-import org.junit.runner.RunWith;
+import lt.compiler.ErrorManager;
+import lt.compiler.SyntaxException;
+import lt.compiler.syntactic.Statement;
+
+import java.util.List;
 
 /**
- * test suite
+ * a generator that generates source code.
  */
-@RunWith(org.junit.runners.Suite.class)
-@org.junit.runners.Suite.SuiteClasses({
-        TestScanner.class,
-        TestParser.class,
-        TestParserMix.class,
-        TestSemantic.class,
-        TestCodeGen.class,
-        TestLang.class,
-        TestDemo.class,
-        TestEvaluator.class,
-        TestBugsInEval.class,
-        TestScannerErrorRecovery.class,
-        TestParserErrorRecovery.class,
-        TestScript.class,
-        TestLibraries.class,
-        TestAnnotations.class,
-        TestJsSupport.class
-})
-public class Suite extends TestSuite {
+public interface SourceGenerator {
+        /**
+         * initiate the generator. This method would be invoked after the generator is constructed.
+         *
+         * @param ast AST
+         * @param err Error manager
+         */
+        void init(List<Statement> ast, ErrorManager err);
+
+        /**
+         * generate source code.
+         *
+         * @return the source code.
+         * @throws SyntaxException exception
+         */
+        String generate() throws SyntaxException;
 }
