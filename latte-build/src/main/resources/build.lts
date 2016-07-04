@@ -1,0 +1,47 @@
+; The default configuration for the Compiler
+; This configuration is used for Java to load Latte classes
+
+Compiler() configure {
+    'classpath':[],       ; class path. classes in these URLs will be loaded for compiling
+    'threads':{           ; threads for scanner, parser and code generator
+        'scanner': 3,     ;   scanner threads         (default value is machine CPU core)
+        'parser':  3,     ;   parser threads          (default value is machine CPU core)
+        'codeGen': 3      ;   code generator threads  (default value is machine CPU core)
+    },
+    'code':{              ; some config about code
+        'autoImport': [], ;   append these imports to the end of import list in all files
+        'indentation':4,  ;   indentation of the source code
+        'lineBase':   0,  ;   all line info += lineBase
+        'columnBase': 0   ;   all column info += columnBase
+    },
+    'out':{
+        'debug': null,    ; output debug msg
+        'info':System.out,; output info msg
+        'warn':System.err,; output warn msg
+        'err': System.err ; output err msg
+    },
+    'fastFail':true,      ; the compiling process stops when any exception occurres
+                          ; set this to `true` when Latte is used as a script
+    'result':{            ; some info about compiling result
+        'outputDir':null  ;   output directory, or don't write to disk if it's not set (or is set to null)
+        'package':  null  ;   the jar file name, or null if don't wan't to pack jar. effective only when outputDir is not null
+        'main':     null  ;   main class, or null if there's no main class. effective only when package is not null
+        'with-lib': false ;   include Latte runtime libraries. effective only when package is not null
+    }
+} compile filesInDirectory('...', //.*\.lt//)
+                          ; compile these files
+                          ; use filesInDirectory('...', //.*\.lt//, true) to recursively
+                          ; compile all `lt` files in children directories
+
+/*
+Note THAT `Compiler` cannot compile scripts(*.lts), use `ScriptCompiler` instead
+you can run this script in REPL :
+
+    :script path-of-this-file
+    script run
+
+or
+
+    java -jar repl.jar -s path-of-this-file
+
+*/
