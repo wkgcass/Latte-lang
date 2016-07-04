@@ -23,7 +23,10 @@ Latte supports
 * Inner Method
 * Lambda
 * JSON Literal
+* Regular Expression
+* Generator Specifying
 * Read Eval Print Loop
+* Compiling to JavaScript (based on `Generator Specifying`)
 * many other features
 
 `Latte` is based on java 8. It's compiled to JVM byte code, and can collaborate with any java library.
@@ -32,7 +35,7 @@ Latte supports
 
 #How to build
 
-`JRE 8` is the only thing required. 
+`JDK 8` is the only thing required. 
 
 The project is managed by `Maven`, you can use `Maven 3` to build automatically
 
@@ -53,11 +56,11 @@ then the [REPL](https://github.com/wkgcass/Latte-lang/blob/master/src/main/java/
 	Type :help for more information.
 	for syntax help, please visit https://github.com/wkgcass/Latte-lang/
     
-    >1+1
+    lt> 1+1
     |
     res0 : java.lang.Integer = 2
     
-    >
+    lt>
 
 #Compile `lt` Files
 There are two ways of compiling `lt` files
@@ -90,13 +93,13 @@ or:
 
 		compiler compile {'fileName':FileObject}
 	
-	usually `filesInDirectory('...')` is used, e.g.
+	usually `filesInDirectory('...', regex)` is used, e.g.
 	
-		compiler compile filesInDirectory('...')
+		compiler compile filesInDirectory('...', //.*\.lt//)
 	
 	these method invocations can be chained up
 
-		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...')
+		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...', //.*\.lt//)
 		
 	You can write a `script` to configure the settings. Check [build.lts](https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/build.lts) for more info.
 	
@@ -114,7 +117,7 @@ or:
 	then use `script run` or `script run ['string array']` to run the script
 	
 #Syntax
-For Language Syntax Help, please visit the [Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)
+For Language Syntax Help, please visit the [Specification](https://github.com/wkgcass/Latte-lang/blob/master/ltls.md)
 
 or visit the [Latte WebSite](http://latte-lang.org/)
 
@@ -141,14 +144,17 @@ Latte 支持如下功能
 * 内部方法
 * Lambda
 * JSON 字面量
+* 正则表达式
+* 生成器指定
 * Read Eval Print Loop
+* 编译到JavaScript (基于`生成器指定`)
 * 许多其它特性
 
 `Latte`基于java8。它被编译到JVM字节码，可以与任何Java类库完美互通。
 
 #如何构建工程
 
-环境仅仅需要 `JRE 8`
+环境仅仅需要 `JDK 8`
 
 本工程使用 `Maven` 进行管理，所以您也可以使用 `Maven 3` 进行自动Build
 
@@ -169,11 +175,11 @@ clone这个仓库,然后执行
 	Type :help for more information.
 	for syntax help, please visit https://github.com/wkgcass/Latte-lang/
         
-    >1+1
+    lt> 1+1
     |
     res0 : java.lang.Integer = 2
     
-    >
+    lt>
 
 #编译 `lt` 文件
 
@@ -205,13 +211,13 @@ clone这个仓库,然后执行
 
 		compiler compile {'fileName':FileObject}
 	
-	通常来说会使用 `filesInDirectory('...')`, e.g.
+	通常来说会使用 `filesInDirectory('...', regex)`, e.g.
 
-		compiler compile filesInDirectory('/Users/me/src')
+		compiler compile filesInDirectory('/Users/me/src', //.*\.lt//)
 	
 	这些方法调用可以被串联起来
 
-		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...')
+		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...', //.*\.lt//)
 		
 	您可以编写一个脚本 `script` 来配置这些属性。查看 [build.lts](https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/build.lts) 以获取更多信息。
 	
@@ -230,6 +236,6 @@ clone这个仓库,然后执行
 #语法
 您可以从这两个地方获取语法规则
 
-[Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)
+[语法规范 (只写了英文的)](https://github.com/wkgcass/Latte-lang/blob/master/ltls.md)
 
 [Latte 主页](http://latte-lang.org/)

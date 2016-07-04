@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>latte-lang</artifactId>
+        <groupId>org.latte-lang</groupId>
+        <version>0.0.3-ALPHA</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>latte-build</artifactId>
+
+    <build>
+        <plugins>
+            <!-- runnable jar start -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>lt.repl.REPL</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>assembly</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- runnable jar end -->
+            <!-- sh and bat start -->
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <copy file="${project.basedir}/src/main/resources/latte.sh"
+                                      tofile="${project.basedir}/../latte"/>
+                                <copy file="${project.basedir}/src/main/resources/latte.bat"
+                                      tofile="${project.basedir}/../latte.bat"/>
+                                <copy file="${project.basedir}/target/${project.artifactId}-${project.version}.jar"
+                                      tofile="${project.basedir}/../repl.jar"/>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- sh and bat end -->
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.latte-lang</groupId>
+            <artifactId>latte-compiler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.latte-lang</groupId>
+            <artifactId>latte-library</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+</project>

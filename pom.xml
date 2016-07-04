@@ -3,6 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <packaging>pom</packaging>
+    <modules>
+        <module>latte-compiler</module>
+        <module>latte-compiler-maven-plugin</module>
+        <module>latte-library</module>
+        <module>latte-build</module>
+    </modules>
 
     <distributionManagement>
         <snapshotRepository>
@@ -94,80 +101,6 @@
                 </configuration>
             </plugin>
             <!-- 1.8 end -->
-            <!-- runnable jar start -->
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <appendAssemblyId>false</appendAssemblyId>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <mainClass>lt.repl.REPL</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>assembly</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- runnable jar end -->
-            <!-- sh and bat start -->
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <tasks>
-                                <copy file="${project.basedir}/src/main/resources/latte.sh"
-                                      tofile="${project.basedir}/latte"/>
-                                <copy file="${project.basedir}/src/main/resources/latte.bat"
-                                      tofile="${project.basedir}/latte.bat"/>
-                                <copy file="${project.basedir}/target/${project.artifactId}-${project.version}.jar"
-                                      tofile="${project.basedir}/repl.jar"/>
-                            </tasks>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- sh and bat end -->
-            <!-- compile -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.1.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>lt.repl.LtLibCompiler</mainClass>
-                            <arguments>
-                                <!-- the classes to load -->
-                                <argument>${project.basedir}/target/classes</argument>
-                                <!-- the resource directory -->
-                                <argument>${project.basedir}/src/main/resources</argument>
-                                <!-- the output directory -->
-                                <argument>${project.basedir}/target/classes</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- compile -->
             <!-- oss -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -197,5 +130,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <latte-version>0.0.3-ALPHA</latte-version>
     </properties>
 </project>

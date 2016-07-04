@@ -13,7 +13,10 @@ hs_err_pid*
 
 # idea #
 .idea/*
-target/*
+latte-compiler/target/*
+latte-compiler-maven-plugin/target/*
+latte-library/target/*
+latte-build/target/*
 *.iml
 
 # sh and bat #
