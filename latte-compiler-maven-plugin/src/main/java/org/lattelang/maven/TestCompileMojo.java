@@ -39,17 +39,23 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * compile latte source files.
+ * compile latte test files.
  */
-@Mojo(name = "compile")
-@Execute(phase = LifecyclePhase.COMPILE, goal = "compile")
+@Mojo(name = "test-compile")
+@Execute(phase = LifecyclePhase.TEST_COMPILE, goal = "test-compile")
 @SuppressWarnings("unused")
-public class CompileMojo extends AbstractMojo {
+public class TestCompileMojo extends AbstractMojo {
         /**
-         * The source directory
+         * The test output directory.
          */
-        @Parameter(defaultValue = "${project.build.sourceDirectory}", required = true)
-        private File sourceDirectory;
+        @Parameter(defaultValue = "${project.build.testOutputDirectory}", required = true)
+        private File testOutputDirectory;
+        /**
+         * The test output directory.
+         */
+        @Parameter(defaultValue = "${project.build.testSourceDirectory}", required = true)
+        private File testSourceDirectory;
+
         /**
          * The output directory.
          */
@@ -65,31 +71,21 @@ public class CompileMojo extends AbstractMojo {
         @SuppressWarnings("unchecked")
         @Override
         public void execute() throws MojoExecutionException, MojoFailureException {
-                // already run
-                if (getPluginContext().containsKey("org::lattelang::maven::CompileMojo")) {
-                        if (Boolean.TRUE.equals(getPluginContext().get("org::lattelang::maven::CompileMojo"))) {
-                                return;
-                        }
-                }
-
-                getPluginContext().put("org::lattelang::maven::CompileMojo", Boolean.TRUE);
-
                 Set<Artifact> artifacts = mavenProject.getDependencyArtifacts();
                 List<File> files = artifacts.stream().filter(a ->
                         !a.getScope().equals(Artifact.SCOPE_TEST)
                 ).map(Artifact::getFile).collect(Collectors.toList());
 
-                File latteSourceDirectory = new File(sourceDirectory.getParent() + "/latte");
+                File latteTestSourceDirectory = new File(testSourceDirectory.getParent() + "/latte");
 
-                getLog().info("Compiling latte source files to " + outputDirectory);
-                Compiler compiler = new Compiler(LoaderUtil.loadClassesIn(files, outputDirectory));
+                getLog().info("Compiling latte test source files to " + testOutputDirectory);
+                Compiler testCompiler = new Compiler(LoaderUtil.loadClassesIn(files, outputDirectory));
 
-                compiler.config.fastFail = false;
-                compiler.config.result.outputDir = outputDirectory;
+                testCompiler.config.fastFail = false;
+                testCompiler.config.result.outputDir = testOutputDirectory;
 
-                ClassLoader sourceLoader;
                 try {
-                        compiler.compile(Utils.filesInDirectory(latteSourceDirectory, ".*\\.lt", true));
+                        testCompiler.compile(Utils.filesInDirectory(latteTestSourceDirectory, ".*\\.lt", true));
                 } catch (Exception e) {
                         getLog().info("Compilation failed!");
                         throw new MojoFailureException("Compilation failed!", e);
