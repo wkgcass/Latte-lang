@@ -86,6 +86,9 @@
 			* html
 			* css
 		2. sql
+8. Extensions
+	1. Atom
+	2. Maven
 
 #§1 File Structure
 ##1.1 indentation
@@ -1768,3 +1771,90 @@ When using `vert.x`, you can write
 	    (res) ->
 	        ...
 	)
+	
+#8 Extensions
+##8.1 Atom
+`Latte` provides two atom packages. Search for `latte-lang` in atom preferences to have them installed.
+
+###atom-latte-lang-ide
+[Atom Package](https://atom.io/packages/atom-latte-lang-ide)
+
+Install the package and add follow the instructions provided in the link.
+
+The `atom-latte-lang-ide` help you generate, compile, and run latte source codes or scripts.
+
+### atom-latte-lang-highlighting
+[Atom Package](https://atom.io/packages/Atom-Latte-lang-Highlighting)
+
+Install the package then `*.lt` and `*.lts` would be highlighted.
+
+![](https://i.github-camo.com/6417764939ce1f533f7f0051ddfb0fc12177006b/687474703a2f2f6c617474652d6c616e672e6f72672f696d616765732f686967686c696768742e706e67)
+
+##8.2 Maven
+A plugin for `Maven 3` is provided, which helps you compile latte source codes or run latte scripts.
+
+###How to use
+###step1
+add the plugin configuration:
+
+	<plugin>
+		<groupId>org.latte-lang</groupId>
+		<artifactId>latte-maven-plugin</artifactId>
+		<version>LATEST</version>
+		<executions>
+			<execution>
+				<id>compile</id>
+				<phase>compile</phase>
+				<goals>
+					<goal>compile</goal>
+				</goals>
+			</execution>
+			<execution>
+				<id>test-compile</id>
+				<phase>test-compile</phase>
+				<goals>
+					<goal>test-compile</goal>
+				</goals>
+			</execution>
+		</executions>
+	</plugin>
+	
+Not all executions are required. For example, you can omit the `test-compile` execution if the project only contains `main` source code.
+	
+###step2
+create a folder named `latte` in the same parent directory. The directory tree should be:
+
+	src
+	├── main
+	│   ├── java
+	│   │   └── *.java    ; java source
+	│   ├── latte
+	│   │   └── *.lt      ; latte source
+	│   └── resources
+	│       │── *.lts     ; latte scripts
+	│       └── other resources
+	└── test
+	    ├── java
+	    │   └── *.java
+	    ├── latte
+	    │   └── *.lt
+	    └── resources
+	        ├── *.lts
+	        └── other resources
+
+###step3
+run
+
+	mvn clean package
+	
+###step4
+you can also run latte scripts with the `latte-maven-plugin`.
+
+run
+
+	mvn clean latte:run -Dscript=<the script in classpath>
+	
+The `run` goal is bond to `test` phase, so all classes would be compiled and tested first executing the script.
+
+>Note that the plugin ends as soon as the script main thread finishes. If you are running multiple thread application, a loop which blocks current thread should be explicitly given.  
+>Or use api of the multiple thread application to block the thread, e.g. `jettyServer.join()`.

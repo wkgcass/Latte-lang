@@ -17,7 +17,7 @@
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
-                    <appendAssemblyId>false</appendAssemblyId>
+                    <appendAssemblyId>true</appendAssemblyId>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
@@ -53,8 +53,6 @@
                                       tofile="${project.basedir}/../latte"/>
                                 <copy file="${project.basedir}/src/main/resources/latte.bat"
                                       tofile="${project.basedir}/../latte.bat"/>
-                                <copy file="${project.basedir}/target/${project.artifactId}-${project.version}.jar"
-                                      tofile="${project.basedir}/../repl.jar"/>
                             </tasks>
                         </configuration>
                     </execution>

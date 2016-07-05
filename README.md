@@ -27,6 +27,7 @@ Latte supports
 * Generator Specifying
 * Read Eval Print Loop
 * Compiling to JavaScript (based on `Generator Specifying`)
+* Latte Maven Plugin
 * many other features
 
 `Latte` is based on java 8. It's compiled to JVM byte code, and can collaborate with any java library.
@@ -115,6 +116,75 @@ or:
 	type `:script <script file>` and Enter
 
 	then use `script run` or `script run ['string array']` to run the script
+
+#Maven Plugin
+A plugin for `Maven 3` is provided, which helps you compile latte source codes or run latte scripts.
+
+###How to use
+###step1
+add the plugin configuration:
+
+	<plugin>
+		<groupId>org.latte-lang</groupId>
+		<artifactId>latte-maven-plugin</artifactId>
+		<version>LATEST</version>
+		<executions>
+			<execution>
+				<id>compile</id>
+				<phase>compile</phase>
+				<goals>
+					<goal>compile</goal>
+				</goals>
+			</execution>
+			<execution>
+				<id>test-compile</id>
+				<phase>test-compile</phase>
+				<goals>
+					<goal>test-compile</goal>
+				</goals>
+			</execution>
+		</executions>
+	</plugin>
+	
+Not all executions are required. For example, you can omit the `test-compile` execution if the project only contains `main` source code.
+	
+###step2
+create a folder named `latte` in the same parent directory. The directory tree should be:
+
+	src
+	├── main
+	│   ├── java
+	│   │   └── *.java    ; java source
+	│   ├── latte
+	│   │   └── *.lt      ; latte source
+	│   └── resources
+	│       │── *.lts     ; latte scripts
+	│       └── other resources
+	└── test
+	    ├── java
+	    │   └── *.java
+	    ├── latte
+	    │   └── *.lt
+	    └── resources
+	        ├── *.lts
+	        └── other resources
+
+###step3
+run
+
+	mvn clean package
+	
+###step4
+you can also run latte scripts with the `latte-maven-plugin`.
+
+run
+
+	mvn clean latte:run -Dscript=<the script in classpath>
+	
+The `run` goal is bond to `test` phase, so all classes would be compiled and tested before executing the script.
+
+>Note that the plugin ends as soon as the script main thread finishes. If you are running multiple thread application, a loop which blocks current thread should be explicitly given.  
+>Or use api of the multiple thread application to block the thread, e.g. `jettyServer.join()`.
 	
 #Syntax
 For Language Syntax Help, please visit the [Specification](https://github.com/wkgcass/Latte-lang/blob/master/ltls.md)
@@ -148,6 +218,7 @@ Latte 支持如下功能
 * 生成器指定
 * Read Eval Print Loop
 * 编译到JavaScript (基于`生成器指定`)
+* Latte Maven Plugin
 * 许多其它特性
 
 `Latte`基于java8。它被编译到JVM字节码，可以与任何Java类库完美互通。
@@ -233,6 +304,74 @@ clone这个仓库,然后执行
 
 	然后使用 `script run` 或者 `script run ['string array']` 来运行这个脚本
 	
+#Maven 插件
+提供了一个`Maven 3`的插件， 这个插件可以用来编译和运行`latte`源文件和脚本（script）。
+
+###如何使用
+###step1
+添加如下maven plugin配置：
+
+	<plugin>
+		<groupId>org.latte-lang</groupId>
+		<artifactId>latte-maven-plugin</artifactId>
+		<version>LATEST</version>
+		<executions>
+			<execution>
+				<id>compile</id>
+				<phase>compile</phase>
+				<goals>
+					<goal>compile</goal>
+				</goals>
+			</execution>
+			<execution>
+				<id>test-compile</id>
+				<phase>test-compile</phase>
+				<goals>
+					<goal>test-compile</goal>
+				</goals>
+			</execution>
+		</executions>
+	</plugin>
+	
+并不是所有`execution`都是必须的。比如说，如果工程内只有`main`，你就可以省略`test-compile`。
+	
+###step2
+在同一个上级目录中创建名称为`latte`的目录。目录结构树应当为：
+
+	src
+	├── main
+	│   ├── java
+	│   │   └── *.java    ; java source
+	│   ├── latte
+	│   │   └── *.lt      ; latte source
+	│   └── resources
+	│       │── *.lts     ; latte scripts
+	│       └── other resources
+	└── test
+	    ├── java
+	    │   └── *.java
+	    ├── latte
+	    │   └── *.lt
+	    └── resources
+	        ├── *.lts
+	        └── other resources
+
+###step3
+运行
+
+	mvn clean package
+	
+###step4
+你可以使用 `latte-maven-plugin` 来执行脚本。
+run
+
+	mvn clean latte:run -Dscript=<the script in classpath>
+	
+`run` goal 绑定在 `test` 阶段，所以在执行前，所有的类都会被编译并测试。
+
+>请注意该插件在脚本主线程结束时结束。如果你运行了一个多线程应用，请务必加上一个阻塞线程的循环。  
+>或者使用多线程应用提供的api来阻塞现场，比如说 `jettyServer.join()`
+
 #语法
 您可以从这两个地方获取语法规则
 

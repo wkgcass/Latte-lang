@@ -9,6 +9,6 @@ shift
 goto getArg
 :end
 
-java -jar "!cd!/repl.jar" !input!
+java -jar "!cd!/latte-build/target/latte-build-0.0.3-ALPHA-jar-with-dependencies.jar" !input!
 
 endlocal EnableDelayedExpansion

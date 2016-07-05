@@ -15,7 +15,7 @@ hs_err_pid*
 .idea/*
 /target/*
 latte-compiler/target/*
-latte-compiler-maven-plugin/target/*
+latte-maven-plugin/target/*
 latte-library/target/*
 latte-build/target/*
 *.iml
