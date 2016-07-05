@@ -6,7 +6,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>latte-compiler</module>
-        <module>latte-compiler-maven-plugin</module>
+        <module>latte-maven-plugin</module>
         <module>latte-library</module>
         <module>latte-build</module>
     </modules>

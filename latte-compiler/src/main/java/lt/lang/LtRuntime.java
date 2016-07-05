@@ -29,6 +29,7 @@ import lt.lang.function.Function1;
 import lt.repl.ScriptCompiler;
 
 import java.io.FileReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.*;
@@ -705,8 +706,8 @@ public class LtRuntime {
                 // `file` format
                 if (file.startsWith("cp:")) {
                         tmp = tmp.substring("cp:".length()).trim();
-                        if (!tmp.startsWith("/")) {
-                                tmp = "/" + tmp;
+                        if (tmp.startsWith("/")) {
+                                tmp = tmp.substring(1);
                         }
                         file = "cp:" + tmp;
                 }
@@ -718,8 +719,12 @@ public class LtRuntime {
                         if (requiredObjects.containsKey(file)) return requiredObjects.get(file);
 
                         // get reader
-                        r = new InputStreamReader(
-                                Utils.class.getResourceAsStream(file.substring("cp:".length())));
+                        ClassLoader loader = callerClass.getClassLoader();
+                        InputStream is = loader.getResourceAsStream(tmp);
+                        if (is == null) {
+                                throw new RuntimeException("cannot find " + file + " in class loader " + loader);
+                        }
+                        r = new InputStreamReader(is);
                 } else {
                         // get from recorder
                         if (requiredObjects.containsKey(file)) return requiredObjects.get(file);

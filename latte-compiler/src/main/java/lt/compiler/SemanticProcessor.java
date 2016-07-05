@@ -3552,7 +3552,7 @@ public class SemanticProcessor {
                         }
                         String src;
                         try {
-                                Object o = c.newInstance();
+                                Object o = con.newInstance();
                                 init.invoke(o, gs.ast, err);
                                 src = (String) generate.invoke(o);
                         } catch (InvocationTargetException t) {
@@ -8631,10 +8631,33 @@ public class SemanticProcessor {
          * @throws ClassNotFoundException exception
          */
         private Class<?> loadClass(String name) throws ClassNotFoundException {
+                int dimensions = 0; // 0 means not an array
+                if (name.startsWith("[") && name.endsWith(";")) {
+                        int i = 0;
+                        char[] chars = name.toCharArray();
+                        for (; i < chars.length; ++i) {
+                                if (chars[i] == '[') {
+                                        ++dimensions;
+                                } else {
+                                        break;
+                                }
+                        }
+                        name = name.substring(i + 1); // chars[i] should be `L`
+                        name = name.substring(0, name.length() - 1); // remove `;`
+                }
+
+                Class<?> cls;
                 try {
-                        return Class.forName(name);
+                        cls = Class.forName(name);
                 } catch (ClassNotFoundException e) {
-                        return classLoader.loadClass(name);
+                        cls = classLoader.loadClass(name);
+                }
+
+                if (dimensions == 0) {
+                        return cls;
+                } else {
+                        int[] d = new int[dimensions];
+                        return Array.newInstance(cls, d).getClass();
                 }
         }
 }

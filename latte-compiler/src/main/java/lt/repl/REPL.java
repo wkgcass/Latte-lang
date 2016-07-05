@@ -59,7 +59,7 @@ public class REPL {
                         System.out.println();
                         System.out.print(lineStarter);
 
-                        ClassPathLoader classPathLoader = new ClassPathLoader();
+                        ClassPathLoader classPathLoader = new ClassPathLoader(Thread.currentThread().getContextClassLoader());
 
                         Evaluator evaluator = new Evaluator(classPathLoader);
                         Scanner scanner = new Scanner(System.in);
@@ -92,7 +92,7 @@ public class REPL {
                                                 evaluator = new Evaluator(classPathLoader);
                                         } else if (cmd.equals(":restart")) {
                                                 sb.delete(0, sb.length());
-                                                classPathLoader = new ClassPathLoader();
+                                                classPathLoader = new ClassPathLoader(Thread.currentThread().getContextClassLoader());
                                                 evaluator = new Evaluator(classPathLoader);
                                         } else if (cmd.startsWith(":cp ")) {
                                                 String cp = cmd.substring(":cp ".length()).trim();
@@ -327,7 +327,7 @@ public class REPL {
 
                                         try {
                                                 FileWriter fw = new FileWriter(file);
-                                                BufferedReader br = new BufferedReader(new InputStreamReader(REPL.class.getResourceAsStream("/" + theFile + ".template")));
+                                                BufferedReader br = new BufferedReader(new InputStreamReader(REPL.class.getClassLoader().getResourceAsStream(theFile + ".template")));
 
                                                 String ss;
                                                 while ((ss = br.readLine()) != null) {

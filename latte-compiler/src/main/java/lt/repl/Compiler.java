@@ -678,7 +678,7 @@ public class Compiler {
                                                 CLASSES.sort(null);
 
                                                 for (String C : CLASSES) {
-                                                        InputStream is = Compiler.class.getResourceAsStream("/" + C);
+                                                        InputStream is = Compiler.class.getClassLoader().getResourceAsStream(C);
                                                         ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
                                                         byte[] bs = new byte[1024];
                                                         int n;
@@ -692,7 +692,7 @@ public class Compiler {
 
                                 // add required files
                                 for (String f : Arrays.asList("build.lts.template", "run.lts.template")) {
-                                        InputStream is = Compiler.class.getResourceAsStream("/" + f);
+                                        InputStream is = Compiler.class.getClassLoader().getResourceAsStream(f);
                                         if (is != null) {
                                                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
                                                 byte[] bs = new byte[1024];

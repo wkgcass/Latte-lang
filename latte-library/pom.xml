@@ -15,7 +15,7 @@
         <plugins>
             <plugin>
                 <groupId>org.latte-lang</groupId>
-                <artifactId>latte-compiler-maven-plugin</artifactId>
+                <artifactId>latte-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <executions>
                     <execution>

@@ -1,8 +1,10 @@
 import lt.compiler.*;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
+import lt.repl.Compiler;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +45,6 @@ public class SimpleTest {
                 fos.close();
                 */
 
-                char[] c = new char[]{'h', 'e', 'l', 'l', 'o'};
-                System.out.println(c);
+                System.out.println(Class.forName("[Ljava.lang.Object;"));
         }
 }

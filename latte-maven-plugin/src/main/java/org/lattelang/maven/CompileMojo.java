@@ -26,22 +26,18 @@ package org.lattelang.maven;
 
 import lt.lang.Utils;
 import lt.repl.Compiler;
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
-import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * compile latte source files.
  */
-@Mojo(name = "compile")
+@Mojo(name = "compile", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 @Execute(phase = LifecyclePhase.COMPILE, goal = "compile")
 @SuppressWarnings("unused")
 public class CompileMojo extends AbstractMojo {
@@ -55,12 +51,11 @@ public class CompileMojo extends AbstractMojo {
          */
         @Parameter(defaultValue = "${project.build.outputDirectory}", required = true)
         private File outputDirectory;
-
         /**
-         * The project.
+         * dependencies.
          */
-        @Parameter(defaultValue = "${project}", required = true)
-        private MavenProject mavenProject;
+        @Parameter(defaultValue = "${project.compileClasspathElements}", required = true)
+        private List<String> dependencies;
 
         @SuppressWarnings("unchecked")
         @Override
@@ -74,15 +69,10 @@ public class CompileMojo extends AbstractMojo {
 
                 getPluginContext().put("org::lattelang::maven::CompileMojo", Boolean.TRUE);
 
-                Set<Artifact> artifacts = mavenProject.getDependencyArtifacts();
-                List<File> files = artifacts.stream().filter(a ->
-                        !a.getScope().equals(Artifact.SCOPE_TEST)
-                ).map(Artifact::getFile).collect(Collectors.toList());
-
                 File latteSourceDirectory = new File(sourceDirectory.getParent() + "/latte");
 
                 getLog().info("Compiling latte source files to " + outputDirectory);
-                Compiler compiler = new Compiler(LoaderUtil.loadClassesIn(files, outputDirectory));
+                Compiler compiler = new Compiler(LoaderUtil.loadClassesIn(dependencies));
 
                 compiler.config.fastFail = false;
                 compiler.config.result.outputDir = outputDirectory;
@@ -91,7 +81,7 @@ public class CompileMojo extends AbstractMojo {
                 try {
                         compiler.compile(Utils.filesInDirectory(latteSourceDirectory, ".*\\.lt", true));
                 } catch (Exception e) {
-                        getLog().info("Compilation failed!");
+                        getLog().error("Compilation failed!");
                         throw new MojoFailureException("Compilation failed!", e);
                 }
 

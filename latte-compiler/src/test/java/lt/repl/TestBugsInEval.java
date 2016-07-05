@@ -99,7 +99,7 @@ public class TestBugsInEval {
          */
         @Test
         public void test1() throws Exception {
-                Evaluator evaluator = new Evaluator(new ClassPathLoader());
+                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                 evaluator.eval("arr:[]String=[null]");
                 Evaluator.Entry entry = evaluator.eval("arr[0]='abc'");
                 assertEquals("res0", entry.name);
@@ -152,7 +152,7 @@ public class TestBugsInEval {
          */
         @Test
         public void test2() throws Exception {
-                Evaluator evaluator = new Evaluator(new ClassPathLoader());
+                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                 evaluator.eval("" +
                         "class Test\n" +
                         "    m(a):Unit");

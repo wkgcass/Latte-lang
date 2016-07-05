@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
  * test evaluator
  */
 public class TestEvaluator {
-        private static final ClassPathLoader CLASS_PATH_LOADER = new ClassPathLoader();
+        private static final ClassPathLoader CLASS_PATH_LOADER = new ClassPathLoader(Thread.currentThread().getContextClassLoader());
 
         @Test
         public void testSimpleCode() throws Exception {

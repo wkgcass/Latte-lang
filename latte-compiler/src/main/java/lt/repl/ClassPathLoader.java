@@ -31,17 +31,9 @@ import java.net.URLClassLoader;
 /**
  * jar class loader
  */
-public class ClassPathLoader extends ClassLoader {
-        private URLClassLoader urlClassLoader;
-
-        public ClassPathLoader() {
-                super(null);
-                this.urlClassLoader = URLClassLoader.newInstance(new URL[0]);
-        }
-
+public class ClassPathLoader extends URLClassLoader {
         public ClassPathLoader(ClassLoader loader) {
-                super(null);
-                this.urlClassLoader = URLClassLoader.newInstance(new URL[0], loader);
+                super(new URL[0], loader);
         }
 
         /**
@@ -52,22 +44,6 @@ public class ClassPathLoader extends ClassLoader {
          * @throws ClassNotFoundException exception
          */
         public void load(URL url) throws IOException, ClassNotFoundException {
-                urlClassLoader = URLClassLoader.newInstance(new URL[]{url}, urlClassLoader);
-        }
-
-        /**
-         * load a class, invoking {@link URLClassLoader#loadClass(String, boolean)}
-         *
-         * @param name    name
-         * @param resolve whether to resolve
-         * @return the class
-         * @throws ClassNotFoundException exceptions
-         */
-        public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                Class<?> cls = urlClassLoader.loadClass(name);
-                if (resolve) {
-                        resolveClass(cls);
-                }
-                return cls;
+                addURL(url);
         }
 }
