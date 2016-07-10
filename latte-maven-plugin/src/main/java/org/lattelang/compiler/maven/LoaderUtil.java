@@ -1,4 +1,4 @@
-package org.lattelang.maven;
+package org.lattelang.compiler.maven;
 
 import java.io.File;
 import java.net.MalformedURLException;

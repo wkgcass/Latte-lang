@@ -16,6 +16,7 @@
             <!-- runnable jar start -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.6</version>
                 <configuration>
                     <appendAssemblyId>true</appendAssemblyId>
                     <descriptorRefs>
@@ -40,20 +41,25 @@
             <!-- runnable jar end -->
             <!-- sh and bat start -->
             <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.1.1</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
                         <goals>
-                            <goal>run</goal>
+                            <goal>java</goal>
                         </goals>
                         <configuration>
-                            <tasks>
-                                <copy file="${project.basedir}/src/main/resources/latte.sh"
-                                      tofile="${project.basedir}/../latte"/>
-                                <copy file="${project.basedir}/src/main/resources/latte.bat"
-                                      tofile="${project.basedir}/../latte.bat"/>
-                            </tasks>
+                            <mainClass>org.lattelang.compiler.build.ShellCommandGenerator</mainClass>
+                            <arguments>
+                                <!-- version -->
+                                <argument>${project.version}</argument>
+                                <!-- output dir -->
+                                <argument>${project.basedir}/../</argument>
+                                <!-- jar file dir -->
+                                <argument>${project.build.directory}</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>

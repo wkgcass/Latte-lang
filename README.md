@@ -6,7 +6,7 @@ Latte is a JVM language. It's highly readable and extensible.
 
 Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about Latte.
 
-[Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)  
+[Syntax Specification]([语法规则](https://github.com/wkgcass/Latte-lang/blob/master/ltls.md) )  
 [Latte WebSite](http://latte-lang.org/)
 
 `Atom` Extensions :
@@ -14,7 +14,11 @@ Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about L
 [atom-latte-lang-highlighting](https://atom.io/packages/Atom-Latte-lang-Highlighting)  
 [atom-latte-lang-ide](https://atom.io/packages/atom-latte-lang-ide)
 
-Latte supports 
+`Maven` Plugin :
+
+[latte-maven-plugin](#mvn-plugin)
+
+###Latte supports
 
 * Operator Binding
 * DSL
@@ -44,13 +48,13 @@ clone the repository, and run
 
 	mvn clean package
 	
-You will get a runnable jar (`repl.jar`) and two shell scripts (`latte` and `latte.bat`). The shell scripts can help you run the `repl`.
+You will get two shell scripts (`latte` and `latte.bat`). The shell scripts can help you run the `repl`.
 
 run:
 
 	./latte
 	
-then the [REPL](https://github.com/wkgcass/Latte-lang/blob/master/src/main/java/lt/repl/REPL.java) starts
+then the [REPL](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/java/lt/repl/REPL.java) starts
     
 	Welcome to Latte lang
 	Type in expressions and double Enter to have them evaluated.
@@ -102,7 +106,7 @@ or:
 
 		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...', //.*\.lt//)
 		
-	You can write a `script` to configure the settings. Check [build.lts](https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/build.lts) for more info.
+	You can write a `script` to configure the settings. Check [build.lts](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/resources/build.lts) for more info.
 	
 #Scripts
 
@@ -117,7 +121,7 @@ or:
 
 	then use `script run` or `script run ['string array']` to run the script
 
-#Maven Plugin
+<h1 id='mvn-plugin'>Maven Plugin</h1>
 A plugin for `Maven 3` is provided, which helps you compile latte source codes or run latte scripts.
 
 ###How to use
@@ -197,7 +201,7 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
 点击 [这里](http://latte-lang.org/index.html#theVideo) 观看有关Latte的视频。
 
-[Wiki Pages](https://github.com/wkgcass/Latte-lang/wiki)  
+[语法规则](https://github.com/wkgcass/Latte-lang/blob/master/ltls.md)  
 [Latte 主页](http://latte-lang.org/)
 
 `Atom`上的扩展插件:
@@ -205,7 +209,11 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 [atom-latte-lang-highlighting](https://atom.io/packages/Atom-Latte-lang-Highlighting)  
 [atom-latte-lang-ide](https://atom.io/packages/atom-latte-lang-ide)
 
-Latte 支持如下功能
+`Maven` Plugin :
+
+[latte-maven-plugin](#mvn-plugin-ch)
+
+###Latte 支持如下功能
 
 * 运算符绑定
 * DSL
@@ -233,13 +241,13 @@ clone这个仓库,然后执行
 
 	mvn clean package
 	
-你将会获取一个可执行jar (`repl.jar`) 以及两个shell脚本 (`latte` 和 `latte.bat`), shell脚本可以快捷地开启`repl`.
+你将会获取两个shell脚本 (`latte` 和 `latte.bat`), shell脚本可以快捷地开启`repl`.
                        
 执行:
                        
 	./latte
 	
-接着, [REPL](https://github.com/wkgcass/Latte-lang/blob/master/src/main/java/lt/repl/REPL.java) 将开始运行
+接着, [REPL](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/java/lt/repl/REPL.java) 将开始运行
     
 	Welcome to Latte lang
 	Type in expressions and double Enter to have them evaluated.
@@ -290,7 +298,7 @@ clone这个仓库,然后执行
 
 		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...', //.*\.lt//)
 		
-	您可以编写一个脚本 `script` 来配置这些属性。查看 [build.lts](https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/build.lts) 以获取更多信息。
+	您可以编写一个脚本 `script` 来配置这些属性。查看 [build.lts](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/resources/build.lts) 以获取更多信息。
 	
 #Scripts
 * 你可以直接运行脚本
@@ -304,7 +312,7 @@ clone这个仓库,然后执行
 
 	然后使用 `script run` 或者 `script run ['string array']` 来运行这个脚本
 	
-#Maven 插件
+<h1 id='mvn-plugin-ch'>Maven 插件</h1>
 提供了一个`Maven 3`的插件， 这个插件可以用来编译和运行`latte`源文件和脚本（script）。
 
 ###如何使用

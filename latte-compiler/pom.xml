@@ -11,5 +11,34 @@
 
     <artifactId>latte-compiler</artifactId>
 
+    <build>
+        <plugins>
+            <!-- classes -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.1.1</version>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>org.lattelang.compiler.ClassRecorder</mainClass>
+                            <arguments>
+                                <!-- the classes to load and output classes.txt -->
+                                <argument>${project.basedir}/target/classes</argument>
+                                <!-- file name -->
+                                <argument>classes.txt</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- classes -->
+        </plugins>
+    </build>
+
 
 </project>

@@ -115,6 +115,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <useAgent>false</useAgent>
+                </configuration>
             </plugin>
             <!-- oss -->
         </plugins>

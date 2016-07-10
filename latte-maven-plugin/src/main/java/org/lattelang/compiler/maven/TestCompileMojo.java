@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package org.lattelang.maven;
+package org.lattelang.compiler.maven;
 
 import lt.lang.Utils;
 import lt.repl.Compiler;
@@ -35,22 +35,22 @@ import java.io.File;
 import java.util.List;
 
 /**
- * compile latte source files.
+ * compile latte test files.
  */
-@Mojo(name = "compile", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
-@Execute(phase = LifecyclePhase.COMPILE, goal = "compile")
+@Mojo(name = "test-compile", requiresDependencyResolution = ResolutionScope.TEST)
+@Execute(phase = LifecyclePhase.TEST_COMPILE, goal = "test-compile")
 @SuppressWarnings("unused")
-public class CompileMojo extends AbstractMojo {
+public class TestCompileMojo extends AbstractMojo {
         /**
-         * The source directory
+         * The test output directory.
          */
-        @Parameter(defaultValue = "${project.build.sourceDirectory}", required = true)
-        private File sourceDirectory;
+        @Parameter(defaultValue = "${project.build.testOutputDirectory}", required = true)
+        private File testOutputDirectory;
         /**
-         * The output directory.
+         * The test output directory.
          */
-        @Parameter(defaultValue = "${project.build.outputDirectory}", required = true)
-        private File outputDirectory;
+        @Parameter(defaultValue = "${project.build.testSourceDirectory}", required = true)
+        private File testSourceDirectory;
         /**
          * dependencies.
          */
@@ -60,26 +60,16 @@ public class CompileMojo extends AbstractMojo {
         @SuppressWarnings("unchecked")
         @Override
         public void execute() throws MojoExecutionException, MojoFailureException {
-                // already run
-                if (getPluginContext().containsKey("org::lattelang::maven::CompileMojo")) {
-                        if (Boolean.TRUE.equals(getPluginContext().get("org::lattelang::maven::CompileMojo"))) {
-                                return;
-                        }
-                }
+                File latteTestSourceDirectory = new File(testSourceDirectory.getParent() + "/latte");
 
-                getPluginContext().put("org::lattelang::maven::CompileMojo", Boolean.TRUE);
+                getLog().info("Compiling latte test source files to " + testOutputDirectory);
+                Compiler testCompiler = new Compiler(LoaderUtil.loadClassesIn(dependencies));
 
-                File latteSourceDirectory = new File(sourceDirectory.getParent() + "/latte");
+                testCompiler.config.fastFail = false;
+                testCompiler.config.result.outputDir = testOutputDirectory;
 
-                getLog().info("Compiling latte source files to " + outputDirectory);
-                Compiler compiler = new Compiler(LoaderUtil.loadClassesIn(dependencies));
-
-                compiler.config.fastFail = false;
-                compiler.config.result.outputDir = outputDirectory;
-
-                ClassLoader sourceLoader;
                 try {
-                        compiler.compile(Utils.filesInDirectory(latteSourceDirectory, ".*\\.lt", true));
+                        testCompiler.compile(Utils.filesInDirectory(latteTestSourceDirectory, ".*\\.lt", true));
                 } catch (Exception e) {
                         getLog().error("Compilation failed!");
                         throw new MojoFailureException("Compilation failed!", e);

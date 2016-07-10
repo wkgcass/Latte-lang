@@ -196,7 +196,8 @@ public class REPL {
                                         "       -c <source-directory> [-r] [-o <output-directory>] [-cp <classpath[:...]>]\n" +
                                         "       ClassName [-cp <classpath[:...]>]\n" +
                                         "       -gb <project-directory>\n" +
-                                        "       -repl" +
+                                        "       -repl\n" +
+                                        "       -v | -version\n" +
                                         "\n" +
                                         "-s       Specify the script location and run the script\n" +
                                         "-c       Specify the source file directory and compile *.lt files\n" +
@@ -204,7 +205,12 @@ public class REPL {
                                         "-o       [option] Specify the output directory. (the source-directory/target/classes/ as default)\n" +
                                         "-cp      [option] The classpath. use ':' to separate the class-paths\n" +
                                         "-repl    Start the repl (or run the program with 0 arguments)\n" +
-                                        "-gb      Generate build.lts and run.lts in the given directory");
+                                        "-gb      Generate build.lts and run.lts in the given directory\n" +
+                                        "-version Show current version\n");
+                                break;
+                        case "-v":
+                        case "-version":
+                                System.out.println("Latte-lang 0.0.3-ALPHA");
                                 break;
                         case "-s":
                                 // run scripts
@@ -238,7 +244,11 @@ public class REPL {
                                                 "see --help");
                                         return;
                                 }
-                                String sourceDir = args[1];
+                                String sourceDir = args[1].trim();
+                                if (sourceDir.endsWith(File.separator)) {
+                                        sourceDir = sourceDir.substring(0, sourceDir.length() - File.separator.length());
+                                }
+
                                 boolean recursive = false;
                                 String outputDir = sourceDir + File.separator + "target" + File.separator + "classes";
                                 List<URL> classPaths = new ArrayList<>();
@@ -283,7 +293,8 @@ public class REPL {
 
                                 Compiler compiler = new Compiler();
                                 File outputDirFile = new File(outputDir);
-                                if (!outputDirFile.exists()) outputDirFile.mkdirs();
+                                if (!outputDirFile.exists()) //noinspection ResultOfMethodCallIgnored
+                                        outputDirFile.mkdirs();
                                 compiler.config.result.outputDir = outputDirFile;
                                 compiler.config.classpath = classPaths;
 
@@ -307,7 +318,10 @@ public class REPL {
                                         System.err.println("see --help");
                                         return;
                                 }
-                                String projectDir = args[1];
+                                String projectDir = args[1].trim();
+                                if (projectDir.endsWith(File.separator)) {
+                                        projectDir = projectDir.substring(0, projectDir.length() - File.separator.length());
+                                }
 
                                 String core = String.valueOf(Runtime.getRuntime().availableProcessors());
                                 String separator = File.separator;
@@ -319,6 +333,7 @@ public class REPL {
                                                 System.out.println("[INFO] " + filePath + " exists");
                                         } else {
                                                 try {
+                                                        //noinspection ResultOfMethodCallIgnored
                                                         file.createNewFile();
                                                 } catch (IOException e) {
                                                         e.printStackTrace();

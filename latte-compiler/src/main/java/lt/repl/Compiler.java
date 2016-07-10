@@ -45,6 +45,7 @@ import java.util.zip.ZipOutputStream;
  * finally creates a ThreadPool to run Code Generation and write files to disk (or store these byte code for loading)<br>
  * if requires loading, then load all these generated classes
  */
+@SuppressWarnings("unused")
 public class Compiler {
         private static final int availableProcessors = Runtime.getRuntime().availableProcessors();
 
@@ -345,7 +346,8 @@ public class Compiler {
                                                 Object o = re.get("outputDir");
                                                 if (o instanceof String) {
                                                         File f = new File((String) o);
-                                                        if (!f.exists()) f.mkdirs();
+                                                        if (!f.exists()) //noinspection ResultOfMethodCallIgnored
+                                                                f.mkdirs();
                                                         if (f.isDirectory()) {
                                                                 result.outputDir = f;
                                                         } else
@@ -610,7 +612,8 @@ public class Compiler {
                                         name += ".jar";
                                 }
                                 File jarPath = new File(config.result.outputDir.getAbsolutePath() + File.separator + name);
-                                if (!jarPath.exists()) jarPath.createNewFile();
+                                if (!jarPath.exists()) //noinspection ResultOfMethodCallIgnored
+                                        jarPath.createNewFile();
                                 zipOutputStream = new ZipOutputStream(new FileOutputStream(jarPath));
                         }
 
@@ -640,7 +643,7 @@ public class Compiler {
 
                                 // classes in jar file
                                 if (zipOutputStream != null) {
-                                        putZipEntry(zipOutputStream, theDir + "/" + simpleName, bytes);
+                                        putZipEntry(zipOutputStream, theDir.isEmpty() ? simpleName : (theDir + "/" + simpleName), bytes);
                                 }
 
                                 fos.close();
@@ -661,7 +664,7 @@ public class Compiler {
 
                                 // add the libraries
                                 if (config.result.with_lib) {
-                                        InputStream classesInputStream = Compiler.class.getResourceAsStream("/classes.txt");
+                                        InputStream classesInputStream = Compiler.class.getClassLoader().getResourceAsStream("classes.txt");
 
                                         if (classesInputStream != null) {
                                                 BufferedReader br = new BufferedReader(
@@ -690,8 +693,12 @@ public class Compiler {
                                         }
                                 }
 
+                                List<String> requireFiles = new ArrayList<>(Arrays.asList("classes.txt", "build.lts.template", "run.lts.template"));
+                                if (Compiler.class.getClassLoader().getResourceAsStream("lib-classes.txt") != null) {
+                                        requireFiles.add("lib-classes.txt");
+                                }
                                 // add required files
-                                for (String f : Arrays.asList("build.lts.template", "run.lts.template")) {
+                                for (String f : requireFiles) {
                                         InputStream is = Compiler.class.getClassLoader().getResourceAsStream(f);
                                         if (is != null) {
                                                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);

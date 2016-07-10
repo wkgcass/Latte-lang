@@ -1,14 +1,8 @@
-import lt.compiler.*;
-import lt.compiler.semantic.STypeDef;
-import lt.compiler.syntactic.Statement;
-import lt.repl.Compiler;
-
-import java.io.*;
-import java.lang.reflect.Array;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * Created by wkgcass on 16/6/4.
@@ -45,6 +39,15 @@ public class SimpleTest {
                 fos.close();
                 */
 
-                System.out.println(Class.forName("[Ljava.lang.Object;"));
+                URL url = new URL("jar:file:///Volumes/PROJECTS/openSource/LessTyping/latte-compiler/target/latte-compiler-0.0.3-ALPHA.jar!/build.lts.template");
+                URLConnection u = url.openConnection();
+                System.out.println(u);
+                InputStream is = u.getInputStream();
+                System.out.println(is);
+                BufferedReader reader=new BufferedReader(new InputStreamReader(is));
+                String s;
+                while(null!=(s=reader.readLine())){
+                        System.out.println(s);
+                }
         }
 }

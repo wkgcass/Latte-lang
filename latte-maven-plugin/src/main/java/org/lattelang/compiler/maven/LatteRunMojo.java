@@ -1,4 +1,4 @@
-package org.lattelang.maven;
+package org.lattelang.compiler.maven;
 
 import lt.repl.ScriptCompiler;
 import org.apache.maven.plugin.AbstractMojo;
