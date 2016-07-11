@@ -6,7 +6,7 @@ Latte is a JVM language. It's highly readable and extensible.
 
 Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about Latte.
 
-[Syntax Specification]([语法规则](https://github.com/wkgcass/Latte-lang/blob/master/ltls.md) )  
+[Syntax Specification](https://github.com/wkgcass/Latte-lang/blob/master/ltls.md)  
 [Latte WebSite](http://latte-lang.org/)
 
 `Atom` Extensions :
@@ -17,6 +17,8 @@ Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about L
 `Maven` Plugin :
 
 [latte-maven-plugin](#mvn-plugin)
+
+##中文版戳[这里](#readme-ch)
 
 ###Latte supports
 
@@ -35,8 +37,6 @@ Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about L
 * many other features
 
 `Latte` is based on java 8. It's compiled to JVM byte code, and can collaborate with any java library.
-
-最下面有中文 ：）
 
 #How to build
 
@@ -195,7 +195,7 @@ For Language Syntax Help, please visit the [Specification](https://github.com/wk
 
 or visit the [Latte WebSite](http://latte-lang.org/)
 
-#中文版 Chinese Version README
+<h1 id='readme-ch'>中文版 Chinese Version README</h1>
 
 Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
