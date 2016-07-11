@@ -27,6 +27,7 @@ package lt.compiler.cases;
 import lt.compiler.*;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
+import lt.lang.function.Function0;
 import lt.lang.function.Function1;
 import lt.repl.ScriptCompiler;
 import org.junit.Test;
@@ -35,6 +36,7 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
@@ -243,6 +245,25 @@ public class TestDemo {
                 Field default_value_of_string_3 = cls.getDeclaredField("default_value_of_string_3");
                 default_value_of_string_3.setAccessible(true);
                 assertEquals("", default_value_of_string_3.get(o));
+                ++count;
+
+                // regexp
+                Field regexp = cls.getDeclaredField("regexp");
+                regexp.setAccessible(true);
+                Pattern $regexp = (Pattern) regexp.get(o);
+                assertEquals(".*\\.lt", $regexp.pattern());
+                ++count;
+
+                // regexp_test
+                Field regexp_test = cls.getDeclaredField("regexp_test");
+                regexp_test.setAccessible(true);
+                assertEquals("//", ((Pattern) regexp_test.get(o)).pattern());
+                ++count;
+
+                // regexp_test2
+                Field regexp_test2 = cls.getDeclaredField("regexp_test2");
+                regexp_test2.setAccessible(true);
+                assertEquals("/", ((Pattern) regexp_test2.get(o)).pattern());
                 ++count;
 
                 assertEquals(count, cls.getDeclaredFields().length);
@@ -806,6 +827,26 @@ public class TestDemo {
                 Object TesterForInterface_Have_Methods_o = TesterForInterface_Have_Methods.newInstance();
                 assertEquals("abs method impl", i_am_an_abstract_method.invoke(TesterForInterface_Have_Methods_o));
                 assertEquals("default method", i_am_a_default_method.invoke(TesterForInterface_Have_Methods_o));
+
+                // I_Am_A_Function
+                Class<?> I_Am_A_Function = classLoader.loadClass("I_Am_A_Function");
+                assertEquals("I_Am_A_Function", I_Am_A_Function.getName());
+                assertEquals(Function0.class, I_Am_A_Function.getInterfaces()[0]);
+                Function0 f0 = (Function0) I_Am_A_Function.newInstance();
+                assertEquals(1, f0.apply());
+
+                // I_Am_A_Function_With_One_Param
+                Class<?> I_Am_A_Function_With_One_Param = classLoader.loadClass("I_Am_A_Function_With_One_Param");
+                assertEquals(Function1.class, I_Am_A_Function_With_One_Param.getInterfaces()[0]);
+                Function1 f1 = (Function1) I_Am_A_Function_With_One_Param.newInstance();
+                assertEquals(1, f1.apply(2));
+
+                // I_Am_A_Function_With_Super_Type
+                Class<?> I_Am_A_Function_With_Super_Type = classLoader.loadClass("I_Am_A_Function_With_Super_Type");
+                assertEquals(Function.class, I_Am_A_Function_With_Super_Type.getInterfaces()[0]);
+                @SuppressWarnings("unchecked")
+                Function<Object, Object> ff = (Function<Object, Object>) I_Am_A_Function_With_Super_Type.newInstance();
+                assertEquals(1, ff.apply(0));
         }
 
         @Test

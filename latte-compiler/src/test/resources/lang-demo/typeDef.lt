@@ -143,3 +143,19 @@ class TesterForInterface_Have_Methods : Interface_Have_Methods
     i_am_an_abstract_method()="abs method impl"
 
 ; interfaces do NOT have initialize statements
+
+; function definition
+; functions can implement functional interfaces or extend functional abstract classes
+; a function that implements lt::lang::function::Function0 and returns 1
+; if the type is lt::lang::function::FunctionX, the runtime is able to transform
+; its type into required type.
+fun I_Am_A_Function
+    return 1
+
+; a function with parameters
+fun I_Am_A_Function_With_One_Param(e)
+    return e - 1
+
+; a function specifies its super type
+fun I_Am_A_Function_With_Super_Type(o) : java::util::function::Function
+    return o+1

@@ -1,5 +1,5 @@
-; there are 5 kinds of literals in Latte
-; string number map array bool
+; there are 6 kinds of literals in Latte
+; string number map array bool regex
 
 ; string
 i_am_string = 'a string'
@@ -61,3 +61,15 @@ default_value_of_string_3 = '' ; java.lang.String (length is 0)
 ; this is easily understood, if 'c', the length is 1, it would likely to be char
 ; but with 0 length or length greater than 1, it can never be char, then it would be considered as String
 ; if want to construct a string with length==1, use "s"
+
+; regular expression
+; regular expressions are compiled into java.util.regex.Pattern
+
+regexp = //.*\.lt//
+; matches any string that ends with `.lt`
+
+regexp_test = //\////
+; the pattern is `//`
+
+regexp_test2 = /////
+; the pattern is `/`
