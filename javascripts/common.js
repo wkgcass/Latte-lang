@@ -68,18 +68,18 @@ function common_compile_highlighting() {
             "compiler = Compiler()\n" +
             "compiler + 'class-path'\n" +
             "compiler >> 'output directory'\n" +
-            "compiler compile filesInDirectory('source file directory', '.*\\\\.lt')\n" +
+            "compiler compile filesInDirectory('source file directory', //.*\\.lt//)\n" +
             "\n" +
             "; or you can chain these invocations up\n" +
             "\n" +
-            "Compiler() + 'class-path' >> 'output dir' compile filesInDirectory('source file directory', '.*\\\\.lt')", {}) +
+            "Compiler() + 'class-path' >> 'output dir' compile filesInDirectory('source file directory', //.*\\.lt//)", {}) +
         "</pre>";
 }
 
 function common_script_highlighting() {
     var txt;
     $.ajax({
-        url: 'https://raw.githubusercontent.com/wkgcass/Latte-lang/master/src/main/resources/build.lts',
+        url: 'https://raw.githubusercontent.com/wkgcass/Latte-lang/master/latte-compiler/src/main/resources/build.lts.template',
         async: false,
         dataType: 'text',
         success: function (res) {

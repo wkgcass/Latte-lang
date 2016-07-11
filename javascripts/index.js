@@ -234,18 +234,29 @@ $(document).ready(function () {
             contents:
             isZh
             ?[
-                $sce.trustAsHtml("Latte 只需要 <code>JRE 8</code>"),
-                $sce.trustAsHtml("建议以<code>lt.repl.REPL</code>为主类打包为jar. 并复制 <code>src/main/resources/latte.sh</code> 或 <code>latte.bat</code> 到打包的目录"),
-                $sce.trustAsHtml("本工程通过Maven管理, 所以您也可以使用 <code>Maven 3</code> 进行自动Build"),
-                $sce.trustAsHtml("clone <a href='" + $scope.git_repo + "'>该仓库</a>, 然后执行 <code>mvn clean package</code> , 在根目录会生成 <code>repl.jar</code> 和批处理文件."),
+                $sce.trustAsHtml("Latte 只需要 <code>JDK 1.8</code>"),
+                $sce.trustAsHtml("本工程通过Maven管理, 所以您可以使用 <code>Maven 3</code> 进行自动Build"),
+                $sce.trustAsHtml("clone <a href='" + $scope.git_repo + "'>该仓库</a>, 然后执行 <code>mvn clean package</code> , 在根目录会生成两个批处理文件."),
                 $sce.trustAsHtml("直接执行 <code>.&#47;latte</code> , REPL将启动")
             ]
             :[
-                $sce.trustAsHtml("Latte only requires <code>JRE 8</code>."),
-                $sce.trustAsHtml("It's recommended to package <code>lt.repl.REPL</code> as the main class. And copy <code>src/main/resources/latte.sh</code> or <code>latte.bat</code> to the jar directory."),
+                $sce.trustAsHtml("Latte only requires <code>JDK 1.8</code>."),
                 $sce.trustAsHtml("The project is managed by Maven, so you can use <code>Maven 3</code> to build automatically."),
-                $sce.trustAsHtml("clone <a href='" + $scope.git_repo + "'>the repository</a>, and run <code>mvn clean package</code> , then, <code>repl.jar</code> and batch procedure files will be generated at root directory."),
+                $sce.trustAsHtml("clone <a href='" + $scope.git_repo + "'>the repository</a>, and run <code>mvn clean package</code> , then two batch procedure files will be generated at root directory."),
                 $sce.trustAsHtml("run <code>.&#47;latte</code> , and REPL will launch")
+            ]
+        };
+        $scope.mvn = {
+            title: isZh?"Maven插件":"Maven Plugin",
+            contents:
+            isZh
+            ?[
+                $sce.trustAsHtml("使用maven-latte-plugin, 您可以编译latte源代码, 或者运行latte脚本."),
+                $sce.trustAsHtml("请点击<a href='https://github.com/wkgcass/Latte-lang#mvn-plugin-ch'>这里</a>")
+            ]
+            :[
+                $sce.trustAsHtml("You can compile latte source codes or run latte scripts with the help of maven-latte-plugin."),
+                $sce.trustAsHtml("Click <a href='https://github.com/wkgcass/Latte-lang#mvn-plugin'>here</a> for more info")
             ]
         };
         $scope.compile = {

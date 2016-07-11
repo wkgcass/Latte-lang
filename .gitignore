@@ -6,3 +6,4 @@ latte
 *.jar
 *.class
 target/
+latte-*/

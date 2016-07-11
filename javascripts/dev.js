@@ -46,7 +46,7 @@ $(document).ready(function () {
 
         $scope.src_code = {
             title: zh?"源代码结构":"Structure of the Source",
-            descr: zh?"Latte采用标准的Maven目录结构":"Latte uses standard Maven project structure."
+            descr: zh?"Latte使用Maven工程的模块化结构":"Latte uses Maven modules."
         };
     }]);
 });

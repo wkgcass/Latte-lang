@@ -12,7 +12,7 @@ $(document).ready(function () {
         files = [];
         function getLtFile(name) {
             $.ajax({
-                url: 'https://raw.githubusercontent.com/wkgcass/Latte-lang/master/src/test/resources/lang-demo/' + name,
+                url: 'https://raw.githubusercontent.com/wkgcass/Latte-lang/master/latte-compiler/src/test/resources/lang-demo/' + name,
                 async: false,
                 dataType: 'text',
                 success: function (res) {
