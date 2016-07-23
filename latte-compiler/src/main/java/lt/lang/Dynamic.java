@@ -66,7 +66,7 @@ public class Dynamic {
         static {
                 try {
                         methodHandle = MethodHandles.lookup().findStatic(Dynamic.class, "invoke", MethodType.methodType(
-                                Object.class, Class.class, Object.class, Class.class, String.class, boolean[].class, Object[].class));
+                                Object.class, Class.class, Object.class, Object.class, Class.class, String.class, boolean[].class, Object[].class));
                         constructorHandle = MethodHandles.lookup().findStatic(Dynamic.class, "construct", MethodType.methodType(
                                 Object.class, Class.class, Class.class, boolean[].class, Object[].class));
                 } catch (NoSuchMethodException | IllegalAccessException e) {
@@ -84,12 +84,14 @@ public class Dynamic {
          */
         @SuppressWarnings("unused")
         public static CallSite bootstrap(MethodHandles.Lookup lookup, String methodName, MethodType methodType) {
-                boolean[] primitives = new boolean[methodType.parameterCount() - 2];
+                final int actualParamCount = 3;
+
+                boolean[] primitives = new boolean[methodType.parameterCount() - actualParamCount];
                 for (int i = 0; i < primitives.length; ++i) {
-                        primitives[i] = methodType.parameterType(i + 2).isPrimitive();
+                        primitives[i] = methodType.parameterType(i + actualParamCount).isPrimitive();
                 }
-                MethodHandle mh = MethodHandles.insertArguments(methodHandle, 2, lookup.lookupClass(), methodName, primitives);
-                mh = mh.asCollector(Object[].class, methodType.parameterCount() - 2).asType(methodType);
+                MethodHandle mh = MethodHandles.insertArguments(methodHandle, actualParamCount, lookup.lookupClass(), methodName, primitives);
+                mh = mh.asCollector(Object[].class, methodType.parameterCount() - actualParamCount).asType(methodType);
 
                 MutableCallSite mCallSite = new MutableCallSite(mh);
                 mCallSite.setTarget(mh);
@@ -715,19 +717,21 @@ public class Dynamic {
         /**
          * invoke method with a invocationState.
          *
-         * @param invocationState invocationState
-         * @param targetClass     the method is in this class
-         * @param o               invoke the method on the object (or null if invoke static)
-         * @param invoker         from which class invokes the method
-         * @param method          method name
-         * @param primitives      whether the argument is primitive
-         * @param args            the arguments
+         * @param invocationState  invocationState
+         * @param targetClass      the method is in this class
+         * @param o                invoke the method on the object (or null if invoke static)
+         * @param functionalObject the object to invoke functional method on if method not found
+         * @param invoker          from which class invokes the method
+         * @param method           method name
+         * @param primitives       whether the argument is primitive
+         * @param args             the arguments
          * @return the method result (void methods' results are <tt>undefined</tt>)
          * @throws Throwable exception
          */
         public static Object invoke(InvocationState invocationState,
                                     Class<?> targetClass,
                                     Object o,
+                                    Object functionalObject,
                                     Class<?> invoker,
                                     String method,
                                     boolean[] primitives,
@@ -767,7 +771,7 @@ public class Dynamic {
                                                 as[i - 1] = args[i];
                                         }
 
-                                        return invoke(invocationState, targetClass, res, invoker, "get", bs, as);
+                                        return invoke(invocationState, targetClass, res, null, invoker, "get", bs, as);
                                 } else if (method.equals("set") && args.length >= 2 && args[0] instanceof Integer) {
                                         if (args.length == 2) {
                                                 Array.set(o, (Integer) args[0], args[1]);
@@ -782,7 +786,7 @@ public class Dynamic {
                                                         as[i - 1] = args[i];
                                                 }
 
-                                                return invoke(invocationState, targetClass, elem, invoker, "set", bs, as);
+                                                return invoke(invocationState, targetClass, elem, null, invoker, "set", bs, as);
                                         }
                                 }
                         } else {
@@ -796,9 +800,33 @@ public class Dynamic {
                                         // string add
                                         return String.valueOf(o) + String.valueOf(args[0]);
                                 } else if (method.equals("set")) {
-                                        return invoke(targetClass, o, invoker, "put", primitives, args);
+                                        return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args);
                                 } else if (method.equals("logicNot") && args.length == 0) {
                                         return !LtRuntime.castToBool(o);
+                                } else if (functionalObject != null) {
+                                        // check whether it's a functional object
+                                        Class<?> cls = functionalObject.getClass();
+                                        Method theMethodToInvoke;
+                                        if (cls.getSuperclass() != null && isFunctionalAbstractClass(cls.getSuperclass())) {
+                                                theMethodToInvoke = findAbstractMethod(cls.getSuperclass());
+                                        } else if (cls.getInterfaces().length == 1 && isFunctionalInterface(cls.getInterfaces()[0])) {
+                                                theMethodToInvoke = findAbstractMethod(cls.getInterfaces()[0]);
+                                        } else {
+                                                // try to invoke apply(...) on this object
+                                                return invoke(invocationState, functionalObject.getClass(), functionalObject, null, invoker, "apply", primitives, args);
+                                        }
+
+                                        // continue processing `theMethodToInvoke`
+                                        invocationState.methodFound = true;
+                                        try {
+                                                Object theRes = theMethodToInvoke.invoke(functionalObject, args);
+                                                if (theMethodToInvoke.getReturnType().equals(Void.TYPE)) {
+                                                        return Undefined.get();
+                                                }
+                                                return theRes;
+                                        } catch (InvocationTargetException e) {
+                                                throw e.getTargetException();
+                                        }
                                 }
                         }
 
@@ -863,18 +891,20 @@ public class Dynamic {
         /**
          * invoke a method.
          *
-         * @param targetClass the method is in this class
-         * @param o           invoke the method on the object (or null if invoke static)
-         * @param invoker     from which class invokes the method
-         * @param method      method name
-         * @param primitives  whether the argument is primitive
-         * @param args        the arguments
+         * @param targetClass      the method is in this class
+         * @param o                invoke the method on the object (or null if invoke static)
+         * @param functionalObject the object to invoke functional method on if method not found
+         * @param invoker          from which class invokes the method
+         * @param method           method name
+         * @param primitives       whether the argument is primitive
+         * @param args             the arguments
          * @return the method result (void methods' results are <tt>undefined</tt>)
          * @throws Throwable exception
          */
-        private static Object invoke(Class<?> targetClass, Object o, Class<?> invoker,
+        @SuppressWarnings("unused")
+        private static Object invoke(Class<?> targetClass, Object o, Object functionalObject, Class<?> invoker,
                                      String method, boolean[] primitives, Object[] args) throws Throwable {
-                return invoke(new InvocationState(), targetClass, o, invoker, method, primitives, args);
+                return invoke(new InvocationState(), targetClass, o, functionalObject, invoker, method, primitives, args);
         }
 
         /**

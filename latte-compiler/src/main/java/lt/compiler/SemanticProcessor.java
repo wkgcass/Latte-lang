@@ -3159,6 +3159,7 @@ public class SemanticProcessor {
                                 Iterator<Value> it = invokeDynamic.arguments().iterator();
                                 Ins.GetClass cls = (Ins.GetClass) it.next(); // class
                                 Value target = it.next();
+                                it.next(); // it is functional object, and it's NullValue.get()
                                 while (it.hasNext()) list.add(it.next());
                                 list.add(assignFrom);
 
@@ -4734,6 +4735,7 @@ public class SemanticProcessor {
                         // invoke dynamic
                         args.add(0, new Ins.GetClass(targetType, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                         args.add(1, invokeOn);
+                        args.add(2, NullValue.get()); // xx.method(...) doesn't support invoking method on functional objects
                         return new Ins.InvokeDynamic(
                                 getInvokeDynamicBootstrapMethod(),
                                 methodName,
@@ -5528,6 +5530,7 @@ public class SemanticProcessor {
                         // invoke dynamic
                         list.add(0, new Ins.GetClass(v.type(), (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                         list.add(1, v); // add invoke target into list
+                        list.add(2, NullValue.get()); // xx[...] doesn't support invoking method on functional objects
 
                         return new Ins.InvokeDynamic(
                                 getInvokeDynamicBootstrapMethod(),
@@ -5870,18 +5873,18 @@ public class SemanticProcessor {
          * get SFieldDef from the given type
          *
          * @param fieldName  field name
-         * @param theType    type to search
-         * @param type       caller type(used to check accessiblility)
+         * @param targetType type to search
+         * @param callerType caller type(used to check accessiblility)
          * @param mode       {@link #FIND_MODE_ANY} {@link #FIND_MODE_NON_STATIC} {@link #FIND_MODE_STATIC}
          * @param checkSuper check the super class/interfaces if it's set to true
          * @return retrieved SFieldDef or null if not found
          */
-        private SFieldDef findFieldFromTypeDef(String fieldName, STypeDef theType, STypeDef type, int mode, boolean checkSuper) {
-                if (theType instanceof SClassDef) {
-                        return findFieldFromClassDef(fieldName, (SClassDef) theType, type, mode, checkSuper);
-                } else if (theType instanceof SInterfaceDef) {
-                        return findFieldFromInterfaceDef(fieldName, (SInterfaceDef) theType, checkSuper);
-                } else throw new LtBug("the type to get field from cannot be " + theType);
+        private SFieldDef findFieldFromTypeDef(String fieldName, STypeDef targetType, STypeDef callerType, int mode, boolean checkSuper) {
+                if (targetType instanceof SClassDef) {
+                        return findFieldFromClassDef(fieldName, (SClassDef) targetType, callerType, mode, checkSuper);
+                } else if (targetType instanceof SInterfaceDef) {
+                        return findFieldFromInterfaceDef(fieldName, (SInterfaceDef) targetType, checkSuper);
+                } else throw new LtBug("the type to get field from cannot be " + targetType);
         }
 
         /**
@@ -6843,6 +6846,14 @@ public class SemanticProcessor {
                                                         List<Value> args = new ArrayList<>();
                                                         args.add(new Ins.GetClass(type, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                                                         args.add(NullValue.get());
+
+                                                        // try to get static field
+                                                        SFieldDef field = findFieldFromTypeDef(access.name, type, scope.type(), FIND_MODE_STATIC, true);
+                                                        if (field == null) {
+                                                                args.add(NullValue.get()); // XXX.method(...) doesn't support invoking method on functional objects
+                                                        } else {
+                                                                args.add(new Ins.GetStatic(field, invocation.line_col()));
+                                                        }
                                                         args.addAll(argList);
 
                                                         // invoke dynamic
@@ -6911,8 +6922,30 @@ public class SemanticProcessor {
                                         argList.add(1, NullValue.get());
                                 else
                                         argList.add(1, scope.getThis());
-                        } else
+                        } else {
                                 argList.add(1, target);
+                        }
+
+                        if (access.exp == null) {
+                                // invoking method on functional objects
+                                argList.add(2, findObjectInCurrentScopeWithName(access.name, scope));
+                        } else {
+                                if (target == null) {
+                                        throw new LtBug("code should not reach here");
+                                } else {
+                                        // xx.method(...)
+                                        SFieldDef field = findFieldFromTypeDef(access.name, target.type(), scope.type(), FIND_MODE_ANY, true);
+                                        if (field == null) {
+                                                argList.add(2, NullValue.get());
+                                        } else {
+                                                if (field.modifiers().contains(SModifier.STATIC)) {
+                                                        argList.add(2, new Ins.GetStatic(field, invocation.line_col()));
+                                                } else {
+                                                        argList.add(2, new Ins.GetField(field, target, invocation.line_col()));
+                                                }
+                                        }
+                                }
+                        }
 
                         return new Ins.InvokeDynamic(
                                 getInvokeDynamicBootstrapMethod(),
@@ -7166,6 +7199,32 @@ public class SemanticProcessor {
                 }
 
                 return result;
+        }
+
+        /**
+         * get object in current scope.
+         *
+         * @param name  the local variable or field's name
+         * @param scope current scope
+         * @return TLoad or GetField or GetStatic or NullValue
+         */
+        private Value findObjectInCurrentScopeWithName(String name, SemanticScope scope) {
+                LeftValue v = scope.getLeftValue(name);
+                if (v != null) return new Ins.TLoad(v, scope, LineCol.SYNTHETIC);
+
+                // try to get field
+                Ins.This aThis = scope.getThis();
+                if (aThis != null) {
+                        // search for static and non-static
+                        SFieldDef field = findFieldFromTypeDef(name, aThis.type(), aThis.type(), FIND_MODE_ANY, true);
+                        if (field == null) return NullValue.get();
+                        return new Ins.GetField(field, aThis, LineCol.SYNTHETIC);
+                } else {
+                        // search for static
+                        SFieldDef field = findFieldFromTypeDef(name, scope.type(), scope.type(), FIND_MODE_STATIC, true);
+                        if (field == null) return NullValue.get();
+                        return new Ins.GetStatic(field, LineCol.SYNTHETIC);
+                }
         }
 
         /**

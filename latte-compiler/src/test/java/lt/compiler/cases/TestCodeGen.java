@@ -2371,4 +2371,65 @@ public class TestCodeGen {
                 assertEquals('a', (char) method2.invoke(null, 1));
                 assertEquals('r', (char) method2.invoke(null, 2));
         }
+
+        @Test
+        public void testFunctionalObject() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestFunctionalObject\n" +
+                                "    static\n" +
+                                "        b = ()->2\n" +
+                                "        method1()\n" +
+                                "            a = ()->1\n" +
+                                "            return a()\n" +
+                                "        method2()\n" +
+                                "            return b()\n" +
+                                "    c = ()->3\n" +
+                                "    method3()\n" +
+                                "        return c()"
+                        , "TestFunctionalObject");
+                Method method1 = cls.getMethod("method1");
+                assertEquals(1, method1.invoke(null));
+
+                Method method2 = cls.getMethod("method2");
+                assertEquals(2, method2.invoke(null));
+
+                Method method3 = cls.getMethod("method3");
+                assertEquals(3, method3.invoke(cls.newInstance()));
+        }
+
+        @Test
+        public void testFunctionalObjectFromOtherClass() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestFunctionalObjectFromOtherClass\n" +
+                                "    static\n" +
+                                "        method1()=(new Functions).a()\n" +
+                                "        method2()=Functions.b()\n" +
+                                "class Functions\n" +
+                                "    public a = ()->1\n" +
+                                "    static\n" +
+                                "        public b = ()->2"
+                        , "TestFunctionalObjectFromOtherClass");
+
+                Method method1 = cls.getMethod("method1");
+                assertEquals(1, method1.invoke(null));
+
+                Method method2 = cls.getMethod("method2");
+                assertEquals(2, method2.invoke(null));
+        }
+
+        @Test
+        public void testFunctionalObjectWithArgs() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestFunctionalObject\n" +
+                                "    static\n" +
+                                "        method(n)\n" +
+                                "            a = (x,y)->x+1+y\n" +
+                                "            return a(n,3)"
+                        , "TestFunctionalObject");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(6, method.invoke(null, 2));
+        }
 }

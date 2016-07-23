@@ -1085,7 +1085,7 @@ public class TestSemantic {
                 assertEquals("get", invokeDynamic.methodName());
                 assertTrue(invokeDynamic.arguments().get(1) instanceof Ins.GetField); // i
                 // Integer.valueOf(0)
-                assertEquals(new IntValue(0), invokeDynamic.arguments().get(2)); // [0]
+                assertEquals(new IntValue(0), invokeDynamic.arguments().get(3)); // [0]
         }
 
         @Test
@@ -1818,11 +1818,12 @@ public class TestSemantic {
 
                 Ins.InvokeDynamic in0 = (Ins.InvokeDynamic) i0;
                 assertEquals("set", in0.methodName());
-                assertEquals(4, in0.arguments().size());
+                assertEquals(5, in0.arguments().size());
                 assertTrue(in0.arguments().get(0) instanceof Ins.GetClass);
                 assertTrue(in0.arguments().get(1) instanceof Ins.GetField);
-                assertTrue(in0.arguments().get(2) instanceof IntValue);
-                assertTrue(in0.arguments().get(3) instanceof Ins.TLoad);
+                assertEquals(NullValue.get(), in0.arguments().get(2));
+                assertTrue(in0.arguments().get(3) instanceof IntValue);
+                assertTrue(in0.arguments().get(4) instanceof Ins.TLoad);
         }
 
         @Test
@@ -2731,5 +2732,28 @@ public class TestSemantic {
                 assertTrue(p1.value() instanceof StringConstantValue);
                 String str = ((StringConstantValue) p1.value()).getStr();
                 assertEquals("var a = 1;", str);
+        }
+
+        @Test
+        public void testFunctionalObject() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    a = ()->1\n" +
+                        "    a()");
+                Set<STypeDef> set = parse(map);
+                Iterator<STypeDef> it = set.iterator();
+
+                assertEquals(2, set.size());
+
+                SClassDef classDef = (SClassDef) it.next();
+                if (!classDef.fullName().equals("test.A")) classDef = (SClassDef) it.next();
+                SConstructorDef cons = classDef.constructors().get(0);
+
+                Ins.InvokeDynamic indy = (Ins.InvokeDynamic) cons.statements().get(2);
+                assertEquals(3, indy.arguments().size());
+                Ins.GetField getField = (Ins.GetField) indy.arguments().get(2);
+                assertEquals("a", getField.field().name());
         }
 }

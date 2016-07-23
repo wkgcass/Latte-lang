@@ -296,6 +296,11 @@ public class Ins {
                 public SFieldDef field() {
                         return field;
                 }
+
+                @Override
+                public String toString() {
+                        return "get field [" + field.toString() + "]";
+                }
         }
 
         /**
