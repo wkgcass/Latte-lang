@@ -148,4 +148,12 @@ public class TestLibraries {
                         "select User.id into Tbl from User where User.name = ?"
                 ), testAllQueries.invoke(null));
         }
+
+        @Test
+        public void testAsync() throws Exception {
+                Class<?> TestAsync = Class.forName("lt.async.test.TestAsync");
+
+                Method testWaterfall = TestAsync.getMethod("testWaterfall");
+                assertEquals(Arrays.asList(1, 2, 3), testWaterfall.invoke(null));
+        }
 }

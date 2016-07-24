@@ -196,18 +196,6 @@ public class List extends LinkedList<Object> {
          * @return immutable list
          */
         public java.util.List<Object> immutable() {
-                return new AbstractList<Object>() {
-                        java.util.List<Object> list = new ArrayList<>(List.this);
-
-                        @Override
-                        public Object get(int index) {
-                                return list.get(index);
-                        }
-
-                        @Override
-                        public int size() {
-                                return list.size();
-                        }
-                };
+                return new ImmutableList(this);
         }
 }

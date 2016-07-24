@@ -1575,7 +1575,7 @@ There are some functions defined in `List` that allow you to use the `List` like
 | list.unshift(list) | yes
 | list.length()      | no
 
-Also, the list supports a method named `immutable()`, which transforms the list into an immutable list.
+Also, the list supports a method named `immutable()`, which returns a new immutable list.
 
 	list.immutable()
 	
@@ -1603,7 +1603,7 @@ or construct the `Map` with a function that modifies the map :
 	        $this.put("b", 2)
 	)
 	
-Also, the map supports a method named `immutable()`, which transforms the map into an immutable map.
+Also, the map supports a method named `immutable()`, which returns a new immutable map.
 
 	map.immutable()
 	

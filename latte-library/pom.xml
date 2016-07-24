@@ -41,7 +41,7 @@
                 <version>1.1.1</version>
                 <executions>
                     <execution>
-                        <phase>compile</phase>
+                        <phase>test-compile</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>

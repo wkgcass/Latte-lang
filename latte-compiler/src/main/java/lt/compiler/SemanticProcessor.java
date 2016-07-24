@@ -216,12 +216,16 @@ public class SemanticProcessor {
                         Set<String> importSimpleNames = new HashSet<>();
                         for (Import i : imports) {
                                 if (i.pkg == null) {
+                                        // TODO check class name? is this feature needed?
+                                        // TODO because package is not checked
+                                        /*
                                         String className = getClassNameFromAccess(i.access);
                                         // check existence
                                         if (!typeExists(className)) {
                                                 err.SyntaxException(className + " does not exist", i.line_col());
                                                 return null;
                                         }
+                                        */
                                         // simple fileName are the same
                                         if (importSimpleNames.contains(i.access.name)) {
                                                 err.SyntaxException("duplicate imports", i.line_col());

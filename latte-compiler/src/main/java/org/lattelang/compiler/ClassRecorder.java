@@ -83,16 +83,12 @@ public class ClassRecorder {
          * @throws Exception exception
          */
         public static void main(String[] args) throws Exception {
-                try {
-                        Class.forName(classToTest);
-                } catch (ClassNotFoundException e) {
-                        String outputDir = args[0];
-                        String scanPath = args[0];
-                        String fileName = args[1];
+                String outputDir = args[0];
+                String scanPath = args[0];
+                String fileName = args[1];
 
-                        String scanResult = outputDir + File.separator + fileName;
+                String scanResult = outputDir + File.separator + fileName;
 
-                        scanPath(scanPath, scanResult);
-                }
+                scanPath(scanPath, scanResult);
         }
 }

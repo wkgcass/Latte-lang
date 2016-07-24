@@ -1,0 +1,26 @@
+package lt::async::test
+
+import lt::async::Async
+
+class TestAsync
+    static
+        val async = Async()
+        testWaterfall()
+            arr = []
+            async.waterfall(
+                [
+                    (x, next)->
+                        arr + 1
+                        next(arr)
+                    (res, next)->
+                        res + 2
+                        next(res)
+                    (res, next)->
+                        res + 3
+                        next(res)
+                ],
+                (err, res)->
+                    if err
+                        throw err
+            )
+            return arr
