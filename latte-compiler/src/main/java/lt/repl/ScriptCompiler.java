@@ -325,7 +325,7 @@ public class ScriptCompiler {
                 SemanticProcessor sp = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                         put(name, defsAndImports);
                 }}, theCompiledClasses, err);
-                CodeGenerator cg = new CodeGenerator(sp.parse());
+                CodeGenerator cg = new CodeGenerator(sp.parse(), sp.getTypes());
                 Map<String, byte[]> map = cg.generate();
                 ClassLoader loader = new ClassLoader(theCompiledClasses) {
                         @Override

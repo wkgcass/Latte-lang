@@ -31,6 +31,7 @@ import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 import lt.lang.*;
 import lt.lang.function.Function1;
+import lt.lang.function.Function3;
 import lt.repl.ScriptCompiler;
 import org.junit.Test;
 
@@ -59,7 +60,7 @@ public class TestCodeGen {
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
-                CodeGenerator codeGenerator = new CodeGenerator(types);
+                CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
                 ClassLoader classLoader = new ClassLoader() {
@@ -1369,7 +1370,7 @@ public class TestCodeGen {
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
-                CodeGenerator codeGenerator = new CodeGenerator(types);
+                CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
                 byte[] b1 = list.get("TestLambdaLT");
@@ -1410,7 +1411,7 @@ public class TestCodeGen {
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
-                CodeGenerator codeGenerator = new CodeGenerator(types);
+                CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
                 byte[] b1 = list.get("TestLambdaLT");
@@ -1451,7 +1452,7 @@ public class TestCodeGen {
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
-                CodeGenerator codeGenerator = new CodeGenerator(types);
+                CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
                 byte[] b1 = list.get("TestLambdaLT");
@@ -1473,6 +1474,45 @@ public class TestCodeGen {
 
                 Function func = (Function) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(3, func.apply(1));
+
+                assertEquals(3, lambda.getDeclaredFields().length);
+        }
+
+        @Test
+        public void testLambdaMultipleArguments() throws Exception {
+                ErrorManager err = new ErrorManager(true);
+                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
+                        "import java::util::function::_\n" +
+                        "class TestLambdaMultipleArguments\n" +
+                        "    method() = (a,b,c)->a+b+c"), new Scanner.Properties(), err);
+                Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
+                Map<String, List<Statement>> map = new HashMap<>();
+                map.put("test.lt", syntacticProcessor.parse());
+                SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
+                Set<STypeDef> types = semanticProcessor.parse();
+
+                CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
+                Map<String, byte[]> list = codeGenerator.generate();
+
+                byte[] b1 = list.get("TestLambdaMultipleArguments");
+                byte[] b2 = list.get("TestLambdaMultipleArguments$Latte$Lambda$0");
+                ClassLoader classLoader = new ClassLoader() {
+                        @Override
+                        protected Class<?> findClass(String name)
+                                throws ClassNotFoundException {
+                                if (name.equals("TestLambdaMultipleArguments")) {
+                                        return defineClass(name, b1, 0, b1.length);
+                                } else {
+                                        return defineClass(name, b2, 0, b2.length);
+                                }
+                        }
+                };
+
+                Class<?> TestLambdaLT = classLoader.loadClass("TestLambdaMultipleArguments");
+                Class<?> lambda = classLoader.loadClass("TestLambdaMultipleArguments$Latte$Lambda$0");
+
+                Function3 func = (Function3) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
+                assertEquals(6, func.apply(1, 2, 3));
 
                 assertEquals(3, lambda.getDeclaredFields().length);
         }

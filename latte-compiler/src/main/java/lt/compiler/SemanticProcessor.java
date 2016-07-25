@@ -137,6 +137,15 @@ public class SemanticProcessor {
         }
 
         /**
+         * get the map of defined types.
+         *
+         * @return a map of name =&gt; type
+         */
+        public Map<String, STypeDef> getTypes() {
+                return types;
+        }
+
+        /**
          * parse the input AST into STypeDef objects.<br>
          * the parsing process are divided into 4 steps.<br>
          * <ol>
@@ -216,17 +225,7 @@ public class SemanticProcessor {
                         Set<String> importSimpleNames = new HashSet<>();
                         for (Import i : imports) {
                                 if (i.pkg == null) {
-                                        // TODO check class name? is this feature needed?
-                                        // TODO because package is not checked
-                                        /*
-                                        String className = getClassNameFromAccess(i.access);
-                                        // check existence
-                                        if (!typeExists(className)) {
-                                                err.SyntaxException(className + " does not exist", i.line_col());
-                                                return null;
-                                        }
-                                        */
-                                        // simple fileName are the same
+                                        // class name are the same
                                         if (importSimpleNames.contains(i.access.name)) {
                                                 err.SyntaxException("duplicate imports", i.line_col());
                                                 return null;
@@ -4234,7 +4233,10 @@ public class SemanticProcessor {
                         SParameter mp = new SParameter();
                         mp.setType(param.type());
                         theMethod.getParameters().add(mp);
-                        meScope.putLeftValue(param.name(), mp);
+
+                        String name = meScope.generateTempName();
+                        meScope.putLeftValue(name, mp);
+                        mp.setName(name);
                 }
                 // new ArrayList
                 SClassDef LinkedList_Type = (SClassDef) getTypeWithName("java.util.LinkedList", LineCol.SYNTHETIC);
@@ -4265,7 +4267,7 @@ public class SemanticProcessor {
                         }
                 }
                 if (LinkedList_add == null) throw new LtBug("java.util.LinkedList should have method add(Object)");
-                for (SParameter param : methodToOverride.getParameters()) {
+                for (SParameter param : theMethod.getParameters()) {
                         LeftValue mp = meScope.getLeftValue(param.name());
                         Ins.InvokeVirtual invokeVirtual = new Ins.InvokeVirtual(
                                 new Ins.TLoad(localVariable, meScope, LineCol.SYNTHETIC),
@@ -4299,6 +4301,21 @@ public class SemanticProcessor {
                         invokeVirtual.arguments().add(new Ins.GetField(f2, meScope.getThis(), LineCol.SYNTHETIC));
                         theMethod.statements().add(invokeVirtual);
                 }
+
+                /* invoke println(list)
+                SClassDef cls = (SClassDef) getTypeWithName("lt.lang.Utils", LineCol.SYNTHETIC);
+                SMethodDef println = null;
+                for (SMethodDef m : cls.methods()) {
+                        if (m.name().equals("println") && m.getParameters().size() == 1 && m.getParameters().get(0).type().fullName().equals("java.lang.Object")) {
+                                println = m;
+                                break;
+                        }
+                }
+                Ins.InvokeStatic is = new Ins.InvokeStatic(println, LineCol.SYNTHETIC);
+                is.arguments().add(new Ins.TLoad(localVariable, meScope, LineCol.SYNTHETIC));
+                theMethod.statements().add(is);
+                */
+
                 // invoke the method handle
                 SMethodDef MethodHandle_invokeWithArguments = null;
                 for (SMethodDef m : getMethodHandle_Class().methods()) {

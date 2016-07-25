@@ -54,7 +54,7 @@ public class TestDemo {
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
-                CodeGenerator codeGenerator = new CodeGenerator(types);
+                CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 return codeGenerator.generate();
         }
 

@@ -57,7 +57,7 @@ public class TestBugsInEval {
                         err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
-                CodeGenerator codeGenerator = new CodeGenerator(types);
+                CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
                 byte[] bs = list.get(clsName);
@@ -109,9 +109,9 @@ public class TestBugsInEval {
         @Test
         public void test1_same() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                        "class Test1(arr)\n" +
-                        "    res0=(arr[0]='abc')\n" +
-                        "    this.arr=arr"
+                                "class Test1(arr)\n" +
+                                "    res0=(arr[0]='abc')\n" +
+                                "    this.arr=arr"
                         , "Test1");
                 Constructor<?> cons = cls.getConstructor(Object.class);
                 String[] arr = new String[]{null};
@@ -158,5 +158,15 @@ public class TestBugsInEval {
                         "    m(a):Unit");
                 evaluator.eval("t=Test()");
                 evaluator.eval("t.m(null)");
+        }
+
+        @Test
+        public void testFunctionAdd() throws Exception {
+                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
+                Object res = evaluator.eval("" +
+                        "x = (a,b,c)->a+b+c\n" +
+                        "x(1,2,3)" +
+                        "").result;
+                assertEquals(6, res);
         }
 }

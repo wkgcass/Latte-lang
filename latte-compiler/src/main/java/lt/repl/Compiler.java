@@ -580,7 +580,7 @@ public class Compiler {
 
                 for (Set<STypeDef> toGen : toGenerate) {
                         Thread t = new Thread(() -> {
-                                CodeGenerator codeGenerator = new CodeGenerator(toGen);
+                                CodeGenerator codeGenerator = new CodeGenerator(toGen, processor.getTypes());
                                 byteCodes.putAll(codeGenerator.generate());
                         });
                         threads.add(t);

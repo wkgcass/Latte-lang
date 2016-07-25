@@ -35,15 +35,17 @@ import java.util.stream.Collectors;
  * The code generator, generate byte code from STypeDef.
  */
 public class CodeGenerator {
-        private Set<STypeDef> types;
+        private final Set<STypeDef> types;
+        private final Map<String, STypeDef> typeDefMap;
 
         /**
          * create the code generator with types to generate
          *
          * @param types types
          */
-        public CodeGenerator(Set<STypeDef> types) {
+        public CodeGenerator(Set<STypeDef> types, Map<String, STypeDef> typeDefMap) {
                 this.types = types;
+                this.typeDefMap = typeDefMap;
         }
 
         /**
@@ -144,7 +146,7 @@ public class CodeGenerator {
         public Map<String, byte[]> generate() {
                 Map<String, byte[]> result = new HashMap<>();
                 for (STypeDef type : types) {
-                        ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+                        ClassWriter classWriter = new SClassWriter(ClassWriter.COMPUTE_FRAMES, typeDefMap);
 
                         List<SModifier> modifiers;                // modifier
                         List<Instruction> staticIns;              // <clinit>

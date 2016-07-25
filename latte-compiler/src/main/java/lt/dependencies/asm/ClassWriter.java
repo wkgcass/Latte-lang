@@ -1716,8 +1716,7 @@ public class ClassWriter extends ClassVisitor {
             c = Class.forName(type1.replace('/', '.'), false, classLoader);
             d = Class.forName(type2.replace('/', '.'), false, classLoader);
         } catch (Exception e) {
-            // TODO there is a better solution
-            return "java/lang/Object";
+            throw new RuntimeException(e.getMessage());
         }
         if (c.isAssignableFrom(d)) {
             return type1;
