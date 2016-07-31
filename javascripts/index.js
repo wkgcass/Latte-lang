@@ -63,6 +63,9 @@ $(document).ready(function () {
                     name: "Lambda"
                 },
                 {
+                    name: isZh?"函数对象调用":"calling functional object"
+                },
+                {
                     name: isZh?"JSON 字面量":"JSON Literals"
                 },
                 {
@@ -195,6 +198,13 @@ $(document).ready(function () {
                     "abstract class Func\n" +
                     "    abstract apply()=...\n" +
                     "func3 : Func = (x)->x+4"
+                    , {}))
+            },
+            {
+                code: $sce.trustAsHtml(highlighting("example_11.lts", "" +
+                    (isZh"; calling functional object\n":"; 调用函数对象\n") +
+                    "var add = (a,b) -> a+b\n" +
+                    "add(1, 2) ; result is 3"
                     , {}))
             },
             {

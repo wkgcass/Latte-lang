@@ -256,7 +256,7 @@ $(document).ready(function () {
                         '] toString', {}
                     ) +
                     '</pre>' +
-                    (zh?'<p>生成如下HTML</p>':'<p>to generate the following HTML</p>' +
+                    (zh?'<p>生成如下HTML</p>':'<p>to generate the following HTML</p>') +
                     '<textarea style="width:100%;resize: none;border: none;" disabled>' +
                     '<html><head></head><body><form><input type="text" value="value"><input type="submit" value="OK"></form></body></html>' +
                     '</textarea><br><br>' +
@@ -270,7 +270,7 @@ $(document).ready(function () {
                     '<p>We should use <code>data class</code> to simulate html elements, and use List <code>[]</code> to simulate the hierarchical relationships.</p>' +
                     '<p>Elements in the list can be separated with new line, so the html library looks like declarative programming.</p>' +
                     '<p>All html have <code>id, name, class, style</code> attributes. So we can write an abstract class to form these attributes.</p>')
-                    )) +
+                    ) +
                     '<pre>' + highlighting('html.lt', 'abstract data class HTMLElement(id, name, cls, style)', {}) +
                     '</pre>' +
                     (zh?(
