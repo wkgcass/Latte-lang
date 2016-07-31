@@ -55,8 +55,17 @@
 	3. string literals
 	4. variable definition
 	5. invocation
+	
+	    * invoke a method/function
+	    * construct an object
+	    * call functional object
+	    
 	6. as
 	7. access
+	    
+	    * access field/local variable
+	    * construct an object
+	    
 	8. index
 	9. one variable operation
 	10. two variable operation
@@ -76,6 +85,7 @@
 	1. Features
 		1. DSL
 		2. Dynamic Method Invocation
+		3. Call functional object
 	2. Language Related Libraries
 		1. evaluator and script
 		2. List
@@ -901,7 +911,7 @@ define an annotation instance and present on the target below
 	abstract class Func
 	    abstract apply()=...
 	    
-##5.12 method invocation
+##5.12 method definition
 There're multiple ways of defining a method
 
 1. noraml
@@ -1054,26 +1064,25 @@ defines a class `User` with one Field `id`, and the field type is `int`
 If the variable is defined in a method, it's considered as a local variable. The local variable __must__ have a initial value.
 
 ##6.5 invocation
-Invoke a method or an inner method. Or construct a new object.
+Invoke a method or an inner method. Or construct a new object. Or call a functional object.
 
-* `method(args)`
-	
-	invoke a method of the current object (non-static)  
-	invoke a method of the current Type (static)  
-	invoke a method from `import static`  
-	construct a new object
-	
-* `this.method(args)`
+* call a method/inner method
 
-	invoke a method of the current object (non-static)
+    * `methodName(args)` the method may be from `import static`, current class (static and no-static)
+    * `target.methodName(args)` target can be any expression
+    * `Type.staticMethod(args)`
 
-* `SuperType.this.method(args)`
+* construct a new object
 
-	invoke a method of the current object from SuperType (non-static)
+    * `TypeName(args)`
+    * `TypeName(field1=value1, field2=value2)` call the no-param-constructor first, then invoke setters.
 
-* `Type.method(args)`
+* call a functional object
 
-	invoke a method of the Type (static)
+    * `func(args)`
+    * `target.field(args)`
+
+    a functional object requires that the object's class is a `direct` implementaion of a functional abstract class / functional interface.
 	
 ##6.6 as
 
@@ -1528,6 +1537,24 @@ The `call` method's arguments would be
 2. run
 3. [true, true, false]
 4. [1, 1.2, 'abc']
+
+###7.1.3. Call functional object
+Latte learns from `scala`, that object with speicfic signature can be `called` just like calling a method.
+
+But Latte has much **less** limitation.
+
+You can call an object with public `apply` method just like in `scala`, also , you can call a method whose class is `direct` implementation of a functional abstract class/interface.
+
+e.g.
+
+    add = (a, b)-> a+b
+    add(1, 2) ; result is 3
+    
+    class X
+        apply(x)=x + 1
+       
+    x = X()
+    x(3) ; result is 4
 
 ##7.2 Language Related Libraries
 ###7.2.1 evaluator and script
