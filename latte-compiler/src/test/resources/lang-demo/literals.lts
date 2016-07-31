@@ -14,12 +14,12 @@ json = {
     'a':'b'
 }
 ; comma at the end can be omitted
-; map literal would be parsed into java.util.LinkedHashMap
+; map literal would be parsed into lt::util::Map
 
 ; array
 list = [1,2,3]
 ; actually, map and array are json format
-; array literal can be array or list
+; array literal can be array or list (lt::util::List)
 
 ; bool values could be the following
 i_am_bool : bool = true
