@@ -202,7 +202,7 @@ $(document).ready(function () {
             },
             {
                 code: $sce.trustAsHtml(highlighting("example_11.lts", "" +
-                    (isZh"; calling functional object\n":"; 调用函数对象\n") +
+                    (isZh?"; calling functional object\n":"; 调用函数对象\n") +
                     "var add = (a,b) -> a+b\n" +
                     "add(1, 2) ; result is 3"
                     , {}))

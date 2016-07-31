@@ -231,7 +231,7 @@ $(document).ready(function () {
                         "        testEquals(a:Rational, b:Rational)= a==b"
                         , {}) +
                     '</pre>' +
-                    '<blockquote>'+ (zh?'关于Rational的测试用例可以在':'You can find the test case of Rational in')+' <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/test/java/lt/compiler/cases/TestDemo.java">TestDemo</a> '+(zh?'中找到':'')+'</blockquote>'
+                    '<blockquote>'+ (zh?'关于Rational的测试用例可以在':'You can find the test case of Rational in')+' <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/test/java/lt/compiler/cases/TestDemo.java">TestDemo</a> '+(zh?'中找到':'')+'</blockquote>'
                 )
             },
             {
@@ -348,7 +348,7 @@ $(document).ready(function () {
                     '</pre>' +
                     (zh?(
                     '<p>现在就可以使用一开始提到的方式来书写HTML了!</p>' +
-                    '<blockquote>完整的html支持和这个实现有些区别, 可以在 <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/lt/html.lt">这里</a> 找到</blockquote>'
+                    '<blockquote>完整的html支持和这个实现有些区别, 可以在 <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/latte-library/src/main/latte/lt/dsl/html.lt">这里</a> 找到</blockquote>'
                     ):(
                     '<p>Now we can use the method mentioned at the beginning to write HTML.</p>' +
                     '<blockquote>Full html support has some differences from this implementation, which can be found <a target="_blank" href="https://github.com/wkgcass/Latte-lang/blob/master/src/main/resources/lt/html.lt">here</a></blockquote>'
