@@ -41,7 +41,8 @@ public class CodeGenerator {
         /**
          * create the code generator with types to generate
          *
-         * @param types types
+         * @param types      types
+         * @param typeDefMap a map of type name to its representing object
          */
         public CodeGenerator(Set<STypeDef> types, Map<String, STypeDef> typeDefMap) {
                 this.types = types;
