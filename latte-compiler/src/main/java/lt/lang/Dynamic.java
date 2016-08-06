@@ -712,6 +712,10 @@ public class Dynamic {
                  * whether the method is found
                  */
                 public boolean methodFound = false;
+                /**
+                 * whether it's a reversed invocation
+                 */
+                public boolean isCallingReverse = false;
         }
 
         /**
@@ -803,7 +807,32 @@ public class Dynamic {
                                         return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args);
                                 } else if (method.equals("logicNot") && args.length == 0) {
                                         return !LtRuntime.castToBool(o);
-                                } else if (functionalObject != null) {
+                                }
+                        }
+
+                        if (!invocationState.isCallingReverse) {
+                                // reversed invocation
+                                if (o != null && args.length == 1 && args[0] != null) {
+                                        String methodName = "reverse_" + method;
+                                        Object _2 = args[0];
+
+                                        InvocationState reverseInvocationState = new InvocationState();
+                                        reverseInvocationState.isCallingReverse = true;
+                                        // reverse
+                                        try {
+                                                return invoke(reverseInvocationState,
+                                                        _2.getClass(), _2,
+                                                        null, invoker, methodName,
+                                                        new boolean[]{false}, new Object[]{o});
+                                        } catch (Throwable t) {
+                                                if (reverseInvocationState.methodFound) {
+                                                        throw t;
+                                                }
+                                        }
+                                }
+
+                                // functional object
+                                if (functionalObject != null) {
                                         // check whether it's a functional object
                                         Class<?> cls = functionalObject.getClass();
                                         Method theMethodToInvoke;
@@ -828,47 +857,47 @@ public class Dynamic {
                                                 throw e.getTargetException();
                                         }
                                 }
-                        }
 
-                        invocationState.methodFound = false; // method still not found
+                                invocationState.methodFound = false; // method still not found
 
-                        Method call = null;
-                        try {
-                                Class<?> cc = targetClass;
-                                if (o != null) {
-                                        cc = o.getClass();
-                                }
-                                call = cc.getMethod("call", Object.class, String.class, boolean[].class, Object[].class);
-                                if (Modifier.isStatic(call.getModifiers()) && !call.getReturnType().equals(void.class)) {
-                                        invocationState.methodFound = true;
-                                }
-                        } catch (NoSuchMethodException ignore) {
-                        }
-
-                        if (invocationState.methodFound) {
-                                assert call != null;
+                                Method call = null;
                                 try {
-                                        return call.invoke(null, o, method, primitives, args);
-                                } catch (InvocationTargetException e) {
-                                        throw e.getTargetException();
+                                        Class<?> cc = targetClass;
+                                        if (o != null) {
+                                                cc = o.getClass();
+                                        }
+                                        call = cc.getMethod("call", Object.class, String.class, boolean[].class, Object[].class);
+                                        if (Modifier.isStatic(call.getModifiers()) && !call.getReturnType().equals(void.class)) {
+                                                invocationState.methodFound = true;
+                                        }
+                                } catch (NoSuchMethodException ignore) {
                                 }
-                        } else {
-                                // method not found
-                                // build exception message
-                                StringBuilder sb = new StringBuilder().append(
-                                        o == null
-                                                ? targetClass.getName()
-                                                : o.getClass().getName()
-                                ).append("#").append(method).append("(");
-                                boolean isFirst = true;
-                                for (Object arg : args) {
-                                        if (isFirst) isFirst = false;
-                                        else sb.append(", ");
-                                        sb.append(arg == null ? "null" : arg.getClass().getName());
+
+                                if (invocationState.methodFound) {
+                                        assert call != null;
+                                        try {
+                                                return call.invoke(null, o, method, primitives, args);
+                                        } catch (InvocationTargetException e) {
+                                                throw e.getTargetException();
+                                        }
                                 }
-                                sb.append(")");
-                                throw new LtRuntimeException("cannot find method to invoke " + sb.toString());
                         }
+
+                        // method not found
+                        // build exception message
+                        StringBuilder sb = new StringBuilder().append(
+                                o == null
+                                        ? targetClass.getName()
+                                        : o.getClass().getName()
+                        ).append("#").append(method).append("(");
+                        boolean isFirst = true;
+                        for (Object arg : args) {
+                                if (isFirst) isFirst = false;
+                                else sb.append(", ");
+                                sb.append(arg == null ? "null" : arg.getClass().getName());
+                        }
+                        sb.append(")");
+                        throw new LtRuntimeException("cannot find method to invoke " + sb.toString());
                 }
 
                 // find best match

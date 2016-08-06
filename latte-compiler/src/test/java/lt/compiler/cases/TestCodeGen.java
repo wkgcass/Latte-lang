@@ -2472,4 +2472,20 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method", Object.class);
                 assertEquals(6, method.invoke(null, 2));
         }
+
+        @Test
+        public void testCallingReverse() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class X\n" +
+                                "    reverse_add(n) = n + 10\n" +
+                                "class TestCallingReverse\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            return 1 + X()"
+                        , "TestCallingReverse"
+                );
+                Method method = cls.getMethod("method");
+                assertEquals(11, method.invoke(null));
+        }
 }
