@@ -2756,4 +2756,28 @@ public class TestSemantic {
                 Ins.GetField getField = (Ins.GetField) indy.arguments().get(2);
                 assertEquals("a", getField.field().name());
         }
+
+        @Test
+        public void testInvokingAnything() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    a = ()->()-> 1\n" +
+                        "    a()()");
+                Set<STypeDef> set = parse(map);
+                Iterator<STypeDef> it = set.iterator();
+
+                assertEquals(3, set.size());
+
+                SClassDef classDef = (SClassDef) it.next();
+                while (!classDef.fullName().equals("test.A")) classDef = (SClassDef) it.next();
+                SConstructorDef cons = classDef.constructors().get(0);
+
+                Ins.InvokeDynamic indy = (Ins.InvokeDynamic) cons.statements().get(2);
+                assertEquals(1, indy.arguments().size());
+                Ins.InvokeDynamic indy2 = (Ins.InvokeDynamic) indy.arguments().get(0);
+                Ins.GetField getField = (Ins.GetField) indy2.arguments().get(2);
+                assertEquals("a", getField.field().name());
+        }
 }

@@ -63,12 +63,16 @@ public class Dynamic {
 
         private static MethodHandle constructorHandle;
 
+        private static MethodHandle callFunctionalObject;
+
         static {
                 try {
                         methodHandle = MethodHandles.lookup().findStatic(Dynamic.class, "invoke", MethodType.methodType(
                                 Object.class, Class.class, Object.class, Object.class, Class.class, String.class, boolean[].class, Object[].class));
                         constructorHandle = MethodHandles.lookup().findStatic(Dynamic.class, "construct", MethodType.methodType(
                                 Object.class, Class.class, Class.class, boolean[].class, Object[].class));
+                        callFunctionalObject = MethodHandles.lookup().findStatic(Dynamic.class, "callFunctionalObject", MethodType.methodType(
+                                Object.class, Object.class, Class.class, Object[].class));
                 } catch (NoSuchMethodException | IllegalAccessException e) {
                         throw new LtRuntimeException(e);
                 }
@@ -117,6 +121,27 @@ public class Dynamic {
                 }
                 MethodHandle mh = MethodHandles.insertArguments(constructorHandle, 0, methodType.returnType(), lookup.lookupClass(), primitives);
                 mh = mh.asCollector(Object[].class, methodType.parameterCount()).asType(methodType);
+
+                MutableCallSite mCallSite = new MutableCallSite(mh);
+                mCallSite.setTarget(mh);
+                return mCallSite;
+        }
+
+        /**
+         * the bootstrap method for calling a functional object.
+         *
+         * @param lookup     lookup
+         * @param methodName method name (this argument will be ignored)
+         * @param methodType methodType (class, arguments)
+         * @return generated call site
+         */
+        @SuppressWarnings("unused")
+        public static CallSite bootstrapCallFunctionalObject(MethodHandles.Lookup lookup, String methodName, MethodType methodType) {
+                // method name will not be used. it can be any value.
+                // but usually it will be "_call_functional_object_"
+
+                MethodHandle mh = MethodHandles.insertArguments(callFunctionalObject, 1, lookup.lookupClass());
+                mh = mh.asCollector(Object[].class, methodType.parameterCount() - 1).asType(methodType);
 
                 MutableCallSite mCallSite = new MutableCallSite(mh);
                 mCallSite.setTarget(mh);
@@ -833,28 +858,11 @@ public class Dynamic {
 
                                 // functional object
                                 if (functionalObject != null) {
-                                        // check whether it's a functional object
-                                        Class<?> cls = functionalObject.getClass();
-                                        Method theMethodToInvoke;
-                                        if (cls.getSuperclass() != null && isFunctionalAbstractClass(cls.getSuperclass())) {
-                                                theMethodToInvoke = findAbstractMethod(cls.getSuperclass());
-                                        } else if (cls.getInterfaces().length == 1 && isFunctionalInterface(cls.getInterfaces()[0])) {
-                                                theMethodToInvoke = findAbstractMethod(cls.getInterfaces()[0]);
-                                        } else {
-                                                // try to invoke apply(...) on this object
-                                                return invoke(invocationState, functionalObject.getClass(), functionalObject, null, invoker, "apply", primitives, args);
-                                        }
-
-                                        // continue processing `theMethodToInvoke`
-                                        invocationState.methodFound = true;
+                                        InvocationState callFunctionalState = new InvocationState();
                                         try {
-                                                Object theRes = theMethodToInvoke.invoke(functionalObject, args);
-                                                if (theMethodToInvoke.getReturnType().equals(Void.TYPE)) {
-                                                        return Undefined.get();
-                                                }
-                                                return theRes;
-                                        } catch (InvocationTargetException e) {
-                                                throw e.getTargetException();
+                                                return callFunctionalObject(callFunctionalState, functionalObject, invoker, args);
+                                        } catch (Throwable t) {
+                                                if (callFunctionalState.methodFound) throw t;
                                         }
                                 }
 
@@ -912,6 +920,64 @@ public class Dynamic {
                         Object res = methodToInvoke.invoke(o, args);
                         if (methodToInvoke.getReturnType() == void.class) return Undefined.get();
                         else return res;
+                } catch (InvocationTargetException e) {
+                        throw e.getTargetException();
+                }
+        }
+
+        /**
+         * call the functional object. This method is the CallSite method.
+         *
+         * @param functionalObject the functional object.
+         * @param callerClass      caller class
+         * @param args             arguments.
+         * @return the calling result.
+         * @throws Throwable exception when calling the functional object.
+         */
+        @SuppressWarnings("unused")
+        private static Object callFunctionalObject(Object functionalObject,
+                                                   Class<?> callerClass,
+                                                   Object[] args) throws Throwable {
+                return callFunctionalObject(new InvocationState(), functionalObject, callerClass, args);
+        }
+
+        /**
+         * call the functional object. This method is the actual method which can be directly used by other methods.
+         *
+         * @param invocationState  invocation state.
+         * @param functionalObject the functional object.
+         * @param callerClass      caller class
+         * @param args             arguments.
+         * @return the calling result.
+         * @throws Throwable exception when calling the functional object.
+         */
+        private static Object callFunctionalObject(InvocationState invocationState,
+                                                   Object functionalObject,
+                                                   Class<?> callerClass,
+                                                   Object[] args) throws Throwable {
+                if (functionalObject == null) throw new NullPointerException();
+
+                // check whether it's a functional object
+                Class<?> cls = functionalObject.getClass();
+                Method theMethodToInvoke;
+                if (cls.getSuperclass() != null && isFunctionalAbstractClass(cls.getSuperclass())) {
+                        theMethodToInvoke = findAbstractMethod(cls.getSuperclass());
+                } else if (cls.getInterfaces().length == 1 && isFunctionalInterface(cls.getInterfaces()[0])) {
+                        theMethodToInvoke = findAbstractMethod(cls.getInterfaces()[0]);
+                } else {
+                        // try to invoke apply(...) on this object
+                        return invoke(new InvocationState(),
+                                functionalObject.getClass(), functionalObject, null, callerClass, "apply", new boolean[args.length], args);
+                }
+
+                // continue processing `theMethodToInvoke`
+                invocationState.methodFound = true;
+                try {
+                        Object theRes = theMethodToInvoke.invoke(functionalObject, args);
+                        if (theMethodToInvoke.getReturnType().equals(Void.TYPE)) {
+                                return Undefined.get();
+                        }
+                        return theRes;
                 } catch (InvocationTargetException e) {
                         throw e.getTargetException();
                 }

@@ -332,7 +332,7 @@ public class JSGenerator implements SourceGenerator {
                         if (((AST.Invocation) exp).invokeWithNames) {
                                 err.SyntaxException("JavaScript don't support invoke with name", exp.line_col());
                         }
-                        buildExpression(sb, ((AST.Invocation) exp).access, indentation);
+                        buildExpression(sb, ((AST.Invocation) exp).exp, indentation);
                         sb.append("(");
                         buildArguments(sb, ((AST.Invocation) exp).args, indentation);
                         sb.append(")");

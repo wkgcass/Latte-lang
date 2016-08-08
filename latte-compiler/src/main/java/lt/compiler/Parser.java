@@ -769,7 +769,7 @@ public class Parser {
                 annos.addAll(storeCurrentAnnos);
 
                 AST.Anno anno;
-                if (e instanceof AST.Invocation) {
+                if (e instanceof AST.Invocation && ((AST.Invocation) e).exp instanceof AST.Access) {
                         // @Anno(...)
 
                         AST.Invocation inv = (AST.Invocation) e;
@@ -796,7 +796,7 @@ public class Parser {
                                         assignments.add(a);
                                 }
                         }
-                        anno = new AST.Anno(inv.access, assignments, lineCol);
+                        anno = new AST.Anno((AST.Access) inv.exp, assignments, lineCol);
                 } else if (e instanceof AST.Access) {
                         // @Anno
 
@@ -1157,13 +1157,13 @@ public class Parser {
 
                                                 if (e instanceof AST.Access) {
                                                         accesses.add((AST.Access) e);
-                                                } else if (e instanceof AST.Invocation) {
+                                                } else if (e instanceof AST.Invocation && ((AST.Invocation) e).exp instanceof AST.Access) {
                                                         if (invocation == null) {
                                                                 invocation = (AST.Invocation) e;
                                                         } else {
                                                                 err.SyntaxException("Multiple Inheritance is not allowed", e.line_col());
                                                                 err.debug("ignore the arguments and only record the name");
-                                                                accesses.add(((AST.Invocation) e).access);
+                                                                accesses.add((AST.Access) ((AST.Invocation) e).exp);
                                                         }
                                                 } else {
                                                         err.SyntaxException("super class or super interfaces cannot be " + e.toString(), e.line_col());
@@ -1753,7 +1753,7 @@ public class Parser {
                                                                 } else if (next instanceof AST.Access) {
                                                                         aNew = new AST.New(
                                                                                 new AST.Invocation(
-                                                                                        (AST.Access) next,
+                                                                                        next,
                                                                                         Collections.emptyList(),
                                                                                         false,
                                                                                         next.line_col()
@@ -1877,10 +1877,11 @@ public class Parser {
                                                                 if (current instanceof Element) {
                                                                         // element should be ')'
                                                                         expecting(")", current.previous(), current, err);
-                                                                        if (!parsedExps.empty() && (parsedExps.peek() instanceof AST.Access)) {
+                                                                        if (!parsedExps.empty()) {
                                                                                 // method() invocation
-                                                                                AST.Access access = (AST.Access) parsedExps.pop();
-                                                                                AST.Invocation invocation = new AST.Invocation(access, Collections.emptyList(), false, access.line_col());
+                                                                                Expression invocationExp = parsedExps.pop();
+                                                                                AST.Invocation invocation = new AST.Invocation(invocationExp, Collections.emptyList(),
+                                                                                        false, invocationExp.line_col());
                                                                                 parsedExps.push(invocation);
                                                                         } else {
                                                                                 err.SyntaxException("it should be the method to invoke", parsedExps.empty() ? current.getLineCol() : parsedExps.peek().line_col());
@@ -1893,9 +1894,9 @@ public class Parser {
                                                                         ElementStartNode startNode = (ElementStartNode) current;
                                                                         List<Statement> statements = parseElemStart(startNode, true, Collections.emptySet(), false);
 
-                                                                        if (!parsedExps.empty() && (parsedExps.peek() instanceof AST.Access)) {
-                                                                                // method(...)
-                                                                                AST.Access access = (AST.Access) parsedExps.pop();
+                                                                        if (!parsedExps.empty()) {
+                                                                                // method(...) or xx[i]() or xx()()()...()
+                                                                                Expression invocationExp = parsedExps.pop();
                                                                                 List<Expression> args = new ArrayList<>();
 
                                                                                 boolean allVarDef = !statements.isEmpty();
@@ -1922,7 +1923,8 @@ public class Parser {
                                                                                         }
                                                                                 }
 
-                                                                                AST.Invocation invocation = new AST.Invocation(access, args, allVarDef, current.getLineCol());
+                                                                                AST.Invocation invocation = new AST.Invocation(invocationExp,
+                                                                                        args, allVarDef, current.getLineCol());
                                                                                 parsedExps.push(invocation);
                                                                         } else {
                                                                                 if (statements.size() == 1) {

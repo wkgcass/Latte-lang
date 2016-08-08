@@ -387,7 +387,11 @@ public class SemanticProcessor {
                                         }
                                 } else {
                                         // super class
-                                        AST.Access access = classDef.superWithInvocation.access;
+                                        if (!(classDef.superWithInvocation.exp instanceof AST.Access)) {
+                                                throw new LtBug("classDef.superWithInvocation.exp should always be AST.Access");
+                                        }
+
+                                        AST.Access access = (AST.Access) classDef.superWithInvocation.exp;
                                         STypeDef tmp = getTypeWithAccess(access, imports);
                                         if (tmp instanceof SClassDef) {
                                                 sClassDef.setParent((SClassDef) tmp);
@@ -3439,8 +3443,10 @@ public class SemanticProcessor {
                         // the result can be invokeXXX or new
                         if (((AST.Invocation) exp).invokeWithNames) {
                                 v = parseValueFromInvocationWithNames((AST.Invocation) exp, scope);
-                        } else {
+                        } else if (((AST.Invocation) exp).exp instanceof AST.Access) {
                                 v = parseValueFromInvocation((AST.Invocation) exp, scope);
+                        } else {
+                                v = parseValueFromInvocationFunctionalObject((AST.Invocation) exp, scope);
                         }
                 } else if (exp instanceof AST.AsType) {
                         AST.AsType asType = (AST.AsType) exp;
@@ -3586,9 +3592,10 @@ public class SemanticProcessor {
         private Value parseValueFromNew(AST.New aNew, SemanticScope scope) throws SyntaxException {
                 SClassDef type;
                 try {
-                        type = (SClassDef) getTypeWithAccess(aNew.invocation.access, fileNameToImport.get(aNew.line_col().fileName));
+                        type = (SClassDef) getTypeWithAccess((AST.Access) aNew.invocation.exp,
+                                fileNameToImport.get(aNew.line_col().fileName));
                 } catch (Throwable t) {
-                        err.SyntaxException(aNew.invocation.access + " is not a class", aNew.line_col());
+                        err.SyntaxException(aNew.invocation.exp + " is not a class", aNew.line_col());
                         return null;
                 }
                 assert type != null;
@@ -3690,9 +3697,10 @@ public class SemanticProcessor {
         private ValuePack parseValueFromInvocationWithNames(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
                 STypeDef theType;
                 try {
-                        theType = getTypeWithAccess(invocation.access, fileNameToImport.get(invocation.line_col().fileName));
+                        theType = getTypeWithAccess((AST.Access) invocation.exp,
+                                fileNameToImport.get(invocation.line_col().fileName));
                 } catch (Throwable t) {
-                        err.SyntaxException(invocation.access + " is not a type", invocation.access.line_col());
+                        err.SyntaxException(invocation.exp + " is not a type", invocation.exp.line_col());
                         return null;
                 }
                 if (theType instanceof SInterfaceDef) {
@@ -6584,6 +6592,33 @@ public class SemanticProcessor {
         }
 
         /**
+         * call the functional object just like calling a method.
+         *
+         * @param invocation invocation object. the invocation.exp is any expression but AST.Access.
+         * @param scope      scope that contains local variables and local methods.
+         * @return The invocation result. Usually the result is InvokeDynamic.
+         * @throws SyntaxException compiling error.
+         * @see #parseValueFromInvocation(AST.Invocation, SemanticScope)
+         * @see #parseValueFromInvocationWithNames(AST.Invocation, SemanticScope)
+         */
+        private Value parseValueFromInvocationFunctionalObject(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
+                Expression exp = invocation.exp;
+                Value possibleFunctionalObject = parseValueFromExpression(exp, null, scope);
+
+                List<Value> arguments = new ArrayList<>();
+                arguments.add(possibleFunctionalObject);
+                for (Expression e : invocation.args) {
+                        arguments.add(parseValueFromExpression(e, null, scope));
+                }
+
+                return new Ins.InvokeDynamic(
+                        getCallFunctionalObjectBootstrapMethod(),
+                        "_call_functional_object_", arguments,
+                        getObject_Class(), Dynamic.INVOKE_STATIC, invocation.line_col()
+                );
+        }
+
+        /**
          * get value from Invocation<br>
          * the Invocation may<br>
          * <ol>
@@ -6596,10 +6631,13 @@ public class SemanticProcessor {
          * <li>construct an object -- {@link #getTypeWithAccess(AST.Access, List)}</li>
          * </ol>
          *
-         * @param invocation invocation object
+         * @param invocation invocation object. invocation.exp should be AST.Access when calling this method.
+         *                   and invocation.invokeWithNames should be false.
          * @param scope      scope that contains local variables and local methods
          * @return Invoke object or New object(represents invokeXXX or new instruction)
          * @throws SyntaxException exceptions
+         * @see #parseValueFromInvocationWithNames(AST.Invocation, SemanticScope)
+         * @see #parseValueFromInvocationFunctionalObject(AST.Invocation, SemanticScope)
          */
         private Value parseValueFromInvocation(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
                 // parse args
@@ -6626,7 +6664,7 @@ public class SemanticProcessor {
                 // get method and target
                 // get import
                 List<Import> imports = fileNameToImport.get(invocation.line_col().fileName);
-                AST.Access access = invocation.access;
+                AST.Access access = (AST.Access) invocation.exp;
                 if (access.exp == null) {
                         // access structure should be
                         // Access(null, methodName)
@@ -6894,7 +6932,7 @@ public class SemanticProcessor {
                                                                         "(type,methodName)" +
                                                                         "/((type or null,\"this\"),methodName)" +
                                                                         "/(null,methodName)/(value,methodName) " +
-                                                                        "but got " + invocation.access, access.exp.line_col());
+                                                                        "but got " + invocation.exp, access.exp.line_col());
                                                         return null;
                                                 } else {
                                                         if (throwableWhenTryValue instanceof SyntaxException) {
@@ -7311,6 +7349,35 @@ public class SemanticProcessor {
                         constructBootstrapMethod = indyMethod;
                 }
                 return constructBootstrapMethod;
+        }
+
+        private SMethodDef callFunctionalObjectBootstrapMethod;
+
+        private SMethodDef getCallFunctionalObjectBootstrapMethod() throws SyntaxException {
+                if (callFunctionalObjectBootstrapMethod == null) {
+                        SClassDef indyType = (SClassDef) getTypeWithName("lt.lang.Dynamic", LineCol.SYNTHETIC);
+                        assert indyType != null;
+
+                        SMethodDef indyMethod = null;
+                        for (SMethodDef m : indyType.methods()) {
+                                if (m.name().equals("bootstrapCallFunctionalObject") && m.getParameters().size() == 3) {
+                                        List<SParameter> parameters = m.getParameters();
+                                        if (parameters.get(0).type().fullName().equals("java.lang.invoke.MethodHandles$Lookup")
+                                                &&
+                                                parameters.get(1).type().fullName().equals("java.lang.String")
+                                                &&
+                                                parameters.get(2).type().fullName().equals("java.lang.invoke.MethodType")) {
+                                                // bootstrap method found
+                                                indyMethod = m;
+                                                break;
+                                        }
+                                }
+                        }
+                        if (indyMethod == null)
+                                throw new LtBug("bootstrap method should exist. lt.lang.Dynamic.bootstrapCallFunctionalObject(java.lang.invoke.MethodHandles.Lookup, java.lang.String, java.lang.invoke.MethodType)");
+                        callFunctionalObjectBootstrapMethod = indyMethod;
+                }
+                return callFunctionalObjectBootstrapMethod;
         }
 
         /**

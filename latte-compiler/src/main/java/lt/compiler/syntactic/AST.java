@@ -583,13 +583,13 @@ public class AST {
          * invocation of methods/constructors
          */
         public static class Invocation implements Expression {
-                public final Access access;
+                public final Expression exp;
                 public final List<Expression> args;
                 public final boolean invokeWithNames;
                 private final LineCol lineCol;
 
-                public Invocation(Access access, List<Expression> args, boolean invokeWithNames, LineCol lineCol) {
-                        this.access = access;
+                public Invocation(Expression exp, List<Expression> args, boolean invokeWithNames, LineCol lineCol) {
+                        this.exp = exp;
                         this.invokeWithNames = invokeWithNames;
                         this.lineCol = lineCol;
                         this.args = args;
@@ -598,7 +598,7 @@ public class AST {
                 @Override
                 public String toString() {
                         StringBuilder sb = new StringBuilder("Invocation(");
-                        sb.append(access);
+                        sb.append(exp);
                         sb.append("(");
                         boolean isFirst = true;
                         for (Expression e : args) {
@@ -622,14 +622,14 @@ public class AST {
                         Invocation that = (Invocation) o;
 
                         if (invokeWithNames != that.invokeWithNames) return false;
-                        if (access != null ? !access.equals(that.access) : that.access != null) return false;
+                        if (exp != null ? !exp.equals(that.exp) : that.exp != null) return false;
                         //
                         return !(args != null ? !args.equals(that.args) : that.args != null);
                 }
 
                 @Override
                 public int hashCode() {
-                        int result = access != null ? access.hashCode() : 0;
+                        int result = exp != null ? exp.hashCode() : 0;
                         result = 31 * result + (args != null ? args.hashCode() : 0);
                         result = 31 * result + (invokeWithNames ? 1 : 0);
                         return result;

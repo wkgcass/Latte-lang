@@ -64,7 +64,7 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "1+,2"
+                                "1+,2"
                 /*         ^Unexpected End */
                         , err);
                 assertEquals(1, err.errorList.size());
@@ -88,7 +88,7 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "1+"
+                                "1+"
                 /*         ^Unexpected End */
                         , err);
                 assertEquals(1, err.errorList.size());
@@ -105,9 +105,9 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "if a type Object\n" +
+                                "if a type Object\n" +
                 /*          ^no where to place */
-                        "    ..."
+                                "    ..."
                         , err);
 
                 assertEquals(1, err.errorList.size());
@@ -133,7 +133,7 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "static private"
+                                "static private"
                 /*              ^not a statement */
                         , err);
 
@@ -151,9 +151,9 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "synchronized(a, method():Unit)\n" +
+                                "synchronized(a, method():Unit)\n" +
                 /*                       ^not an expression */
-                        "    ..."
+                                "    ..."
                         , err);
 
                 assertEquals(1, err.errorList.size());
@@ -178,7 +178,7 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "while true"
+                                "while true"
                 /*       ^not elem start */
                         , err);
 
@@ -205,7 +205,7 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "do a"
+                                "do a"
                 /*          ^unexpected
                  *       ^unexpected end
                  */
@@ -229,9 +229,9 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "import method()\n" +
+                                "import method()\n" +
                 /*              ^not access */
-                        "import method()._"
+                                "import method()._"
                 /*              ^not import static */
                         , err);
 
@@ -252,13 +252,13 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "package pack.clsx\n" +
+                                "package pack.clsx\n" +
                 /*                   ^not :: not name */
-                        "package pack cls\n" +
+                                "package pack cls\n" +
                 /*                    ^shouldn't be name */
-                        "package\n" +
+                                "package\n" +
                 /*              ^shouldn't be name */
-                        "    ..."
+                                "    ..."
                         , err);
 
                 assertEquals(4, err.errorList.size());
@@ -295,9 +295,9 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "@[]\n" +
+                                "@[]\n" +
                 /*        ^expecting annotation instance */
-                        "a"
+                                "a"
                         , err);
 
                 assertEquals(1, err.errorList.size());
@@ -319,15 +319,15 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "try\n" +
+                                "try\n" +
                 /*       ^invalid try */
-                        "try\n" +
-                        "    ...\n" +
-                        "catch e fail1\n" +
+                                "try\n" +
+                                "    ...\n" +
+                                "catch e fail1\n" +
                 /*                    ^unexpected */
-                        "try\n" +
-                        "    ...\n" +
-                        "finally fail2"
+                                "try\n" +
+                                "    ...\n" +
+                                "finally fail2"
                 /*               ^unexpected token */
                         , err);
 
@@ -372,12 +372,12 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "interface I:invoke()\n" +
+                                "interface I:invoke()\n" +
                 /*                   ^invalid try */
-                        "interface :\n" +
+                                "interface :\n" +
                 /*                 ^invalid try */
-                        "interface\n" +
-                        "    ...."
+                                "interface\n" +
+                                "    ...."
                 /*           ^invalid try */
                         , err);
 
@@ -411,18 +411,18 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "class C(a=1,b)\n" +
+                                "class C(a=1,b)\n" +
                 /*                   ^should have init value */
-                        "class C(a, method())\n" +
+                                "class C(a, method())\n" +
                 /*                  ^not variableDef or Access(null,'') */
-                        "class C*\n" +
+                                "class C*\n" +
                 /*              ^unexpected */
-                        "class C:P1(),P2()\n" +
+                                "class C:P1(),P2()\n" +
                 /*                    ^multiple Inheritance */
-                        "class C:a*2\n" +
+                                "class C:a*2\n" +
                 /*                ^not invocation nor access */
-                        "class\n" +
-                        "    ..."
+                                "class\n" +
+                                "    ..."
                 /*           ^unexpected */
                         , err);
 
@@ -520,8 +520,8 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "for\n" +
-                        "    ..."
+                                "for\n" +
+                                "    ..."
                 /*           ^unexpected */
                         , err);
 
@@ -540,9 +540,9 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "if true\n" +
-                        "else\n" +
-                        "elseif true"
+                                "if true\n" +
+                                "else\n" +
+                                "elseif true"
                 /*              ^syntax */
                         , err);
 
@@ -568,9 +568,9 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "method(a=1,b):Unit\n" +
+                                "method(a=1,b):Unit\n" +
                 /*                  ^no init value */
-                        "method(a=1,method()):Unit\n"
+                                "method(a=1,method()):Unit\n"
                 /*                  ^syntax */
                         , err);
 
@@ -619,7 +619,7 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "as 1"
+                                "as 1"
                 /*                  ^syntax */
                         , err);
 
@@ -637,31 +637,32 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "method()()\n" +
-                /*       ^syntax */
-                        "method(())\n" +
+                                "method()()\n" +
+                /*       ^!!!! it's NO longer a syntax error */
+                                "method(())\n" +
                 /*              ^syntax */
-                        "method(class C, a)"
+                                "method(class C, a)"
                 /*              ^syntax */
                         , err);
 
-                assertEquals(3, err.errorList.size());
-                assertEquals(1, err.errorList.get(0).lineCol.line);
-                assertEquals(1, err.errorList.get(0).lineCol.column);
+                assertEquals(2, err.errorList.size());
+
+                assertEquals(2, err.errorList.get(0).lineCol.line);
+                assertEquals(9, err.errorList.get(0).lineCol.column);
                 assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(0).type);
 
-                assertEquals(2, err.errorList.get(1).lineCol.line);
-                assertEquals(9, err.errorList.get(1).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(1).type);
-
-                assertEquals(3, err.errorList.get(2).lineCol.line);
-                assertEquals(8, err.errorList.get(2).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(2).type);
+                assertEquals(3, err.errorList.get(1).lineCol.line);
+                assertEquals(8, err.errorList.get(1).lineCol.column);
+                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(1).type);
 
                 assertEquals(
                         Arrays.asList(
                                 new AST.Invocation(
-                                        new AST.Access(null, "method", LineCol.SYNTHETIC),
+                                        new AST.Invocation(
+                                                new AST.Access(null, "method", LineCol.SYNTHETIC),
+                                                Collections.emptyList(),
+                                                false, LineCol.SYNTHETIC
+                                        ),
                                         Collections.emptyList(),
                                         false, LineCol.SYNTHETIC
                                 ),
@@ -686,21 +687,21 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "{\n" +
-                        "    'a':,\n" +
+                                "{\n" +
+                                "    'a':,\n" +
                 /*              ^syntax */
-                        "    'b':2\n" +
-                        "}\n" +
-                        "{\n" +
-                        "    'a':1\n" +
-                        "    'b':class C\n" +
+                                "    'b':2\n" +
+                                "}\n" +
+                                "{\n" +
+                                "    'a':1\n" +
+                                "    'b':class C\n" +
                 /*               ^syntax */
-                        "    'c':3\n" +
-                        "}\n" +
-                        "{\n" +
-                        "    'a'\n" +
+                                "    'c':3\n" +
+                                "}\n" +
+                                "{\n" +
+                                "    'a'\n" +
                 /*           ^syntax */
-                        "}"
+                                "}"
                         , err);
 
                 assertEquals(4, err.errorList.size());
@@ -750,9 +751,9 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "arr[1,class C,3]\n" +
+                                "arr[1,class C,3]\n" +
                 /*              ^unexpected */
-                        "[1,class C,3]"
+                                "[1,class C,3]"
                 /*          ^unexpected */
                         , err);
 
@@ -793,7 +794,7 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "(a.b, method(), c)->1"
+                                "(a.b, method(), c)->1"
                 /*              ^unexpected */
                         , err);
 
@@ -823,8 +824,8 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                        "a.\n" +
-                        "    ...\n"
+                                "a.\n" +
+                                "    ...\n"
                 /*           ^unexpected */
                         , err);
 

@@ -2488,4 +2488,23 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals(11, method.invoke(null));
         }
+
+        @Test
+        public void testFunctionalObjectUpgradeVersion() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestFunctionalObjectUpgradeVersion\n" +
+                                "    static\n" +
+                                "        method1(n)\n" +
+                                "            a = (x,y)->(z)->x+y+z\n" +
+                                "            return a(n,3)(2)\n" +
+                                "        method2(o)\n" +
+                                "            return o[0](3)"
+                        , "TestFunctionalObjectUpgradeVersion");
+                Method method1 = cls.getMethod("method1", Object.class);
+                assertEquals(7, method1.invoke(null, 2));
+                Method method2 = cls.getMethod("method2", Object.class);
+                assertEquals(4, method2.invoke(null,
+                        (Object) new Function[]{(Function<Integer, Object>) o -> o + 1}));
+        }
 }
