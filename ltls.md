@@ -86,6 +86,7 @@
 		1. DSL
 		2. Dynamic Method Invocation
 		3. Call functional object
+		4. Reversed Invocation
 	2. Language Related Libraries
 		1. evaluator and script
 		2. List
@@ -1555,6 +1556,25 @@ e.g.
        
     x = X()
     x(3) ; result is 4
+
+You can call `any expression` as long as the object you are calling matches the above rules. e.g.
+
+    func = (x, y)-> (z)-> x + y + z
+    func(1, 2)(3) ; result is 6
+
+###7.1.4 Reversed Invocation
+
+Sometimes you would like to write a library, for example a Rational library.  
+You may want to write code as : `1 - Rational(1, 3)` which means `1 - 1/3`, result should be `2/3`
+
+Latte-lang allow you to override operator `-` with method definition `subtract(...)`, but `Integer/int` don't have method `subtract`.
+
+Now Latte-lang allow you to `reverse invoke` a method, simply add `reverse_` prefix to your method name. e.g.
+
+    a.subtract(b) ; could be b.reverse_subtract(a)
+    a + b ; could be b.reverse_add(a)
+
+This feature can be used on any methods whose names start with `reverse_` and the length is greater than 8 (`'reverse_'.length`).
 
 ##7.2 Language Related Libraries
 ###7.2.1 evaluator and script

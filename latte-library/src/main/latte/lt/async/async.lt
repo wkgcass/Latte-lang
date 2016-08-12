@@ -1,0 +1,274 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package lt::async
+
+/*
+Async is a library help you run async programs elegantly.
+The library is buit for async programs but itself doesn't provide threads or thread pools.
+It simply runs as a single-thread program, but the functions passed in might be from
+a framework or library that maintains a thread pool. e.g. Vert.x event loop.
+*/
+class Async
+    /*
+    waterfall accepts a list of functions, these functions should have two params.
+    the first param of the function is result from previous function (or null if it's the first function)
+    the second param of the function is the next function to be invoked, e.g.
+
+        Async().waterfall(
+            [
+                (res, next)->
+                    ...
+                    next(something)
+                (res, next)->
+                    ...
+                    next(something)
+            ], (err, res)->
+                if err
+                    ...
+                else
+                    ...
+        )
+
+    when an exception occurred, it automatically goes to the final callback function
+    and apply the exception as the first argument, null as the second argument
+    */
+    waterfall(functions, callback):Unit
+        callback = CallbackWrapper2(callback)
+        var next = (res)-> callback(null, res)
+        for i in (functions.length-1)..0
+            var f = functions[i]
+            next = WaterfallFunNext(f, next, callback)
+        next(null)
+
+    /*
+    parallel accepts a list of functions, these functions should have one parameter,
+    which represents the callback function to invoke, e.g.
+
+        Async().parallel(
+            [
+                (next)->
+                    ...
+                    next(something)
+                (next)->
+                    ...
+                    next(something)
+            ], (err, results)->
+                if err
+                    ...
+                else
+                    var res0 = results[0]
+                    var res1 = results[1]
+                    ...
+        )
+
+    These functions will be invoked and results will be collected,
+    the result order is the same as the functions' but the functions are called
+    at the same time.
+
+    when an exception occurred, it automatically goes to the final callback function
+    and apply the exception as the first argument, null as the second argument
+    */
+    parallel(functions, callback):Unit
+        callback = CallbackWrapper2(callback)
+        var resultMap = {}
+        for i in 0.:functions.length
+            var f = functions[i]
+            var next = ParallelFunNext(resultMap, i, functions.length, callback)
+            f(next)
+
+    /*
+    series accepts a list of functions, these functions should have one parameter,
+    which represents the callback function to invoke, e.g.
+
+        Async().series(
+            [
+                (next)->
+                    ...
+                    next(something)
+                (next)->
+                    ...
+                    next(something)
+            ], (err, results)->
+                if err
+                    ...
+                else
+                    var res0 = results[0]
+                    var res1 = results[1]
+                    ...
+        )
+
+    These functions will be invoked and results will be collected,
+    the result order and function-calling-order are both the same as the functions'
+
+    when an exception occurred, it automatically goes to the final callback function
+    and apply the exception as the first argument, null as the second argument
+    */
+    series(functions, callback):Unit
+        callback = CallbackWrapper2(callback)
+        var resultList = []
+        var next = func->
+            callback(null, resultList)
+        for i in (functions.length-1)..0
+            var f = functions[i]
+            next = SeriesFunNext(f, next, callback, resultList)
+        next(null)
+
+    /*
+    `each` accepts a list/array and for each element invokes `iterator`, and finally
+    invoke the `callback` function.
+    iterator is a function with two params, the first is current element to handle,
+    the second is a function with 0 param, which let the library know this iteration finishes.
+    `callback` is a function with 1 param, which represents the exception or null
+    if no exception thrown during the process
+
+        Async().each(
+            [1, 2, 3, 4]
+            (item, next)->
+                ...
+                next()
+            err ->
+                if err
+                    ...
+                else
+                    ...
+        )
+
+    The iterations start at the same time.
+    when an exception occurred, it automatically goes to the final callback function
+    and apply the exception as the first argument
+    */
+    each(array, iterator, callback):Unit
+        callback = CallbackWrapper1(callback)
+        var taskStatus = {}
+        for i in 0.:array.length
+            var item = array[i]
+            var next = EachFunNext(taskStatus, i, array.length, callback)
+            try
+                iterator(item, next)
+            catch e
+                callback(e)
+
+    /*
+    `eachSeries` accepts a list/array and for each element invokes `iterator`,
+    and finally invoke the `callback` function.
+    iterator is a function with two params, the first is current element to handle,
+    the second is a function with 0 param, which let the library know this iteration finishes.
+    `callback` is a function with 1 param, which represents the exception or null
+    if no exception thrown during the process
+
+        Async().eachSeries(
+            [1, 2, 3, 4]
+            (item, next)->
+                ...
+                next()
+            err ->
+                if err
+                    ...
+                else
+                    ...
+        )
+
+    The iterations run in an order same as elements order in the given array.
+    when an exception occurred, it automatically goes to the final callback function
+    and apply the exception as the first argument
+    */
+    eachSeries(array, iterator, callback):Unit
+        callback = CallbackWrapper1(callback)
+        var next = ()->
+            callback(null)
+        for i in (array.length-1)..0
+            var item = array[i]
+            next = EachSeriesFunNext(item, iterator, next, callback)
+        next()
+
+; this class makes sure that the callback method would be invoked only once
+abstract class CallbackWrapper(callback)
+    alreadyCalled = false
+    apply(arg1, arg2):Unit
+        if alreadyCalled
+            return
+        alreadyCalled = true
+        invokeCallback(arg1, arg2)
+
+    protected abstract invokeCallback(arg1, arg2)
+
+class CallbackWrapper2(callback):CallbackWrapper(callback)
+    @Override
+    protected invokeCallback(arg1, arg2)
+        callback(arg1)
+
+class CallbackWrapper2(callback):CallbackWrapper(callback)
+    @Override
+    protected invokeCallback(arg1, arg2)
+        callback(arg1, arg2)
+
+class WaterfallFunNext(f, next, callback)
+    callback = CallbackWrapper(callback)
+    apply(res)
+        try
+            f(res, next)
+        catch e
+            callback(e, null)
+
+class ParallelFunNext(resultMap, cursor, functionLength, callback)
+    apply(res)
+        try
+            resultMap[cursor] = res
+            checkAndInvokeCallback()
+        catch e
+            callback(e, null)
+    private checkAndInvokeCallback():Unit
+        var list = []
+        for i in 0.:functionLength
+            if resultMap.containsKey(i)
+                list + resultMap[i]
+            else
+                return
+        callback(null, list)
+
+class SeriesFunNext(f, next, callback, resultList)
+    apply(res)
+        resultList + res
+        try
+            f(next)
+        catch e
+            callback(e, null)
+
+class EachFunNext(taskStatus, cursor, arrayLength, callback)
+    apply()
+        taskStatus[cursor] = true
+        checkAndInvokeCallback()
+    private checkAndInvokeCallback():Unit
+        for i in 0.:arrayLength
+            if !taskStatus.containsKey(i)
+                return
+        callback(null)
+
+class EachSeriesFunNext(item, it, next, callback)
+    apply()
+        try
+            it(item, next)
+        catch e
+            callback(e)
