@@ -145,13 +145,12 @@ public class Evaluator {
                 }
 
                 List<Statement> innerStatements = new ArrayList<>();
-                List<Statement> defsAndImports = new ArrayList<>();
+                List<Statement> defList = new ArrayList<>();
 
                 for (Statement s : statements) {
                         if (s instanceof ClassDef || s instanceof InterfaceDef || s instanceof FunDef) {
-                                defsAndImports.add(s);
+                                defList.add(s);
                         } else if (s instanceof Import) {
-                                defsAndImports.add(s);
                                 imports.add((Import) s);
                         } else if (s instanceof PackageDeclare) {
                                 err.SyntaxException("scripts cannot have package declaration", s.line_col());
@@ -209,16 +208,16 @@ public class Evaluator {
                 );
 
                 // fill the eval class into the def list
-                defsAndImports.add(evalClass);
-                defsAndImports.add(new Import(new AST.PackageRef("lt::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                defsAndImports.add(new Import(new AST.PackageRef("java::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                defsAndImports.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                defsAndImports.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                defsAndImports.add(new Import(new AST.PackageRef("lt::repl", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                defsAndImports.addAll(imports);
+                defList.add(evalClass);
+                defList.add(new Import(new AST.PackageRef("lt::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                defList.add(new Import(new AST.PackageRef("java::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                defList.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                defList.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                defList.add(new Import(new AST.PackageRef("lt::repl", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                defList.addAll(imports);
 
                 SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
-                        put(evalFileName, defsAndImports);
+                        put(evalFileName, defList);
                 }}, cl, err);
                 CodeGenerator codeGen = new CodeGenerator(processor.parse(), processor.getTypes());
                 Map<String, byte[]> byteCodes = codeGen.generate();

@@ -128,11 +128,12 @@ class Async
     series(functions, callback):Unit
         callback = CallbackWrapper2(callback)
         var resultList = []
-        var next = func->
+        var next = elem->
+            resultList + elem
             callback(null, resultList)
         for i in (functions.length-1)..0
             var f = functions[i]
-            next = SeriesFunNext(f, next, callback, resultList)
+            next = SeriesFunNext(f, next, callback, resultList, i)
         next(null)
 
     /*
@@ -211,10 +212,15 @@ abstract class CallbackWrapper(callback)
             return
         alreadyCalled = true
         invokeCallback(arg1, arg2)
+    apply(arg1):Unit
+        if alreadyCalled
+            return
+        alreadyCalled = true
+        invokeCallback(arg1, null)
 
     protected abstract invokeCallback(arg1, arg2)
 
-class CallbackWrapper2(callback):CallbackWrapper(callback)
+class CallbackWrapper1(callback):CallbackWrapper(callback)
     @Override
     protected invokeCallback(arg1, arg2)
         callback(arg1)
@@ -225,7 +231,7 @@ class CallbackWrapper2(callback):CallbackWrapper(callback)
         callback(arg1, arg2)
 
 class WaterfallFunNext(f, next, callback)
-    callback = CallbackWrapper(callback)
+    callback = CallbackWrapper2(callback)
     apply(res)
         try
             f(res, next)
@@ -248,9 +254,10 @@ class ParallelFunNext(resultMap, cursor, functionLength, callback)
                 return
         callback(null, list)
 
-class SeriesFunNext(f, next, callback, resultList)
+class SeriesFunNext(f, next, callback, resultList, cursor)
     apply(res)
-        resultList + res
+        if cursor > 0
+            resultList + res
         try
             f(next)
         catch e

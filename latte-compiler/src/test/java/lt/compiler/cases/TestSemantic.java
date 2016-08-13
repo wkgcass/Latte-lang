@@ -2780,4 +2780,20 @@ public class TestSemantic {
                 Ins.GetField getField = (Ins.GetField) indy2.arguments().get(2);
                 assertEquals("a", getField.field().name());
         }
+
+        @Test
+        public void testOverrideMethods() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class A\n" +
+                        "    protected abstract method(arg)\n" +
+                        "class B:A\n" +
+                        "    @Override\n" +
+                        "    protected method(arg)=1\n" +
+                        "class C:A\n" +
+                        "    @Override\n" +
+                        "    protected method(arg)=2");
+                parse(map); // pass compilation
+        }
 }

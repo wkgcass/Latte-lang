@@ -4015,6 +4015,7 @@ public class SemanticProcessor {
                         LineCol.SYNTHETIC
                 );
                 SMethodDef method = parseInnerMethod(methodDef, scope);
+                methodToStatements.put(method, lambda.statements);
 
                 List<Value> args = new ArrayList<>();
                 assert method != null;

@@ -786,7 +786,6 @@ public class Dynamic {
                 }
 
                 if (methodList.isEmpty()) {
-                        invocationState.methodFound = true; // set to true, if method not found then set this to false
 
                         if (c.isArray()) {
                                 if (method.equals("get") && args.length >= 1 && args[0] instanceof Integer) {
@@ -966,7 +965,7 @@ public class Dynamic {
                         theMethodToInvoke = findAbstractMethod(cls.getInterfaces()[0]);
                 } else {
                         // try to invoke apply(...) on this object
-                        return invoke(new InvocationState(),
+                        return invoke(invocationState,
                                 functionalObject.getClass(), functionalObject, null, callerClass, "apply", new boolean[args.length], args);
                 }
 

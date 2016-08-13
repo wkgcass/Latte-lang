@@ -169,4 +169,10 @@ public class TestBugsInEval {
                         "").result;
                 assertEquals(6, res);
         }
+
+        @Test
+        public void testEmptyLambda() throws Exception {
+                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
+                evaluator.eval("()->...");
+        }
 }

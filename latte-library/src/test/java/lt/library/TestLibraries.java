@@ -150,10 +150,42 @@ public class TestLibraries {
         }
 
         @Test
-        public void testAsync() throws Exception {
+        public void testAsync_waterfall() throws Exception {
                 Class<?> TestAsync = Class.forName("lt.async.test.TestAsync");
 
                 Method testWaterfall = TestAsync.getMethod("testWaterfall");
                 assertEquals(Arrays.asList(1, 2, 3), testWaterfall.invoke(null));
+        }
+
+        @Test
+        public void testAsync_parallel() throws Exception {
+                Class<?> TestAsync = Class.forName("lt.async.test.TestAsync");
+
+                Method testParallel = TestAsync.getMethod("testParallel");
+                assertEquals(Arrays.asList(1, 2, 3), testParallel.invoke(null));
+        }
+
+        @Test
+        public void testAsync_series() throws Exception {
+                Class<?> TestAsync = Class.forName("lt.async.test.TestAsync");
+
+                Method testSeries = TestAsync.getMethod("testSeries");
+                assertEquals(Arrays.asList(1, 2, 3), testSeries.invoke(null));
+        }
+
+        @Test
+        public void testAsync_each() throws Exception {
+                Class<?> TestAsync = Class.forName("lt.async.test.TestAsync");
+
+                Method testEach = TestAsync.getMethod("testEach");
+                assertEquals(Arrays.asList(1, 2, 3), testEach.invoke(null));
+        }
+
+        @Test
+        public void testAsync_eachSeries() throws Exception {
+                Class<?> TestAsync = Class.forName("lt.async.test.TestAsync");
+
+                Method testEachSeries = TestAsync.getMethod("testEachSeries");
+                assertEquals(Arrays.asList(1, 2, 3), testEachSeries.invoke(null));
         }
 }

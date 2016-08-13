@@ -467,7 +467,8 @@ public class Parser {
 
                         if (current.getTokenType() == TokenType.VALID_NAME) {
                                 // check whether is method def
-                                int def_method_type = checkMethodDef((Element) current);
+                                int def_method_type = checkMethodDef((Element) current,
+                                        !annos.isEmpty() || !modifiers.isEmpty());
                                 if (def_method_type == METHOD_DEF_TYPE) {
                                         // method():Type
                                         return parse_method_def_type();
@@ -702,7 +703,7 @@ public class Parser {
          * </code>
          *
          * @return PackageDeclare
-         * @throws SyntaxException
+         * @throws SyntaxException compiling error
          */
         private PackageDeclare parse_pkg_declare() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
@@ -962,7 +963,7 @@ public class Parser {
          * </code>
          *
          * @return InterfaceDef
-         * @throws SyntaxException
+         * @throws SyntaxException compiling error
          */
         private InterfaceDef parse_interface() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
@@ -1486,20 +1487,24 @@ public class Parser {
                 String methodName = ((Element) current).getContent();
                 Set<AST.Anno> annos = new HashSet<>(this.annos);
                 this.annos.clear();
+                Set<Modifier> modifiers = new HashSet<>(this.modifiers);
+                this.modifiers.clear();
 
                 List<VariableDef> variableList = new ArrayList<>();
                 Set<String> names = new HashSet<>();
                 parse_method_def_variables(variableList, names);
                 // method(..)
-                nextNode(false); // method(..)=
-                nextNode(false); // method(..)=pass
-                nextNode(true);
+
+                nextNode(true); // method(..)= or method(..)
+                if (current != null && !(current instanceof EndingNode)) {
+                        nextNode(false); // method(..)=pass
+                        nextNode(true);
+                }
 
                 MethodDef def = new MethodDef(methodName, modifiers, null, variableList, annos,
                         Collections.emptyList(),
                         lineCol);
                 annos.clear();
-                modifiers.clear();
                 return def;
         }
 
@@ -1517,6 +1522,8 @@ public class Parser {
                 String methodName = ((Element) current).getContent();
                 Set<AST.Anno> annos = new HashSet<>(this.annos);
                 this.annos.clear();
+                Set<Modifier> modifiers = new HashSet<>(this.modifiers);
+                this.modifiers.clear();
 
                 List<VariableDef> variableList = new ArrayList<>();
                 Set<String> names = new HashSet<>();
@@ -1528,12 +1535,9 @@ public class Parser {
                 parse_expression();
 
                 Expression exp = parsedExps.pop();
-                MethodDef def = new MethodDef(methodName, modifiers, null, variableList, annos, Collections.singletonList(
+                return new MethodDef(methodName, modifiers, null, variableList, annos, Collections.singletonList(
                         new AST.Return(exp, exp.line_col())
                 ), lineCol);
-                annos.clear();
-                modifiers.clear();
-                return def;
         }
 
         /**

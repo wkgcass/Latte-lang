@@ -299,9 +299,10 @@ public class CompileUtil {
                 return false;
         }
 
-        public static int checkMethodDef(Element elem) throws UnexpectedEndException {
+        public static int checkMethodDef(Element elem, boolean annosOrModifiersNotEmpty) throws UnexpectedEndException {
                 if (elem.getTokenType() == TokenType.VALID_NAME) {
                         Node nodeAfterRightPar = null;
+                        Node rightPar = null;
 
                         // method
                         Node n1 = get_next_node(elem);
@@ -315,19 +316,25 @@ public class CompileUtil {
                                                 if (n3 instanceof Element) {
                                                         // method(口)
                                                         if (((Element) n3).getContent().equals(")")) {
+                                                                rightPar = n3;
                                                                 nodeAfterRightPar = get_next_node(n3);
                                                         }
                                                 }
                                         } else if (n2 instanceof Element) {
                                                 // method()
                                                 if (((Element) n2).getContent().equals(")")) {
+                                                        rightPar = n2;
                                                         nodeAfterRightPar = get_next_node(n2);
                                                 }
                                         }
                                 }
                         }
 
-                        if (nodeAfterRightPar != null) {
+                        if (nodeAfterRightPar == null) {
+                                if (rightPar != null && annosOrModifiersNotEmpty) {
+                                        return METHOD_DEF_EMPTY;
+                                }
+                        } else {
                                 if (nodeAfterRightPar instanceof ElementStartNode) {
                                         return METHOD_DEF_NORMAL;
                                 } else if (nodeAfterRightPar instanceof Element) {
@@ -343,6 +350,8 @@ public class CompileUtil {
                                                                 return METHOD_DEF_ONE_STMT;
                                                 }
                                         }
+                                } else if (nodeAfterRightPar instanceof EndingNode && annosOrModifiersNotEmpty) {
+                                        return METHOD_DEF_EMPTY;
                                 }
                         }
                 }

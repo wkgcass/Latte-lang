@@ -24,3 +24,56 @@ class TestAsync
                         throw err
             )
             return arr
+        testParallel()
+            result = []
+            async.parallel(
+                [
+                    (next)->
+                        next(1)
+                    (next)->
+                        next(2)
+                    (next)->
+                        next(3)
+                ], (err, results)->
+                    if err
+                        throw err
+                    else
+                        result addAll results
+            )
+            return result
+        testSeries()
+            result = []
+            async.series(
+                [
+                    (next)->
+                        next(1)
+                    (next)->
+                        next(2)
+                    (next)->
+                        next(3)
+                ], (err, results)->
+                    result addAll results
+            )
+            return result
+        testEach()
+            result = []
+            async.each(
+                [1, 2, 3]
+                (item, next)->
+                    result + item
+                    next()
+                err->
+                    ...
+            )
+            return result
+        testEachSeries()
+            result = []
+            async.eachSeries(
+                [1, 2, 3]
+                (item, next)->
+                    result + item
+                    next()
+                err->
+                    ...
+            )
+            return result
