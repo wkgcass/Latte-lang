@@ -2796,4 +2796,17 @@ public class TestSemantic {
                         "    protected method(arg)=2");
                 parse(map); // pass compilation
         }
+
+        @Test
+        public void testImportStaticName() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "package test\n" +
+                        "class Utils");
+                map.put("test2", "" +
+                        "import test::Utils\n" +
+                        "class X\n" +
+                        "    Utils()");
+                parse(map); // pass compilation
+        }
 }

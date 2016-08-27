@@ -47,4 +47,16 @@ public class TestScript {
                 String[] args = new String[]{"a", "b", "c"};
                 assertArrayEquals(args, (Object[]) script.run(args).getResult());
         }
+
+        @Test
+        public void testStaticMethod() throws Throwable {
+                ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+                assertEquals(3,
+                        scriptCompiler.compile("yy", "" +
+                                "import lt::repl::TestStaticMethod\n" +
+                                "a = 2\n" +
+                                "return TestStaticMethod.x(a)"
+                        ).run().getResult()
+                );
+        }
 }

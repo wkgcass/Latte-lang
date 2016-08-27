@@ -224,7 +224,7 @@ public class SemanticProcessor {
 
                         Set<String> importSimpleNames = new HashSet<>();
                         for (Import i : imports) {
-                                if (i.pkg == null) {
+                                if (i.pkg == null && !i.importAll) {
                                         // class name are the same
                                         if (importSimpleNames.contains(i.access.name)) {
                                                 err.SyntaxException("duplicate imports", i.line_col());
