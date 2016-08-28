@@ -175,4 +175,12 @@ public class TestBugsInEval {
                 Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                 evaluator.eval("()->...");
         }
+
+        @Test
+        public void testOpAssign() throws Exception {
+                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
+                evaluator.eval("i = 1");
+                Object res = evaluator.eval("i <<= 2").result;
+                assertEquals(4, res);
+        }
 }

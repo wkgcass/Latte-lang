@@ -2568,7 +2568,7 @@ public class Parser {
                 LineCol lineCol = current.getLineCol();
                 if (exp instanceof AST.Access) {
                         AST.Access access = (AST.Access) exp;
-                        if (access.exp == null && !usedVarNames.contains(access.name)) {
+                        if (access.exp == null && !usedVarNames.contains(access.name) && op.equals("=")) {
                                 // define a new variable
                                 VariableDef def = new VariableDef(access.name, modifiers, annos, access.line_col());
                                 annos.clear();

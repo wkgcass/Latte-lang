@@ -96,9 +96,7 @@ public class Scanner {
                 ".", // class positioning or method access
                 ":", // type specification or generic extends
                 "::", // package::package
-                "=", "+=", "-=", "*=", "/=", "%=", // assignment
-                "<<", ">>", ">>>", // shift
-                "&", "^", "|", "~", // bit logic
+                "=", // assignment
                 "^^", // pow
                 "!", "&&", "||", // logic
                 "!=", "==", "!==", "===", // equals/reference equals
@@ -112,6 +110,11 @@ public class Scanner {
                 ":::", // concat
                 ":=", // assign
                 "#" // generator
+        ));
+        public final static Set<String> SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN = new HashSet<>(Arrays.asList(
+                "+", "-", "*", "/", "%",
+                "<<", ">>", ">>>", // shift
+                "&", "^", "|", "~" // bit logic
         ));
         /**
          * symbols that let the scanner know the following input should be scanned as a string<br>
@@ -170,6 +173,8 @@ public class Scanner {
                 PAIR.put("[", "]"); // array[index]
 
                 SPLIT_X.addAll(NO_RECORD);
+                SPLIT_X.addAll(SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN);
+                SPLIT_X.addAll(SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN.stream().map(s -> s + "=").collect(Collectors.toList()));
 
                 Set<String> set = new HashSet<>();
                 set.addAll(LAYER);

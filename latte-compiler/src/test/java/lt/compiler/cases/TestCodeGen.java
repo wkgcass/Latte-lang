@@ -2507,4 +2507,19 @@ public class TestCodeGen {
                 assertEquals(4, method2.invoke(null,
                         (Object) new Function[]{(Function<Integer, Object>) o -> o + 1}));
         }
+
+        @Test
+        public void testOperatorAssign() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestOperatorAssign\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            i = 2\n" +
+                                "            i <<= 3\n" +
+                                "            return i"
+                        , "TestOperatorAssign");
+                Method method1 = cls.getMethod("method");
+                assertEquals(16, method1.invoke(null));
+        }
 }

@@ -450,7 +450,12 @@ public class CompileUtil {
         }
 
         public static boolean isAssign(String s) {
-                return s.equals("=") || s.equals("+=") || s.equals("-=") || s.equals("*=") || s.equals("/=") || s.equals("%=");
+                if (s.equals("=")) return true;
+                if (s.endsWith("=")) {
+                        String before = s.substring(0, s.length() - 1);
+                        if (isTwoVariableOperator(before)) return true;
+                }
+                return false;
         }
 
         public static boolean isSync(Element elem) {

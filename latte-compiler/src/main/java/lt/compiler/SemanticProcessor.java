@@ -7213,21 +7213,23 @@ public class SemanticProcessor {
                                 SParameter paramLast = method.getParameters().get(i);
                                 SParameter paramCurrent = methodCurrent.getParameters().get(i);
 
-                                if (paramLast.type().isAssignableFrom(paramCurrent.type()) && !paramLast.type().equals(paramCurrent.type())) {
-                                        // assignable
-                                        if (swap == SWAP_NONE) {
-                                                swap = SWAP_SWAP;
-                                        } else if (swap == SWAP_NO_SWAP) {
-                                                err.SyntaxException("cannot choose between " + method + " and " + methodCurrent + " with args " + argList, lineCol);
-                                                return null;
-                                        }
-                                } else {
-                                        // not assignable
-                                        if (swap == SWAP_NONE) {
-                                                swap = SWAP_NO_SWAP;
-                                        } else if (swap == SWAP_SWAP) {
-                                                err.SyntaxException("cannot choose between " + method + " and " + methodCurrent + " with args " + argList, lineCol);
-                                                return null;
+                                if (!paramLast.type().equals(paramCurrent.type())) {
+                                        if (paramLast.type().isAssignableFrom(paramCurrent.type()) && !paramLast.type().equals(paramCurrent.type())) {
+                                                // assignable
+                                                if (swap == SWAP_NONE) {
+                                                        swap = SWAP_SWAP;
+                                                } else if (swap == SWAP_NO_SWAP) {
+                                                        err.SyntaxException("cannot choose between " + method + " and " + methodCurrent + " with args " + argList, lineCol);
+                                                        return null;
+                                                }
+                                        } else {
+                                                // not assignable
+                                                if (swap == SWAP_NONE) {
+                                                        swap = SWAP_NO_SWAP;
+                                                } else if (swap == SWAP_SWAP) {
+                                                        err.SyntaxException("cannot choose between " + method + " and " + methodCurrent + " with args " + argList, lineCol);
+                                                        return null;
+                                                }
                                         }
                                 }
                         }
@@ -8231,8 +8233,11 @@ public class SemanticProcessor {
                                                 return;
                                         }
                                         break;
+                                case SYNCHRONIZED:
+                                        methodDef.modifiers().add(SModifier.SYNCHRONIZED);
+                                        break;
                                 default:
-                                        err.UnexpectedTokenException("valid modifier for fields (class:(public|private|protected|pkg|val)|interface:(pub|val))", m.toString(), m.line_col());
+                                        err.UnexpectedTokenException("valid modifier for methods (class:(public|private|protected|pkg|val)|interface:(pub|val))", m.toString(), m.line_col());
                                         return;
                         }
                 }

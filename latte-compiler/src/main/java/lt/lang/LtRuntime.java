@@ -735,10 +735,10 @@ public class LtRuntime {
 
                 // get script file name
                 if (tmp.contains("/")) {
-                        tmp = tmp.substring(file.indexOf("/") + 1);
+                        tmp = tmp.substring(tmp.indexOf("/") + 1);
                 }
                 if (file.contains("\\")) {
-                        tmp = tmp.substring(file.indexOf("\\") + 1);
+                        tmp = tmp.substring(tmp.indexOf("\\") + 1);
                 }
 
                 // compile and run
