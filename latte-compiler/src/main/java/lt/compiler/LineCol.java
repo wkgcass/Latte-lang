@@ -55,6 +55,10 @@ public class LineCol {
          */
         public static final LineCol SYNTHETIC = new LineCol(null, 0, 0);
 
+        public static LineCol SYNTHETIC_WITH_FILE(String file) {
+                return new LineCol(file, 0, 0);
+        }
+
         @Override
         public String toString() {
                 return fileName + "(" + line + ", " + column + ")";

@@ -2206,4 +2206,23 @@ public class TestParser {
                         , list
                 );
         }
+
+        @Test
+        public void testInternalSyntaxLambda() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "(" +
+                        "    (redisLock(o))\n" +
+                        "        println()\n" +
+                        ").test()");
+                AST.Invocation redisLock = new AST.Invocation(new AST.Access(null, "redisLock", LineCol.SYNTHETIC),
+                        Collections.singletonList(new AST.Access(null, "o", LineCol.SYNTHETIC)), false, LineCol.SYNTHETIC);
+                AST.Lambda lambda = new AST.Lambda(Collections.emptyList(), Collections.singletonList(
+                        new AST.Invocation(new AST.Access(null, "println", LineCol.SYNTHETIC),
+                                Collections.emptyList(), false, LineCol.SYNTHETIC)
+                ), LineCol.SYNTHETIC);
+                AST.Invocation invokeLambda = new AST.Invocation(redisLock, Collections.singletonList(lambda), false, LineCol.SYNTHETIC);
+                AST.Invocation test = new AST.Invocation(new AST.Access(invokeLambda, "test", LineCol.SYNTHETIC),
+                        Collections.emptyList(), false, LineCol.SYNTHETIC);
+                assertEquals(Collections.singletonList(test), stmts);
+        }
 }

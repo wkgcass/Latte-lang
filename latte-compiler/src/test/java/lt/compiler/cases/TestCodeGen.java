@@ -2522,4 +2522,20 @@ public class TestCodeGen {
                 Method method1 = cls.getMethod("method");
                 assertEquals(16, method1.invoke(null));
         }
+
+        @Test
+        public void testInternalSyntaxLambda() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "class TestInternalSyntaxLambda\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            return (T())\n" +
+                                "                return 1 + 2\n" +
+                                "class T\n" +
+                                "    apply(o)=o()"
+                        , "TestInternalSyntaxLambda");
+                Method method = cls.getMethod("method");
+                assertEquals(3, method.invoke(null));
+        }
 }

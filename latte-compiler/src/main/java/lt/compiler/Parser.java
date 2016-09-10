@@ -1990,9 +1990,24 @@ public class Parser {
 
                 } else if (current instanceof ElementStartNode) {
                         if (!expectingStartNode) {
-                                err.UnexpectedNewLayerException(current.getLineCol());
-                                err.debug("ignore the statement");
-                                throw new ParseFail();
+                                /*
+                                expression
+                                    ...
+
+                                will be parsed into
+
+                                expression(()->
+                                        ...
+                                )
+
+                                the behavior of the expression may change because the AST changed
+                                 */
+                                Expression exp = parsedExps.pop();
+                                List<Statement> lambdaStmts = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
+                                AST.Lambda lambda = new AST.Lambda(Collections.emptyList(), lambdaStmts, LineCol.SYNTHETIC_WITH_FILE(current.getLineCol().fileName));
+                                AST.Invocation invocation = new AST.Invocation(exp, Collections.singletonList(lambda), false, LineCol.SYNTHETIC_WITH_FILE(current.getLineCol().fileName));
+                                parsedExps.push(invocation);
+                                nextNode(true);
                         }
                 }
                 // else
