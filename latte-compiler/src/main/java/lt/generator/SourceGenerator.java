@@ -41,8 +41,12 @@ public interface SourceGenerator {
         /**
          * initiate the generator. This method would be invoked after the generator is constructed.
          *
-         * @param ast AST
-         * @param err Error manager
+         * @param ast       AST
+         * @param processor semantic processor
+         * @param scope     semantic scope
+         * @param lineCol   lineCol
+         * @param err       Error manager
+         * @throws SyntaxException compiling error
          */
         void init(List<Statement> ast, SemanticProcessor processor, SemanticScope scope, LineCol lineCol, ErrorManager err) throws SyntaxException;
 
