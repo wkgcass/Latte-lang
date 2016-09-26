@@ -24,13 +24,14 @@
 
 package lt.compiler;
 
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * line, column and filename info
  */
-public class LineCol {
+public class LineCol implements Serializable {
         public final String fileName;
         public final int line;
         public final int column;

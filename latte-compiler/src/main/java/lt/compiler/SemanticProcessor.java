@@ -45,6 +45,7 @@ import lt.lang.LtIterator;
 import lt.lang.Undefined;
 import lt.dependencies.asm.MethodVisitor;
 
+import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandles;
@@ -59,55 +60,55 @@ import java.util.stream.Collectors;
  * semantic processor
  */
 public class SemanticProcessor {
-        private static final int PARSING_CLASS = 0;
-        private static final int PARSING_INTERFACE = 1;
+        public static final int PARSING_CLASS = 0;
+        public static final int PARSING_INTERFACE = 1;
 
         /**
          * Map&lt;FileName, List of statements&gt;
          */
-        private final Map<String, List<Statement>> mapOfStatements;
+        public final Map<String, List<Statement>> mapOfStatements;
         /**
          * maps full name to type<br>
          * one type should only exist once in a Processor
          */
-        private Map<String, STypeDef> types = new HashMap<>();
+        public Map<String, STypeDef> types = new HashMap<>();
         /**
          * full name to {@link ClassDef} from {@link Parser}
          */
-        private Map<String, ClassDef> originalClasses = new HashMap<>();
+        public Map<String, ClassDef> originalClasses = new HashMap<>();
         /**
          * full name to {@link InterfaceDef} from {@link Parser}
          */
-        private Map<String, InterfaceDef> originalInterfaces = new HashMap<>();
+        public Map<String, InterfaceDef> originalInterfaces = new HashMap<>();
         /**
          * {@link SMethodDef} to it's containing statements
          */
-        private Map<SMethodDef, List<Statement>> methodToStatements = new HashMap<>();
+        public Map<SMethodDef, List<Statement>> methodToStatements = new HashMap<>();
         /**
          * file name to Import info
          */
-        private Map<String, List<Import>> fileNameToImport = new HashMap<>();
+        public Map<String, List<Import>> fileNameToImport = new HashMap<>();
         /**
          * a set of types that should be return value of {@link #parse()} method.<br>
          * these types are to be compiled into byte codes
          */
-        private final Set<STypeDef> typeDefSet = new HashSet<>();
+        public final Set<STypeDef> typeDefSet = new HashSet<>();
         /**
          * invokable =&gt; (the-invokable-to-invoke =&gt; the current default parameter).
          */
-        private Map<SInvokable, Map<SInvokable, Expression>> defaultParamInvokable = new HashMap<>();
+        public Map<SInvokable, Map<SInvokable, Expression>> defaultParamInvokable = new HashMap<>();
         /**
          * retrieve existing classes from this class loader
          */
-        private final ClassLoader classLoader;
+        public final ClassLoader classLoader;
         /**
          * error manager
          */
-        private final ErrorManager err;
+        public final ErrorManager err;
         /**
          * access which represents a type can be converted into instantiation
          */
-        private boolean enableTypeAccess = true;
+        public boolean enableTypeAccess = true;
 
         /**
          * initialize the Processor
@@ -134,6 +135,37 @@ public class SemanticProcessor {
                 types.put("byte", ByteTypeDef.get());
                 types.put("void", VoidType.get());
                 types.put("Unit", VoidType.get());
+        }
+
+        public static String byte2hex(byte[] b) {
+                StringBuilder sb = new StringBuilder();
+                String tmp;
+                for (byte aB : b) {
+                        tmp = Integer.toHexString(aB & 0XFF);
+                        if (tmp.length() == 1) {
+                                sb.append("0").append(tmp);
+                        } else {
+                                sb.append(tmp);
+                        }
+
+                }
+                return sb.toString();
+        }
+
+        @SuppressWarnings("unused")
+        public static byte[] hex2byte(String str) {
+                str = str.trim();
+                int len = str.length();
+
+                if (len == 0 || len % 2 == 1) {
+                        return null;
+                }
+
+                byte[] b = new byte[len / 2];
+                for (int i = 0; i < str.length(); i += 2) {
+                        b[i / 2] = (byte) Integer.decode("0X" + str.substring(i, i + 2)).intValue();
+                }
+                return b;
         }
 
         /**
@@ -348,7 +380,7 @@ public class SemanticProcessor {
          * @param fileNameToPackageName  file name to package name
          * @throws SyntaxException exception
          */
-        private void step2(Map<String, List<ClassDef>> fileNameToClassDef,
+        public void step2(Map<String, List<ClassDef>> fileNameToClassDef,
                            Map<String, List<InterfaceDef>> fileNameToInterfaceDef,
                            Map<String, String> fileNameToPackageName) throws SyntaxException {
                 for (String fileName : mapOfStatements.keySet()) {
@@ -650,7 +682,7 @@ public class SemanticProcessor {
          * @param fileNameToFunctions   file name to functions
          * @throws SyntaxException exception
          */
-        private void step3(Map<String, String> fileNameToPackageName,
+        public void step3(Map<String, String> fileNameToPackageName,
                            Map<String, List<FunDef>> fileNameToFunctions) throws SyntaxException {
                 for (STypeDef sTypeDef : typeDefSet) {
                         if (sTypeDef instanceof SClassDef) {
@@ -798,7 +830,7 @@ public class SemanticProcessor {
          *
          * @throws SyntaxException exception
          */
-        private void step4() throws SyntaxException {
+        public void step4() throws SyntaxException {
                 for (STypeDef typeDef : types.values()) {
                         if (typeDef instanceof SAnnoDef) {
                                 SAnnoDef annoDef = (SAnnoDef) typeDef;
@@ -998,7 +1030,7 @@ public class SemanticProcessor {
          * @param sTypeDef sTypeDef
          * @throws SyntaxException exception
          */
-        private void checkOverrideAllMethods(STypeDef sTypeDef) throws SyntaxException {
+        public void checkOverrideAllMethods(STypeDef sTypeDef) throws SyntaxException {
                 checkOverride(sTypeDef);
 
                 // check whether overrides all methods from super
@@ -1035,7 +1067,7 @@ public class SemanticProcessor {
          * @param scope     the invokable scope
          * @throws SyntaxException exception
          */
-        private void fillDefaultParamMethod(SInvokable invokable, SemanticScope scope) throws SyntaxException {
+        public void fillDefaultParamMethod(SInvokable invokable, SemanticScope scope) throws SyntaxException {
                 Map<SInvokable, Expression> invokePair = defaultParamInvokable.get(invokable);
                 SInvokable methodToInvoke = invokePair.keySet().iterator().next();
                 Expression arg = invokePair.get(methodToInvoke);
@@ -1086,7 +1118,7 @@ public class SemanticProcessor {
          * @param cls the class should be data class
          * @throws SyntaxException compiling error
          */
-        private void fillMethodsIntoDataClass(SClassDef cls) throws SyntaxException {
+        public void fillMethodsIntoDataClass(SClassDef cls) throws SyntaxException {
                 // check parameter modifiers
                 // cannot be `val`
                 for (SParameter p : cls.constructors().get(0).getParameters()) {
@@ -1459,7 +1491,7 @@ public class SemanticProcessor {
          * @param superScope the class scope
          * @throws SyntaxException compile error
          */
-        private void parseMethod(SMethodDef methodDef, List<Statement> statements, SemanticScope superScope) throws SyntaxException {
+        public void parseMethod(SMethodDef methodDef, List<Statement> statements, SemanticScope superScope) throws SyntaxException {
                 if (!methodDef.statements().isEmpty()) return;
                 if (methodDef.modifiers().contains(SModifier.ABSTRACT)) {
                         if (!statements.isEmpty()) {
@@ -1499,7 +1531,7 @@ public class SemanticProcessor {
          * @param annos annotations to fill values
          * @throws SyntaxException exception
          */
-        private void parseAnnoValues(Collection<SAnno> annos) throws SyntaxException {
+        public void parseAnnoValues(Collection<SAnno> annos) throws SyntaxException {
                 // check annotation
                 for (SAnno sAnno : annos) {
                         AST.Anno anno = annotationRecorder.get(sAnno); // get original anno object
@@ -1545,7 +1577,7 @@ public class SemanticProcessor {
          * @return the cast value
          * @throws SyntaxException compiling error
          */
-        private Value checkAndCastAnnotationValues(Value value, LineCol lineCol) throws SyntaxException {
+        public Value checkAndCastAnnotationValues(Value value, LineCol lineCol) throws SyntaxException {
                 if (value instanceof IntValue
                         || value instanceof ShortValue
                         || value instanceof ByteValue
@@ -1600,7 +1632,7 @@ public class SemanticProcessor {
          * @return true if it's int(boxed or primitive)
          * @throws SyntaxException exception
          */
-        private boolean isInt(STypeDef requiredType, NumberLiteral literal, LineCol lineCol) throws SyntaxException {
+        public boolean isInt(STypeDef requiredType, NumberLiteral literal, LineCol lineCol) throws SyntaxException {
                 return (requiredType == null ||
                         requiredType instanceof IntTypeDef ||
                         (requiredType instanceof SClassDef && requiredType.isAssignableFrom(
@@ -1620,7 +1652,7 @@ public class SemanticProcessor {
          * @return true if it's long(boxed or primitive)
          * @throws SyntaxException exception
          */
-        private boolean isLong(STypeDef requiredType, NumberLiteral literal, LineCol lineCol) throws SyntaxException {
+        public boolean isLong(STypeDef requiredType, NumberLiteral literal, LineCol lineCol) throws SyntaxException {
                 return (requiredType == null ||
                         requiredType instanceof LongTypeDef ||
                         (requiredType instanceof SClassDef) && requiredType.isAssignableFrom(
@@ -1640,7 +1672,7 @@ public class SemanticProcessor {
          * @return true if it's short(boxed or primitive)
          * @throws SyntaxException exception
          */
-        private boolean isShort(STypeDef requiredType, NumberLiteral literal, LineCol lineCol) throws SyntaxException {
+        public boolean isShort(STypeDef requiredType, NumberLiteral literal, LineCol lineCol) throws SyntaxException {
                 return (requiredType == null ||
                         requiredType instanceof ShortTypeDef ||
                         requiredType instanceof SClassDef && requiredType.isAssignableFrom(
@@ -1660,7 +1692,7 @@ public class SemanticProcessor {
          * @return true if it's byte(boxed or primitive)
          * @throws SyntaxException exception
          */
-        private boolean isByte(STypeDef requiredType, NumberLiteral literal, LineCol lineCol) throws SyntaxException {
+        public boolean isByte(STypeDef requiredType, NumberLiteral literal, LineCol lineCol) throws SyntaxException {
                 return (requiredType == null ||
                         requiredType instanceof ByteTypeDef ||
                         requiredType instanceof SClassDef && requiredType.isAssignableFrom(
@@ -1680,7 +1712,7 @@ public class SemanticProcessor {
          * @return true if it's float(boxed or primitive)
          * @throws SyntaxException exception
          */
-        private boolean isFloat(STypeDef requiredType, LineCol lineCol) throws SyntaxException {
+        public boolean isFloat(STypeDef requiredType, LineCol lineCol) throws SyntaxException {
                 return (requiredType == null ||
                         requiredType instanceof FloatTypeDef ||
                         requiredType instanceof SClassDef && requiredType.isAssignableFrom(
@@ -1698,7 +1730,7 @@ public class SemanticProcessor {
          * @return true if it's double(boxed or primitive)
          * @throws SyntaxException exception
          */
-        private boolean isDouble(STypeDef requiredType, LineCol lineCol) throws SyntaxException {
+        public boolean isDouble(STypeDef requiredType, LineCol lineCol) throws SyntaxException {
                 return (requiredType == null ||
                         requiredType instanceof DoubleTypeDef ||
                         requiredType instanceof SClassDef && requiredType.isAssignableFrom(
@@ -1715,7 +1747,7 @@ public class SemanticProcessor {
          * @return true if it's boolean(boxed or primitve)
          * @throws SyntaxException exception
          */
-        private boolean isBool(STypeDef requiredType, LineCol lineCol) throws SyntaxException {
+        public boolean isBool(STypeDef requiredType, LineCol lineCol) throws SyntaxException {
                 return (requiredType == null ||
                         requiredType instanceof BoolTypeDef ||
                         requiredType instanceof SClassDef && requiredType.isAssignableFrom(
@@ -1736,7 +1768,7 @@ public class SemanticProcessor {
          * @return true if it's char
          * @throws SyntaxException exception
          */
-        private boolean isChar(STypeDef requiredType, StringLiteral literal, LineCol lineCol) throws SyntaxException {
+        public boolean isChar(STypeDef requiredType, StringLiteral literal, LineCol lineCol) throws SyntaxException {
                 if (requiredType == null)
                         return isChar(literal, lineCol, true);
                 if (requiredType instanceof CharTypeDef)
@@ -1767,7 +1799,7 @@ public class SemanticProcessor {
          * @return true if the literal is char
          * @throws SyntaxException exception
          */
-        private boolean isChar(StringLiteral literal, LineCol lineCol, boolean testSymbol) throws SyntaxException {
+        public boolean isChar(StringLiteral literal, LineCol lineCol, boolean testSymbol) throws SyntaxException {
                 String str = literal.literal();
                 str = str.substring(1);
                 str = str.substring(0, str.length() - 1);
@@ -1781,7 +1813,7 @@ public class SemanticProcessor {
 
         private SClassDef Throwable_Class;
 
-        private SClassDef getThrowable_Class() throws SyntaxException {
+        public SClassDef getThrowable_Class() throws SyntaxException {
                 if (Throwable_Class == null) {
                         Throwable_Class = (SClassDef) getTypeWithName("java.lang.Throwable", LineCol.SYNTHETIC);
                 }
@@ -1815,7 +1847,7 @@ public class SemanticProcessor {
          * @param doNotParseMethodDef the methodDef should not be parsed( in this case, they should be outer methods instead of inner methods)
          * @throws SyntaxException compile error
          */
-        private void parseStatement(Statement statement,
+        public void parseStatement(Statement statement,
                                     STypeDef methodReturnType,
                                     SemanticScope scope,
                                     List<Instruction> instructions,
@@ -1895,7 +1927,7 @@ public class SemanticProcessor {
          * @return {@link LtRuntime#castToThrowable(Object)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLang_castToThrowable() throws SyntaxException {
+        public SMethodDef getLang_castToThrowable() throws SyntaxException {
                 if (Lang_castToThrowable == null) {
                         SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         assert Lang != null;
@@ -1930,7 +1962,7 @@ public class SemanticProcessor {
          * @return the new method (the inner method)
          * @throws SyntaxException compile error
          */
-        private SMethodDef parseInnerMethod(MethodDef methodDef, SemanticScope scope) throws SyntaxException {
+        public SMethodDef parseInnerMethod(MethodDef methodDef, SemanticScope scope) throws SyntaxException {
                 if (scope.parent == null) throw new LtBug("scope.parent should not be null");
 
                 SemanticScope theTopScope = scope.parent;
@@ -2111,7 +2143,7 @@ public class SemanticProcessor {
          * @param continueIns      jump to this position when meets a continue
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromSynchronized(AST.Synchronized aSynchronized,
+        public void parseInstructionFromSynchronized(AST.Synchronized aSynchronized,
                                                       STypeDef methodReturnType,
                                                       SemanticScope scope,
                                                       List<Instruction> instructions,
@@ -2233,7 +2265,7 @@ public class SemanticProcessor {
          * @param scope        scope
          * @return the cursor should += this return value
          */
-        private int insertInstructionsBeforeReturn(List<Instruction> instructions,
+        public int insertInstructionsBeforeReturn(List<Instruction> instructions,
                                                    int returnIndex,
                                                    List<? extends Instruction> toInsert,
                                                    SemanticScope scope) throws SyntaxException {
@@ -2266,7 +2298,7 @@ public class SemanticProcessor {
          * @return {@link LtRuntime#throwableWrapperObject(Throwable)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLang_throwableWrapperObject() throws SyntaxException {
+        public SMethodDef getLang_throwableWrapperObject() throws SyntaxException {
                 if (Lang_throwableWrapperObject == null) {
                         SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         assert Lang != null;
@@ -2334,7 +2366,7 @@ public class SemanticProcessor {
          * @param continueIns      jump to this position when meets a continue
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromTry(AST.Try aTry,
+        public void parseInstructionFromTry(AST.Try aTry,
                                              STypeDef methodReturnType,
                                              SemanticScope scope,
                                              List<Instruction> instructions,
@@ -2617,7 +2649,7 @@ public class SemanticProcessor {
          * @return {@link lt.lang.LtIterator#getIterator(Object)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLtIterator_Get() throws SyntaxException {
+        public SMethodDef getLtIterator_Get() throws SyntaxException {
                 if (LtIterator_getIterator == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtIterator", LineCol.SYNTHETIC);
                         assert cls != null;
@@ -2640,7 +2672,7 @@ public class SemanticProcessor {
          * @return {@link LtIterator#hasNext()}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLtIterator_hasNext() throws SyntaxException {
+        public SMethodDef getLtIterator_hasNext() throws SyntaxException {
                 if (LtIterator_hasNext == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtIterator", LineCol.SYNTHETIC);
                         assert cls != null;
@@ -2663,7 +2695,7 @@ public class SemanticProcessor {
          * @return {@link LtIterator#next()}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLtIterator_next() throws SyntaxException {
+        public SMethodDef getLtIterator_next() throws SyntaxException {
                 if (LtIterator_next == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtIterator", LineCol.SYNTHETIC);
                         assert cls != null;
@@ -2708,7 +2740,7 @@ public class SemanticProcessor {
          * @param exceptionTable   exception table
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromFor(AST.For aFor,
+        public void parseInstructionFromFor(AST.For aFor,
                                              STypeDef methodReturnType,
                                              SemanticScope scope,
                                              List<Instruction> instructions,
@@ -2796,7 +2828,7 @@ public class SemanticProcessor {
          * @param exceptionTable   exception table
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromWhile(AST.While aWhile, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions, List<ExceptionTable> exceptionTable) throws SyntaxException {
+        public void parseInstructionFromWhile(AST.While aWhile, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions, List<ExceptionTable> exceptionTable) throws SyntaxException {
                 Ins.Nop nopBreak = new Ins.Nop();
                 Ins.Nop nopContinue = new Ins.Nop();
 
@@ -2906,7 +2938,7 @@ public class SemanticProcessor {
          * @param continueIns      to this position when meets continue
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromIf(AST.If anIf,
+        public void parseInstructionFromIf(AST.If anIf,
                                             STypeDef methodReturnType,
                                             SemanticScope scope,
                                             List<Instruction> instructions,
@@ -2961,7 +2993,7 @@ public class SemanticProcessor {
          * @param instructions     instruction list
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromReturn(AST.Return ret, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions) throws SyntaxException {
+        public void parseInstructionFromReturn(AST.Return ret, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions) throws SyntaxException {
                 Ins.TReturn tReturn;
                 if (ret.exp == null) {
                         if (!methodReturnType.equals(VoidType.get())) {
@@ -2990,7 +3022,7 @@ public class SemanticProcessor {
          * @return {@link LtRuntime#putField(Object, String, Object, Class)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLang_putField() throws SyntaxException {
+        public SMethodDef getLang_putField() throws SyntaxException {
                 if (null == Lang_putField) {
                         SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         assert Lang != null;
@@ -3018,7 +3050,7 @@ public class SemanticProcessor {
          * @param instructions instruction list
          * @throws SyntaxException compile error
          */
-        private void parseInstructionFromAssignment(Value assignTo,
+        public void parseInstructionFromAssignment(Value assignTo,
                                                     Value assignFrom,
                                                     SemanticScope scope,
                                                     List<Instruction> instructions,
@@ -3217,7 +3249,7 @@ public class SemanticProcessor {
          * @return retrieved Value or null if no initValue is assigned
          * @throws SyntaxException compile error
          */
-        private Value parseInsFromVariableDef(VariableDef variableDef, SemanticScope scope) throws SyntaxException {
+        public Value parseInsFromVariableDef(VariableDef variableDef, SemanticScope scope) throws SyntaxException {
                 List<Import> imports = fileNameToImport.get(variableDef.line_col().fileName);
 
                 STypeDef type = variableDef.getType() == null
@@ -3324,7 +3356,7 @@ public class SemanticProcessor {
          * @return parsed result
          * @throws SyntaxException exception
          */
-        private Value parseValueFromExpression(Expression exp, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromExpression(Expression exp, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
                 List<Import> imports = fileNameToImport.get(exp.line_col().fileName);
 
                 Value v; // retrieved value without type check
@@ -3524,14 +3556,14 @@ public class SemanticProcessor {
                 } else if (exp instanceof AST.New) {
                         v = parseValueFromNew((AST.New) exp, scope);
                 } else if (exp instanceof AST.GeneratorSpec) {
-                        v = parseValueFromGeneratorSpec((AST.GeneratorSpec) exp);
+                        v = parseValueFromGeneratorSpec((AST.GeneratorSpec) exp, requiredType, scope);
                 } else {
                         throw new LtBug("unknown expression " + exp);
                 }
                 return cast(requiredType, v, exp.line_col());
         }
 
-        private Value parseValueFromGeneratorSpec(AST.GeneratorSpec gs) throws SyntaxException {
+        public Value parseValueFromGeneratorSpec(AST.GeneratorSpec gs, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
                 STypeDef type = getTypeWithAccess(gs.type, fileNameToImport.get(gs.line_col().fileName));
                 if (type instanceof SClassDef && !((SClassDef) type).modifiers().contains(SModifier.ABSTRACT)) {
                         Class<?> c;
@@ -3552,19 +3584,9 @@ public class SemanticProcessor {
                                 err.SyntaxException("cannot find constructor : " + type.fullName() + "()", gs.type.line_col());
                                 return null;
                         }
-                        Method init;
-                        Method generate;
+                        SourceGenerator sourceGen;
                         try {
-                                init = SourceGenerator.class.getMethod("init", List.class, ErrorManager.class);
-                                generate = SourceGenerator.class.getMethod("generate");
-                        } catch (NoSuchMethodException e) {
-                                throw new LtBug(e);
-                        }
-                        String src;
-                        try {
-                                Object o = con.newInstance();
-                                init.invoke(o, gs.ast, err);
-                                src = (String) generate.invoke(o);
+                                sourceGen = (SourceGenerator) con.newInstance();
                         } catch (InvocationTargetException t) {
                                 if (t.getTargetException() instanceof SyntaxException) {
                                         throw (SyntaxException) t.getTargetException();
@@ -3574,13 +3596,117 @@ public class SemanticProcessor {
                         } catch (Throwable e) {
                                 throw new LtBug("caught exception in generator", e);
                         }
-                        StringConstantValue v = new StringConstantValue(src);
-                        v.setType((SClassDef) getTypeWithName("java.lang.String", LineCol.SYNTHETIC));
-                        return v;
+                        sourceGen.init(gs.ast, this, scope, gs.line_col(), err);
+
+                        if (sourceGen.resultType() == SourceGenerator.EXPRESSION) {
+                                Expression exp = (Expression) sourceGen.generate();
+                                return parseValueFromExpression(exp, requiredType, scope);
+                        } else if (sourceGen.resultType() == SourceGenerator.SERIALIZE) {
+                                Serializable ser = (Serializable) sourceGen.generate();
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                                        oos.writeObject(ser);
+                                } catch (IOException e) {
+                                        throw new LtBug(e);
+                                }
+                                String serStr;
+                                serStr = byte2hex(baos.toByteArray());
+                                return decodeSerExp(serStr, scope, gs.line_col());
+                        } else if (sourceGen.resultType() == SourceGenerator.VALUE) {
+                                return (Value) sourceGen.generate();
+                        } else {
+                                throw new LtBug("unknown resultType in " + c);
+                        }
                 } else {
                         err.SyntaxException("Generator should be a class", gs.line_col());
                         return null;
                 }
+        }
+
+        public Value decodeSerExp(String serStr, SemanticScope scope, LineCol lineCol) throws SyntaxException {
+                String ObjectInputStream_Name = ObjectInputStream.class.getName();
+                String InputStream_Name = InputStream.class.getName();
+                String ByteArrayInputStream_Name = ByteArrayInputStream.class.getName();
+                SClassDef ObjectInputStream = (SClassDef) getTypeWithName(ObjectInputStream_Name, lineCol);
+                assert ObjectInputStream != null;
+                STypeDef InputStream = getTypeWithName(InputStream_Name, lineCol);
+                assert InputStream != null;
+                SClassDef ByteArrayInputStream = (SClassDef) getTypeWithName(ByteArrayInputStream_Name, lineCol);
+                assert ByteArrayInputStream != null;
+                STypeDef byte1Array = getTypeWithName("[B", lineCol);
+                assert byte1Array != null;
+                SClassDef StringCls = (SClassDef) getTypeWithName("java.lang.String", lineCol);
+                assert StringCls != null;
+                SClassDef SemanticProcessor = (SClassDef) getTypeWithName(lt.compiler.SemanticProcessor.class.getName(), lineCol);
+                assert SemanticProcessor != null;
+
+                SConstructorDef ObjectInputStream_con = null;
+                // find constructor
+                for (SConstructorDef con : ObjectInputStream.constructors()) {
+                        if (con.getParameters().size() == 1 && con.getParameters().get(0).type().equals(InputStream)) {
+                                // found constructor
+                                ObjectInputStream_con = con;
+                                break;
+                        }
+                }
+                if (ObjectInputStream_con == null)
+                        throw new LtBug(ObjectInputStream_Name + "(" + InputStream_Name + ") should exist");
+                SMethodDef readObject = null;
+                // find readObject method
+                for (SMethodDef method : ObjectInputStream.methods()) {
+                        if (method.name().equals("readObject") && method.getParameters().size() == 0) {
+                                readObject = method;
+                                break;
+                        }
+                }
+                if (readObject == null) throw new LtBug(ObjectInputStream_Name + ".readObject() should exist");
+                SConstructorDef ByteArrayInputStream_con = null;
+                // find constructor
+                for (SConstructorDef con : ByteArrayInputStream.constructors()) {
+                        if (con.getParameters().size() == 1 && con.getParameters().get(0).type().equals(byte1Array)) {
+                                ByteArrayInputStream_con = con;
+                                break;
+                        }
+                }
+                if (ByteArrayInputStream_con == null)
+                        throw new LtBug(ByteArrayInputStream_Name + "(byte[]) should exist");
+                // find hex2byte(String)
+                SMethodDef hex2byte = null;
+                for (SMethodDef method : SemanticProcessor.methods()) {
+                        if (method.name().equals("hex2byte") && method.getParameters().size() == 1 && method.getParameters().get(0).type().equals(StringCls)) {
+                                hex2byte = method;
+                                break;
+                        }
+                }
+                if (hex2byte == null)
+                        throw new LtBug(lt.compiler.SemanticProcessor.class.getName() + ".hex2byte should exist");
+
+                // do handling
+                ValuePack vp = new ValuePack(true);
+                // theSerValue
+                StringConstantValue theSerValue = new StringConstantValue(serStr);
+                theSerValue.setType(StringCls);
+                // hex2byte(theSerValue)
+                Ins.InvokeStatic invokeHex2byte = new Ins.InvokeStatic(hex2byte, lineCol);
+                invokeHex2byte.arguments().add(theSerValue);
+                // new ByteArrayInputStream(...)
+                Ins.New aNew1 = new Ins.New(ByteArrayInputStream_con, lineCol);
+                aNew1.args().add(invokeHex2byte);
+                // new ObjectInputStream(...)
+                Ins.New aNew2 = new Ins.New(ObjectInputStream_con, lineCol);
+                aNew2.args().add(aNew1);
+                // store
+                LocalVariable local = new LocalVariable(aNew2.type(), false);
+                scope.putLeftValue(scope.generateTempName(), local);
+                Ins.TStore store = new Ins.TStore(local, aNew2, scope, lineCol, err);
+
+                vp.instructions().add(store);
+
+                // x.readObject()
+                Ins.InvokeVirtual invokeReadObject = new Ins.InvokeVirtual(
+                        new Ins.TLoad(local, scope, lineCol), readObject, lineCol);
+                vp.instructions().add(invokeReadObject);
+                return vp;
         }
 
         /**
@@ -3589,7 +3715,7 @@ public class SemanticProcessor {
          * @param aNew new
          * @return constructing a new object
          */
-        private Value parseValueFromNew(AST.New aNew, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromNew(AST.New aNew, SemanticScope scope) throws SyntaxException {
                 SClassDef type;
                 try {
                         type = (SClassDef) getTypeWithAccess((AST.Access) aNew.invocation.exp,
@@ -3612,7 +3738,7 @@ public class SemanticProcessor {
 
         private SMethodDef Pattern_compile;
 
-        private SMethodDef getPattern_compile() throws SyntaxException {
+        public SMethodDef getPattern_compile() throws SyntaxException {
                 if (Pattern_compile == null) {
                         SClassDef Pattern = (SClassDef) getTypeWithName("java.util.regex.Pattern", LineCol.SYNTHETIC);
                         assert Pattern != null;
@@ -3635,7 +3761,7 @@ public class SemanticProcessor {
          * @param exp regex literal
          * @return invokes Pattern.compile('str')
          */
-        private Value parseValueFromRegex(RegexLiteral exp) throws SyntaxException {
+        public Value parseValueFromRegex(RegexLiteral exp) throws SyntaxException {
                 SMethodDef compile = getPattern_compile();
                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(
                         compile, exp.line_col()
@@ -3666,7 +3792,7 @@ public class SemanticProcessor {
          * @return {@link LtRuntime#getField(Object, String, Class)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLang_require() throws SyntaxException {
+        public SMethodDef getLang_require() throws SyntaxException {
                 if (Lang_require == null) {
                         SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         assert Lang != null;
@@ -3694,7 +3820,7 @@ public class SemanticProcessor {
          * @return ValuePack, the pack result is the constructed variable
          * @throws SyntaxException compiling error
          */
-        private ValuePack parseValueFromInvocationWithNames(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
+        public ValuePack parseValueFromInvocationWithNames(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
                 STypeDef theType;
                 try {
                         theType = getTypeWithAccess((AST.Access) invocation.exp,
@@ -3768,7 +3894,7 @@ public class SemanticProcessor {
          * @return Function0 to Function 26
          * @throws SyntaxException exception
          */
-        private SInterfaceDef getDefaultLambdaFunction(int argCount, LineCol lineCol) throws SyntaxException {
+        public SInterfaceDef getDefaultLambdaFunction(int argCount, LineCol lineCol) throws SyntaxException {
                 if (argCount > 26) {
                         err.SyntaxException("too may arguments for a lambda expression, maximum arg count is 26", lineCol);
                         return null;
@@ -3785,7 +3911,7 @@ public class SemanticProcessor {
          * @param methodToOverride                     the method to override, use array[0] to store the method, not null
          * @return true if lambda can be used on the required type. false otherwise
          */
-        private boolean getMethodForLambda(STypeDef requiredType,
+        public boolean getMethodForLambda(STypeDef requiredType,
                                            SConstructorDef[] constructorWithZeroParamAndCanAccess,
                                            SMethodDef[] methodToOverride) {
                 if (requiredType instanceof SClassDef) {
@@ -3962,7 +4088,7 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          * @see #buildAClassForLambda(STypeDef, boolean, SMethodDef, SConstructorDef, SInterfaceDef, boolean)
          */
-        private Value parseValueFromLambda(AST.Lambda lambda, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromLambda(AST.Lambda lambda, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
                 SMethodDef methodToOverride;
                 SConstructorDef constructorWithZeroParamAndCanAccess = null;
                 if (requiredType == null || requiredType.fullName().equals("java.lang.Object")) {
@@ -4105,7 +4231,7 @@ public class SemanticProcessor {
 
         private SClassDef Object_Class;
 
-        private SClassDef getObject_Class() throws SyntaxException {
+        public SClassDef getObject_Class() throws SyntaxException {
                 if (Object_Class == null) {
                         Object_Class = (SClassDef) getTypeWithName("java.lang.Object", LineCol.SYNTHETIC);
                 }
@@ -4125,7 +4251,7 @@ public class SemanticProcessor {
          * @return generated class (SClassDef form)
          * @throws SyntaxException compile error
          */
-        private SClassDef buildAClassForLambda(STypeDef lambdaClassType, boolean isStatic, SMethodDef methodToOverride,
+        public SClassDef buildAClassForLambda(STypeDef lambdaClassType, boolean isStatic, SMethodDef methodToOverride,
                                                SConstructorDef superConstructor,
                                                SInterfaceDef interfaceType,
                                                boolean isInterface) throws SyntaxException {
@@ -4372,7 +4498,7 @@ public class SemanticProcessor {
          * @return {@link java.lang.invoke.MethodHandle}
          * @throws SyntaxException exception
          */
-        private SClassDef getMethodHandle_Class() throws SyntaxException {
+        public SClassDef getMethodHandle_Class() throws SyntaxException {
                 if (MethodHandle_Class == null) {
                         MethodHandle_Class = (SClassDef) getTypeWithName("java.lang.invoke.MethodHandle", LineCol.SYNTHETIC);
                 }
@@ -4388,7 +4514,7 @@ public class SemanticProcessor {
          * @return {@link java.lang.invoke.MethodType}
          * @throws SyntaxException exception
          */
-        private SClassDef getMethodType_Class() throws SyntaxException {
+        public SClassDef getMethodType_Class() throws SyntaxException {
                 if (MethodType_Class == null) {
                         MethodType_Class = (SClassDef) getTypeWithName("java.lang.invoke.MethodType", LineCol.SYNTHETIC);
                 }
@@ -4404,7 +4530,7 @@ public class SemanticProcessor {
          * @return {@link java.lang.invoke.LambdaMetafactory}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLambdaMetafactory_metafactory() throws SyntaxException {
+        public SMethodDef getLambdaMetafactory_metafactory() throws SyntaxException {
                 if (LambdaMetafactory_metafactory == null) {
                         SClassDef LambdaMetafactory = (SClassDef) getTypeWithName("java.lang.invoke.LambdaMetafactory", LineCol.SYNTHETIC);
                         assert LambdaMetafactory != null;
@@ -4428,7 +4554,7 @@ public class SemanticProcessor {
          * @return the invocation of the inner method
          * @throws SyntaxException compile error
          */
-        private Value parseValueFromProcedure(AST.Procedure procedure, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromProcedure(AST.Procedure procedure, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
                 String methodName = "procedure$0";
                 int i = 1;
                 while (scope.getInnerMethod(methodName) != null) {
@@ -4468,7 +4594,7 @@ public class SemanticProcessor {
          * @return {@link lt.compiler.semantic.Ins.NewMap}
          * @throws SyntaxException compile error
          */
-        private Value parseValueFromMapExp(AST.MapExp mapExp, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromMapExp(AST.MapExp mapExp, SemanticScope scope) throws SyntaxException {
                 Ins.NewMap newMap = new Ins.NewMap(getTypeWithName("lt.util.Map", mapExp.line_col()));
 
                 SClassDef Object_type = (SClassDef) getTypeWithName("java.lang.Object", mapExp.line_col());
@@ -4501,7 +4627,7 @@ public class SemanticProcessor {
          * @return new array or new list
          * @throws SyntaxException compile error
          */
-        private Value parseValueFromArrayExp(AST.ArrayExp arrayExp, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromArrayExp(AST.ArrayExp arrayExp, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
                 // first build an array
                 if (requiredType instanceof SArrayTypeDef
                         && ((SArrayTypeDef) requiredType).dimension() == 1
@@ -4610,7 +4736,7 @@ public class SemanticProcessor {
          * @return ValuePack
          * @throws SyntaxException compile error
          */
-        private ValuePack parseValueFromAssignment(AST.Assignment exp, SemanticScope scope) throws SyntaxException {
+        public ValuePack parseValueFromAssignment(AST.Assignment exp, SemanticScope scope) throws SyntaxException {
                 ValuePack pack = new ValuePack(true); // value pack
                 // assignment
                 // =/+=/-=/*=//=/%=
@@ -4658,7 +4784,7 @@ public class SemanticProcessor {
          * @return InvokeStatic
          * @throws SyntaxException exception
          */
-        private Ins.InvokeStatic invoke_Undefined_get(LineCol lineCol) throws SyntaxException {
+        public Ins.InvokeStatic invoke_Undefined_get(LineCol lineCol) throws SyntaxException {
                 if (Undefined_get == null) {
                         SClassDef UndefiendClass = (SClassDef) getTypeWithName("lt.lang.Undefined", lineCol);
                         assert UndefiendClass != null;
@@ -4682,7 +4808,7 @@ public class SemanticProcessor {
          * @return the result
          * @throws SyntaxException compile error
          */
-        private Value parseValueFromTwoVarOp(TwoVariableOperation tvo, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromTwoVarOp(TwoVariableOperation tvo, SemanticScope scope) throws SyntaxException {
                 String op = tvo.operator();
                 Value left = parseValueFromExpression(tvo.expressions().get(0), null, scope);
                 Value right = parseValueFromExpression(tvo.expressions().get(1), null, scope);
@@ -4698,7 +4824,7 @@ public class SemanticProcessor {
          * @return {@link Math#pow(double, double)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getMath_pow() throws SyntaxException {
+        public SMethodDef getMath_pow() throws SyntaxException {
                 if (Math_pow == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("java.lang.Math", LineCol.SYNTHETIC);
                         assert cls != null;
@@ -4725,7 +4851,7 @@ public class SemanticProcessor {
          * @return {@link lt.lang.RangeList}
          * @throws SyntaxException exception
          */
-        private SConstructorDef getRangeListCons() throws SyntaxException {
+        public SConstructorDef getRangeListCons() throws SyntaxException {
                 if (RangeListCons == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.RangeList", LineCol.SYNTHETIC);
                         assert cls != null;
@@ -4749,7 +4875,7 @@ public class SemanticProcessor {
          * @return a subclass of {@link lt.compiler.semantic.Ins.Invoke}
          * @throws SyntaxException compile error
          */
-        private Value invokeMethodWithArgs(LineCol lineCol, STypeDef targetType, Value invokeOn, String methodName, List<Value> args, SemanticScope scope) throws SyntaxException {
+        public Value invokeMethodWithArgs(LineCol lineCol, STypeDef targetType, Value invokeOn, String methodName, List<Value> args, SemanticScope scope) throws SyntaxException {
                 List<SMethodDef> methods = new ArrayList<>();
                 int FIND_MODE;
                 if (invokeOn.equals(NullValue.get())) {
@@ -4843,7 +4969,7 @@ public class SemanticProcessor {
          * @return the result
          * @throws SyntaxException compile error
          */
-        private Value parseValueFromTwoVarOpILFD(Value left, int baseOp, String methodName, Value right, SemanticScope scope, LineCol lineCol) throws SyntaxException {
+        public Value parseValueFromTwoVarOpILFD(Value left, int baseOp, String methodName, Value right, SemanticScope scope, LineCol lineCol) throws SyntaxException {
                 if (left.type() instanceof PrimitiveTypeDef) {
                         if (right.type() instanceof PrimitiveTypeDef) {
                                 if (left.type().equals(DoubleTypeDef.get()) || right.type().equals(DoubleTypeDef.get())) {
@@ -4894,7 +5020,7 @@ public class SemanticProcessor {
          * @return {@link LtRuntime#compare(int, int)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLang_compare() throws SyntaxException {
+        public SMethodDef getLang_compare() throws SyntaxException {
                 if (Lang_compare == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         assert cls != null;
@@ -4921,7 +5047,7 @@ public class SemanticProcessor {
          * @return {@link Comparable#compareTo(Object)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getComparable_compareTo() throws SyntaxException {
+        public SMethodDef getComparable_compareTo() throws SyntaxException {
                 if (null == Comparable_compareTo) {
                         SInterfaceDef comparable = (SInterfaceDef) getTypeWithName("java.lang.Comparable", LineCol.SYNTHETIC);
                         assert comparable != null;
@@ -4948,7 +5074,7 @@ public class SemanticProcessor {
          * @return the result
          * @throws SyntaxException compile error
          */
-        private Value parseValueFromTwoVarOpCompare(Value left, int compare_mode, String methodName, Value right, SemanticScope scope, LineCol lineCol) throws SyntaxException {
+        public Value parseValueFromTwoVarOpCompare(Value left, int compare_mode, String methodName, Value right, SemanticScope scope, LineCol lineCol) throws SyntaxException {
                 if (left.type() instanceof PrimitiveTypeDef) {
                         if (right.type() instanceof PrimitiveTypeDef) {
                                 Ins.TwoVarOp twoVarOp;
@@ -5010,7 +5136,7 @@ public class SemanticProcessor {
          * @return {@link LtRuntime#compareRef(Object, Object)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLang_compareRef() throws SyntaxException {
+        public SMethodDef getLang_compareRef() throws SyntaxException {
                 if (Lang_compareRef == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         assert cls != null;
@@ -5040,7 +5166,7 @@ public class SemanticProcessor {
          * @return result
          * @throws SyntaxException compile error
          */
-        private Value parseValueFromTwoVarOp(Value left, String op, Value right, SemanticScope scope, LineCol lineCol) throws SyntaxException {
+        public Value parseValueFromTwoVarOp(Value left, String op, Value right, SemanticScope scope, LineCol lineCol) throws SyntaxException {
                 switch (op) {
                         case "..":
                                 Value intLeft = cast(IntTypeDef.get(), left, lineCol);
@@ -5252,7 +5378,7 @@ public class SemanticProcessor {
          * @return {@link LtRuntime#is(Object, Object, Class)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLang_is() throws SyntaxException {
+        public SMethodDef getLang_is() throws SyntaxException {
                 if (Lang_is == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         assert cls != null;
@@ -5277,7 +5403,7 @@ public class SemanticProcessor {
          * @return {@link LtRuntime#not(Object, Object, Class)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLang_not() throws SyntaxException {
+        public SMethodDef getLang_not() throws SyntaxException {
                 if (Lang_not == null) {
                         SClassDef cls = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         assert cls != null;
@@ -5305,7 +5431,7 @@ public class SemanticProcessor {
          * @return result
          * @throws SyntaxException compile error
          */
-        private Value parseSelfOneVarOp(Operation exp, SemanticScope scope) throws SyntaxException {
+        public Value parseSelfOneVarOp(Operation exp, SemanticScope scope) throws SyntaxException {
                 Expression e = exp.expressions().get(0);
                 if (!(e instanceof AST.Access)) {
                         err.SyntaxException(exp.operator() + " cannot operate on " + e, exp.line_col());
@@ -5381,7 +5507,7 @@ public class SemanticProcessor {
          * @return result
          * @throws SyntaxException compile error
          */
-        private Value parseValueFromOneVarOp(Operation exp, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromOneVarOp(Operation exp, SemanticScope scope) throws SyntaxException {
                 String op = exp.operator();
                 boolean unary = exp.isUnary();
 
@@ -5515,7 +5641,7 @@ public class SemanticProcessor {
          * @return list
          * @throws SyntaxException exception
          */
-        private List<Value> parseArguments(List<Expression> args, SemanticScope scope) throws SyntaxException {
+        public List<Value> parseArguments(List<Expression> args, SemanticScope scope) throws SyntaxException {
                 List<Value> list = new ArrayList<>();
                 for (Expression exp : args) {
                         Value a = parseValueFromExpression(exp, null, scope);
@@ -5537,7 +5663,7 @@ public class SemanticProcessor {
          * @return result
          * @throws SyntaxException compile error
          */
-        private Value parseValueFromIndex(AST.Index index, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromIndex(AST.Index index, SemanticScope scope) throws SyntaxException {
                 Value v = parseValueFromExpression(index.exp, null, scope);
                 assert v != null;
 
@@ -5624,7 +5750,7 @@ public class SemanticProcessor {
          * @return New instruction
          * @throws SyntaxException exception
          */
-        private Ins.New parseValueFromAccessType(AST.Access access, List<Import> imports, STypeDef currentType) throws SyntaxException {
+        public Ins.New parseValueFromAccessType(AST.Access access, List<Import> imports, STypeDef currentType) throws SyntaxException {
                 SClassDef type = (SClassDef) getTypeWithAccess(access, imports);
                 assert type != null;
                 SConstructorDef zeroParamCons = null;
@@ -5660,7 +5786,7 @@ public class SemanticProcessor {
          * @param scope  scope that contains localvariables
          * @return retrieved value can be getField/getStatic/TLoad/arraylength
          */
-        private Value parseValueFromAccess(AST.Access access, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromAccess(AST.Access access, SemanticScope scope) throws SyntaxException {
                 List<Import> imports = fileNameToImport.get(access.line_col().fileName);
                 if (access.exp == null) {
                         // Access(null,name)
@@ -5862,7 +5988,7 @@ public class SemanticProcessor {
          * @return InvokeStatic
          * @throws SyntaxException exception
          */
-        private Ins.InvokeStatic invokeGetField(Value target, String name, STypeDef callerClass, LineCol lineCol) throws SyntaxException {
+        public Ins.InvokeStatic invokeGetField(Value target, String name, STypeDef callerClass, LineCol lineCol) throws SyntaxException {
                 SMethodDef m = getLang_getField();
                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
                 invokeStatic.arguments().add(target);
@@ -5882,7 +6008,7 @@ public class SemanticProcessor {
          * @return {@link LtRuntime#getField(Object, String, Class)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getLang_getField() throws SyntaxException {
+        public SMethodDef getLang_getField() throws SyntaxException {
                 if (Lang_getField == null) {
                         SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                         assert Lang != null;
@@ -5909,7 +6035,7 @@ public class SemanticProcessor {
          * @param checkSuper check the super class/interfaces if it's set to true
          * @return retrieved SFieldDef or null if not found
          */
-        private SFieldDef findFieldFromTypeDef(String fieldName, STypeDef targetType, STypeDef callerType, int mode, boolean checkSuper) {
+        public SFieldDef findFieldFromTypeDef(String fieldName, STypeDef targetType, STypeDef callerType, int mode, boolean checkSuper) {
                 if (targetType instanceof SClassDef) {
                         return findFieldFromClassDef(fieldName, (SClassDef) targetType, callerType, mode, checkSuper);
                 } else if (targetType instanceof SInterfaceDef) {
@@ -5927,7 +6053,7 @@ public class SemanticProcessor {
          * @param checkSuper check the super class/interfaces if it's set to true
          * @return retrieved SFieldDef or null if not found
          */
-        private SFieldDef findFieldFromClassDef(String fieldName, SClassDef theClass, STypeDef type, int mode, boolean checkSuper) {
+        public SFieldDef findFieldFromClassDef(String fieldName, SClassDef theClass, STypeDef type, int mode, boolean checkSuper) {
                 for (SFieldDef f : theClass.fields()) {
                         if (mode == FIND_MODE_STATIC) {
                                 if (!f.modifiers().contains(SModifier.STATIC)) continue;
@@ -5983,7 +6109,7 @@ public class SemanticProcessor {
          * @param checkSuper   check the super interfaces if it's set to true
          * @return retrieved SFieldDef or null if not found
          */
-        private SFieldDef findFieldFromInterfaceDef(String fieldName, SInterfaceDef theInterface, boolean checkSuper) {
+        public SFieldDef findFieldFromInterfaceDef(String fieldName, SInterfaceDef theInterface, boolean checkSuper) {
                 for (SFieldDef f : theInterface.fields()) {
                         if (f.name().equals(fieldName)) return f;
                 }
@@ -6008,7 +6134,7 @@ public class SemanticProcessor {
          * @return casted value
          * @throws SyntaxException exception
          */
-        private Value cast(STypeDef requiredType, Value v, LineCol lineCol) throws SyntaxException {
+        public Value cast(STypeDef requiredType, Value v, LineCol lineCol) throws SyntaxException {
                 // if v is instance of requiredType, return
                 if (requiredType == null
                         ||
@@ -6187,7 +6313,7 @@ public class SemanticProcessor {
          * @return casted value
          * @throws SyntaxException exception
          */
-        private Value castObjToObj(STypeDef type, Value v, LineCol lineCol) throws SyntaxException {
+        public Value castObjToObj(STypeDef type, Value v, LineCol lineCol) throws SyntaxException {
                 SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", lineCol);
                 assert Lang != null;
 
@@ -6218,7 +6344,7 @@ public class SemanticProcessor {
          * @return casted value
          * @throws SyntaxException exception
          */
-        private Value castObjToPrimitive(PrimitiveTypeDef type, Value v, LineCol lineCol) throws SyntaxException {
+        public Value castObjToPrimitive(PrimitiveTypeDef type, Value v, LineCol lineCol) throws SyntaxException {
                 SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
                 assert Lang != null;
 
@@ -6321,7 +6447,7 @@ public class SemanticProcessor {
          * @param methodList method list
          * @return true/false
          */
-        private boolean whetherTheMethodIsOverriddenByMethodsInTheList(SMethodDef method, List<SMethodDef> methodList) throws SyntaxException {
+        public boolean whetherTheMethodIsOverriddenByMethodsInTheList(SMethodDef method, List<SMethodDef> methodList) throws SyntaxException {
                 // methodList is null
                 // return false
                 if (methodList == null) return false;
@@ -6344,15 +6470,15 @@ public class SemanticProcessor {
         /**
          * search for static and non-static
          */
-        private static final int FIND_MODE_ANY = 0;
+        public static final int FIND_MODE_ANY = 0;
         /**
          * only search for static
          */
-        private static final int FIND_MODE_STATIC = 1;
+        public static final int FIND_MODE_STATIC = 1;
         /**
          * only search for non-static
          */
-        private static final int FIND_MODE_NON_STATIC = 2;
+        public static final int FIND_MODE_NON_STATIC = 2;
 
         /**
          * find method from interface and it's super interfaces
@@ -6364,7 +6490,7 @@ public class SemanticProcessor {
          * @param matchedMethods matched methods
          * @param checkSuper     whether to check super types
          */
-        private void findMethodFromInterfaceWithArguments(String name, List<Value> argList, SInterfaceDef sInterfaceDef, int mode, List<SMethodDef> matchedMethods, boolean checkSuper) throws SyntaxException {
+        public void findMethodFromInterfaceWithArguments(String name, List<Value> argList, SInterfaceDef sInterfaceDef, int mode, List<SMethodDef> matchedMethods, boolean checkSuper) throws SyntaxException {
                 out:
                 for (SMethodDef m : sInterfaceDef.methods()) {
                         // check name
@@ -6417,7 +6543,7 @@ public class SemanticProcessor {
          * @param matchedMethods matched methods, the final result would be chosen from the list
          * @param checkSuper     whether to check super types
          */
-        private void findMethodFromClassWithArguments(String name, List<Value> argList, STypeDef invokeOn, SClassDef sClassDef, int mode, List<SMethodDef> matchedMethods, boolean checkSuper) throws SyntaxException {
+        public void findMethodFromClassWithArguments(String name, List<Value> argList, STypeDef invokeOn, SClassDef sClassDef, int mode, List<SMethodDef> matchedMethods, boolean checkSuper) throws SyntaxException {
                 // prevent invalid class access
                 if (!sClassDef.modifiers().contains(SModifier.PUBLIC)) {
                         if (sClassDef.modifiers().contains(SModifier.PROTECTED)) {
@@ -6527,7 +6653,7 @@ public class SemanticProcessor {
          * @param checkSuper     whether to check super types
          * @throws SyntaxException exception
          */
-        private void findMethodFromTypeWithArguments(LineCol lineCol, String name, List<Value> argList, STypeDef invokeOn, STypeDef sTypeDef, int mode, List<SMethodDef> matchedMethods, boolean checkSuper) throws SyntaxException {
+        public void findMethodFromTypeWithArguments(LineCol lineCol, String name, List<Value> argList, STypeDef invokeOn, STypeDef sTypeDef, int mode, List<SMethodDef> matchedMethods, boolean checkSuper) throws SyntaxException {
                 if (sTypeDef instanceof SClassDef) {
                         findMethodFromClassWithArguments(name, argList, invokeOn, (SClassDef) sTypeDef, mode, matchedMethods, checkSuper);
                 } else if (sTypeDef instanceof SInterfaceDef) {
@@ -6554,7 +6680,7 @@ public class SemanticProcessor {
          * @return {@link lt.compiler.semantic.Ins.New} or {@link lt.compiler.semantic.Ins.InvokeDynamic}
          * @throws SyntaxException exception
          */
-        private Value constructingNewInst(SClassDef classDef, List<Value> argList, LineCol lineCol) throws SyntaxException {
+        public Value constructingNewInst(SClassDef classDef, List<Value> argList, LineCol lineCol) throws SyntaxException {
                 out:
                 for (SConstructorDef con : classDef.constructors()) {
                         // foreach constructor, check its parameters
@@ -6602,7 +6728,7 @@ public class SemanticProcessor {
          * @see #parseValueFromInvocation(AST.Invocation, SemanticScope)
          * @see #parseValueFromInvocationWithNames(AST.Invocation, SemanticScope)
          */
-        private Value parseValueFromInvocationFunctionalObject(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromInvocationFunctionalObject(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
                 Expression exp = invocation.exp;
                 Value possibleFunctionalObject = parseValueFromExpression(exp, null, scope);
 
@@ -6640,7 +6766,7 @@ public class SemanticProcessor {
          * @see #parseValueFromInvocationWithNames(AST.Invocation, SemanticScope)
          * @see #parseValueFromInvocationFunctionalObject(AST.Invocation, SemanticScope)
          */
-        private Value parseValueFromInvocation(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromInvocation(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
                 // parse args
                 List<Value> argList = new ArrayList<>();
                 boolean tmpEnableTypeAccess = enableTypeAccess;
@@ -7160,7 +7286,7 @@ public class SemanticProcessor {
          * @param target target
          * @return true or false
          */
-        private boolean isGetFieldAtRuntime(Value target) {
+        public boolean isGetFieldAtRuntime(Value target) {
                 if (target instanceof Ins.InvokeStatic) {
                         Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) target;
                         if (invokeStatic.invokable() instanceof SMethodDef) {
@@ -7182,15 +7308,15 @@ public class SemanticProcessor {
         /**
          * no swap info
          */
-        private static final int SWAP_NONE = 0;
+        public static final int SWAP_NONE = 0;
         /**
          * do swap
          */
-        private static final int SWAP_SWAP = 1;
+        public static final int SWAP_SWAP = 1;
         /**
          * do not swap
          */
-        private static final int SWAP_NO_SWAP = 2;
+        public static final int SWAP_NO_SWAP = 2;
 
         /**
          * find best match
@@ -7201,7 +7327,7 @@ public class SemanticProcessor {
          * @return selected method
          * @throws SyntaxException exception
          */
-        private SMethodDef findBestMatch(List<Value> argList, List<SMethodDef> methods, LineCol lineCol) throws SyntaxException {
+        public SMethodDef findBestMatch(List<Value> argList, List<SMethodDef> methods, LineCol lineCol) throws SyntaxException {
                 if (null == methods || methods.isEmpty()) return null;
                 Iterator<SMethodDef> it = methods.iterator();
                 SMethodDef method = it.next();
@@ -7250,7 +7376,7 @@ public class SemanticProcessor {
          * @return a new list containing modified arguments
          * @throws SyntaxException compile error
          */
-        private List<Value> castArgsForMethodInvoke(List<Value> args, List<SParameter> parameters, LineCol lineCol) throws SyntaxException {
+        public List<Value> castArgsForMethodInvoke(List<Value> args, List<SParameter> parameters, LineCol lineCol) throws SyntaxException {
                 List<Value> result = new ArrayList<>();
 
                 for (int i = 0; i < parameters.size(); ++i) {
@@ -7270,7 +7396,7 @@ public class SemanticProcessor {
          * @param scope current scope
          * @return TLoad or GetField or GetStatic or NullValue
          */
-        private Value findObjectInCurrentScopeWithName(String name, SemanticScope scope) {
+        public Value findObjectInCurrentScopeWithName(String name, SemanticScope scope) {
                 LeftValue v = scope.getLeftValue(name);
                 if (v != null) return new Ins.TLoad(v, scope, LineCol.SYNTHETIC);
 
@@ -7298,7 +7424,7 @@ public class SemanticProcessor {
          * @return {@link Dynamic#bootstrap(MethodHandles.Lookup, String, MethodType)}
          * @throws SyntaxException exception
          */
-        private SMethodDef getInvokeDynamicBootstrapMethod() throws SyntaxException {
+        public SMethodDef getInvokeDynamicBootstrapMethod() throws SyntaxException {
                 if (invokeDynamicBootstrapMethod == null) {
                         SClassDef indyType = (SClassDef) getTypeWithName("lt.lang.Dynamic", LineCol.SYNTHETIC);
                         assert indyType != null;
@@ -7327,7 +7453,7 @@ public class SemanticProcessor {
 
         private SMethodDef constructBootstrapMethod;
 
-        private SMethodDef getConstructBootstrapMethod() throws SyntaxException {
+        public SMethodDef getConstructBootstrapMethod() throws SyntaxException {
                 if (constructBootstrapMethod == null) {
                         SClassDef indyType = (SClassDef) getTypeWithName("lt.lang.Dynamic", LineCol.SYNTHETIC);
                         assert indyType != null;
@@ -7356,7 +7482,7 @@ public class SemanticProcessor {
 
         private SMethodDef callFunctionalObjectBootstrapMethod;
 
-        private SMethodDef getCallFunctionalObjectBootstrapMethod() throws SyntaxException {
+        public SMethodDef getCallFunctionalObjectBootstrapMethod() throws SyntaxException {
                 if (callFunctionalObjectBootstrapMethod == null) {
                         SClassDef indyType = (SClassDef) getTypeWithName("lt.lang.Dynamic", LineCol.SYNTHETIC);
                         assert indyType != null;
@@ -7391,7 +7517,7 @@ public class SemanticProcessor {
          * @return InvokeStatic (all operations must invoke box type's static valueOf(..) method)
          * @throws SyntaxException exception
          */
-        private Ins.InvokeStatic boxPrimitive(Value primitive, LineCol lineCol) throws SyntaxException {
+        public Ins.InvokeStatic boxPrimitive(Value primitive, LineCol lineCol) throws SyntaxException {
                 assert primitive.type() instanceof PrimitiveTypeDef;
                 if (primitive.type() instanceof ByteTypeDef) {
                         SClassDef aByte = (SClassDef) getTypeWithName("java.lang.Byte", lineCol);
@@ -7517,7 +7643,7 @@ public class SemanticProcessor {
          * @return unescaped string
          * @throws SyntaxException exception
          */
-        private String unescape(String s, LineCol lineCol) throws SyntaxException {
+        public String unescape(String s, LineCol lineCol) throws SyntaxException {
                 char[] chars = s.toCharArray();
                 char[] preResult = new char[chars.length];
                 int j = 0;
@@ -7582,7 +7708,7 @@ public class SemanticProcessor {
          * </ul>
          * @throws SyntaxException exception
          */
-        private Value parseValueFromObject(Object o) throws SyntaxException {
+        public Value parseValueFromObject(Object o) throws SyntaxException {
                 // primitives
                 if (o instanceof Integer) {
                         return new IntValue((Integer) o);
@@ -7664,7 +7790,7 @@ public class SemanticProcessor {
          * @param visitedType     already visited types
          * @throws SyntaxException exception
          */
-        private void recordAbstractMethodsForOverrideCheck_interface(SInterfaceDef i,
+        public void recordAbstractMethodsForOverrideCheck_interface(SInterfaceDef i,
                                                                      List<SMethodDef> abstractMethods,
                                                                      List<SMethodDef> visitedMethods,
                                                                      Set<SInterfaceDef> visitedType) throws SyntaxException {
@@ -7696,7 +7822,7 @@ public class SemanticProcessor {
          * @param visitedType     already visited types
          * @throws SyntaxException exception
          */
-        private void recordAbstractMethodsForOverrideCheck_class(SClassDef c,
+        public void recordAbstractMethodsForOverrideCheck_class(SClassDef c,
                                                                  List<SMethodDef> abstractMethods,
                                                                  List<SMethodDef> visitedMethods,
                                                                  Set<SInterfaceDef> visitedType) throws SyntaxException {
@@ -7727,7 +7853,7 @@ public class SemanticProcessor {
          * @param abstractMethods record abstract methods
          * @throws SyntaxException exception
          */
-        private void recordAbstractMethodsForOverrideCheck(SClassDef c, List<SMethodDef> abstractMethods) throws SyntaxException {
+        public void recordAbstractMethodsForOverrideCheck(SClassDef c, List<SMethodDef> abstractMethods) throws SyntaxException {
                 List<SMethodDef> visitedMethods = new ArrayList<>();
                 Set<SInterfaceDef> visitedTypes = new HashSet<>();
                 recordAbstractMethodsForOverrideCheck_class(
@@ -7750,7 +7876,7 @@ public class SemanticProcessor {
          * @param overriddenMethod method in super class/interface
          * @throws SyntaxException compiling error
          */
-        private void checkFinalAndOverride(SMethodDef method, SMethodDef overriddenMethod) throws SyntaxException {
+        public void checkFinalAndOverride(SMethodDef method, SMethodDef overriddenMethod) throws SyntaxException {
                 if (overriddenMethod.modifiers().contains(SModifier.FINAL)) {
                         err.SyntaxException(overriddenMethod + " cannot be overridden", method.line_col());
                         return;
@@ -7768,7 +7894,7 @@ public class SemanticProcessor {
          * @param visitedTypes types already visited
          * @throws SyntaxException exception
          */
-        private void checkOverride_class(SMethodDef method,
+        public void checkOverride_class(SMethodDef method,
                                          SClassDef sClassDef,
                                          Set<STypeDef> visitedTypes) throws SyntaxException {
                 if (visitedTypes.contains(sClassDef)) return;
@@ -7797,7 +7923,7 @@ public class SemanticProcessor {
          * @param visitedTypes  types already visited
          * @throws SyntaxException exception
          */
-        private void checkOverride_interface(SMethodDef method,
+        public void checkOverride_interface(SMethodDef method,
                                              SInterfaceDef sInterfaceDef,
                                              Set<STypeDef> visitedTypes) throws SyntaxException {
                 if (visitedTypes.contains(sInterfaceDef)) return;
@@ -7820,7 +7946,7 @@ public class SemanticProcessor {
          * @param sTypeDef type to be checked
          * @throws SyntaxException exception
          */
-        private void checkOverride(STypeDef sTypeDef) throws SyntaxException {
+        public void checkOverride(STypeDef sTypeDef) throws SyntaxException {
                 if (sTypeDef instanceof SClassDef) {
                         for (SMethodDef m : ((SClassDef) sTypeDef).methods()) {
                                 checkOverride_class(m, ((SClassDef) sTypeDef).parent(), new HashSet<>());
@@ -7847,7 +7973,7 @@ public class SemanticProcessor {
          * @param recorder a queue of interfaces to be checked
          * @throws SyntaxException exception
          */
-        private void checkInterfaceCircularInheritance(final SInterfaceDef toCheck, List<SInterfaceDef> current, List<SInterfaceDef> recorder) throws SyntaxException {
+        public void checkInterfaceCircularInheritance(final SInterfaceDef toCheck, List<SInterfaceDef> current, List<SInterfaceDef> recorder) throws SyntaxException {
                 for (SInterfaceDef i : current) {
                         recorder.add(i);
                         if (i.equals(toCheck)) {
@@ -7870,7 +7996,7 @@ public class SemanticProcessor {
          * @return found method or null
          * @throws SyntaxException exception
          */
-        private SMethodDef findMethodWithSameSignature(SMethodDef method,
+        public SMethodDef findMethodWithSameSignature(SMethodDef method,
                                                        List<SMethodDef> methodList,
                                                        boolean onlyCheckSignature) throws SyntaxException {
                 outer:
@@ -7938,7 +8064,7 @@ public class SemanticProcessor {
                 return null;
         }
 
-        private Map<SAnno, AST.Anno> annotationRecorder = new HashMap<>();
+        public Map<SAnno, AST.Anno> annotationRecorder = new HashMap<>();
 
         /**
          * parse the annotations<br>
@@ -7950,7 +8076,7 @@ public class SemanticProcessor {
          * @param type                  the annotation accepts element type
          * @throws SyntaxException exception
          */
-        private void parseAnnos(Set<AST.Anno> annos,
+        public void parseAnnos(Set<AST.Anno> annos,
                                 SAnnotationPresentable annotationPresentable,
                                 List<Import> imports,
                                 ElementType type,
@@ -7991,7 +8117,7 @@ public class SemanticProcessor {
          * @param imports         imports
          * @throws SyntaxException exceptions
          */
-        private void parseParameters(List<VariableDef> variableDefList, int i, SInvokable invokable, List<Import> imports,
+        public void parseParameters(List<VariableDef> variableDefList, int i, SInvokable invokable, List<Import> imports,
                                      boolean allowAccessModifier) throws SyntaxException {
                 for (int j = 0; j < i; ++j) {
                         // foreach variable
@@ -8052,7 +8178,7 @@ public class SemanticProcessor {
          * @param isStatic whether the field is static
          * @throws SyntaxException exception
          */
-        private void parseField(VariableDef v, STypeDef type, List<Import> imports, int mode, boolean isStatic) throws SyntaxException {
+        public void parseField(VariableDef v, STypeDef type, List<Import> imports, int mode, boolean isStatic) throws SyntaxException {
                 // field, set its name|type|modifier|annos|declaringClass
                 SFieldDef fieldDef = new SFieldDef(v.line_col());
                 fieldDef.setName(v.getName()); // name
@@ -8171,7 +8297,7 @@ public class SemanticProcessor {
          * @param isStatic   whether the method is static
          * @throws SyntaxException exception
          */
-        private void parseMethod(MethodDef m, int i, STypeDef type, SMethodDef lastMethod, List<Import> imports, int mode, boolean isStatic) throws SyntaxException {
+        public void parseMethod(MethodDef m, int i, STypeDef type, SMethodDef lastMethod, List<Import> imports, int mode, boolean isStatic) throws SyntaxException {
                 // method name|declaringType|returnType|parameters|modifier|anno
                 SMethodDef methodDef = new SMethodDef(m.line_col());
                 methodDef.setName(m.name);
@@ -8307,7 +8433,7 @@ public class SemanticProcessor {
          * @param interfaceDefs interfaceDef list
          * @throws UnexpectedTokenException the statement is not import/class/interface
          */
-        private void select_import_class_interface_fun(Statement stmt,
+        public void select_import_class_interface_fun(Statement stmt,
                                                        List<Import> imports,
                                                        List<ClassDef> classDefs,
                                                        List<InterfaceDef> interfaceDefs,
@@ -8334,7 +8460,7 @@ public class SemanticProcessor {
          * @return STypeDef (not null)
          * @throws SyntaxException exception
          */
-        private STypeDef getTypeWithName(String clsName, LineCol lineCol) throws SyntaxException {
+        public STypeDef getTypeWithName(String clsName, LineCol lineCol) throws SyntaxException {
                 if (types.containsKey(clsName)) {
                         return types.get(clsName);
                 } else {
@@ -8445,7 +8571,7 @@ public class SemanticProcessor {
          * @param presentable compiler presentable object
          * @throws SyntaxException exception
          */
-        private void getAnnotationFromAnnotatedElement(AnnotatedElement elem, SAnnotationPresentable presentable) throws SyntaxException {
+        public void getAnnotationFromAnnotatedElement(AnnotatedElement elem, SAnnotationPresentable presentable) throws SyntaxException {
                 for (Annotation a : elem.getAnnotations()) {
                         Class<?> aClass = a.getClass();
                         while (aClass != null && !aClass.isAnnotation() && aClass.getInterfaces().length != 0) {
@@ -8479,7 +8605,7 @@ public class SemanticProcessor {
          * @param cls       class object
          * @param modifiers modifiers
          */
-        private void getModifierFromClass(Class<?> cls, List<SModifier> modifiers) {
+        public void getModifierFromClass(Class<?> cls, List<SModifier> modifiers) {
                 int ms = cls.getModifiers();
                 if (java.lang.reflect.Modifier.isAbstract(ms)) {
                         modifiers.add(SModifier.ABSTRACT);
@@ -8523,7 +8649,7 @@ public class SemanticProcessor {
          * @param member  member
          * @param sMember sMember
          */
-        private void getModifierFromMember(Member member, SMember sMember) {
+        public void getModifierFromMember(Member member, SMember sMember) {
                 int ms = member.getModifiers();
                 List<SModifier> modifiers = sMember.modifiers();
                 if (java.lang.reflect.Modifier.isAbstract(ms)) {
@@ -8568,7 +8694,7 @@ public class SemanticProcessor {
          * @param interfaces interfaces
          * @throws SyntaxException exception
          */
-        private void getSuperInterfaceFromClass(Class<?> cls, List<SInterfaceDef> interfaces) throws SyntaxException {
+        public void getSuperInterfaceFromClass(Class<?> cls, List<SInterfaceDef> interfaces) throws SyntaxException {
                 for (Class<?> i : cls.getInterfaces()) {
                         if (!i.isAnnotation()) {
                                 interfaces.add((SInterfaceDef) getTypeWithName(i.getName(), LineCol.SYNTHETIC));
@@ -8585,7 +8711,7 @@ public class SemanticProcessor {
          * @param methods       method list
          * @throws SyntaxException exceptions
          */
-        private void getFieldsAndMethodsFromClass(Class<?> cls, STypeDef declaringType, List<SFieldDef> fields, List<SMethodDef> methods) throws SyntaxException {
+        public void getFieldsAndMethodsFromClass(Class<?> cls, STypeDef declaringType, List<SFieldDef> fields, List<SMethodDef> methods) throws SyntaxException {
                 for (Field f : cls.getDeclaredFields()) {
                         SFieldDef fieldDef = new SFieldDef(LineCol.SYNTHETIC);
                         fieldDef.setName(f.getName());
@@ -8627,7 +8753,7 @@ public class SemanticProcessor {
          * @param invokable  the parameters belong to this invokable
          * @throws SyntaxException exception
          */
-        private void getParameterFromClassArray(Class<?>[] paramTypes, SInvokable invokable) throws SyntaxException {
+        public void getParameterFromClassArray(Class<?>[] paramTypes, SInvokable invokable) throws SyntaxException {
                 for (Class<?> paramType : paramTypes) {
                         SParameter param = new SParameter();
                         param.setName("?");
@@ -8647,7 +8773,7 @@ public class SemanticProcessor {
          * @param type class name
          * @return true/false
          */
-        private boolean typeExists(String type) {
+        public boolean typeExists(String type) {
                 if (!types.containsKey(type)) {
                         try {
                                 loadClass(type);
@@ -8665,7 +8791,7 @@ public class SemanticProcessor {
          * @param access access
          * @return retrieved class name
          */
-        private String getClassNameFromAccess(AST.Access access) {
+        public String getClassNameFromAccess(AST.Access access) {
                 String pre;
                 if (access.exp instanceof AST.Access) {
                         pre = getClassNameFromAccess((AST.Access) access.exp) + ".";
@@ -8684,7 +8810,7 @@ public class SemanticProcessor {
          * @param imports import statements
          * @return found class name or <tt>null</tt> if not found
          */
-        private String findClassNameWithImport(String name, List<Import> imports) {
+        public String findClassNameWithImport(String name, List<Import> imports) {
                 if (typeExists(name)) return name;
                 // first try to find those classes with the same simple name
                 // e.g. import java.util.List
@@ -8715,7 +8841,7 @@ public class SemanticProcessor {
          * @return retrieved STypeDef (not null)
          * @throws SyntaxException exception
          */
-        private STypeDef getTypeWithAccess(AST.Access access, List<Import> imports) throws SyntaxException {
+        public STypeDef getTypeWithAccess(AST.Access access, List<Import> imports) throws SyntaxException {
                 assert access.exp == null || access.exp instanceof AST.PackageRef || "[]".equals(access.name);
 
                 if ("[]".equals(access.name)) {
@@ -8767,7 +8893,7 @@ public class SemanticProcessor {
          * @param lineCol file_line_col
          * @throws SyntaxException exception
          */
-        private void putNameAndTypeDef(STypeDef type, LineCol lineCol) throws SyntaxException {
+        public void putNameAndTypeDef(STypeDef type, LineCol lineCol) throws SyntaxException {
                 if (types.containsKey(type.fullName())) {
                         err.SyntaxException("duplicate type names " + type.fullName(), lineCol);
                         // code won't reach here
@@ -8783,7 +8909,7 @@ public class SemanticProcessor {
          * @return load a class
          * @throws ClassNotFoundException exception
          */
-        private Class<?> loadClass(String name) throws ClassNotFoundException {
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
                 int dimensions = 0; // 0 means not an array
                 if (name.startsWith("[") && name.endsWith(";")) {
                         int i = 0;

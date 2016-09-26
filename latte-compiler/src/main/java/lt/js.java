@@ -22,12 +22,12 @@
  * SOFTWARE.
  */
 
-package lt.generator;
+package lt;
 
-import lt.compiler.CompileUtil;
-import lt.compiler.ErrorManager;
-import lt.compiler.LtBug;
-import lt.compiler.SyntaxException;
+import lt.compiler.*;
+import lt.compiler.semantic.SClassDef;
+import lt.compiler.semantic.Value;
+import lt.compiler.semantic.builtin.StringConstantValue;
 import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
@@ -38,21 +38,24 @@ import lt.compiler.syntactic.operation.OneVariableOperation;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
 import lt.compiler.syntactic.operation.UnaryOneVariableOperation;
 import lt.compiler.syntactic.pre.Modifier;
+import lt.generator.SourceGenerator;
 
 import java.util.*;
 
 /**
  * transform latte AST into javascript code
  */
-public class JSGenerator implements SourceGenerator {
+public class js implements SourceGenerator {
         private static final int INDENT = 4;
 
         private List<Statement> ast;
+        private SemanticProcessor processor;
         private ErrorManager err;
 
         @Override
-        public void init(List<Statement> ast, ErrorManager err) {
+        public void init(List<Statement> ast, SemanticProcessor processor, SemanticScope scope, LineCol lineCol, ErrorManager err) {
                 this.ast = ast;
+                this.processor = processor;
                 this.err = err;
         }
 
@@ -62,10 +65,18 @@ public class JSGenerator implements SourceGenerator {
          * @return js code
          * @throws SyntaxException exception
          */
-        public String generate() throws SyntaxException {
+        @Override
+        public Value generate() throws SyntaxException {
                 StringBuilder sb = new StringBuilder();
                 buildStatements(sb, ast, 0);
-                return sb.toString().trim();
+                StringConstantValue s = new StringConstantValue(sb.toString().trim());
+                s.setType((SClassDef) processor.getTypeWithName("java.lang.String", LineCol.SYNTHETIC));
+                return s;
+        }
+
+        @Override
+        public int resultType() {
+                return VALUE;
         }
 
         /**

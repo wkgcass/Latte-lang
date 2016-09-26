@@ -2718,7 +2718,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    a = #lt::generator::JSGenerator\n" +
+                        "    a = #lt::js\n" +
                         "        a=1");
                 Set<STypeDef> set = parse(map);
 

@@ -26,9 +26,11 @@ package lt.compiler.semantic;
 
 import lt.compiler.LineCol;
 
+import java.io.Serializable;
+
 /**
  * statement
  */
-public interface Instruction {
+public interface Instruction extends Serializable {
         LineCol line_col();
 }

@@ -28,7 +28,11 @@ import lt.compiler.*;
 import lt.compiler.Scanner;
 import lt.compiler.semantic.SModifier;
 import lt.compiler.semantic.STypeDef;
+import lt.compiler.syntactic.Expression;
 import lt.compiler.syntactic.Statement;
+import lt.compiler.syntactic.literal.NumberLiteral;
+import lt.compiler.syntactic.operation.TwoVariableOperation;
+import lt.generator.SourceGenerator;
 import lt.lang.*;
 import lt.lang.function.Function1;
 import lt.lang.function.Function3;
@@ -2395,11 +2399,11 @@ public class TestCodeGen {
                         "" +
                                 "class TestGeneratorSpec\n" +
                                 "    static\n" +
-                                "        method1()=#lt::generator::JSGenerator\n" +
+                                "        method1()=#lt::js\n" +
                                 "            a=1\n" +
                                 "            b=2\n" +
                                 "        method2(i)=(\n" +
-                                "            #lt::generator::JSGenerator\n" +
+                                "            #lt::js\n" +
                                 "                a=1\n" +
                                 "        ).charAt(i)"
                         , "TestGeneratorSpec");
@@ -2537,5 +2541,83 @@ public class TestCodeGen {
                         , "TestInternalSyntaxLambda");
                 Method method = cls.getMethod("method");
                 assertEquals(3, method.invoke(null));
+        }
+
+        public static class ASTGen implements SourceGenerator {
+                private Statement stmt;
+
+                @Override
+                public void init(List<Statement> ast, SemanticProcessor processor, SemanticScope scope, LineCol lineCol, ErrorManager err) {
+                        this.stmt = ast.get(0);
+                }
+
+                @Override
+                public Object generate() throws SyntaxException {
+                        return new TwoVariableOperation(
+                                "+",
+                                new NumberLiteral("1", LineCol.SYNTHETIC),
+                                (Expression) stmt,
+                                LineCol.SYNTHETIC
+                        );
+                }
+
+                @Override
+                public int resultType() {
+                        return EXPRESSION;
+                }
+        }
+
+        @Test
+        public void testGenerator_AST() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestGenerator_AST\n" +
+                                "    static\n" +
+                                "        method()=#" + ASTGen.class.getName().replace(".", "::") + "\n" +
+                                "            123"
+                        , "TestGenerator_AST");
+                Method method = cls.getMethod("method");
+                assertEquals(124, method.invoke(null));
+        }
+
+        @Test
+        public void testGenerator_Serialize() throws Throwable {
+                Class<?> cls = retrieveClass("" +
+                                "import lt::ast\n" +
+                                "class TestGenerator_Serialize\n" +
+                                "    static\n" +
+                                "        method()=#ast\n" +
+                                "            1+2"
+                        , "TestGenerator_Serialize");
+                Method method = cls.getMethod("method");
+                assertEquals(Collections.singletonList(new TwoVariableOperation("+",
+                        new NumberLiteral("1", LineCol.SYNTHETIC),
+                        new NumberLiteral("2", LineCol.SYNTHETIC),
+                        LineCol.SYNTHETIC)), method.invoke(null));
+        }
+
+        @Test
+        public void testGenerator_in_one_line() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import lt::ast\n" +
+                                "class TestGenerator_in_one_line\n" +
+                                "    static\n" +
+                                "        method()=#ast#1+2"
+                        , "TestGenerator_in_one_line");
+                Method method = cls.getMethod("method");
+                assertEquals(Collections.singletonList(new TwoVariableOperation("+",
+                        new NumberLiteral("1", LineCol.SYNTHETIC),
+                        new NumberLiteral("2", LineCol.SYNTHETIC),
+                        LineCol.SYNTHETIC)), method.invoke(null));
+        }
+
+        @Test
+        public void testArrayFieldIndex() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestArrayFieldIndex\n" +
+                                "    static\n" +
+                                "        method(o)=o._1"
+                        , "TestArrayFieldIndex");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(2, method.invoke(null, (Object) new int[]{1, 2, 3}));
         }
 }

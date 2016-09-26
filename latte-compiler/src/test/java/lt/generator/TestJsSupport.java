@@ -24,16 +24,16 @@
 
 package lt.generator;
 
-import lt.compiler.ErrorManager;
-import lt.compiler.Parser;
-import lt.compiler.Scanner;
-import lt.compiler.SyntaxException;
+import lt.compiler.*;
+import lt.compiler.semantic.builtin.StringConstantValue;
+import lt.js;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * test js
@@ -43,9 +43,9 @@ public class TestJsSupport {
                 ErrorManager err = new ErrorManager(true);
                 Scanner scanner = new Scanner("test-js.ltjs", new StringReader(source), new Scanner.Properties(), err);
                 Parser parser = new Parser(scanner.scan(), err);
-                JSGenerator js = new JSGenerator();
-                js.init(parser.parse(), err);
-                return js.generate();
+                js js = new js();
+                js.init(parser.parse(), new SemanticProcessor(Collections.emptyMap(), ClassLoader.getSystemClassLoader(), err), null, null, err);
+                return ((StringConstantValue) js.generate()).getStr();
         }
 
         @Test

@@ -427,7 +427,14 @@ public class LtRuntime {
                 if (o.getClass().isArray()) {
                         if (fieldName.equals("length")) {
                                 return Array.getLength(o);
-                        } else return Undefined.get();
+                        } else if (fieldName.startsWith("_")) {
+                                try {
+                                        int index = Integer.parseInt(fieldName.substring(1));
+                                        return Array.get(o, index);
+                                } catch (NumberFormatException ignore) {
+                                }
+                        }
+                        return Undefined.get();
                 }
 
                 // try to get field
@@ -737,7 +744,7 @@ public class LtRuntime {
                 if (tmp.contains("/")) {
                         tmp = tmp.substring(tmp.indexOf("/") + 1);
                 }
-                if (file.contains("\\")) {
+                if (tmp.contains("\\")) {
                         tmp = tmp.substring(tmp.indexOf("\\") + 1);
                 }
 

@@ -24,9 +24,11 @@
 
 package lt.compiler.semantic;
 
+import java.io.Serializable;
+
 /**
  * value
  */
-public interface Value {
+public interface Value extends Serializable {
         STypeDef type();
 }

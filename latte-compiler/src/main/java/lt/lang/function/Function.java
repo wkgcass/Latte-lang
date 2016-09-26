@@ -24,8 +24,10 @@
 
 package lt.lang.function;
 
+import java.io.Serializable;
+
 /**
  * function
  */
-public interface Function {
+public interface Function extends Serializable {
 }

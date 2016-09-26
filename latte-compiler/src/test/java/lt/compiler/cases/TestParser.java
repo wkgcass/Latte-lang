@@ -2178,23 +2178,23 @@ public class TestParser {
         @Test
         public void testGeneratorSpec() throws Exception {
                 List<Statement> list = parse("" +
-                        "#lt::generator::JSGenerator\n" +
-                        "#lt::generator::JSGenerator\n" +
+                        "#lt::generator::js\n" +
+                        "#lt::generator::js\n" +
                         "    a=1\n" +
                         "(" +
-                        "    #lt::generator::JSGenerator\n" +
+                        "    #lt::generator::js\n" +
                         "        a=1).charAt(0)");
                 VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
                 v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
                 AST.GeneratorSpec gs2 = new AST.GeneratorSpec(
-                        new AST.Access(new AST.PackageRef("lt::generator", LineCol.SYNTHETIC), "JSGenerator", LineCol.SYNTHETIC),
+                        new AST.Access(new AST.PackageRef("lt::generator", LineCol.SYNTHETIC), "js", LineCol.SYNTHETIC),
                         Collections.singletonList(v),
                         LineCol.SYNTHETIC
                 );
                 assertEquals(
                         Arrays.asList(
                                 new AST.GeneratorSpec(
-                                        new AST.Access(new AST.PackageRef("lt::generator", LineCol.SYNTHETIC), "JSGenerator", LineCol.SYNTHETIC),
+                                        new AST.Access(new AST.PackageRef("lt::generator", LineCol.SYNTHETIC), "js", LineCol.SYNTHETIC),
                                         Collections.emptyList(),
                                         LineCol.SYNTHETIC
                                 ), gs2,
@@ -2224,5 +2224,16 @@ public class TestParser {
                 AST.Invocation test = new AST.Invocation(new AST.Access(invokeLambda, "test", LineCol.SYNTHETIC),
                         Collections.emptyList(), false, LineCol.SYNTHETIC);
                 assertEquals(Collections.singletonList(test), stmts);
+        }
+
+        @Test
+        public void testSqlGeneratorSyntax() throws Exception {
+                // pass
+                parse("" +
+                        "sql = select(#sql#[user.id, user.name, user.pwd]).\n" +
+                        "from('user').\n" +
+                        "join('user_role').`as`('ur').on(#sql#ur.user_id == user.id).\n" +
+                        "join('role').on(#sql#role.id == ur.user_id).\n" +
+                        "where(#sql#user.id > 10 and user.name not 'cass')");
         }
 }

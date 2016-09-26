@@ -1854,18 +1854,35 @@ public class Parser {
                                                         modifiersIsEmpty();
 
                                                         LineCol lineCol = current.getLineCol();
-                                                        Expression theType = next_exp(true);
-                                                        if (theType instanceof AST.Access) {
-                                                                List<Statement> ast;
-                                                                if (current instanceof ElementStartNode) {
-                                                                        ast = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false);
-                                                                        nextNode(true);
+                                                        if (parsedExps.isEmpty()) {
+                                                                // #generator
+                                                                //     ...
+                                                                Expression theType = next_exp(true);
+                                                                if (theType instanceof AST.Access) {
+                                                                        List<Statement> ast;
+                                                                        if (current instanceof ElementStartNode) {
+                                                                                ast = parseElemStart((ElementStartNode) current, false, Collections.emptySet(), false);
+                                                                                nextNode(true);
+                                                                        } else {
+                                                                                ast = Collections.emptyList();
+                                                                        }
+                                                                        parsedExps.push(new AST.GeneratorSpec((AST.Access) theType, ast, lineCol));
+                                                                } else if (theType instanceof AST.GeneratorSpec) {
+                                                                        parsedExps.push(theType);
                                                                 } else {
-                                                                        ast = Collections.emptyList();
+                                                                        err.UnexpectedTokenException("a type", theType.toString(), theType.line_col());
                                                                 }
-                                                                parsedExps.push(new AST.GeneratorSpec((AST.Access) theType, ast, lineCol));
                                                         } else {
-                                                                err.UnexpectedTokenException("a type", theType.toString(), theType.line_col());
+                                                                // #geneartor#...
+                                                                Expression exp = parsedExps.pop();
+                                                                if (!(exp instanceof AST.Access)) {
+                                                                        err.UnexpectedTokenException(exp.toString(), lineCol);
+                                                                        exp = new AST.Access(null, "x", lineCol);
+                                                                }
+                                                                AST.Access generator = (AST.Access) exp;
+                                                                parsedExps.push(
+                                                                        new AST.GeneratorSpec(generator,
+                                                                                Collections.singletonList(next_exp(false)), lineCol));
                                                         }
 
                                                 } else if (content.equals("(")) {

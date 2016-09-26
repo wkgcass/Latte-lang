@@ -24,8 +24,8 @@
 
 package lt.generator;
 
-import lt.compiler.ErrorManager;
-import lt.compiler.SyntaxException;
+import lt.compiler.*;
+import lt.compiler.syntactic.Expression;
 import lt.compiler.syntactic.Statement;
 
 import java.util.List;
@@ -34,19 +34,30 @@ import java.util.List;
  * a generator that generates source code.
  */
 public interface SourceGenerator {
+        int EXPRESSION = 1;
+        int SERIALIZE = 2;
+        int VALUE = 3;
+
         /**
          * initiate the generator. This method would be invoked after the generator is constructed.
          *
          * @param ast AST
          * @param err Error manager
          */
-        void init(List<Statement> ast, ErrorManager err);
+        void init(List<Statement> ast, SemanticProcessor processor, SemanticScope scope, LineCol lineCol, ErrorManager err) throws SyntaxException;
 
         /**
-         * generate source code.
+         * generate an object. if the result type is {@link #EXPRESSION}, then the object <b>must</b> be an {@link Expression}.<br>
+         * if the result type is {@link #SERIALIZE}, then the object <b>must</b> be a {@link java.io.Serializable} object.<br>
+         * if the result type is {@link #VALUE}, then the object <b>must</b> be a {@link lt.compiler.semantic.Value} object.
          *
-         * @return the source code.
+         * @return the transformed state
          * @throws SyntaxException exception
          */
-        String generate() throws SyntaxException;
+        Object generate() throws SyntaxException;
+
+        /**
+         * @return {@link #EXPRESSION} or {@link #SERIALIZE} or {@link #VALUE}
+         */
+        int resultType();
 }
