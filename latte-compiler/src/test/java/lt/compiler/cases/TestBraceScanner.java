@@ -25,7 +25,7 @@
 package lt.compiler.cases;
 
 import lt.compiler.ErrorManager;
-import lt.compiler.IndentScanner;
+import lt.compiler.BraceScanner;
 import lt.compiler.Properties;
 import lt.compiler.SyntaxException;
 import lt.compiler.lexical.*;
@@ -38,11 +38,11 @@ import static org.junit.Assert.*;
 /**
  * test
  */
-public class TestScanner {
+public class TestBraceScanner {
         @Test
         public void testPkg() throws Exception {
                 // package lt.test
-                IndentScanner processor = new IndentScanner("test", new StringReader("package lt::test"), new Properties(), new ErrorManager(true));
+                BraceScanner processor = new BraceScanner("test", new StringReader("package lt::test"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -59,7 +59,7 @@ public class TestScanner {
         @Test
         public void testImport() throws Exception {
                 // import packageName._
-                IndentScanner processor = new IndentScanner("test", new StringReader("" +
+                BraceScanner processor = new BraceScanner("test", new StringReader("" +
                         "import Package::name::_\n" +
                         "import Package::name::Test"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
@@ -87,7 +87,7 @@ public class TestScanner {
         @Test
         public void testCls1() throws Exception {
                 // class ClassName
-                IndentScanner processor = new IndentScanner("test", new StringReader("class ClassName"), new Properties(), new ErrorManager(true));
+                BraceScanner processor = new BraceScanner("test", new StringReader("class ClassName"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -102,7 +102,7 @@ public class TestScanner {
         @Test
         public void testCls2() throws Exception {
                 // class ClassName(arg1:Type1,arg2:Type2)
-                IndentScanner processor = new IndentScanner("test", new StringReader("class ClassName(arg1,arg2=value2)"), new Properties(), new ErrorManager(true));
+                BraceScanner processor = new BraceScanner("test", new StringReader("class ClassName(arg1,arg2=value2)"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -132,7 +132,7 @@ public class TestScanner {
         @Test
         public void testVariable3() throws Exception {
                 // val value:Type = 1
-                IndentScanner processor = new IndentScanner("test", new StringReader("val value = 1"), new Properties(), new ErrorManager(true));
+                BraceScanner processor = new BraceScanner("test", new StringReader("val value = 1"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -150,9 +150,10 @@ public class TestScanner {
         public void testMethod1() throws Exception {
                 //val trim(input)
                 //    <input.trim()
-                IndentScanner processor = new IndentScanner("test", new StringReader("" +
-                        "val trim(input)\n" +
-                        "    return input.trim()"), new Properties(), new ErrorManager(true));
+                BraceScanner processor = new BraceScanner("test", new StringReader("" +
+                        "val trim(input) {\n" +
+                        "    return input.trim()\n" +
+                        "}"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -186,7 +187,7 @@ public class TestScanner {
         @Test
         public void testMethod2() throws Exception {
                 // voidMethod(input)=0
-                IndentScanner processor = new IndentScanner("test", new StringReader("voidMethod(input)=0"), new Properties(), new ErrorManager(true));
+                BraceScanner processor = new BraceScanner("test", new StringReader("voidMethod(input)=0"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -211,7 +212,7 @@ public class TestScanner {
         @Test
         public void testModifiers() throws Exception {
                 //pub val abs class X
-                IndentScanner processor = new IndentScanner("test", new StringReader("public val abstract class X"), new Properties(), new ErrorManager(true));
+                BraceScanner processor = new BraceScanner("test", new StringReader("public val abstract class X"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -234,14 +235,15 @@ public class TestScanner {
                 //    <"hello"
                 //else
                 //    <"world"
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
-                                "if true\n" +
+                                "if true {\n" +
                                 "    return \"hello world\"\n" +
-                                "elseif false\n" +
+                                "} elseif false {\n" +
                                 "    return \"hello\"\n" +
-                                "else\n" +
-                                "    return \"world\""), new Properties(), new ErrorManager(true));
+                                "} else {\n" +
+                                "    return \"world\"\n" +
+                                "}"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -282,10 +284,11 @@ public class TestScanner {
         public void testFor1() throws Exception {
                 //for i @ iterable
                 //    i
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
-                                "for i in iterable\n" +
-                                "    i"), new Properties(), new ErrorManager(true));
+                                "for i in iterable {\n" +
+                                "    i\n" +
+                                "}"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -307,10 +310,11 @@ public class TestScanner {
         public void testWhile1() throws Exception {
                 //while true
                 //    i+=1
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
-                                "while true\n" +
-                                "    i+=1"), new Properties(), new ErrorManager(true));
+                                "while true {\n" +
+                                "    i+=1\n" +
+                                "}"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -334,11 +338,11 @@ public class TestScanner {
                 // do
                 //     i+=1
                 // while true
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
-                                "do\n" +
+                                "do {\n" +
                                 "    i+=1\n" +
-                                "while true"), new Properties(), new ErrorManager(true));
+                                "} while true"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -370,16 +374,18 @@ public class TestScanner {
                 //    OtherException
                 //finally
                 //    <ret
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
-                                "try\n" +
+                                "try {\n" +
                                 "    throw e\n" +
-                                "catch e\n" +
-                                "    SomeException,AnotherException\n" +
+                                "} catch e {\n" +
+                                "    SomeException,AnotherException {\n" +
                                 "        throw RuntimeException(e)\n" +
-                                "    OtherException\n" +
-                                "finally\n" +
-                                "    return ret"), new Properties(), new ErrorManager(true));
+                                "    }\n" +
+                                "    OtherException {}\n" +
+                                "} finally {\n" +
+                                "    return ret\n" +
+                                "}"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -437,10 +443,16 @@ public class TestScanner {
         @Test
         public void testLambda() throws Exception {
                 //list.stream().filter(
-                //    (e)=>
+                //    (e)=> {
                 //        e>10
+                //    }
                 //)
-                IndentScanner processor = new IndentScanner("test", new StringReader("list.stream().filter(\n    (e)->e>10)"), new Properties(), new ErrorManager(true));
+                BraceScanner processor = new BraceScanner("test", new StringReader("" +
+                        "list.stream().filter(\n" +
+                        "    (e)->{\n" +
+                        "        e > 10\n" +
+                        "    }\n" +
+                        ")"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -484,7 +496,7 @@ public class TestScanner {
 
         @Test
         public void testOperators() throws Exception {
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
                                 "1+2\n" +
                                 "3-4\n" +
@@ -603,7 +615,7 @@ public class TestScanner {
 
         @Test
         public void testSpacesAtTheFront() throws Exception {
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "  import package::name::_"
                 ), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
@@ -618,7 +630,7 @@ public class TestScanner {
         public void testIndent() throws Exception {
                 Properties properties = new Properties();
                 properties._INDENTATION_ = 2;
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         // the statements is copied from testIf
                         // but changed indentation to 2
                         "" +
@@ -633,7 +645,7 @@ public class TestScanner {
 
         @Test
         public void testDefine() throws Exception {
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
                                 "define 'CREATE TABLE' as 'class'\n" +
                                 "CREATE TABLE User"), new Properties(), new ErrorManager(true));
@@ -650,7 +662,7 @@ public class TestScanner {
 
         @Test
         public void testErrWhenPreProcessing1() throws Exception {
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
                                 "define 'CREATE TABLE' 'class'"), // there should be an `as`
                         new Properties(), new ErrorManager(true));
@@ -664,7 +676,7 @@ public class TestScanner {
 
         @Test
         public void testErrWhenPreProcessing2() throws Exception {
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
                                 "define 'CREATE TABLE' as 'class'\n" +
                                 "undef 'A'"), // A is not defined
@@ -680,7 +692,7 @@ public class TestScanner {
 
         @Test
         public void testMultipleLineComment() throws Exception {
-                IndentScanner processor = new IndentScanner("test", new StringReader(
+                BraceScanner processor = new BraceScanner("test", new StringReader(
                         "" +
                                 "a=1/**/\n" + // inline comment 1
                                 "a/**/=2\n" + // inline comment 2

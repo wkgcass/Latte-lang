@@ -25,7 +25,8 @@
 package lt.compiler.cases;
 
 import lt.compiler.*;
-import lt.compiler.Scanner;
+import lt.compiler.IndentScanner;
+import lt.compiler.Properties;
 import lt.compiler.semantic.SModifier;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Expression;
@@ -57,7 +58,7 @@ import static org.junit.Assert.*;
 public class TestCodeGen {
         private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
                 ErrorManager err = new ErrorManager(true);
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), new Scanner.Properties(), err);
+                IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader(code), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -180,7 +181,7 @@ public class TestCodeGen {
                         "TestInvokeStatic");
                 Method method = cls.getMethod("method");
                 Object o = method.invoke(null);
-                assertTrue(o instanceof Properties);
+                assertTrue(o instanceof java.util.Properties);
         }
 
         @Test
@@ -1361,13 +1362,13 @@ public class TestCodeGen {
         @Test
         public void testLambdaLT1() throws Exception {
                 ErrorManager err = new ErrorManager(true);
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
+                IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader("" +
                         "import lt::compiler::_\n" +
                         "class TestLambdaLT\n" +
                         "    static\n" +
                         "        method():TestLambdaFunc\n" +
                         "            i=1\n" +
-                        "            return (o)->o+1+i"), new Scanner.Properties(), err);
+                        "            return (o)->o+1+i"), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -1403,12 +1404,12 @@ public class TestCodeGen {
         @Test
         public void testLambdaLT2() throws Exception {
                 ErrorManager err = new ErrorManager(true);
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
+                IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader("" +
                         "import lt::compiler::_\n" +
                         "class TestLambdaLT\n" +
                         "    method():TestLambdaFunc\n" +
                         "        i=1\n" +
-                        "        return (o)->o+1+i"), new Scanner.Properties(), err);
+                        "        return (o)->o+1+i"), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -1444,12 +1445,12 @@ public class TestCodeGen {
         @Test
         public void testLambdaLT3() throws Throwable {
                 ErrorManager err = new ErrorManager(true);
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
+                IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader("" +
                         "import java::util::function::_\n" +
                         "class TestLambdaLT\n" +
                         "    method():Function\n" +
                         "        i=1\n" +
-                        "        return (o)->o+1+i"), new Scanner.Properties(), err);
+                        "        return (o)->o+1+i"), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -1485,10 +1486,10 @@ public class TestCodeGen {
         @Test
         public void testLambdaMultipleArguments() throws Exception {
                 ErrorManager err = new ErrorManager(true);
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader("" +
+                IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader("" +
                         "import java::util::function::_\n" +
                         "class TestLambdaMultipleArguments\n" +
-                        "    method() = (a,b,c)->a+b+c"), new Scanner.Properties(), err);
+                        "    method() = (a,b,c)->a+b+c"), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());

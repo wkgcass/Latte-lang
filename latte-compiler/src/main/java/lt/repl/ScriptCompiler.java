@@ -25,6 +25,7 @@
 package lt.repl;
 
 import lt.compiler.*;
+import lt.compiler.Properties;
 import lt.compiler.Scanner;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Statement;
@@ -275,7 +276,7 @@ public class ScriptCompiler {
                 //             ...
                 //
                 ErrorManager err = new ErrorManager(true);
-                Scanner scanner = new Scanner(name, scriptReader, new Scanner.Properties(), err);
+                Scanner scanner = new ScannerSwitcher(name, scriptReader, new Properties(), err);
                 Parser parser = new Parser(scanner.scan(), err);
                 List<Statement> statements = parser.parse();
 

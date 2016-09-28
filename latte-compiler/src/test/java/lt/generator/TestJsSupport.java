@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 public class TestJsSupport {
         private String compile(String source) throws IOException, SyntaxException {
                 ErrorManager err = new ErrorManager(true);
-                Scanner scanner = new Scanner("test-js.ltjs", new StringReader(source), new Scanner.Properties(), err);
+                IndentScanner scanner = new IndentScanner("test-js.ltjs", new StringReader(source), new Properties(), err);
                 Parser parser = new Parser(scanner.scan(), err);
                 js js = new js();
                 js.init(parser.parse(), new SemanticProcessor(Collections.emptyMap(), ClassLoader.getSystemClassLoader(), err), null, null, err);

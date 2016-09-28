@@ -25,6 +25,7 @@
 package lt.repl;
 
 import lt.compiler.*;
+import lt.compiler.Properties;
 import lt.compiler.Scanner;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Expression;
@@ -70,6 +71,11 @@ public class Evaluator {
         private int generatedVariableIndex = 0;
         private final String varNameBase;
 
+        public static final int SCANNER_TYPE_INDENT = 0;
+        public static final int SCANNER_TYPE_BRACE = 1;
+
+        private int scannerType = 0;
+
         public Evaluator(ClassPathLoader classPathLoader) {
                 this("res", classPathLoader);
         }
@@ -77,6 +83,10 @@ public class Evaluator {
         public Evaluator(String varNameBase, ClassPathLoader classPathLoader) {
                 this.varNameBase = varNameBase;
                 cl = new CL(classPathLoader);
+        }
+
+        public void setScannerType(int type) {
+                this.scannerType = type;
         }
 
         public static class Entry {
@@ -103,7 +113,15 @@ public class Evaluator {
                         throw new IllegalArgumentException("the input string cannot be empty or null");
 
                 ErrorManager err = new ErrorManager(true);
-                Scanner scanner = new Scanner(evalFileName, new StringReader(stmt), new Scanner.Properties(), err);
+                Scanner scanner;
+                switch (scannerType) {
+                        case SCANNER_TYPE_BRACE:
+                                scanner = new BraceScanner(evalFileName, new StringReader(stmt), new Properties(), err);
+                                break;
+                        case SCANNER_TYPE_INDENT:
+                        default:
+                                scanner = new IndentScanner(evalFileName, new StringReader(stmt), new Properties(), err);
+                }
                 Parser parser = new Parser(scanner.scan(), err);
 
                 List<Statement> statements = parser.parse();

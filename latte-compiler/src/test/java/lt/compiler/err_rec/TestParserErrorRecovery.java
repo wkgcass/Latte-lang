@@ -53,7 +53,7 @@ import static org.junit.Assert.*;
  */
 public class TestParserErrorRecovery {
         private List<Statement> parse(String code, ErrorManager err) throws IOException, SyntaxException {
-                Scanner scanner = new Scanner("test.lt", new StringReader(code), new Scanner.Properties(), err);
+                IndentScanner scanner = new IndentScanner("test.lt", new StringReader(code), new Properties(), err);
                 Parser parser = new Parser(scanner.scan(), err);
                 return parser.parse();
         }

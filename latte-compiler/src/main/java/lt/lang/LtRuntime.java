@@ -560,10 +560,15 @@ public class LtRuntime {
                         throwNonRuntime(invocationState, t);
                         // try to find `set(fieldName,value)`
                         // invoke dynamic would try to find set then try to find put
-                        Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass,
-                                "set",
-                                new boolean[]{false, false},
-                                new Object[]{fieldName, value});
+                        try {
+                                Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass,
+                                        "set",
+                                        new boolean[]{false, false},
+                                        new Object[]{fieldName, value});
+                        } catch (Throwable t2) {
+                                // failed to invoke, throw `t`
+                                throw new LtRuntimeException("cannot find field to put: " + o.getClass().getName() + "#" + fieldName);
+                        }
                 }
         }
 

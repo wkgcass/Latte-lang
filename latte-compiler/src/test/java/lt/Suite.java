@@ -52,7 +52,9 @@ import org.junit.runner.RunWith;
         TestParserErrorRecovery.class,
         TestScript.class,
         TestAnnotations.class,
-        TestJsSupport.class
+        TestJsSupport.class,
+        TestBraceScanner.class,
+        TestScannerSwitcher.class
 })
 public class Suite extends TestSuite {
 }

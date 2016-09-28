@@ -25,6 +25,8 @@
 package lt.repl;
 
 import lt.compiler.*;
+import lt.compiler.Properties;
+import lt.compiler.Scanner;
 import lt.compiler.lexical.ElementStartNode;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
@@ -494,7 +496,7 @@ public class Compiler {
                 errorManager.out = config.out;
 
                 List<Scan> scans = new ArrayList<>();
-                lt.compiler.Scanner.Properties properties = new lt.compiler.Scanner.Properties();
+                Properties properties = new Properties();
                 properties._COLUMN_BASE_ = config.code.columnBase;
                 properties._INDENTATION_ = config.code.indentation;
                 properties._LINE_BASE_ = config.code.lineBase;
@@ -740,10 +742,10 @@ public class Compiler {
         private class Scan implements Callable<FileRoot> {
                 private final String fileName;
                 private final Reader reader;
-                private final lt.compiler.Scanner.Properties properties;
+                private final Properties properties;
                 private final ErrorManager err;
 
-                private Scan(String fileName, Reader reader, lt.compiler.Scanner.Properties properties, ErrorManager err) {
+                private Scan(String fileName, Reader reader, Properties properties, ErrorManager err) {
                         this.fileName = fileName;
                         this.reader = reader;
                         this.properties = properties;
@@ -752,7 +754,7 @@ public class Compiler {
 
                 @Override
                 public FileRoot call() throws Exception {
-                        lt.compiler.Scanner scanner = new lt.compiler.Scanner(fileName, reader, properties, err);
+                        Scanner scanner = new ScannerSwitcher(fileName, reader, properties, err);
                         FileRoot fileRoot = new FileRoot();
                         fileRoot.fileName = fileName;
                         fileRoot.root = scanner.scan();

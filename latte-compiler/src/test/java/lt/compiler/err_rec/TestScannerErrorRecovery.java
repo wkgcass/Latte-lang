@@ -25,7 +25,8 @@
 package lt.compiler.err_rec;
 
 import lt.compiler.ErrorManager;
-import lt.compiler.Scanner;
+import lt.compiler.IndentScanner;
+import lt.compiler.Properties;
 import lt.compiler.SyntaxException;
 import lt.compiler.lexical.Element;
 import lt.compiler.lexical.ElementStartNode;
@@ -42,7 +43,7 @@ import static org.junit.Assert.*;
  */
 public class TestScannerErrorRecovery {
         private ElementStartNode scan(String words, ErrorManager errorManager) throws IOException, SyntaxException {
-                Scanner scanner = new Scanner("test.lt", new StringReader(words), new Scanner.Properties(), errorManager);
+                IndentScanner scanner = new IndentScanner("test.lt", new StringReader(words), new Properties(), errorManager);
                 return scanner.scan();
         }
 

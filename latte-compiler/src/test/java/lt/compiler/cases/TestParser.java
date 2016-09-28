@@ -25,7 +25,8 @@
 package lt.compiler.cases;
 
 import lt.compiler.*;
-import lt.compiler.Scanner;
+import lt.compiler.IndentScanner;
+import lt.compiler.Properties;
 import lt.compiler.lexical.ElementStartNode;
 import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.*;
@@ -52,7 +53,7 @@ import static org.junit.Assert.*;
  */
 public class TestParser {
         private static List<Statement> parse(String stmt) throws IOException, SyntaxException {
-                lt.compiler.Scanner processor = new lt.compiler.Scanner("test", new StringReader(stmt), new Scanner.Properties(), new ErrorManager(true));
+                IndentScanner processor = new IndentScanner("test", new StringReader(stmt), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Parser syntacticProcessor = new Parser(root, new ErrorManager(true));

@@ -42,6 +42,10 @@ public class Element extends Node {
                 return content;
         }
 
+        public void setContent(String content) {
+                this.content = content;
+        }
+
         public void checkWhetherIsValidName() {
                 if (getTokenType() == TokenType.VALID_NAME) {
                         content = CompileUtil.validateValidName(content);

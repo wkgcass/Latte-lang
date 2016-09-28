@@ -49,7 +49,7 @@ import static org.junit.Assert.*;
 public class TestAnnotations {
         private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
                 ErrorManager err = new ErrorManager(true);
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner("test.lt", new StringReader(code), new Scanner.Properties(), err);
+                IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader(code), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());

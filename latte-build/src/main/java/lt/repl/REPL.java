@@ -77,6 +77,9 @@ public class REPL {
                                                 System.out.println(":cp <class-path>                           load classes");
                                                 System.out.println(":script <script-path>                      compile a script");
                                                 System.out.println("----------------------------------------------------------------");
+                                                System.out.println(":scanner-indent                            use IndentScanner to scan input");
+                                                System.out.println(":scanner-brace                             use BraceScanner to scan input");
+                                                System.out.println("----------------------------------------------------------------");
                                                 System.out.println("Compiler()                                 construct a new Compiler");
                                                 System.out.println("compiler >> '<directory>'                  set compiler output directory");
                                                 System.out.println("compiler compile filesInDirectory('<directory>')");
@@ -114,6 +117,10 @@ public class REPL {
                                                         t.printStackTrace();
                                                         sleep(10);
                                                 }
+                                        } else if (cmd.equals(":scanner-indent")) {
+                                                evaluator.setScannerType(Evaluator.SCANNER_TYPE_INDENT);
+                                        } else if (cmd.equals(":scanner-brace")) {
+                                                evaluator.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
                                         } else if (cmd.equals(":")) {
                                                 sb.delete(0, sb.length());
                                         } else {

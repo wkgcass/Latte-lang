@@ -25,6 +25,7 @@
 package lt.compiler.cases;
 
 import lt.compiler.*;
+import lt.compiler.Properties;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 import lt.lang.function.Function0;
@@ -47,7 +48,7 @@ public class TestDemo {
         private Map<String, byte[]> generate(BufferedReader br, String fileName) throws IOException, SyntaxException, ClassNotFoundException {
                 ErrorManager err = new ErrorManager(true);
 
-                lt.compiler.Scanner lexicalProcessor = new lt.compiler.Scanner(fileName, br, new lt.compiler.Scanner.Properties(), err);
+                IndentScanner lexicalProcessor = new IndentScanner(fileName, br, new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put(fileName, syntacticProcessor.parse());

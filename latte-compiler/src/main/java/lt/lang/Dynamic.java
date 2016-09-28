@@ -904,7 +904,7 @@ public class Dynamic {
                                 sb.append(arg == null ? "null" : arg.getClass().getName());
                         }
                         sb.append(")");
-                        throw new LtRuntimeException("cannot find method to invoke " + sb.toString());
+                        throw new LtRuntimeException("cannot find method to invoke: " + sb.toString());
                 }
 
                 // find best match

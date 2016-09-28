@@ -39,6 +39,7 @@ public class SimpleTest {
                 fos.close();
                 */
 
+                /*
                 URL url = new URL("jar:file:///Volumes/PROJECTS/openSource/LessTyping/latte-compiler/target/latte-compiler-0.0.3-ALPHA.jar!/build.lts.template");
                 URLConnection u = url.openConnection();
                 System.out.println(u);
@@ -49,5 +50,8 @@ public class SimpleTest {
                 while(null!=(s=reader.readLine())){
                         System.out.println(s);
                 }
+                */
+
+                System.out.println("\033[0;32;40mabc");
         }
 }

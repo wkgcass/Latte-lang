@@ -25,10 +25,11 @@
 package lt.compiler.lexical;
 
 import lt.compiler.LineCol;
+import lt.compiler.Properties;
 import lt.compiler.SyntaxException;
 
 /**
- * illegal indent. the indent should always be {@link lt.compiler.Scanner.Properties#_INDENTATION_} spaces
+ * illegal indent. the indent should always be {@link Properties#_INDENTATION_} spaces
  */
 public class IllegalIndentationException extends SyntaxException {
         public IllegalIndentationException(String lineMsg, int _INDENT, LineCol lineCol) {
