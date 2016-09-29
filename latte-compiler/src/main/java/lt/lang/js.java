@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package lt;
+package lt.lang;
 
 import lt.compiler.*;
 import lt.compiler.semantic.SClassDef;

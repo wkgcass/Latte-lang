@@ -2400,11 +2400,11 @@ public class TestCodeGen {
                         "" +
                                 "class TestGeneratorSpec\n" +
                                 "    static\n" +
-                                "        method1()=#lt::js\n" +
+                                "        method1()=#js\n" +
                                 "            a=1\n" +
                                 "            b=2\n" +
                                 "        method2(i)=(\n" +
-                                "            #lt::js\n" +
+                                "            #js\n" +
                                 "                a=1\n" +
                                 "        ).charAt(i)"
                         , "TestGeneratorSpec");
@@ -2583,7 +2583,6 @@ public class TestCodeGen {
         @Test
         public void testGenerator_Serialize() throws Throwable {
                 Class<?> cls = retrieveClass("" +
-                                "import lt::ast\n" +
                                 "class TestGenerator_Serialize\n" +
                                 "    static\n" +
                                 "        method()=#ast\n" +
@@ -2599,7 +2598,6 @@ public class TestCodeGen {
         @Test
         public void testGenerator_in_one_line() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                "import lt::ast\n" +
                                 "class TestGenerator_in_one_line\n" +
                                 "    static\n" +
                                 "        method()=#ast#1+2"

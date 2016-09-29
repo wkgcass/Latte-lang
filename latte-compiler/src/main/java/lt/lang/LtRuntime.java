@@ -448,6 +448,7 @@ public class LtRuntime {
                 }
 
                 Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
+                invocationState.fromField = true;
 
                 // try to find `fieldName()`
                 try {
@@ -551,6 +552,7 @@ public class LtRuntime {
                 }
 
                 Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
+                invocationState.fromField = true;
 
                 // try `setFieldName(value)`
                 try {
@@ -634,14 +636,6 @@ public class LtRuntime {
                 // a!=b and a.equals(b) is false
                 if (b instanceof Class) if (((Class) b).isInstance(a)) return true;
                 // b is not class or (b is class and a not instanceof b)
-
-                Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
-
-                try {
-                        return castToBool(Dynamic.invoke(invocationState, a.getClass(), a, null, callerClass, "is", new boolean[]{false}, new Object[]{b}));
-                } catch (Throwable t) {
-                        throwNonRuntime(invocationState, t);
-                }
                 return false;
         }
 
@@ -663,15 +657,6 @@ public class LtRuntime {
                 // a!=b and a.equals(b) is false
                 if (b instanceof Class) if (((Class) b).isInstance(a)) return false;
                 // b is not class or (b is class and a not instanceof b)
-
-                Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
-
-                try {
-                        return castToBool(Dynamic.invoke(invocationState, a.getClass(), a,
-                                null, callerClass, "not", new boolean[]{false}, new Object[]{b}));
-                } catch (Throwable t) {
-                        throwNonRuntime(invocationState, t);
-                }
                 return true;
         }
 

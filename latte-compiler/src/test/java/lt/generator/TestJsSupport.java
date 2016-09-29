@@ -26,7 +26,7 @@ package lt.generator;
 
 import lt.compiler.*;
 import lt.compiler.semantic.builtin.StringConstantValue;
-import lt.js;
+import lt.lang.js;
 import org.junit.Test;
 
 import java.io.IOException;

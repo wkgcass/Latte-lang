@@ -741,6 +741,10 @@ public class Dynamic {
                  * whether it's a reversed invocation
                  */
                 public boolean isCallingReverse = false;
+                /**
+                 * the method that invokes this, is trying to get or put a field
+                 */
+                public boolean fromField = false;
         }
 
         /**
@@ -887,6 +891,16 @@ public class Dynamic {
                                         } catch (InvocationTargetException e) {
                                                 throw e.getTargetException();
                                         }
+                                }
+                        }
+
+                        // dynamically get field `o.methodName`
+                        // if it's not `null` and not `undefined` then invoke the retrieved object
+                        if (!invocationState.fromField && !invocationState.isCallingReverse) {
+                                Object result = LtRuntime.getField(o, method, invoker);
+                                if (result != null && !result.equals(Undefined.get())) {
+                                        invocationState.methodFound = true;
+                                        return callFunctionalObject(result, invoker, args);
                                 }
                         }
 
