@@ -27,6 +27,7 @@ package lt.compiler.cases;
 import lt.compiler.*;
 import lt.compiler.IndentScanner;
 import lt.compiler.Properties;
+import lt.compiler.Scanner;
 import lt.compiler.semantic.SModifier;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Expression;
@@ -58,7 +59,7 @@ import static org.junit.Assert.*;
 public class TestCodeGen {
         private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
                 ErrorManager err = new ErrorManager(true);
-                IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader(code), new Properties(), err);
+                Scanner lexicalProcessor = new ScannerSwitcher("test.lt", new StringReader(code), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
                 Map<String, List<Statement>> map = new HashMap<>();
                 map.put("test.lt", syntacticProcessor.parse());
@@ -2618,5 +2619,37 @@ public class TestCodeGen {
                         , "TestArrayFieldIndex");
                 Method method = cls.getMethod("method", Object.class);
                 assertEquals(2, method.invoke(null, (Object) new int[]{1, 2, 3}));
+        }
+
+        @Test
+        public void testStringExpression() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                ";; brace\n" +
+                                "class TestStringExpression {\n" +
+                                "  static {\n" +
+                                "    test1()=\"abc\"\n" + // normal string
+                                "    test2()=\"abc${1}\"\n" + // exp at the end
+                                "    test3()=\"${1}abc\"\n" + // exp at the start
+                                "    test4()=\"ab${1}c\"\n" + // exp at the middle
+                                "    test5()=\"ab${test1()}c\"\n" + // exp outside
+                                "    test6() {\n" +
+                                "      \"ab${x=1}c\"\n" +
+                                "      return x\n" +
+                                "    }\n" + // exp define a variable
+                                "  }\n" +
+                                "}"
+                        , "TestStringExpression");
+                Method test = cls.getMethod("test1");
+                assertEquals("abc", test.invoke(null));
+                test = cls.getMethod("test2");
+                assertEquals("abc1", test.invoke(null));
+                test = cls.getMethod("test3");
+                assertEquals("1abc", test.invoke(null));
+                test = cls.getMethod("test4");
+                assertEquals("ab1c", test.invoke(null));
+                test = cls.getMethod("test5");
+                assertEquals("ababcc", test.invoke(null));
+                test = cls.getMethod("test6");
+                assertEquals(1, test.invoke(null));
         }
 }

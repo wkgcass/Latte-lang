@@ -3462,9 +3462,7 @@ public class SemanticProcessor {
                                         return null;
                                 }
                         } else if (requiredType == null || requiredType.isAssignableFrom(getTypeWithName("java.lang.String", exp.line_col()))) {
-                                StringConstantValue s = new StringConstantValue(str);
-                                s.setType((SClassDef) getTypeWithName("java.lang.String", exp.line_col()));
-                                return s;
+                                return generateStringConcat(str, scope, exp.line_col());
                         } else {
                                 err.SyntaxException(exp + " cannot be converted into " + requiredType, exp.line_col());
                                 return null;
@@ -7678,6 +7676,112 @@ public class SemanticProcessor {
                 char[] result = new char[j];
                 System.arraycopy(preResult, 0, result, 0, j);
                 return new String(result);
+        }
+
+        /**
+         * generate string that concat expressions inside the string which is surrounded by `${ }`
+         *
+         * @param str   raw string
+         * @param scope semantic scope
+         * @return result from {@link #concatValuesToString(List, SemanticScope, LineCol)}
+         */
+        public Value generateStringConcat(String str, SemanticScope scope, LineCol lineCol) throws SyntaxException {
+                char[] chars = str.toCharArray();
+                SClassDef STRING = (SClassDef) getTypeWithName("java.lang.String", lineCol);
+
+                List<Value> elemsToConcat = new ArrayList<>();
+                StringBuilder sb = new StringBuilder();
+                StringBuilder evalStr = new StringBuilder();
+
+                Stack<Object> evaluatingStack = new Stack<>();
+                boolean isEvaluating = false;
+                Object flag = new Object();
+                for (int i = 0; i < chars.length; i++) {
+                        char c = chars[i];
+                        if (c == '$' && i < chars.length - 1 && chars[i + 1] == '{') {
+                                evaluatingStack.push(flag);
+                                ++i;
+                        } else if (c == '}') {
+                                if (!evaluatingStack.isEmpty()) evaluatingStack.pop();
+                        }
+
+                        if (evaluatingStack.isEmpty()) {
+                                if (isEvaluating) {
+                                        String expStr = evalStr.toString();
+                                        evalStr.delete(0, evalStr.length());
+                                        List<Statement> statements;
+                                        try {
+                                                ErrorManager subErr = new ErrorManager(true);
+                                                Scanner scanner = new ScannerSwitcher("eval",
+                                                        new StringReader(expStr), new Properties(), subErr);
+                                                Parser parser = new Parser(scanner.scan(), subErr);
+                                                statements = parser.parse();
+                                        } catch (IOException e) {
+                                                // this can never happen for the reader is a StringReader
+                                                throw new LtBug(e);
+                                        }
+                                        if (statements.size() != 1 || !(statements.get(0) instanceof Expression)) {
+                                                err.SyntaxException("the string can only concat an expression, but got " + statements, lineCol);
+                                                throw new LtBug("code won't reach here");
+                                        }
+                                        Expression exp = (Expression) statements.get(0);
+                                        elemsToConcat.add(parseValueFromExpression(exp, null, scope));
+                                } else {
+                                        sb.append(c);
+                                }
+                                isEvaluating = false;
+                        } else {
+                                if (isEvaluating) {
+                                        if (c == '\n' || c == '\t' || c == '\r' || c == '\"' || c == '\'' || c == '\\') {
+                                                err.SyntaxException("invalid char " + c + " for expression in string " + str, lineCol);
+                                                throw new LtBug("code won't reach here");
+                                        }
+                                        evalStr.append(c);
+                                } else {
+                                        StringConstantValue s = new StringConstantValue(sb.toString());
+                                        s.setType(STRING);
+                                        elemsToConcat.add(s);
+                                        sb.delete(0, sb.length());
+                                }
+                                isEvaluating = true;
+                        }
+                }
+                if (sb.length() != 0 || elemsToConcat.isEmpty()) {
+                        // append last piece of value to the list
+                        StringConstantValue s = new StringConstantValue(sb.toString());
+                        s.setType(STRING);
+                        elemsToConcat.add(s);
+                }
+
+                return concatValuesToString(elemsToConcat, scope, lineCol);
+        }
+
+        /**
+         * concat the values as one string
+         *
+         * @param values  value list
+         * @param scope   scope
+         * @param lineCol lineCol
+         * @return StringConstantValue or 'xx+yy+zz+...'
+         * @throws SyntaxException compiling error
+         */
+        public Value concatValuesToString(List<Value> values, SemanticScope scope, LineCol lineCol) throws SyntaxException {
+                if (values.size() == 1 && values.get(0) instanceof StringConstantValue) {
+                        // plain string
+                        return values.get(0);
+                } else {
+                        if (!(values.get(0) instanceof StringConstantValue) && !(values.get(1) instanceof StringConstantValue)) {
+                                StringConstantValue emptyString = new StringConstantValue("");
+                                emptyString.setType((SClassDef) getTypeWithName("java.lang.String", LineCol.SYNTHETIC));
+                                values.add(0, emptyString);
+                        }
+                        Iterator<Value> it = values.iterator();
+                        Value finalValue = it.next();
+                        while (it.hasNext()) {
+                                finalValue = parseValueFromTwoVarOp(finalValue, "+", it.next(), scope, lineCol);
+                        }
+                        return finalValue;
+                }
         }
 
         /**

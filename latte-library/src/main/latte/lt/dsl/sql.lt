@@ -42,32 +42,31 @@ interface Selectable
 data class Column(tbl_o, name:String):Selectable
     tbl = tbl_o.getClass.simpleName
 
-    gt(o):Condition=Condition(">", this, [o])
-    lt(o):Condition=Condition("<", this, [o])
-    ge(o):Condition=Condition(">=", this, [o])
-    le(o):Condition=Condition("<=", this, [o])
-    equal(o):Condition=Condition("=", this, [o])
-    notEqual(o):Condition=Condition("<>", this, [o])
-    between(a,b):Condition=Condition("between", this, [a,b])
-    `in`(agg):Condition=Condition("in", this, [agg])
-    like(o):Condition=Condition("like", this, [o])
+    gt(o):Condition = Condition(">", this, [o])
+    lt(o):Condition = Condition("<", this, [o])
+    ge(o):Condition = Condition(">=", this, [o])
+    le(o):Condition = Condition("<=", this, [o])
+    equal(o):Condition = Condition("=", this, [o])
+    notEqual(o):Condition = Condition("<>", this, [o])
+    between(a,b):Condition = Condition("between", this, [a,b])
+    `in`(agg):Condition = Condition("in", this, [agg])
+    like(o):Condition = Condition("like", this, [o])
 
-    assign(o):Assign=Assign(this, o)
+    assign(o):Assign = Assign(this, o)
 
-    desc():Order=Order(this, false)
-    asc():Order=Order(this, true)
+    desc():Order = Order(this, false)
+    asc():Order = Order(this, true)
 
     `as`(alias:String):As = As(this, alias)
 
     toString(context):String = context.surround + tbl + context.surround + "." + context.surround + name + context.surround
 
 data class As(col, alias:String):Selectable
-    toString(context):String
-        return col.toString(context) + " as " + alias
+    toString(context):String = col.toString(context) + " as " + alias
 
 ; assign to the column
 data class Assign(col:Column, o)
-    toString(context:SQL):String = col.toString(context)+" = "+context.putValue(o)
+    toString(context:SQL):String = col.toString(context) + " = " + context.putValue(o)
 
 ; represents a Condition
 data class Condition(op:String, col:Column, ls:List)
@@ -119,7 +118,7 @@ data class Fun(funcName:String, args:List):Selectable
     toString(context):String
         sb = StringBuilder(funcName)
         sb append "("
-        isFirst=true
+        isFirst = true
         for arg in args
             if isFirst
                 isFirst=false
@@ -132,10 +131,8 @@ data class Fun(funcName:String, args:List):Selectable
         sb append ")"
         return sb.toString
 
-data class SQL(
-    surround = ""                             ; surrounds table and columns
-)
-    params:List = []                          ; the list of arguments
+data class SQL(surround = ""/* surrounds table and columns */)
+    params:List = []        ; the list of arguments
 
     putValue(o):String
         if o is type EndStatement
