@@ -596,21 +596,29 @@ public class Ins {
          */
         public static class LogicOr implements Value, Instruction {
                 private final LineCol lineCol;
-                private final Value b1;
-                private final Value b2;
+                private final SMethodDef castToBool;
+                private final Value v1;
+                private final Value v2;
+                private final STypeDef type;
 
-                public LogicOr(Value b1, Value b2, LineCol lineCol) {
+                public LogicOr(SMethodDef castToBool, Value v1, Value v2, STypeDef type, LineCol lineCol) {
                         this.lineCol = lineCol;
-                        this.b1 = b1;
-                        this.b2 = b2;
+                        this.castToBool = castToBool;
+                        this.v1 = v1;
+                        this.v2 = v2;
+                        this.type = type;
                 }
 
-                public Value b1() {
-                        return b1;
+                public SMethodDef getCastToBool() {
+                        return castToBool;
                 }
 
-                public Value b2() {
-                        return b2;
+                public Value v1() {
+                        return v1;
+                }
+
+                public Value v2() {
+                        return v2;
                 }
 
                 @Override
@@ -620,7 +628,7 @@ public class Ins {
 
                 @Override
                 public STypeDef type() {
-                        return BoolTypeDef.get();
+                        return type;
                 }
         }
 

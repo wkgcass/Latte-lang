@@ -752,17 +752,20 @@ public class TestCodeGen {
                                 "class TestLogicOr\n" +
                                 "    static\n" +
                                 "        method(a,ls)\n" +
-                                "            a||ls.add(1)",
+                                "            return a||(\n" +
+                                "                ls.add(1)\n" +
+                                "                return 10\n" +
+                                "            )",
                         "TestLogicOr");
 
                 Method method = cls.getMethod("method", Object.class, Object.class);
 
                 List<Integer> ls = new ArrayList<>();
-                method.invoke(null, false, ls);
+                assertEquals(10, method.invoke(null, false, ls));
                 assertEquals(Collections.singletonList(1), ls);
 
                 ls.clear();
-                method.invoke(null, true, ls);
+                assertEquals(true, method.invoke(null, true, ls));
                 assertTrue(ls.isEmpty());
         }
 
@@ -2651,5 +2654,18 @@ public class TestCodeGen {
                 assertEquals("ababcc", test.invoke(null));
                 test = cls.getMethod("test6");
                 assertEquals(1, test.invoke(null));
+        }
+
+        @Test
+        public void testOrReturnsObject() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestOrReturnsObject\n" +
+                                "    static" +
+                                "        method(a, b, c)=a || b || c"
+                        , "TestOrReturnsObject");
+                Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
+                assertEquals(10, method.invoke(null, 10, 20, 30));
+                assertEquals(20, method.invoke(null, 0, 20, 30));
+                assertEquals(30, method.invoke(null, 0, 0, 30));
         }
 }

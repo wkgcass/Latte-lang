@@ -25,6 +25,7 @@
 package lt.lang;
 
 import lt.lang.function.Function;
+import lt.lang.function.Function0;
 import lt.lang.function.Function1;
 import lt.repl.ScriptCompiler;
 

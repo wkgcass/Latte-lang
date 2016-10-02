@@ -386,55 +386,54 @@ public class CodeGenerator {
         }
 
         /**
-         * build logicOr.<br>
-         * <br>
-         * <code>
-         * buildValueAccess<br>
-         * IfNe flag ---------- true<br>
-         * buildValueAccess<br>
-         * IfNe flag ---------- true<br>
-         * IConst_0<br>
-         * goto nop<br>
-         * flag: IConst1<br>
-         * nop
-         * </code>
+         * eval `left` and cast to bool
+         * check if it's true
+         * if true then return the `left` value
+         * else ignore the `left`
+         * do eval and return `right`
+         * <p>
+         * <p>
+         * v1 (stack is [v1])
+         * dup ([v1 v1]
+         * castToBool ([v1 I])
+         * if ne goto nop ([v1]) // I is 1
+         * pop ([])
+         * v2 ([v2])
+         * nop (v1/v2)
          *
          * @param methodVisitor method visitor
          * @param info          method info
          * @param logicOr       Ins.LogicOr
          */
         private void buildLogicOr(MethodVisitor methodVisitor, CodeInfo info, Ins.LogicOr logicOr) {
-                /*
-                 * if ne b1 goto flag (if b1==false goto flag)
-                 * if ne b2 goto flag (if b2==false goto flag)
-                 * false              (push true into stack)
-                 * goto nop           (goto nop, skip `else` branch)
-                 * flag: true         (flag: push false into stack)
-                 * nop                (nop)
-                 */
-                buildValueAccess(methodVisitor, info, logicOr.b1(), true);
+                buildValueAccess(methodVisitor, info, logicOr.v1(), true); // [v1]
+                methodVisitor.visitInsn(Opcodes.DUP); // dup [v1 v1]
+                info.push(CodeInfo.Size._1);
+                // invoke castToBool
+                SMethodDef castToBool = logicOr.getCastToBool();
+                methodVisitor.visitMethodInsn(
+                        Opcodes.INVOKESTATIC,
+                        typeToInternalName(castToBool.declaringType()),
+                        castToBool.name(),
+                        methodDesc(
+                                castToBool.getReturnType(),
+                                castToBool.getParameters().stream().map(SParameter::type).collect(Collectors.toList())),
+                        false);
+                info.pop(1);
+                info.push(CodeInfo.Size._1);
+                // [v1 I]
                 // if ne goto flag
                 Label flag = new Label();
-                methodVisitor.visitJumpInsn(Opcodes.IFNE, flag);
+                methodVisitor.visitJumpInsn(Opcodes.IFNE, flag); // goto flag(nop)
                 info.pop(1);
-                // b2
-                buildValueAccess(methodVisitor, info, logicOr.b2(), true);
-                // if ne goto flag
-                methodVisitor.visitJumpInsn(Opcodes.IFNE, flag);
+                // pop
+                methodVisitor.visitInsn(Opcodes.POP); // [(empty stack)]
                 info.pop(1);
-                // false
-                methodVisitor.visitInsn(Opcodes.ICONST_0);
-                // goto nop
-                Label nop = new Label();
-                methodVisitor.visitJumpInsn(Opcodes.GOTO, nop);
-                // flag: true
+                // v2
+                buildValueAccess(methodVisitor, info, logicOr.v2(), true); // v2
+                // flag: nop
                 methodVisitor.visitLabel(flag);
-                methodVisitor.visitInsn(Opcodes.ICONST_1);
-                // nop
-                methodVisitor.visitLabel(nop);
                 methodVisitor.visitInsn(Opcodes.NOP);
-
-                info.push(CodeInfo.Size._1); // push true or false into stack
         }
 
         /**

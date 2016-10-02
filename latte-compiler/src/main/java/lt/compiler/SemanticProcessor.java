@@ -1920,6 +1920,29 @@ public class SemanticProcessor {
         }
 
         /**
+         * {@link LtRuntime#castToBool(Object)}
+         */
+        private SMethodDef Lang_castToBool;
+
+        /**
+         * @return {@link LtRuntime#castToThrowable(Object)}
+         * @throws SyntaxException exception
+         */
+        public SMethodDef getLang_castToBool() throws SyntaxException {
+                if (Lang_castToBool == null) {
+                        SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert Lang != null;
+                        for (SMethodDef m : Lang.methods()) {
+                                if (m.name().equals("castToBool")) {
+                                        Lang_castToBool = m;
+                                        break;
+                                }
+                        }
+                }
+                return Lang_castToBool;
+        }
+
+        /**
          * {@link LtRuntime#castToThrowable(Object)}
          */
         private SMethodDef Lang_castToThrowable;
@@ -5357,9 +5380,16 @@ public class SemanticProcessor {
                         case "||":
                         case "or":
                                 // logic or with short cut
+                                if (left.type() instanceof PrimitiveTypeDef) {
+                                        left = boxPrimitive(left, lineCol);
+                                }
+                                if (right.type() instanceof PrimitiveTypeDef) {
+                                        right = boxPrimitive(right, lineCol);
+                                }
                                 return new Ins.LogicOr(
-                                        cast(BoolTypeDef.get(), left, lineCol),
-                                        cast(BoolTypeDef.get(), right, lineCol),
+                                        getLang_castToBool(),
+                                        left, right,
+                                        getTypeWithName("java.lang.Object", LineCol.SYNTHETIC), // TODO
                                         lineCol
                                 );
                         case ":=":
@@ -6421,12 +6451,7 @@ public class SemanticProcessor {
                         invokeStatic.arguments().add(v);
                         return invokeStatic;
                 } else if (type instanceof BoolTypeDef) {
-                        for (SMethodDef m : Lang.methods()) {
-                                if (m.name().equals("castToBool")) {
-                                        method = m;
-                                        break;
-                                }
-                        }
+                        method = getLang_castToBool();
                         if (method == null) throw new LtBug("lt.lang.LtRuntime.castToBool(Object) should exist");
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                         invokeStatic.arguments().add(v);
