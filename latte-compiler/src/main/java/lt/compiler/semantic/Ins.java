@@ -24,15 +24,13 @@
 
 package lt.compiler.semantic;
 
-import lt.compiler.ErrorManager;
-import lt.compiler.LineCol;
-import lt.compiler.SemanticScope;
-import lt.compiler.SyntaxException;
+import lt.compiler.*;
 import lt.compiler.semantic.builtin.*;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * abstract instructions
@@ -956,11 +954,13 @@ public class Ins {
                 private final int mode;
                 private final Value index;
                 private final Value arr;
+                private final Map<String, STypeDef> types;
 
-                public TALoad(Value arr, Value index, LineCol lineCol) {
+                public TALoad(Value arr, Value index, LineCol lineCol, Map<String, STypeDef> types) {
                         this.arr = arr;
                         this.index = index;
                         this.lineCol = lineCol;
+                        this.types = types;
 
                         if (((SArrayTypeDef) arr.type()).dimension() == 1) {
                                 STypeDef type = ((SArrayTypeDef) arr.type()).type();
@@ -984,7 +984,19 @@ public class Ins {
 
                 @Override
                 public STypeDef type() {
-                        return ((SArrayTypeDef) arr.type()).type();
+                        SArrayTypeDef arrT = (SArrayTypeDef) arr.type();
+                        STypeDef rawType = arrT.type();
+                        if (arrT.dimension() == 1) return rawType;
+
+                        SArrayTypeDef newArrT = new SArrayTypeDef();
+                        newArrT.setType(rawType);
+                        newArrT.setDimension(arrT.dimension() - 1);
+                        String name = newArrT.fullName();
+
+                        if (types.containsKey(name)) return types.get(name);
+                        else {
+                                throw new LtBug("code won't reach here");
+                        }
                 }
 
                 public Value arr() {

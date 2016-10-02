@@ -3087,7 +3087,12 @@ public class SemanticProcessor {
                 // else
                 // simply assign `assignFrom` to `assignTo`
                 // the following actions would be assign work
-                if (assignTo instanceof Ins.GetField) {
+                if (assignTo.type() instanceof PointerType) {
+                        if (assignFrom.type() instanceof PrimitiveTypeDef) {
+                                assignFrom = boxPrimitive(assignFrom, lineCol);
+                        }
+                        instructions.add(invokePointerSet(assignTo, assignFrom, lineCol));
+                } else if (assignTo instanceof Ins.GetField) {
                         // field
                         instructions.add(new Ins.PutField(
                                 ((Ins.GetField) assignTo).field(),
@@ -3304,7 +3309,30 @@ public class SemanticProcessor {
                         }
                 }
 
-                if (variableDef.getInit() != null) {
+                if (variableDef.getInit() == null) {
+                        if (type instanceof PointerType) {
+                                ValuePack pack = new ValuePack(true);
+                                if (null != field) {
+                                        if (field.modifiers().contains(SModifier.STATIC)) {
+                                                pack.instructions().add(new Ins.PutStatic(field,
+                                                        constructPointer(
+                                                                ((PointerType) type).getPointingType(), variableDef.getModifiers().contains(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC))
+                                                        ), variableDef.line_col(), err));
+                                                pack.instructions().add(invoke_Undefined_get(LineCol.SYNTHETIC));
+                                        } else {
+                                                pack.instructions().add(new Ins.PutField(field, scope.getThis(),
+                                                        constructPointer(
+                                                                ((PointerType) type).getPointingType(), variableDef.getModifiers().contains(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC))
+                                                        ), variableDef.line_col(), err));
+                                                pack.instructions().add(invoke_Undefined_get(LineCol.SYNTHETIC));
+                                        }
+                                } else {
+                                        err.SyntaxException("local variable must have initial value", variableDef.line_col());
+                                        return null; // code won't reach here
+                                }
+                                return pack;
+                        }
+                } else {
                         // variable def with a init value
 
                         Value v = parseValueFromExpression(
@@ -3326,29 +3354,176 @@ public class SemanticProcessor {
                         ValuePack pack = new ValuePack(true);
                         if (null != field) {
                                 if (field.modifiers().contains(SModifier.STATIC)) {
-                                        // putStatic
-                                        pack.instructions().add(new Ins.PutStatic(field, v, variableDef.line_col(), err));
-                                        Ins.GetStatic getStatic = new Ins.GetStatic(field, variableDef.line_col());
-                                        pack.instructions().add(getStatic);
+                                        if (type instanceof PointerType) {
+                                                /*
+                                                 * get static field
+                                                 * invoke set and get
+                                                 */
+
+                                                Ins.PutStatic putPtr = new Ins.PutStatic(field,
+                                                        constructPointer(
+                                                                ((PointerType) type).getPointingType(), variableDef.getModifiers().contains(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC))
+                                                        ), variableDef.line_col(), err);
+                                                pack.instructions().add(putPtr);
+
+                                                if (v.type() instanceof PrimitiveTypeDef)
+                                                        v = boxPrimitive(v, LineCol.SYNTHETIC);
+                                                Ins.InvokeVirtual set = invokePointerSet(new Ins.GetStatic(field, variableDef.line_col()),
+                                                        v, variableDef.line_col());
+                                                pack.instructions().add(set);
+
+                                                Value get = invokePointerGet(new Ins.GetStatic(field, variableDef.line_col()),
+                                                        variableDef.line_col());
+                                                pack.instructions().add((Instruction) get);
+                                        } else {
+                                                // putStatic
+                                                pack.instructions().add(new Ins.PutStatic(field, v, variableDef.line_col(), err));
+                                                Ins.GetStatic getStatic = new Ins.GetStatic(field, variableDef.line_col());
+                                                pack.instructions().add(getStatic);
+                                        }
                                 } else {
-                                        // putField
-                                        pack.instructions().add(new Ins.PutField(field, scope.getThis(), v, variableDef.line_col(), err));
-                                        Ins.GetField getField = new Ins.GetField(field, scope.getThis(), variableDef.line_col());
-                                        pack.instructions().add(getField);
+                                        if (type instanceof PointerType) {
+                                                /*
+                                                 * get field
+                                                 * invoke set and get
+                                                 */
+
+                                                Ins.PutField putPtr = new Ins.PutField(field, scope.getThis(),
+                                                        constructPointer(
+                                                                ((PointerType) type).getPointingType(), variableDef.getModifiers().contains(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC))
+                                                        ), variableDef.line_col(), err);
+                                                pack.instructions().add(putPtr);
+
+                                                if (v.type() instanceof PrimitiveTypeDef)
+                                                        v = boxPrimitive(v, LineCol.SYNTHETIC);
+                                                Ins.InvokeVirtual set = invokePointerSet(new Ins.GetField(field, scope.getThis(), variableDef.line_col()),
+                                                        v, variableDef.line_col());
+                                                pack.instructions().add(set);
+
+                                                Value get = invokePointerGet(new Ins.GetField(field, scope.getThis(), variableDef.line_col()),
+                                                        variableDef.line_col());
+                                                pack.instructions().add((Instruction) get);
+                                        } else {
+                                                // putField
+                                                pack.instructions().add(new Ins.PutField(field, scope.getThis(), v, variableDef.line_col(), err));
+                                                Ins.GetField getField = new Ins.GetField(field, scope.getThis(), variableDef.line_col());
+                                                pack.instructions().add(getField);
+                                        }
                                 }
                         } else {
                                 // else field not found
-                                // local variable
-                                LocalVariable localVariable = (LocalVariable) scope.getLeftValue(variableDef.getName());
-                                pack.instructions().add(new Ins.TStore(localVariable, v, scope, variableDef.line_col(), err));
-                                Ins.TLoad tLoad = new Ins.TLoad(localVariable, scope, variableDef.line_col());
-                                pack.instructions().add(tLoad);
+                                if (type instanceof PointerType) {
+                                        /*
+                                         * tload
+                                         * get and set
+                                         */
+                                        LocalVariable localVariable = (LocalVariable) scope.getLeftValue(variableDef.getName());
+
+                                        Ins.TStore storePtr = new Ins.TStore(localVariable,
+                                                constructPointer(
+                                                        ((PointerType) type).getPointingType(), variableDef.getModifiers().contains(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC))
+                                                ), scope, variableDef.line_col(), err);
+                                        pack.instructions().add(storePtr);
+
+                                        if (v.type() instanceof PrimitiveTypeDef)
+                                                v = boxPrimitive(v, LineCol.SYNTHETIC);
+                                        Ins.InvokeVirtual set = invokePointerSet(new Ins.TLoad(localVariable, scope, variableDef.line_col()),
+                                                v, variableDef.line_col());
+                                        pack.instructions().add(set);
+
+                                        Value get = invokePointerGet(new Ins.TLoad(localVariable, scope, variableDef.line_col()),
+                                                variableDef.line_col());
+                                        pack.instructions().add((Instruction) get);
+                                        localVariable.alreadyAssigned();
+                                } else {
+                                        // local variable
+                                        LocalVariable localVariable = (LocalVariable) scope.getLeftValue(variableDef.getName());
+                                        pack.instructions().add(new Ins.TStore(localVariable, v, scope, variableDef.line_col(), err));
+                                        Ins.TLoad tLoad = new Ins.TLoad(localVariable, scope, variableDef.line_col());
+                                        pack.instructions().add(tLoad);
+                                }
                         }
                         return pack;
                 }
 
                 // else ignore the var def
                 return null;
+        }
+
+        private SConstructorDef Pointer_con;
+
+        public SConstructorDef getPointer_con() throws SyntaxException {
+                if (Pointer_con == null) {
+                        SClassDef Pointer = (SClassDef) getTypeWithName("lt.lang.Pointer", LineCol.SYNTHETIC);
+                        for (SConstructorDef con : Pointer.constructors()) {
+                                if (con.getParameters().size() == 2) {
+                                        Pointer_con = con;
+                                        break;
+                                }
+                        }
+                }
+                return Pointer_con;
+        }
+
+        public Ins.New constructPointer(STypeDef pointingType, boolean isVal) throws SyntaxException {
+                Ins.GetClass pointingTypeClass = new Ins.GetClass(pointingType, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC));
+                Ins.New aNew = new Ins.New(getPointer_con(), LineCol.SYNTHETIC);
+                aNew.args().add(pointingTypeClass);
+                aNew.args().add(new BoolValue(isVal));
+                return aNew;
+        }
+
+        private SMethodDef Pointer_set;
+
+        public SMethodDef getPointer_set() throws SyntaxException {
+                if (Pointer_set == null) {
+                        SClassDef Pointer = (SClassDef) getTypeWithName("lt.lang.Pointer", LineCol.SYNTHETIC);
+                        for (SMethodDef m : Pointer.methods()) {
+                                if (m.name().equals("set") && m.getParameters().size() == 1) {
+                                        Pointer_set = m;
+                                        break;
+                                }
+                        }
+                }
+                return Pointer_set;
+        }
+
+        public Ins.InvokeVirtual invokePointerSet(Value target, Value valueToSet, LineCol lineCol) throws SyntaxException {
+                assert target.type() instanceof PointerType;
+                Ins.InvokeVirtual set = new Ins.InvokeVirtual(
+                        target,
+                        getPointer_set(),
+                        lineCol);
+                set.arguments().add(valueToSet);
+                return set;
+        }
+
+        private SMethodDef Pointer_get;
+
+        public SMethodDef getPointer_get() throws SyntaxException {
+                if (Pointer_get == null) {
+                        SClassDef Pointer = (SClassDef) getTypeWithName("lt.lang.Pointer", LineCol.SYNTHETIC);
+                        for (SMethodDef m : Pointer.methods()) {
+                                if (m.name().equals("get") && m.getParameters().isEmpty()) {
+                                        Pointer_get = m;
+                                        break;
+                                }
+                        }
+                }
+                return Pointer_get;
+        }
+
+        public Value invokePointerGet(Value target, LineCol lineCol) throws SyntaxException {
+                assert target.type() instanceof PointerType;
+                STypeDef pointingType = ((PointerType) target.type()).getPointingType();
+                Ins.InvokeVirtual get = new Ins.InvokeVirtual(
+                        target, getPointer_get(), lineCol);
+
+                if (pointingType instanceof PrimitiveTypeDef) {
+                        return cast(pointingType, get, lineCol);
+                } else {
+                        return new Ins.CheckCast(get, pointingType, lineCol);
+                }
         }
 
         /**
@@ -3383,6 +3558,10 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public Value parseValueFromExpression(Expression exp, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
+                if (requiredType instanceof PointerType) {
+                        requiredType = ((PointerType) requiredType).getPointingType();
+                }
+
                 List<Import> imports = fileNameToImport.get(exp.line_col().fileName);
 
                 Value v; // retrieved value without type check
@@ -3493,7 +3672,7 @@ public class SemanticProcessor {
                 } else if (exp instanceof VariableDef) {
                         // variable def
                         // putField/putStatic/TStore
-                        return parseInsFromVariableDef((VariableDef) exp, scope);
+                        v = parseInsFromVariableDef((VariableDef) exp, scope);
                 } else if (exp instanceof AST.Invocation) {
                         // parse invocation
                         // the result can be invokeXXX or new
@@ -4768,9 +4947,15 @@ public class SemanticProcessor {
                 // assignment
                 // =/+=/-=/*=//=/%=
                 Value assignFrom = parseValueFromExpression(exp.assignFrom, null, scope);
-                Value assignTo = parseValueFromExpression(exp.assignTo, null, scope);
+                Value assignTo;
+                if (exp.assignTo.name == null) {
+                        assignTo = parseValueFromExpression(exp.assignTo, null, scope);
+                } else {
+                        assignTo = __parseValueFromAccess(exp.assignTo, scope);
+                }
                 if (!exp.op.equals("=")) {
-                        assignFrom = parseValueFromTwoVarOp(assignTo,
+                        assignFrom = parseValueFromTwoVarOp(
+                                parseValueFromExpression(exp.assignTo, null, scope), // the `assignTo` is calculated, so it should be final extracted value.
                                 exp.op.substring(0, exp.op.length() - 1),
                                 assignFrom, scope, LineCol.SYNTHETIC);
                 }
@@ -5704,10 +5889,14 @@ public class SemanticProcessor {
                 List<Value> list = parseArguments(index.args, scope);
 
                 assert list != null;
-                if (v.type() instanceof SArrayTypeDef && list.size() == 1) {
+                if (v.type() instanceof SArrayTypeDef && !list.isEmpty()) {
                         try {
-                                Value i = cast(IntTypeDef.get(), list.get(0), index.args.get(0).line_col());
-                                return new Ins.TALoad(v, i, index.line_col());
+                                Value result = v;
+                                for (int ii = 0; ii < list.size(); ++ii) {
+                                        Value i = cast(IntTypeDef.get(), list.get(ii), index.args.get(ii).line_col());
+                                        result = new Ins.TALoad(result, i, index.line_col(), getTypes());
+                                }
+                                return result;
                         } catch (Throwable ignore) {
                                 // cast failed
                         }
@@ -5813,6 +6002,23 @@ public class SemanticProcessor {
         }
 
         /**
+         * proxy for parsing value from access {@link #__parseValueFromAccess(AST.Access, SemanticScope)}
+         *
+         * @param access access
+         * @param scope  scope
+         * @return result that will extract value from the object if it's a pointer
+         * @throws SyntaxException compiling error
+         */
+        public Value parseValueFromAccess(AST.Access access, SemanticScope scope) throws SyntaxException {
+                Value v = __parseValueFromAccess(access, scope);
+                assert v != null;
+                if (v.type() instanceof PointerType) {
+                        v = invokePointerGet(v, access.line_col());
+                }
+                return v;
+        }
+
+        /**
          * parse value from access object<br>
          * the access object can be : (null,fieldName),(null,localVariableName),(this,fieldName),(Type,fieldName),((Type,this),fieldName),(exp,fieldName)
          *
@@ -5821,7 +6027,7 @@ public class SemanticProcessor {
          * @return retrieved value can be getField/getStatic/TLoad/arraylength
          * @throws SyntaxException compiling error
          */
-        public Value parseValueFromAccess(AST.Access access, SemanticScope scope) throws SyntaxException {
+        private Value __parseValueFromAccess(AST.Access access, SemanticScope scope) throws SyntaxException {
                 List<Import> imports = fileNameToImport.get(access.line_col().fileName);
                 if (access.exp == null) {
                         // Access(null,name)
@@ -6170,6 +6376,10 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public Value cast(STypeDef requiredType, Value v, LineCol lineCol) throws SyntaxException {
+                if (requiredType instanceof PointerType) {
+                        requiredType = ((PointerType) requiredType).getPointingType();
+                }
+
                 // if v is instance of requiredType, return
                 if (requiredType == null
                         ||
@@ -7422,6 +7632,13 @@ public class SemanticProcessor {
                 return result;
         }
 
+        public Value findObjectInCurrentScopeWithName(String name, SemanticScope scope) throws SyntaxException {
+                Value v = __findObjectInCurrentScopeWithName(name, scope);
+                if (v.type() instanceof PointerType) {
+                        return invokePointerGet(v, LineCol.SYNTHETIC);
+                } else return v;
+        }
+
         /**
          * get object in current scope.
          *
@@ -7429,7 +7646,7 @@ public class SemanticProcessor {
          * @param scope current scope
          * @return TLoad or GetField or GetStatic or NullValue
          */
-        public Value findObjectInCurrentScopeWithName(String name, SemanticScope scope) {
+        public Value __findObjectInCurrentScopeWithName(String name, SemanticScope scope) {
                 LeftValue v = scope.getLeftValue(name);
                 if (v != null) return new Ins.TLoad(v, scope, LineCol.SYNTHETIC);
 
@@ -7706,9 +7923,11 @@ public class SemanticProcessor {
         /**
          * generate string that concat expressions inside the string which is surrounded by `${ }`
          *
-         * @param str   raw string
-         * @param scope semantic scope
+         * @param str     raw string
+         * @param scope   semantic scope
+         * @param lineCol lineCol info
          * @return result from {@link #concatValuesToString(List, SemanticScope, LineCol)}
+         * @throws SyntaxException compiling error
          */
         public Value generateStringConcat(String str, SemanticScope scope, LineCol lineCol) throws SyntaxException {
                 char[] chars = str.toCharArray();
@@ -8984,8 +9203,18 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public STypeDef getTypeWithAccess(AST.Access access, List<Import> imports) throws SyntaxException {
-                assert access.exp == null || access.exp instanceof AST.PackageRef || "[]".equals(access.name);
+                assert access.exp == null || access.exp instanceof AST.PackageRef || "[]".equals(access.name) || "*".equals(access.name);
 
+                boolean isPointer = false;
+                LineCol pointerLineCol = null;
+                if ("*".equals(access.name)) {
+                        isPointer = true;
+                        pointerLineCol = access.line_col();
+                        assert access.exp instanceof AST.Access;
+                        access = (AST.Access) access.exp;
+                }
+
+                STypeDef resultType;
                 if ("[]".equals(access.name)) {
                         assert access.exp instanceof AST.Access;
                         STypeDef type = getTypeWithAccess((AST.Access) access.exp, imports);
@@ -9001,31 +9230,37 @@ public class SemanticProcessor {
                         a.setType(type);
                         a.setDimension(dimension);
                         if (types.containsKey(a.fullName())) {
-                                return types.get(a.fullName());
+                                resultType = types.get(a.fullName());
                         } else {
                                 putNameAndTypeDef(a, access.line_col());
-                                return a;
+                                resultType = a;
                         }
 
-                }
-
-                assert access.exp == null || access.exp instanceof AST.PackageRef;
-
-                AST.PackageRef pkg = (AST.PackageRef) access.exp;
-                String name = access.name;
-
-                String className;
-                if (pkg == null) {
-                        className = findClassNameWithImport(name, imports);
                 } else {
-                        className = pkg.pkg.replace("::", ".") + "." + name;
+
+                        assert access.exp == null || access.exp instanceof AST.PackageRef;
+
+                        AST.PackageRef pkg = (AST.PackageRef) access.exp;
+                        String name = access.name;
+
+                        String className;
+                        if (pkg == null) {
+                                className = findClassNameWithImport(name, imports);
+                        } else {
+                                className = pkg.pkg.replace("::", ".") + "." + name;
+                        }
+
+                        if (null == className || !typeExists(className)) {
+                                err.SyntaxException("type " + name + " not defined", access.line_col());
+                                return null;
+                        }
+                        resultType = getTypeWithName(className, access.line_col());
                 }
 
-                if (null == className || !typeExists(className)) {
-                        err.SyntaxException("type " + name + " not defined", access.line_col());
-                        return null;
+                if (isPointer) {
+                        resultType = new PointerType(resultType, pointerLineCol);
                 }
-                return getTypeWithName(className, access.line_col());
+                return resultType;
         }
 
         /**

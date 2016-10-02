@@ -2810,4 +2810,15 @@ public class TestSemantic {
                         "    Utils()");
                 parse(map); // pass compilation
         }
+
+        @Test
+        public void testPointerType() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "class Test\n" +
+                        "    a:*int = 1\n" +
+                        "    a = 2");
+                parse(map);
+                // compiling pass
+        }
 }

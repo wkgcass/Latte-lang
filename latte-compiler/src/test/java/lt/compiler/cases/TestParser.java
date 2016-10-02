@@ -2237,4 +2237,22 @@ public class TestParser {
                         "join('role').on(#sql#role.id == ur.user_id).\n" +
                         "where(#sql#user.id > 10 and user.name not 'cass')");
         }
+
+        @Test
+        public void testPointer() throws Exception {
+                // pointer
+                List<Statement> stmts = parse("" +
+                        "a:*int = 1\n" +
+                        "a = 2");
+                VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
+                v.setType(new AST.Access(new AST.Access(null, "int", LineCol.SYNTHETIC), "*", LineCol.SYNTHETIC));
+                assertEquals(Arrays.asList(
+                        v, new AST.Assignment(
+                                new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                "=",
+                                new NumberLiteral("2", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC)
+                ), stmts);
+        }
 }

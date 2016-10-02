@@ -30,10 +30,10 @@ public class SimpleTest {
                 }
                 */
                 sb.append("" +
+                        "class X(public num)\n" +
                         "class hehe\n" +
-                        "    static\n" +
-                        "        method(a,b,c)\n" +
-                        "            return a or b and c");
+                        "    i:*X = X(1)\n" +
+                        "    i.num");
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);

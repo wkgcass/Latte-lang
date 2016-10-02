@@ -74,6 +74,7 @@ public class TestCodeGen {
                         protected Class<?> findClass(String name)
                                 throws ClassNotFoundException {
                                 byte[] bs = list.get(name);
+                                if (bs == null) throw new ClassNotFoundException(name);
                                 return defineClass(name, bs, 0, bs.length);
                         }
                 };
@@ -2667,5 +2668,125 @@ public class TestCodeGen {
                 assertEquals(10, method.invoke(null, 10, 20, 30));
                 assertEquals(20, method.invoke(null, 0, 20, 30));
                 assertEquals(30, method.invoke(null, 0, 0, 30));
+        }
+
+        @Test
+        public void testPointerVarDef() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestPointerVarDef\n" +
+                                "    static\n" +
+                                "        public f3:*int=3\n" +
+                                "        public val f5:*int=5\n" +
+                                "    public f2:*int=2\n" +
+                                "    public val f4:*int=4\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            return (a:*int = 1)"
+                        , "TestPointerVarDef");
+                Method method = cls.getMethod("method");
+                assertEquals(1, method.invoke(null));
+                Field f2 = cls.getField("f2");
+                Object ins = cls.newInstance();
+                Pointer p2 = (Pointer) f2.get(ins);
+                assertEquals(2, p2.get());
+                assertTrue(p2.canChange());
+
+                Field f3 = cls.getField("f3");
+                Pointer p3 = ((Pointer) f3.get(null));
+                assertEquals(3, p3.get());
+                assertTrue(p3.canChange());
+
+                Field f4 = cls.getField("f4");
+                Pointer p4 = (Pointer) f4.get(ins);
+                assertEquals(4, p4.get());
+                assertFalse(p4.canChange());
+
+                Field f5 = cls.getField("f5");
+                Pointer p5 = (Pointer) f5.get(ins);
+                assertEquals(5, p5.get());
+                assertFalse(p5.canChange());
+        }
+
+        @Test
+        public void testPointerAccess() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestPointerAccess\n" +
+                                "    static\n" +
+                                "        public f3:*int=3\n" +
+                                "        method3()=f3\n" +
+                                "        public val f5:*int=5\n" +
+                                "        method5()=f5\n" +
+                                "    public f2:*int=2\n" +
+                                "    method2()=f2\n" +
+                                "    public val f4:*int=4\n" +
+                                "    method4()=f4\n" +
+                                "    static\n" +
+                                "        method1()\n" +
+                                "            a:*int = 1\n" +
+                                "            return a"
+                        , "TestPointerAccess");
+                Method method1 = cls.getMethod("method1");
+                Method method2 = cls.getMethod("method2");
+                Method method3 = cls.getMethod("method3");
+                Method method4 = cls.getMethod("method4");
+                Method method5 = cls.getMethod("method5");
+                Object o = cls.newInstance();
+
+                assertEquals(1, method1.invoke(null));
+                assertEquals(2, method2.invoke(o));
+                assertEquals(3, method3.invoke(null));
+                assertEquals(4, method4.invoke(o));
+                assertEquals(5, method5.invoke(null));
+        }
+
+        @Test
+        public void testPointerAssign() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestPointerAccess\n" +
+                                "    static\n" +
+                                "        public f3:*int\n" +
+                                "        f3=3\n" +
+                                "        method3()=f3\n" +
+                                "        public val f5:*int\n" +
+                                "        f5=5\n" +
+                                "        method5()=f5\n" +
+                                "    public f2:*int\n" +
+                                "    f2=2\n" +
+                                "    method2()=f2\n" +
+                                "    public val f4:*int\n" +
+                                "    f4=4\n" +
+                                "    method4()=f4\n" +
+                                "    static\n" +
+                                "        method1()\n" +
+                                "            a:*int = 10\n" +
+                                "            a=1\n" +
+                                "            return a"
+                        , "TestPointerAccess");
+
+                Method method1 = cls.getMethod("method1");
+                Method method2 = cls.getMethod("method2");
+                Method method3 = cls.getMethod("method3");
+                Method method4 = cls.getMethod("method4");
+                Method method5 = cls.getMethod("method5");
+                Object o = cls.newInstance();
+
+                assertEquals(1, method1.invoke(null));
+                assertEquals(2, method2.invoke(o));
+                assertEquals(3, method3.invoke(null));
+                assertEquals(4, method4.invoke(o));
+                assertEquals(5, method5.invoke(null));
+        }
+
+        @Test
+        public void testCompileMultipleIndexAccess() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestCompileMultipleIndexAccess\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            arr:[][]int = [[1,2],[3,4]]\n" +
+                                "            return arr[1,0]"
+                        , "TestCompileMultipleIndexAccess");
+                Method method = cls.getMethod("method");
+                assertEquals(3, method.invoke(null));
         }
 }

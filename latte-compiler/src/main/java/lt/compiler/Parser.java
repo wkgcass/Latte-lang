@@ -2693,6 +2693,16 @@ public class Parser {
          */
         private AST.Access parse_cls_for_type_spec() throws SyntaxException {
                 AST.Access a;
+                boolean isPointer = false;
+                LineCol pointerLineCol = null;
+
+                // check *
+                if (((Element) current).getContent().equals("*")) {
+                        // it's a pointer
+                        isPointer = true;
+                        pointerLineCol = current.getLineCol();
+                        nextNode(false);
+                }
 
                 // parse array
                 // []Type or [][]Type ...
@@ -2737,6 +2747,9 @@ public class Parser {
                         a = new AST.Access(a, "[]", a.line_col());
                 }
 
+                if (isPointer) {
+                        a = new AST.Access(a, "*", pointerLineCol);
+                }
                 return a;
         }
 

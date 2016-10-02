@@ -35,8 +35,10 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Defines Latte Runtime behavior.
@@ -299,6 +301,7 @@ public class LtRuntime {
          */
         public static int castToInt(Object o) {
                 if (o instanceof Number) return ((Number) o).intValue();
+                if (o instanceof Character) return (Character) o;
                 throw generateClassCastException(o, int.class);
         }
 
