@@ -2255,4 +2255,30 @@ public class TestParser {
                                 LineCol.SYNTHETIC)
                 ), stmts);
         }
+
+        @Test
+        public void testArrayTypeMap() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "['a':1, 'b':2]\n" +
+                        "[\n" +
+                        "    'a': 1\n" +
+                        "    'b': 2\n" +
+                        "]\n" +
+                        "[\n" +
+                        "    'a':1,\n" +
+                        "    'b':2\n" +
+                        "]\n" +
+                        "['a':1\n" +
+                        "    'b':2]"
+                );
+                LinkedHashMap<Expression, Expression> map = new LinkedHashMap<>();
+                map.put(new StringLiteral("'a'", LineCol.SYNTHETIC), new NumberLiteral("1", LineCol.SYNTHETIC));
+                map.put(new StringLiteral("'b'", LineCol.SYNTHETIC), new NumberLiteral("2", LineCol.SYNTHETIC));
+                assertEquals(Arrays.asList(
+                        new AST.MapExp(map, LineCol.SYNTHETIC),
+                        new AST.MapExp(map, LineCol.SYNTHETIC),
+                        new AST.MapExp(map, LineCol.SYNTHETIC),
+                        new AST.MapExp(map, LineCol.SYNTHETIC)
+                ), stmts);
+        }
 }

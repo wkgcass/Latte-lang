@@ -2735,4 +2735,35 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals(3, method.invoke(null));
         }
+
+        @Test
+        public void testArrayMap() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestArrayMap\n" +
+                                "    static\n" +
+                                "        method()=[\"a\":1, \"b\":2]"
+                        , "TestArrayMap");
+                Method method = cls.getMethod("method");
+                LinkedHashMap<String, Integer> map = new LinkedHashMap<>();
+                map.put("a", 1);
+                map.put("b", 2);
+                assertEquals(map, method.invoke(null));
+        }
+
+        @Test
+        public void testArrayMap2() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                ";; brace\n" +
+                                "class TestArrayMap2 {\n" +
+                                "    static {\n" +
+                                "        method()=[\"a\":1, \"b\":2]\n" +
+                                "    }\n" +
+                                "}"
+                        , "TestArrayMap2");
+                Method method = cls.getMethod("method");
+                LinkedHashMap<String, Integer> map = new LinkedHashMap<>();
+                map.put("a", 1);
+                map.put("b", 2);
+                assertEquals(map, method.invoke(null));
+        }
 }

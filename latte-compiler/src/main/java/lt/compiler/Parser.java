@@ -2238,18 +2238,36 @@ public class Parser {
                         // current instanceof ElementStartNode
                         // [...]
                         expecting("]", current, current.next() == null ? null : current.next().next(), err);
-                        List<Statement> stmts = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
-                        List<Expression> exps = new ArrayList<>();
 
-                        for (Statement stmt : stmts) {
-                                if (stmt instanceof Expression) {
-                                        exps.add((Expression) stmt);
-                                } else {
-                                        err.UnexpectedTokenException("array contents", stmt.toString(), stmt.line_col());
-                                        err.debug("ignore the statement");
+                        // check whether it's a map or a list
+                        ElementStartNode startNode = (ElementStartNode) current;
+                        Node linked = startNode.getLinkedNode();
+                        boolean isMap = false;
+                        while (linked != null) {
+                                if (linked instanceof Element && ((Element) linked).getContent().equals(":")) {
+                                        isMap = true;
+                                        break;
                                 }
+                                linked = linked.next();
                         }
-                        parsedExps.push(new AST.ArrayExp(exps, lineCol));
+
+                        List<Statement> stmts = parseElemStart(startNode, true, Collections.emptySet(), isMap);
+
+                        if (isMap) {
+                                parsedExps.push(parseExpMap(startNode));
+                        } else {
+                                List<Expression> exps = new ArrayList<>();
+
+                                for (Statement stmt : stmts) {
+                                        if (stmt instanceof Expression) {
+                                                exps.add((Expression) stmt);
+                                        } else {
+                                                err.UnexpectedTokenException("array contents", stmt.toString(), stmt.line_col());
+                                                err.debug("ignore the statement");
+                                        }
+                                }
+                                parsedExps.push(new AST.ArrayExp(exps, lineCol));
+                        }
 
                         nextNode(false); // [...]
                         nextNode(true); // [...] ..
