@@ -2738,9 +2738,15 @@ public class Parser {
 
                         a = (AST.Access) parsedExps.pop();
                 } else {
-                        err.UnexpectedTokenException("type", ((Element) current).getContent(), current.getLineCol());
-                        err.debug("assume that the token is Object");
-                        a = new AST.Access(null, "Object", LineCol.SYNTHETIC);
+                        if (isPointer && arrayDepth == 0) {
+                                return new AST.Access(null, "*", pointerLineCol);
+                        } else {
+
+                                err.UnexpectedTokenException("type", ((Element) current).getContent(), current.getLineCol());
+                                err.debug("assume that the token is Object");
+                                a = new AST.Access(null, "Object", LineCol.SYNTHETIC);
+
+                        }
                 }
 
                 for (int i = 0; i < arrayDepth; ++i) {

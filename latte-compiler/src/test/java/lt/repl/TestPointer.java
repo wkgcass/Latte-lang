@@ -20,8 +20,10 @@ public class TestPointer {
         @Test
         public void testInvoke() throws Exception {
                 Object result = evaluator.eval("" +
-                        "i:*lt::lang::function::Function0=()->1\n" +
-                        "i()"
+                        "method()\n" +
+                        "    i:*lt::lang::function::Function0=()->1\n" +
+                        "    return i()\n" +
+                        "method()"
                 ).result;
                 assertEquals(1, result);
         }
@@ -30,8 +32,10 @@ public class TestPointer {
         public void testAccessField() throws Exception {
                 Object result = evaluator.eval("" +
                         "class X(public num)\n" +
-                        "i:*X = X(1)\n" +
-                        "i.num"
+                        "method()\n" +
+                        "    i:*X = X(1)\n" +
+                        "    return i.num\n" +
+                        "method()"
                 ).result;
                 assertEquals(1, result);
         }
@@ -40,8 +44,10 @@ public class TestPointer {
         public void testAccessMethod() throws Exception {
                 Object result = evaluator.eval("" +
                         "data class X(num)\n" +
-                        "i:*X = X(1)\n" +
-                        "i.num"
+                        "method()\n" +
+                        "    i:*X = X(1)\n" +
+                        "    return i.num\n" +
+                        "method()"
                 ).result;
                 assertEquals(1, result);
         }
@@ -49,27 +55,44 @@ public class TestPointer {
         @Test
         public void testLambdaChangeValue() throws Exception {
                 Object result = evaluator.eval("" +
-                        "i:*int = 1\n" +
-                        "f=()->\n" +
-                        "    i=2\n" +
-                        "f()\n" +
-                        "i").result;
+                        "method()\n" +
+                        "    i:*int = 1\n" +
+                        "    f=()->\n" +
+                        "        i=2\n" +
+                        "    f()\n" +
+                        "    return i\n" +
+                        "method()").result;
                 assertEquals(2, result);
+        }
+
+        @Test
+        public void testLambdaGetValue() throws Exception {
+                Object result = evaluator.eval("" +
+                        "method()\n" +
+                        "    i:*int = 1\n" +
+                        "    return (()->i)()\n" +
+                        "method()"
+                ).result;
+                assertEquals(1, result);
         }
 
         @Test
         public void testArrayPointer() throws Exception {
                 Object result = evaluator.eval("" +
-                        "i:*[]int = [1,2]\n" +
-                        "i[0]").result;
+                        "method()\n" +
+                        "    i:*[]int = [1,2]\n" +
+                        "    return i[0]\n" +
+                        "method()").result;
                 assertEquals(1, result);
         }
 
         @Test
         public void test2dArrayPointer() throws Exception {
                 Object result = evaluator.eval("" +
-                        "i:*[][]int = [[1,2],[3,4]]\n" +
-                        "i[1, 0]").result;
+                        "method()\n" +
+                        "    i:*[][]int = [[1,2],[3,4]]\n" +
+                        "    return i[1, 0]\n" +
+                        "method()").result;
                 assertEquals(3, result);
         }
 }

@@ -2816,8 +2816,9 @@ public class TestSemantic {
                 Map<String, String> map = new HashMap<>();
                 map.put("test", "" +
                         "class Test\n" +
-                        "    a:*int = 1\n" +
-                        "    a = 2");
+                        "    method()\n" +
+                        "        a:*int = 1\n" +
+                        "        a = 2");
                 parse(map);
                 // compiling pass
         }
