@@ -1,66 +1,72 @@
-function useZh(){
-    var paramUseZh=GetQueryString('useZh');
-    if(paramUseZh){
-        if(paramUseZh=='false' || paramUseZh=='no' || paramUseZh=='0') return false;
+function useZh() {
+    var paramUseZh = getQueryString('useZh');
+    if (paramUseZh) {
+        if (paramUseZh == 'false' || paramUseZh == 'no' || paramUseZh == '0') return false;
         else return true;
     }
 
     var lang = navigator.language;
-    if(!lang) navigator.browserLanguage;
-    if(!lang) lang="en-us"
-    return lang.length>2 && lang.toLowerCase().substring(0,2)=='zh';
+    if (!lang) lang = navigator.browserLanguage;
+    if (!lang) lang = "en-us"
+    return lang.length > 2 && lang.toLowerCase().substring(0, 2) == 'zh';
 }
 
-function GetQueryString(name)
-{
-     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
-     var r = window.location.search.substr(1).match(reg);
-     if(r!=null)return  unescape(r[2]); return null;
+function getQueryString(name) {
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+    var h = window.location.href;
+    if (h.indexOf('#') == -1) {
+        h = '';
+    } else {
+        h = h.substring(h.indexOf('#') + 1);
+    }
+    var r = h.match(reg);
+    if (r != null)return unescape(r[2]);
+    return null;
 }
 
 function common_git_repo() {
     return "https://github.com/wkgcass/Latte-lang";
 }
 function common_navs() {
-    var isZh=useZh();
-    var suffix = "?useZh="+(isZh?"1":"0");
+    var isZh = useZh();
+    var suffix = "#useZh=" + (isZh ? "1" : "0");
     return [
         {
-            name: isZh?"主页":"Home",
+            name: isZh ? "主页" : "Home",
             active: false,
-            link: "index.html"+suffix
+            link: "index.html" + suffix
         },
         {
-            name: isZh?"下载":"Download",
+            name: isZh ? "下载" : "Download",
             active: false,
-            link: "download.html"+suffix
+            link: "download.html" + suffix
         },
         {
-            name: isZh?"教程":"Intro",
+            name: isZh ? "介绍" : "Intro",
             active: false,
-            link: "tutorial.html"+suffix
+            link: "tutorial.html" + suffix
         },
         {
-            name: isZh?"语法":"Syntax",
+            name: isZh ? "基础语法" : "Basic Syntax",
             active: false,
-            link: "syntax.html"+suffix
+            link: "syntax.html" + suffix
         },
         {
-            name: isZh?"示例":"Examples",
+            name: isZh ? "示例" : "Examples",
             active: false,
-            link: "example.html"+suffix
+            link: "example.html" + suffix
         },
         {
-            name: isZh?"开发":"Develop",
+            name: isZh ? "开发" : "Develop",
             active: false,
-            link: "dev.html"+suffix
+            link: "dev.html" + suffix
         },
         {
             name: "Switch Language",
             active: false,
-            link: "?useZh=" + (isZh?"false":"true")
+            link: "#useZh=" + (isZh ? "false" : "true")
         }
-    ]
+    ];
 }
 function common_compile_highlighting() {
     return "<pre class='code' style='height:200px'>" +
@@ -88,3 +94,7 @@ function common_script_highlighting() {
     });
     return "<pre>\n" + txt + "\n</pre>";
 }
+
+window.addEventListener('hashchange', function () {
+    window.location.reload();
+});

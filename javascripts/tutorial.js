@@ -4,15 +4,15 @@ $(document).ready(function () {
 
     var app = angular.module('tutorial', []);
     app.controller('controller', ['$scope', '$sce', function ($scope, $sce) {
-        var zh=useZh();
+        var zh = useZh();
 
         $scope.navs = common_navs();
         $scope.navs[2].active = true;
 
         $scope.git_repo = common_git_repo();
 
-        $scope.descr = zh?"Latte是一种JVM语言, 它与Java有许多相似之处. 这里给出Latte与Java相同语义的比较"
-                         :"Latte is a JVM language, it have many similarities with java. Here's some comparisons between Latte and Java.";
+        $scope.descr = zh ? "Latte是一种JVM语言, 它与Java有许多相似之处. 这里给出Latte与Java相同语义的比较. 详细语法请参考语言规范."
+            : "Latte is a JVM language, it have many similarities with java. Here's some comparisons between Latte and Java. For detailed syntax please read the language specification.";
 
         function getLatteHtml(str) {
             return $sce.trustAsHtml(highlighting("", str, {}));
@@ -23,11 +23,11 @@ $(document).ready(function () {
                 title: "Hello World",
                 java: "System.out.println(\"hello world\");",
                 latte: getLatteHtml("println('hello world')"),
-                note: zh?$sce.trustAsHtml("Latte隐式导入 <code>lt.lang.Utils</code> 下的所有static方法.")
-                        :$sce.trustAsHtml("Latte implicitly import all static methods of <code>lt.lang.Utils</code>.")
+                note: zh ? $sce.trustAsHtml("Latte隐式导入 <code>lt.lang.Utils</code> 下的所有static方法.")
+                    : $sce.trustAsHtml("Latte implicitly import all static methods of <code>lt.lang.Utils</code>.")
             },
             {
-                title: zh?"注释":"Comments",
+                title: zh ? "注释" : "Comments",
                 java: "" +
                 "// comment\n" +
                 "/*\n" +
@@ -40,7 +40,7 @@ $(document).ready(function () {
                     "*/")
             },
             {
-                title: zh?"值":"Values",
+                title: zh ? "值" : "Values",
                 java: "" +
                 "int i = 1;\n" +
                 "float f =  1.2\n" +
@@ -67,18 +67,18 @@ $(document).ready(function () {
                     "    'name' : 'cass'\n" +
                     "    'age' : 22\n" +
                     "}"),
-                note: zh?$sce.trustAsHtml("Latte是动态静态类型结合的. 对于没有声明类型的变量将视为 <code>java.lang.Object</code>")
-                        :$sce.trustAsHtml("Latte is a hybrid of dynamic and static typing. The variables without type declarations are considered as <code>java.lang.Object</code>")
+                note: zh ? $sce.trustAsHtml("Latte是动态静态类型结合的. 对于没有声明类型的变量将视为 <code>java.lang.Object</code>")
+                    : $sce.trustAsHtml("Latte is a hybrid of dynamic and static typing. The variables without type declarations are considered as <code>java.lang.Object</code>")
             },
             {
-                title: zh?"正则表达式":"Regular Expression",
+                title: zh ? "正则表达式" : "Regular Expression",
                 java: "" +
                 "Pattern pattern = Pattern.compile(\"\\\\d+\")",
                 latte: getLatteHtml("" +
-                "var pattern = //\\d+//")
+                    "var pattern = //\\d+//")
             },
             {
-                title: zh?"类型定义":"Type Definition",
+                title: zh ? "类型定义" : "Type Definition",
                 java: "" +
                 "public class User {\n" +
                 "    private int id\n" +
@@ -96,17 +96,17 @@ $(document).ready(function () {
                     "class User(id : int, name : String)\n" +
                     "    toString():String='User(id='+id+', name='+name+')'\n" +
                     "\n" +
-                    (zh?"; 若不考虑与java的交互, 可以省略类型\n":"; the types can be omitted\n") +
-                    (zh?"; 更偏向弱类型的写法\n":"; the way looks more like weak typing language\n") +
+                    (zh ? "; 若不考虑与java的交互, 可以省略类型\n" : "; the types can be omitted\n") +
+                    (zh ? "; 更偏向弱类型的写法\n" : "; the way looks more like weak typing language\n") +
                     "class User(id,name)\n" +
                     "\n" +
-                    (zh?"; 可以将参数通过换行隔开\n":"; params can be separated with new line\n") +
+                    (zh ? "; 可以将参数通过换行隔开\n" : "; params can be separated with new line\n") +
                     "class User(\n" +
                     "    id : int\n" +
                     "    name : String\n" +
                     ")"),
-                note: zh?$sce.trustAsHtml("构造块中的参数与变量都将视为类的字段")
-                        :$sce.trustAsHtml("parameters in constructing blocks are considered as fields")
+                note: zh ? $sce.trustAsHtml("构造块中的参数与变量都将视为类的字段")
+                    : $sce.trustAsHtml("parameters in constructing blocks are considered as fields")
             },
             {
                 title: "Data Class",
@@ -148,7 +148,7 @@ $(document).ready(function () {
                     "data class User(id:int, name:String)")
             },
             {
-                title: zh?"`fun` 语法":"`fun` Syntax",
+                title: zh ? "`fun` 语法" : "`fun` Syntax",
                 java: "" +
                 "public class printElem implements java.util.function.Consumer {\n" +
                 "    public void accept(Object o) {\n" +
@@ -160,7 +160,7 @@ $(document).ready(function () {
                     "    println(o)")
             },
             {
-                title: zh?"运算符重载":"Operator Binding",
+                title: zh ? "运算符重载" : "Operator Binding",
                 java: "" +
                 "BigInteger a = new BigInteger(\"16\");\n" +
                 "BigInteger b = new BigInteger(\"3\");\n" +
@@ -194,7 +194,7 @@ $(document).ready(function () {
                     "map put 'cass', 22")
             },
             {
-                title: zh?"条件语句":"Condition Statements",
+                title: zh ? "条件语句" : "Condition Statements",
                 java: "" +
                 "if(list != null) {\n" +
                 "    a = list\n" +
@@ -208,8 +208,8 @@ $(document).ready(function () {
                     "else\n" +
                     "    a = []\n" +
                     "    map['key']=a"),
-                note: zh?$sce.trustAsHtml("<code>null, undefined, 0</code> 都将转化为 <code>false</code>")
-                        :$sce.trustAsHtml("<code>null, undefined, 0</code> are converted into <code>false</code>")
+                note: zh ? $sce.trustAsHtml("<code>null, undefined, 0</code> 都将转化为 <code>false</code>")
+                    : $sce.trustAsHtml("<code>null, undefined, 0</code> are converted into <code>false</code>")
             },
             {
                 title: "For Loop",
@@ -226,9 +226,9 @@ $(document).ready(function () {
                     "    println(u)\n" +
                     "\n" +
                     "for i in 0.:arr.length\n" +
-                    "    println(\"the \"+i+'th element is '+arr[i])"),
-                note: zh?$sce.trustAsHtml("for语句可以接受 <code>Iterable, Iterator, Enumeration, 数组, Map</code> 作为循环依据")
-                        :$sce.trustAsHtml("for statement can accept <code>Iterable, Iterator, Enumeration, Arrays, Map</code>")
+                    "    println(\"the ${i}th element is ${arr[i]}\")"),
+                note: zh ? $sce.trustAsHtml("for语句可以接受 <code>Iterable, Iterator, Enumeration, 数组, Map</code> 作为循环依据")
+                    : $sce.trustAsHtml("for statement can accept <code>Iterable, Iterator, Enumeration, Arrays, Map</code>")
             },
             {
                 title: "While/Do-While Loop",
@@ -252,8 +252,8 @@ $(document).ready(function () {
                     "do\n" +
                     "    ...\n" +
                     "while boolValue"),
-                note: zh?$sce.trustAsHtml("<code>null, undefined, 0</code> 都将转化为 <code>false</code>")
-                        :$sce.trustAsHtml("<code>null, undefined, 0</code> are converted into <code>false</code>")
+                note: zh ? $sce.trustAsHtml("<code>null, undefined, 0</code> 都将转化为 <code>false</code>")
+                    : $sce.trustAsHtml("<code>null, undefined, 0</code> are converted into <code>false</code>")
             },
             {
                 title: "Try-Catch-Finally",
@@ -281,8 +281,8 @@ $(document).ready(function () {
                     "    stream close\n" +
                     "\n" +
                     "throw 'a string'"),
-                note: zh?$sce.trustAsHtml("Latte允许throw与catch任何类型, 例如 throw \"error message\", 所以并不直接提供java的catch Type")
-                        :$sce.trustAsHtml("Latte allows throwing and catching any type, e.g. throw \"error message\". As a result, Latte doesn't provide `catch Type`")
+                note: zh ? $sce.trustAsHtml("Latte允许throw与catch任何类型, 例如 throw \"error message\", 所以并不直接提供java的catch Type")
+                    : $sce.trustAsHtml("Latte allows throwing and catching any type, e.g. throw \"error message\". As a result, Latte doesn't provide `catch Type`")
             },
             {
                 title: "Synchronized",
