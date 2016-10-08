@@ -27,6 +27,7 @@ package lt.repl;
 import lt.compiler.*;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -44,6 +45,13 @@ import static org.junit.Assert.*;
  * bugs caught by eval
  */
 public class TestBugsInEval {
+        Evaluator evaluator;
+
+        @Before
+        public void setUp() throws Exception {
+                evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
+        }
+
         private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
                 ErrorManager err = new ErrorManager(true);
 
@@ -99,7 +107,6 @@ public class TestBugsInEval {
          */
         @Test
         public void test1() throws Exception {
-                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                 evaluator.eval("arr:[]String=[null]");
                 Evaluator.Entry entry = evaluator.eval("arr[0]='abc'");
                 assertEquals("res0", entry.name);
@@ -152,7 +159,6 @@ public class TestBugsInEval {
          */
         @Test
         public void test2() throws Exception {
-                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                 evaluator.eval("" +
                         "class Test\n" +
                         "    m(a):Unit");
@@ -162,7 +168,6 @@ public class TestBugsInEval {
 
         @Test
         public void testFunctionAdd() throws Exception {
-                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                 Object res = evaluator.eval("" +
                         "x = (a,b,c)->a+b+c\n" +
                         "x(1,2,3)" +
@@ -172,15 +177,21 @@ public class TestBugsInEval {
 
         @Test
         public void testEmptyLambda() throws Exception {
-                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                 evaluator.eval("()->...");
         }
 
         @Test
         public void testOpAssign() throws Exception {
-                Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                 evaluator.eval("i = 1");
                 Object res = evaluator.eval("i <<= 2").result;
                 assertEquals(4, res);
+        }
+
+        @Test
+        public void testInternalLambdaAndOtherStatements() throws Exception {
+                evaluator.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
+                assertEquals(2, evaluator.eval("" +
+                        "[1, 2, 3, 4].stream.filter{it > 2}\n" +
+                        "1 + 1").result);
         }
 }

@@ -940,10 +940,9 @@ public class TestParser {
                 AST.Lambda l = new AST.Lambda(
                         Collections.emptyList(),
                         Collections.singletonList(
-                                new AST.Return(
-                                        new TwoVariableOperation("+",
-                                                new NumberLiteral("1", LineCol.SYNTHETIC),
-                                                new NumberLiteral("1", LineCol.SYNTHETIC), LineCol.SYNTHETIC), LineCol.SYNTHETIC)),
+                                new TwoVariableOperation("+",
+                                        new NumberLiteral("1", LineCol.SYNTHETIC),
+                                        new NumberLiteral("1", LineCol.SYNTHETIC), LineCol.SYNTHETIC)),
                         LineCol.SYNTHETIC);
 
                 assertEquals(l, stmt);
@@ -962,10 +961,9 @@ public class TestParser {
                                 new VariableDef("b", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
                         ),
                         Collections.singletonList(
-                                new AST.Return(
-                                        new TwoVariableOperation("+",
-                                                new AST.Access(null, "a", LineCol.SYNTHETIC),
-                                                new AST.Access(null, "b", LineCol.SYNTHETIC), LineCol.SYNTHETIC), LineCol.SYNTHETIC)),
+                                new TwoVariableOperation("+",
+                                        new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                        new AST.Access(null, "b", LineCol.SYNTHETIC), LineCol.SYNTHETIC)),
                         LineCol.SYNTHETIC);
 
                 assertEquals(l, stmt);
@@ -986,12 +984,11 @@ public class TestParser {
 
                 AST.Invocation invocation = new AST.Invocation(new AST.Access(null, "method", LineCol.SYNTHETIC), Arrays.asList(
                         new AST.Lambda(Collections.singletonList(new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)), Collections.singletonList(
-                                new AST.Return(
-                                        new TwoVariableOperation(
-                                                "+",
-                                                new AST.Access(null, "a", LineCol.SYNTHETIC),
-                                                new NumberLiteral("1", LineCol.SYNTHETIC),
-                                                LineCol.SYNTHETIC), LineCol.SYNTHETIC)), LineCol.SYNTHETIC),
+                                new TwoVariableOperation(
+                                        "+",
+                                        new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                        new NumberLiteral("1", LineCol.SYNTHETIC),
+                                        LineCol.SYNTHETIC)), LineCol.SYNTHETIC),
                         new NumberLiteral("1", LineCol.SYNTHETIC)
                 ), false, LineCol.SYNTHETIC);
 
@@ -1010,11 +1007,9 @@ public class TestParser {
                                 new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
                         ),
                         Collections.singletonList(
-                                new AST.Return(
-                                        new TwoVariableOperation("+",
-                                                new AST.Access(null, "a", LineCol.SYNTHETIC),
-                                                new NumberLiteral("1", LineCol.SYNTHETIC), LineCol.SYNTHETIC),
-                                        LineCol.SYNTHETIC)),
+                                new TwoVariableOperation("+",
+                                        new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                        new NumberLiteral("1", LineCol.SYNTHETIC), LineCol.SYNTHETIC)),
                         LineCol.SYNTHETIC);
 
                 assertEquals(l, stmt);
@@ -2213,13 +2208,15 @@ public class TestParser {
                 List<Statement> stmts = parse("" +
                         "(" +
                         "    (redisLock(o))\n" +
-                        "        println()\n" +
+                        "        println(it)\n" +
                         ").test()");
                 AST.Invocation redisLock = new AST.Invocation(new AST.Access(null, "redisLock", LineCol.SYNTHETIC),
                         Collections.singletonList(new AST.Access(null, "o", LineCol.SYNTHETIC)), false, LineCol.SYNTHETIC);
-                AST.Lambda lambda = new AST.Lambda(Collections.emptyList(), Collections.singletonList(
+                AST.Lambda lambda = new AST.Lambda(Collections.singletonList(
+                        new VariableDef("it", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
+                ), Collections.singletonList(
                         new AST.Invocation(new AST.Access(null, "println", LineCol.SYNTHETIC),
-                                Collections.emptyList(), false, LineCol.SYNTHETIC)
+                                Collections.singletonList(new AST.Access(null, "it", LineCol.SYNTHETIC)), false, LineCol.SYNTHETIC)
                 ), LineCol.SYNTHETIC);
                 AST.Invocation invokeLambda = new AST.Invocation(redisLock, Collections.singletonList(lambda), false, LineCol.SYNTHETIC);
                 AST.Invocation test = new AST.Invocation(new AST.Access(invokeLambda, "test", LineCol.SYNTHETIC),
@@ -2236,24 +2233,6 @@ public class TestParser {
                         "join('user_role').`as`('ur').on(#sql#ur.user_id == user.id).\n" +
                         "join('role').on(#sql#role.id == ur.user_id).\n" +
                         "where(#sql#user.id > 10 and user.name not 'cass')");
-        }
-
-        @Test
-        public void testPointer() throws Exception {
-                // pointer
-                List<Statement> stmts = parse("" +
-                        "a:*int = 1\n" +
-                        "a = 2");
-                VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
-                v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
-                v.setType(new AST.Access(new AST.Access(null, "int", LineCol.SYNTHETIC), "*", LineCol.SYNTHETIC));
-                assertEquals(Arrays.asList(
-                        v, new AST.Assignment(
-                                new AST.Access(null, "a", LineCol.SYNTHETIC),
-                                "=",
-                                new NumberLiteral("2", LineCol.SYNTHETIC),
-                                LineCol.SYNTHETIC)
-                ), stmts);
         }
 
         @Test

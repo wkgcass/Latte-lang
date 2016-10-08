@@ -30,6 +30,10 @@ public class BraceScanner extends AbstractScanner {
 
         private void init() {
                 PAIR.put("{{", "}}");
+                LAYER.remove("\\\\");
+                LAYER_END.remove("\\/");
+                LAYER.remove("->");
+                SPLIT_X.add("->");
 
                 Set<String> set = new HashSet<>();
                 set.addAll(LAYER);

@@ -811,7 +811,7 @@ public class TestParserErrorRecovery {
                 assertEquals(
                         new AST.Lambda(
                                 Collections.singletonList(new VariableDef("c", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)),
-                                Collections.singletonList(new AST.Return(new NumberLiteral("1", LineCol.SYNTHETIC), LineCol.SYNTHETIC)),
+                                Collections.singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)),
                                 LineCol.SYNTHETIC
                         ),
                         statements.get(0)

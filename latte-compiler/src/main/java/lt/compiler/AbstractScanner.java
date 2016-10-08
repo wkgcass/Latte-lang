@@ -22,10 +22,11 @@ public abstract class AbstractScanner implements Scanner {
          * <pre>
          * [lambda]-[=]-[(]-[)]-[-&gt;]-[|]-[END]
          *                            |
-         *                            --[a]-[+]-[b]
+         *                            +-[a]-[+]-[b]
          * </pre>
          */
-        public final Set<String> LAYER = new HashSet<>(Collections.singletonList("->"));
+        public final Set<String> LAYER = new HashSet<>(Arrays.asList("->", "\\\\"));
+        public final Set<String> LAYER_END = new HashSet<>(Collections.singletonList("\\/"));
         /**
          * the input should be split when meets these tokens
          */
@@ -115,6 +116,7 @@ public abstract class AbstractScanner implements Scanner {
 
                 Set<String> set = new HashSet<>();
                 set.addAll(LAYER);
+                set.addAll(LAYER_END);
                 set.addAll(SPLIT_X);
                 set.add(ENDING);
                 set.add(COMMENT);
@@ -245,7 +247,7 @@ public abstract class AbstractScanner implements Scanner {
                                         args.previous = n;
                                         args.currentLine = n.getLineCol().line;
                                         args.currentCol = n.getLineCol().column;
-                                        EndingNode endingNode = new EndingNode(args, EndingNode.WEAK);
+                                        EndingNode endingNode = new EndingNode(args, EndingNode.SYNTHETIC);
 
                                         endingNode.setNext(next);
                                         next.setPrevious(endingNode);

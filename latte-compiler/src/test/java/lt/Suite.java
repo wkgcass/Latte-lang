@@ -31,7 +31,7 @@ import lt.compiler.err_rec.TestScannerErrorRecovery;
 import lt.generator.TestJsSupport;
 import lt.repl.TestBugsInEval;
 import lt.repl.TestEvaluator;
-import lt.repl.TestPointer;
+import lt.repl.VariableTest;
 import lt.repl.TestScript;
 import org.junit.runner.RunWith;
 
@@ -56,7 +56,7 @@ import org.junit.runner.RunWith;
         TestJsSupport.class,
         TestBraceScanner.class,
         TestScannerSwitcher.class,
-        TestPointer.class
+        VariableTest.class
 })
 public class Suite extends TestSuite {
 }

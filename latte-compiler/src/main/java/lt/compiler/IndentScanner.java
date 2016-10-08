@@ -495,8 +495,13 @@ public class IndentScanner extends AbstractScanner {
 
                         if (LAYER.contains(token)) {
                                 // start new layer
-                                args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
+                                if (!token.equals("\\\\")) {
+                                        args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
+                                }
                                 createStartNode(args);
+                        } else if (LAYER_END.contains(token)) {
+                                // end the layer
+                                redirectToStartNodeByIndent(args, args.startNodeStack.lastElement().getIndent());
                         } else if (SPLIT_X.contains(token)) {
                                 // do split check
                                 if (!NO_RECORD.contains(token)) {

@@ -30,12 +30,13 @@ package lt.compiler.lexical;
 public class EndingNode extends Node {
         public static final int STRONG = 0;
         public static final int WEAK = 1;
+        public static final int SYNTHETIC = 2;
 
         private int type;
 
         public EndingNode(Args args, int type) {
                 super(args, type == STRONG ? TokenType.EndingNodeStrong : TokenType.EndingNode);
-                if (type != STRONG && type != WEAK) {
+                if (type != STRONG && type != WEAK && type != SYNTHETIC) {
                         throw new IllegalArgumentException("unexpected type number " + type + ", use EndingNode.STRONG or EndingNode.WEAK");
                 }
                 this.type = type;

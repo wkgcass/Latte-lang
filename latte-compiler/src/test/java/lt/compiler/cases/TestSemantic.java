@@ -1228,14 +1228,16 @@ public class TestSemantic {
                 SMethodDef method = classDef.methods().get(0);
                 assertEquals(1, method.statements().size());
 
-                Instruction ins = ((ValuePack) method.statements().get(0)).instructions().get(0); // ValuePack(TStore,TLoad)
+                Instruction ins = ((ValuePack) ((Ins.TReturn) method.statements().get(0)).value()).instructions().get(0); // ValuePack(TStore,TLoad)
                 assertTrue(ins instanceof Ins.TStore);
                 Ins.TStore TStore = (Ins.TStore) ins;
 
                 assertEquals(1, TStore.index());
-                assertTrue(TStore.newValue() instanceof Ins.InvokeStatic);
-                Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) TStore.newValue();
-                assertEquals(new IntValue(1), invokeStatic.arguments().get(0));
+                assertTrue(TStore.newValue() instanceof Ins.New);
+                Ins.New aNew = (Ins.New) TStore.newValue();
+                assertEquals("lt.lang.Pointer", aNew.constructor().declaringType().fullName());
+                Ins.InvokeVirtual invokeVirtual = (Ins.InvokeVirtual) ((ValuePack) ((Ins.TReturn) method.statements().get(0)).value()).instructions().get(1);
+                assertEquals(new IntValue(1), ((Ins.InvokeStatic) invokeVirtual.arguments().get(0)).arguments().get(0));
         }
 
         @Test
@@ -2264,7 +2266,7 @@ public class TestSemantic {
                 assertEquals("inner$Latte$InnerMethod$0", innerMethod.name());
 
                 assertEquals(1, innerMethod.getParameters().size());
-                assertTrue(innerMethod.getParameters().get(0).type().equals(IntTypeDef.get()));
+                assertTrue(innerMethod.getParameters().get(0).type().fullName().equals("lt.lang.Pointer"));
                 assertEquals("i", innerMethod.getParameters().get(0).name());
         }
 
@@ -2809,17 +2811,5 @@ public class TestSemantic {
                         "class X\n" +
                         "    Utils()");
                 parse(map); // pass compilation
-        }
-
-        @Test
-        public void testPointerType() throws Exception {
-                Map<String, String> map = new HashMap<>();
-                map.put("test", "" +
-                        "class Test\n" +
-                        "    method()\n" +
-                        "        a:*int = 1\n" +
-                        "        a = 2");
-                parse(map);
-                // compiling pass
         }
 }

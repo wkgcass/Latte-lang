@@ -89,7 +89,7 @@ catch e
 variable1 = 1            ; type is java.lang.Object, and initialize with 1
 variable2 : int = 1      ; type is int, and initialize with 1
 variable3 : int          ; type is int, with no initialize expression
-; only in class constructing block, the variable can have no init expression
+; the variable without init expression would be automatically assigned with 0 or (char)0 or false or null
 ; in method block, variables are parsed as local variable
 ; it cannnot be uninitialized
 

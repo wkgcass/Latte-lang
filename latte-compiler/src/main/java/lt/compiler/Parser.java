@@ -288,7 +288,12 @@ public class Parser {
                 } else {
                         current = next;
                 }
-                if (next instanceof EndingNode && ((EndingNode) next).getType() == EndingNode.WEAK) {
+                if (next instanceof EndingNode &&
+                        (
+                                ((EndingNode) next).getType() == EndingNode.WEAK
+                                        ||
+                                        ((EndingNode) next).getType() == EndingNode.SYNTHETIC
+                        )) {
                         if (!canBeEnd) {
                                 nextNode(false);
                         }
@@ -2013,7 +2018,7 @@ public class Parser {
 
                                 will be parsed into
 
-                                expression(()->
+                                expression(it->
                                         ...
                                 )
 
@@ -2021,10 +2026,16 @@ public class Parser {
                                  */
                                 Expression exp = parsedExps.pop();
                                 List<Statement> lambdaStmts = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
-                                AST.Lambda lambda = new AST.Lambda(Collections.emptyList(), lambdaStmts, LineCol.SYNTHETIC_WITH_FILE(current.getLineCol().fileName));
+                                AST.Lambda lambda = new AST.Lambda(Collections.singletonList(
+                                        new VariableDef("it", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
+                                ), lambdaStmts, LineCol.SYNTHETIC_WITH_FILE(current.getLineCol().fileName));
                                 AST.Invocation invocation = new AST.Invocation(exp, Collections.singletonList(lambda), false, LineCol.SYNTHETIC_WITH_FILE(current.getLineCol().fileName));
                                 parsedExps.push(invocation);
                                 nextNode(true);
+                                if (current instanceof EndingNode && ((EndingNode) current).getType() == EndingNode.SYNTHETIC) {
+                                        nextNode(true);
+                                }
+                                parse_expression();
                         }
                 }
                 // else
@@ -2329,22 +2340,20 @@ public class Parser {
                 }
 
                 nextNode(false); // ->
+                expecting("->", current.previous(), current, err);
                 nextNode(false);
                 // (...)->口
 
-                if (!(current instanceof ElementStartNode)) {
-                        err.UnexpectedTokenException("new layer", current.toString(), current.getLineCol());
-                }
-
-                List<Statement> stmts = parseElemStart((ElementStartNode) current, true, set, false);
-                if (stmts.size() == 1 && stmts.get(0) instanceof Expression) {
-                        AST.Return ret = new AST.Return((Expression) stmts.get(0), stmts.get(0).line_col());
-                        stmts.clear();
-                        stmts.add(ret);
+                List<Statement> stmts;
+                if (current instanceof ElementStartNode) {
+                        stmts = parseElemStart((ElementStartNode) current, true, set, false);
+                        nextNode(true);
+                } else {
+                        stmts = new ArrayList<>();
+                        stmts.add(get_exp(false));
                 }
 
                 AST.Lambda l = new AST.Lambda(variableDefList, stmts, lineCol);
-                nextNode(true);
 
                 parsedExps.push(l);
 
@@ -2711,16 +2720,6 @@ public class Parser {
          */
         private AST.Access parse_cls_for_type_spec() throws SyntaxException {
                 AST.Access a;
-                boolean isPointer = false;
-                LineCol pointerLineCol = null;
-
-                // check *
-                if (((Element) current).getContent().equals("*")) {
-                        // it's a pointer
-                        isPointer = true;
-                        pointerLineCol = current.getLineCol();
-                        nextNode(false);
-                }
 
                 // parse array
                 // []Type or [][]Type ...
@@ -2756,24 +2755,17 @@ public class Parser {
 
                         a = (AST.Access) parsedExps.pop();
                 } else {
-                        if (isPointer && arrayDepth == 0) {
-                                return new AST.Access(null, "*", pointerLineCol);
-                        } else {
 
-                                err.UnexpectedTokenException("type", ((Element) current).getContent(), current.getLineCol());
-                                err.debug("assume that the token is Object");
-                                a = new AST.Access(null, "Object", LineCol.SYNTHETIC);
+                        err.UnexpectedTokenException("type", ((Element) current).getContent(), current.getLineCol());
+                        err.debug("assume that the token is Object");
+                        a = new AST.Access(null, "Object", LineCol.SYNTHETIC);
 
-                        }
                 }
 
                 for (int i = 0; i < arrayDepth; ++i) {
                         a = new AST.Access(a, "[]", a.line_col());
                 }
 
-                if (isPointer) {
-                        a = new AST.Access(a, "*", pointerLineCol);
-                }
                 return a;
         }
 

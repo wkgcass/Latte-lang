@@ -348,6 +348,15 @@ public class js implements SourceGenerator {
                         buildArguments(sb, ((AST.Invocation) exp).args, indentation);
                         sb.append(")");
                 } else if (exp instanceof AST.Lambda) {
+                        // check last statement
+                        AST.Lambda l = (AST.Lambda) exp;
+                        if (!l.statements.isEmpty()) {
+                                Statement stmt = l.statements.get(l.statements.size() - 1);
+                                if (stmt instanceof Expression) {
+                                        l.statements.set(l.statements.size() - 1, new AST.Return((Expression) stmt, stmt.line_col()));
+                                }
+                        }
+
                         sb.append("function(");
                         buildParameters(sb, ((AST.Lambda) exp).params);
                         sb.append(") {\n");

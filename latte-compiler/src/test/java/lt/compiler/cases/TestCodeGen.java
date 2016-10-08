@@ -2543,7 +2543,7 @@ public class TestCodeGen {
                                 "            return (T())\n" +
                                 "                return 1 + 2\n" +
                                 "class T\n" +
-                                "    apply(o)=o()"
+                                "    apply(o)=o(this)"
                         , "TestInternalSyntaxLambda");
                 Method method = cls.getMethod("method");
                 assertEquals(3, method.invoke(null));
@@ -2671,59 +2671,6 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testPointerVarDef() throws Exception {
-                Class<?> cls = retrieveClass("" +
-                                "class TestPointerVarDef\n" +
-                                "    static\n" +
-                                "        method()\n" +
-                                "            return (a:*int = 1)\n" +
-                                "        method2()\n" +
-                                "            return (val a:*int = 2)"
-                        , "TestPointerVarDef");
-                Method method = cls.getMethod("method");
-                Method method2 = cls.getMethod("method2");
-                assertEquals(1, method.invoke(null));
-                assertEquals(2, method2.invoke(null));
-        }
-
-        @Test
-        public void testPointerAccess() throws Exception {
-                Class<?> cls = retrieveClass("" +
-                                "class TestPointerAccess\n" +
-                                "    static\n" +
-                                "        method1()\n" +
-                                "            a:*int = 1\n" +
-                                "            return a\n" +
-                                "        method2()\n" +
-                                "            val a:*int = 2\n" +
-                                "            return a"
-                        , "TestPointerAccess");
-                Method method1 = cls.getMethod("method1");
-                Method method2 = cls.getMethod("method2");
-                Object o = cls.newInstance();
-
-                assertEquals(1, method1.invoke(null));
-                assertEquals(2, method2.invoke(o));
-        }
-
-        @Test
-        public void testPointerAssign() throws Exception {
-                Class<?> cls = retrieveClass("" +
-                                "class TestPointerAccess\n" +
-                                "    static\n" +
-                                "        method1()\n" +
-                                "            a:*int = 10\n" +
-                                "            a=1\n" +
-                                "            return a"
-                        , "TestPointerAccess");
-
-                Method method1 = cls.getMethod("method1");
-                Object o = cls.newInstance();
-
-                assertEquals(1, method1.invoke(null));
-        }
-
-        @Test
         public void testCompileMultipleIndexAccess() throws Exception {
                 Class<?> cls = retrieveClass("" +
                                 "class TestCompileMultipleIndexAccess\n" +
@@ -2765,5 +2712,97 @@ public class TestCodeGen {
                 map.put("a", 1);
                 map.put("b", 2);
                 assertEquals(map, method.invoke(null));
+        }
+
+        @Test
+        public void testAutoReturn() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestAutoReturn\n" +
+                                "    static\n" +
+                                "        method()\n" +
+                                "            1"
+                        , "TestAutoReturn");
+                Method method = cls.getMethod("method");
+                assertEquals(1, method.invoke(null));
+        }
+
+        @Test
+        public void testAutoReturnWithType() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestAutoReturnWithType\n" +
+                                "    static\n" +
+                                "        method1():int\n" +
+                                "            1\n" +
+                                "        method2():Unit\n" +
+                                "            Object()"
+                        , "TestAutoReturnWithType");
+                Method method1 = cls.getMethod("method1");
+                assertEquals(1, method1.invoke(null));
+
+                Method method2 = cls.getMethod("method2");
+                assertEquals(null, method2.invoke(null));
+        }
+
+        @Test
+        public void testAutoReturnIf() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                ";; brace\n" +
+                                "class TestAutoReturnIf {\n" +
+                                "    static {\n" +
+                                "        method(a) {\n" +
+                                "            if a { 1 } else { 2 }\n" +
+                                "        }\n" +
+                                "    }\n" +
+                                "}"
+                        , "TestAutoReturnIf");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(1, method.invoke(null, true));
+                assertEquals(2, method.invoke(null, false));
+        }
+
+        @Test
+        public void testBraceLambda() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                ";; brace\n" +
+                                "class TestBraceLambda {\n" +
+                                "    static {\n" +
+                                "        method() {\n" +
+                                "            x = 1\n" +
+                                "            f = ()->2\n" +
+                                "            x + f()\n" +
+                                "        }\n" +
+                                "    }\n" +
+                                "}"
+                        , "TestBraceLambda");
+                Method method = cls.getMethod("method");
+                assertEquals(3, method.invoke(null));
+        }
+
+        @Test
+        public void testBraceInternalSyntaxLambda() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                ";; brace\n" +
+                                "import java::util::stream::Collectors._\n" +
+                                "class TestBraceInternalSyntaxLambda {\n" +
+                                "    static {\n" +
+                                "        method()= [1, 2, 3, 4].stream.filter{it > 2}.map{it + 1}.collect(toList())" +
+                                "    }\n" +
+                                "}"
+                        , "TestBraceInternalSyntaxLambda");
+                Method method = cls.getMethod("method");
+                assertEquals(Arrays.asList(4, 5), method.invoke(null));
+        }
+
+        @Test
+        public void testIndentInternalSyntaxLambda() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import java::util::stream::Collectors._\n" +
+                                "class TestIndentInternalSyntaxLambda\n" +
+                                "    static\n" +
+                                "        method()=\n" +
+                                "        [1, 2, 3, 4].stream.filter\\\\it > 2\\/.map\\\\it + 1\\/.collect(toList())"
+                        , "TestIndentInternalSyntaxLambda");
+                Method method = cls.getMethod("method");
+                assertEquals(Arrays.asList(4, 5), method.invoke(null));
         }
 }

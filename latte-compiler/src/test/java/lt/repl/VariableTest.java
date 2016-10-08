@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 /**
  * tests for pointers
  */
-public class TestPointer {
+public class VariableTest {
         Evaluator evaluator;
 
         @Before
@@ -21,7 +21,7 @@ public class TestPointer {
         public void testInvoke() throws Exception {
                 Object result = evaluator.eval("" +
                         "method()\n" +
-                        "    i:*lt::lang::function::Function0=()->1\n" +
+                        "    i:lt::lang::function::Function0=()->1\n" +
                         "    return i()\n" +
                         "method()"
                 ).result;
@@ -33,7 +33,7 @@ public class TestPointer {
                 Object result = evaluator.eval("" +
                         "class X(public num)\n" +
                         "method()\n" +
-                        "    i:*X = X(1)\n" +
+                        "    i:X = X(1)\n" +
                         "    return i.num\n" +
                         "method()"
                 ).result;
@@ -45,7 +45,7 @@ public class TestPointer {
                 Object result = evaluator.eval("" +
                         "data class X(num)\n" +
                         "method()\n" +
-                        "    i:*X = X(1)\n" +
+                        "    i:X = X(1)\n" +
                         "    return i.num\n" +
                         "method()"
                 ).result;
@@ -56,7 +56,7 @@ public class TestPointer {
         public void testLambdaChangeValue() throws Exception {
                 Object result = evaluator.eval("" +
                         "method()\n" +
-                        "    i:*int = 1\n" +
+                        "    i:int = 1\n" +
                         "    f=()->\n" +
                         "        i=2\n" +
                         "    f()\n" +
@@ -69,7 +69,7 @@ public class TestPointer {
         public void testLambdaGetValue() throws Exception {
                 Object result = evaluator.eval("" +
                         "method()\n" +
-                        "    i:*int = 1\n" +
+                        "    i:int = 1\n" +
                         "    return (()->i)()\n" +
                         "method()"
                 ).result;
@@ -80,7 +80,7 @@ public class TestPointer {
         public void testArrayPointer() throws Exception {
                 Object result = evaluator.eval("" +
                         "method()\n" +
-                        "    i:*[]int = [1,2]\n" +
+                        "    i:[]int = [1,2]\n" +
                         "    return i[0]\n" +
                         "method()").result;
                 assertEquals(1, result);
@@ -90,7 +90,7 @@ public class TestPointer {
         public void test2dArrayPointer() throws Exception {
                 Object result = evaluator.eval("" +
                         "method()\n" +
-                        "    i:*[][]int = [[1,2],[3,4]]\n" +
+                        "    i:[][]int = [[1,2],[3,4]]\n" +
                         "    return i[1, 0]\n" +
                         "method()").result;
                 assertEquals(3, result);

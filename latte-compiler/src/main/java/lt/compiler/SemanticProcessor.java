@@ -524,7 +524,7 @@ public class SemanticProcessor {
                                         }
 
                                         // parameters
-                                        parseParameters(classDef.params, i, constructor, imports, true, false);
+                                        parseParameters(classDef.params, i, constructor, imports, true);
 
                                         constructor.setDeclaringType(sClassDef);
                                         sClassDef.constructors().add(constructor);
@@ -564,7 +564,7 @@ public class SemanticProcessor {
 
                                                 SMethodDef lastMethod = null;
                                                 for (int i = methodDef.params.size(); i > generateIndex; --i) {
-                                                        parseMethod((MethodDef) stmt, i, sClassDef, lastMethod, imports, PARSING_CLASS, false, false);
+                                                        parseMethod((MethodDef) stmt, i, sClassDef, lastMethod, imports, PARSING_CLASS, false);
                                                         lastMethod = sClassDef.methods().get(sClassDef.methods().size() - 1);
 
                                                         // record the method
@@ -590,7 +590,7 @@ public class SemanticProcessor {
 
                                                         SMethodDef lastMethod = null;
                                                         for (int i = methodDef.params.size(); i > generateIndex; --i) {
-                                                                parseMethod((MethodDef) stmt, i, sClassDef, lastMethod, imports, PARSING_CLASS, true, false);
+                                                                parseMethod((MethodDef) stmt, i, sClassDef, lastMethod, imports, PARSING_CLASS, true);
                                                                 lastMethod = sClassDef.methods().get(sClassDef.methods().size() - 1);
 
                                                                 // record the method
@@ -628,7 +628,7 @@ public class SemanticProcessor {
 
                                                 SMethodDef lastMethod = null;
                                                 for (int i = m.params.size(); i > generateIndex; --i) {
-                                                        parseMethod(m, i, sInterfaceDef, lastMethod, imports, PARSING_INTERFACE, false, false);
+                                                        parseMethod(m, i, sInterfaceDef, lastMethod, imports, PARSING_INTERFACE, false);
                                                         lastMethod = sInterfaceDef.methods().get(sInterfaceDef.methods().size() - 1);
 
                                                         // record the method
@@ -657,7 +657,7 @@ public class SemanticProcessor {
 
                                                         SMethodDef lastMethod = null;
                                                         for (int i = m.params.size(); i > generateIndex; --i) {
-                                                                parseMethod(m, i, sInterfaceDef, lastMethod, imports, PARSING_INTERFACE, true, false);
+                                                                parseMethod(m, i, sInterfaceDef, lastMethod, imports, PARSING_INTERFACE, true);
                                                                 lastMethod = sInterfaceDef.methods().get(sInterfaceDef.methods().size() - 1);
 
                                                                 // record the method
@@ -760,7 +760,7 @@ public class SemanticProcessor {
                                 method.modifiers().add(SModifier.PUBLIC);
 
                                 // fill parameters
-                                parseParameters(fun.params, fun.params.size(), method, imports, false, false);
+                                parseParameters(fun.params, fun.params.size(), method, imports, false);
 
                                 methodToStatements.put(method, fun.statements);
 
@@ -1499,6 +1499,12 @@ public class SemanticProcessor {
                                 return;
                         }
                 }
+
+                // fill in return
+                if (!methodDef.getReturnType().equals(VoidType.get())) {
+                        transformLastExpToReturn(statements);
+                }
+
                 SemanticScope scope = new SemanticScope(superScope);
                 if (!methodDef.modifiers().contains(SModifier.STATIC)) {
                         scope.setThis(new Ins.This(scope.type()));
@@ -1520,6 +1526,20 @@ public class SemanticProcessor {
                                         methodDef.exceptionTables(),
                                         null, null,
                                         false);
+                        }
+                }
+        }
+
+        private void transformLastExpToReturn(List<Statement> statements) {
+                if (statements.isEmpty()) return;
+                int lastIndex = statements.size() - 1;
+                Statement lastStmt = statements.get(lastIndex);
+                if (lastStmt instanceof Expression) {
+                        AST.Return ret = new AST.Return((Expression) lastStmt, lastStmt.line_col());
+                        statements.set(lastIndex, ret);
+                } else if (lastStmt instanceof AST.If) {
+                        for (AST.If.IfPair pair : ((AST.If) lastStmt).ifs) {
+                                transformLastExpToReturn(pair.body);
                         }
                 }
         }
@@ -2098,7 +2118,7 @@ public class SemanticProcessor {
 
                 // parse the method
                 parseMethod(newMethodDef, newMethodDef.params.size(), scope.type(), null, fileNameToImport.get(newMethodDef.line_col().fileName),
-                        (scope.type() instanceof SClassDef) ? PARSING_CLASS : PARSING_INTERFACE, scope.getThis() == null, true);
+                        (scope.type() instanceof SClassDef) ? PARSING_CLASS : PARSING_INTERFACE, scope.getThis() == null);
                 SMethodDef m = methods.get(methods.size() - 1);
                 // change the modifier
                 m.modifiers().remove(SModifier.PUBLIC);
@@ -3309,23 +3329,36 @@ public class SemanticProcessor {
                         }
                 }
 
-                final String FIELD_CANNOT_BE_POINTER = "field (as well as param and return) type cannot be pointer";
-                if (variableDef.getInit() == null) {
-                        if (isPointerType(type)) {
-                                if (null != field) {
-                                        throw new LtBug(FIELD_CANNOT_BE_POINTER);
-                                } else {
-                                        err.SyntaxException("local variable must have initial value", variableDef.line_col());
-                                        return null; // code won't reach here
-                                }
-                        }
-                } else {
+                if (variableDef.getInit() != null || isLocalVar) {
                         // variable def with a init value
 
-                        Value v = parseValueFromExpression(
-                                variableDef.getInit(),
-                                type,
-                                scope);
+                        Value v;
+                        if (variableDef.getInit() == null) {
+                                if (type instanceof PrimitiveTypeDef) {
+                                        if (type instanceof IntTypeDef) {
+                                                v = new IntValue(0);
+                                        } else if (type instanceof ShortTypeDef || type instanceof ByteTypeDef) {
+                                                v = new ValueAnotherType(type, new IntValue(0), LineCol.SYNTHETIC);
+                                        } else if (type instanceof LongTypeDef) {
+                                                v = new LongValue(0);
+                                        } else if (type instanceof FloatTypeDef) {
+                                                v = new FloatValue(0);
+                                        } else if (type instanceof DoubleTypeDef) {
+                                                v = new DoubleValue(0);
+                                        } else if (type instanceof BoolTypeDef) {
+                                                v = new BoolValue(false);
+                                        } else if (type instanceof CharTypeDef) {
+                                                v = new CharValue((char) 0);
+                                        } else throw new LtBug("unknown primitive type " + type);
+                                } else {
+                                        v = NullValue.get();
+                                }
+                        } else {
+                                v = parseValueFromExpression(
+                                        variableDef.getInit(),
+                                        type,
+                                        scope);
+                        }
 
                         if (isLocalVar) {
                                 boolean canChange = true;
@@ -3334,6 +3367,12 @@ public class SemanticProcessor {
                                                 canChange = false;
                                         }
                                 }
+
+                                if (canChange) {
+                                        AST.Access typeAccess = variableDef.getType();
+                                        type = getTypeWithAccess(new AST.Access(typeAccess, "*", typeAccess == null ? LineCol.SYNTHETIC : typeAccess.line_col()), imports);
+                                }
+
                                 LocalVariable localVariable = new LocalVariable(type, canChange);
                                 scope.putLeftValue(variableDef.getName(), localVariable);
                         }
@@ -3341,23 +3380,15 @@ public class SemanticProcessor {
                         ValuePack pack = new ValuePack(true);
                         if (null != field) {
                                 if (field.modifiers().contains(SModifier.STATIC)) {
-                                        if (isPointerType(type)) {
-                                                throw new LtBug(FIELD_CANNOT_BE_POINTER);
-                                        } else {
-                                                // putStatic
-                                                pack.instructions().add(new Ins.PutStatic(field, v, variableDef.line_col(), err));
-                                                Ins.GetStatic getStatic = new Ins.GetStatic(field, variableDef.line_col());
-                                                pack.instructions().add(getStatic);
-                                        }
+                                        // putStatic
+                                        pack.instructions().add(new Ins.PutStatic(field, v, variableDef.line_col(), err));
+                                        Ins.GetStatic getStatic = new Ins.GetStatic(field, variableDef.line_col());
+                                        pack.instructions().add(getStatic);
                                 } else {
-                                        if (isPointerType(type)) {
-                                                throw new LtBug(FIELD_CANNOT_BE_POINTER);
-                                        } else {
-                                                // putField
-                                                pack.instructions().add(new Ins.PutField(field, scope.getThis(), v, variableDef.line_col(), err));
-                                                Ins.GetField getField = new Ins.GetField(field, scope.getThis(), variableDef.line_col());
-                                                pack.instructions().add(getField);
-                                        }
+                                        // putField
+                                        pack.instructions().add(new Ins.PutField(field, scope.getThis(), v, variableDef.line_col(), err));
+                                        Ins.GetField getField = new Ins.GetField(field, scope.getThis(), variableDef.line_col());
+                                        pack.instructions().add(getField);
                                 }
                         } else {
                                 // else field not found
@@ -8465,7 +8496,7 @@ public class SemanticProcessor {
          * @throws SyntaxException exceptions
          */
         public void parseParameters(List<VariableDef> variableDefList, int i, SInvokable invokable, List<Import> imports,
-                                    boolean allowAccessModifier, boolean allowPointer) throws SyntaxException {
+                                    boolean allowAccessModifier) throws SyntaxException {
                 for (int j = 0; j < i; ++j) {
                         // foreach variable
                         // set their name|target(constructor)|type|modifier(val)|anno_general
@@ -8483,9 +8514,6 @@ public class SemanticProcessor {
                                 type = getTypeWithAccess(v.getType(), imports);
                         }
                         param.setType(type);
-                        if (!allowPointer && isPointerType(param.type())) {
-                                err.SyntaxException("parameter type cannot be pointer", v.getType().line_col());
-                        }
 
                         for (Modifier m : v.getModifiers()) {
                                 switch (m.modifier) {
@@ -8539,9 +8567,6 @@ public class SemanticProcessor {
                                 ? getTypeWithName("java.lang.Object", v.line_col())
                                 : getTypeWithAccess(v.getType(), imports)
                 );
-                if (isPointerType(fieldDef.type())) {
-                        err.SyntaxException("field type cannot be pointer", v.getType().line_col());
-                }
                 fieldDef.setDeclaringType(type); // declaringClass
 
                 // try to get access flags
@@ -8650,7 +8675,7 @@ public class SemanticProcessor {
          * @param isStatic   whether the method is static
          * @throws SyntaxException exception
          */
-        public void parseMethod(MethodDef m, int i, STypeDef type, SMethodDef lastMethod, List<Import> imports, int mode, boolean isStatic, boolean allowParamPointer) throws SyntaxException {
+        public void parseMethod(MethodDef m, int i, STypeDef type, SMethodDef lastMethod, List<Import> imports, int mode, boolean isStatic) throws SyntaxException {
                 // method name|declaringType|returnType|parameters|modifier|anno
                 SMethodDef methodDef = new SMethodDef(m.line_col());
                 methodDef.setName(m.name);
@@ -8660,10 +8685,7 @@ public class SemanticProcessor {
                                 ? getTypeWithName("java.lang.Object", m.line_col())
                                 : getTypeWithAccess(m.returnType, imports)
                 );
-                if (isPointerType(methodDef.getReturnType())) {
-                        err.SyntaxException("method return type cannot be pointer", m.returnType == null ? m.line_col() : m.returnType.line_col());
-                }
-                parseParameters(m.params, i, methodDef, imports, false, allowParamPointer);
+                parseParameters(m.params, i, methodDef, imports, false);
 
                 // modifier
                 // try to get access flags
