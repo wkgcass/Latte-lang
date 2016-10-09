@@ -2805,4 +2805,47 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals(Arrays.asList(4, 5), method.invoke(null));
         }
+
+        @Test
+        public void testInnerMethodChangeParam() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestInnerMethodChangeParam\n" +
+                                "    static\n" +
+                                "        method(a)\n" +
+                                "            inner()\n" +
+                                "                a=2\n" +
+                                "            inner()\n" +
+                                "            return a"
+                        , "TestInnerMethodChangeParam");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(2, method.invoke(null, new Object()));
+        }
+
+        @Test
+        public void testInnerMethodContainRealType() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestInnerMethodContainRealType\n" +
+                                "    static\n" +
+                                "        method(a:int)\n" +
+                                "            inner()\n" +
+                                "                a=Object()\n" +
+                                "            inner()\n" +
+                                "            return a"
+                        , "TestInnerMethodContainRealType");
+                Method method = cls.getMethod("method", int.class);
+                try {
+                        method.invoke(null, 1);
+                        fail();
+                } catch (Exception e) {
+                        if (e instanceof InvocationTargetException) {
+                                InvocationTargetException i = (InvocationTargetException) e;
+                                Throwable t = i.getTargetException();
+                                if (!(t instanceof ClassCastException)) {
+                                        fail();
+                                } // cast object to int fail
+                        } else {
+                                fail();
+                        }
+                }
+        }
 }

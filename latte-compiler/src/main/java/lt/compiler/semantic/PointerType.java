@@ -8,8 +8,8 @@ import lt.compiler.LineCol;
 public class PointerType extends STypeDef {
         private final STypeDef pointingType;
 
-        public PointerType(STypeDef pointingType, LineCol lineCol) {
-                super(lineCol);
+        public PointerType(STypeDef pointingType) {
+                super(LineCol.SYNTHETIC);
                 this.pointingType = pointingType;
                 setFullName("lt.lang.Pointer");
                 setPkg("lt.lang");
@@ -21,6 +21,6 @@ public class PointerType extends STypeDef {
 
         @Override
         public String toString() {
-                return "*" + pointingType.toString();
+                return "*" + pointingType.fullName();
         }
 }

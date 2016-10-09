@@ -1498,6 +1498,7 @@ public class SemanticProcessor {
                                 err.SyntaxException("abstract method cannot contain statements", statements.get(0).line_col());
                                 return;
                         }
+                        return;
                 }
 
                 // fill in return
@@ -1514,7 +1515,34 @@ public class SemanticProcessor {
                         fillDefaultParamMethod(methodDef, scope);
                 } else {
                         for (SParameter p : methodDef.getParameters()) {
-                                scope.putLeftValue(p.name(), p);
+                                if (p.canChange() && !isPointerType(p.type()) && CompileUtil.isValidName(p.name())) {
+                                        scope.putLeftValue(scope.generateTempName(), p);
+                                } else {
+                                        scope.putLeftValue(p.name(), p);
+                                }
+                        }
+                        for (SParameter p : methodDef.getParameters()) {
+                                if (p.canChange() && !isPointerType(p.type()) && CompileUtil.isValidName(p.name())) {
+                                        // get the value and put into container
+                                        PointerType t = new PointerType(p.type());
+                                        if (types.containsKey(t.toString())) {
+                                                t = (PointerType) types.get(t.toString());
+                                        } else {
+                                                types.put(t.toString(), t);
+                                        }
+
+                                        LocalVariable local = new LocalVariable(t, false);
+                                        scope.putLeftValue(p.name(), local);
+
+                                        // local = new Pointer(p)
+                                        Ins.TStore tStore = new Ins.TStore(
+                                                local, invokePointerSet(
+                                                constructPointer(),
+                                                new Ins.TLoad(p, scope, LineCol.SYNTHETIC),
+                                                LineCol.SYNTHETIC),
+                                                scope, LineCol.SYNTHETIC, err);
+                                        methodDef.statements().add(tStore);
+                                }
                         }
                         // fill statements
                         for (Statement stmt : statements) {
@@ -2072,6 +2100,7 @@ public class SemanticProcessor {
                 // the params are added to front positions
                 LinkedHashMap<String, STypeDef> localVariables = scope.getLocalVariables();
                 List<VariableDef> param4Locals = new ArrayList<>();
+                List<PointerType> realPointerTypes = new ArrayList<>();
                 localVariables.forEach((k, v) -> {
                         // construct a synthetic VariableDef as param
                         VariableDef variable = new VariableDef(k, Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
@@ -2102,6 +2131,9 @@ public class SemanticProcessor {
                                                 LineCol.SYNTHETIC
                                         )
                                 );
+                                if (v instanceof PointerType) {
+                                        realPointerTypes.add((PointerType) v);
+                                }
                         }
                         param4Locals.add(variable);
                 });
@@ -2124,6 +2156,15 @@ public class SemanticProcessor {
                 m.modifiers().remove(SModifier.PUBLIC);
                 m.modifiers().remove(SModifier.PROTECTED);
                 m.modifiers().add(0, SModifier.PRIVATE);
+
+                // change to real pointer type
+                int cursor = 0;
+                for (SParameter p : m.getParameters()) {
+                        if (isPointerType(p.type())) {
+                                p.setType(realPointerTypes.get(cursor++));
+                        }
+                }
+                assert cursor == realPointerTypes.size();
 
                 // add into scope
                 SemanticScope.MethodRecorder rec = new SemanticScope.MethodRecorder(m, paramCount);
@@ -3400,16 +3441,10 @@ public class SemanticProcessor {
                                         LocalVariable localVariable = (LocalVariable) scope.getLeftValue(variableDef.getName());
 
                                         Ins.TStore storePtr = new Ins.TStore(localVariable,
-                                                constructPointer(
-                                                        type, variableDef.getModifiers().contains(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC))
-                                                ), scope, variableDef.line_col(), err);
+                                                invokePointerSet(constructPointer(),
+                                                        v, variableDef.line_col()),
+                                                scope, variableDef.line_col(), err);
                                         pack.instructions().add(storePtr);
-
-                                        if (v.type() instanceof PrimitiveTypeDef)
-                                                v = boxPrimitive(v, LineCol.SYNTHETIC);
-                                        Ins.InvokeVirtual set = invokePointerSet(new Ins.TLoad(localVariable, scope, variableDef.line_col()),
-                                                v, variableDef.line_col());
-                                        pack.instructions().add(set);
 
                                         Value get = invokePointerGet(new Ins.TLoad(localVariable, scope, variableDef.line_col()),
                                                 variableDef.line_col());
@@ -3436,7 +3471,7 @@ public class SemanticProcessor {
                 if (Pointer_con == null) {
                         SClassDef Pointer = (SClassDef) getTypeWithName("lt.lang.Pointer", LineCol.SYNTHETIC);
                         for (SConstructorDef con : Pointer.constructors()) {
-                                if (con.getParameters().size() == 2) {
+                                if (con.getParameters().size() == 0) {
                                         Pointer_con = con;
                                         break;
                                 }
@@ -3445,15 +3480,8 @@ public class SemanticProcessor {
                 return Pointer_con;
         }
 
-        public Ins.New constructPointer(STypeDef pointerT, boolean isVal) throws SyntaxException {
-                assert isPointerType(pointerT);
-                STypeDef pointingType = getPointingType(pointerT);
-
-                Ins.GetClass pointingTypeClass = new Ins.GetClass(pointingType, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC));
-                Ins.New aNew = new Ins.New(getPointer_con(), LineCol.SYNTHETIC);
-                aNew.args().add(pointingTypeClass);
-                aNew.args().add(new BoolValue(isVal));
-                return aNew;
+        public Ins.New constructPointer() throws SyntaxException {
+                return new Ins.New(getPointer_con(), LineCol.SYNTHETIC);
         }
 
         private SMethodDef Pointer_set;
@@ -3477,6 +3505,9 @@ public class SemanticProcessor {
                         target,
                         getPointer_set(),
                         lineCol);
+                if (valueToSet.type() instanceof PrimitiveTypeDef) {
+                        valueToSet = boxPrimitive(valueToSet, LineCol.SYNTHETIC);
+                }
                 set.arguments().add(valueToSet);
                 return set;
         }
@@ -9224,14 +9255,12 @@ public class SemanticProcessor {
                 assert access.exp == null || access.exp instanceof AST.PackageRef || "[]".equals(access.name) || "*".equals(access.name);
 
                 boolean isPointer = false;
-                LineCol pointerLineCol = null;
                 if ("*".equals(access.name)) {
                         if (access.exp == null) {
-                                return new PointerType(getTypeWithName("java.lang.Object", LineCol.SYNTHETIC), access.line_col());
+                                return new PointerType(getTypeWithName("java.lang.Object", LineCol.SYNTHETIC));
                         }
 
                         isPointer = true;
-                        pointerLineCol = access.line_col();
                         assert access.exp instanceof AST.Access;
                         access = (AST.Access) access.exp;
                 }
@@ -9280,7 +9309,7 @@ public class SemanticProcessor {
                 }
 
                 if (isPointer) {
-                        resultType = new PointerType(resultType, pointerLineCol);
+                        resultType = new PointerType(resultType);
                 }
                 return resultType;
         }

@@ -92,12 +92,12 @@ public class TestSemantic {
                 SMethodDef method = classDef.methods().get(0);
                 assertEquals("apply", method.name());
                 assertEquals(1, method.getParameters().size());
-                assertEquals(1, method.statements().size());
-                assertTrue(method.statements().get(0) instanceof Ins.TReturn);
-                Ins.TReturn r = (Ins.TReturn) method.statements().get(0);
+                assertEquals(2, method.statements().size());
+                assertTrue(method.statements().get(1) instanceof Ins.TReturn);
+                Ins.TReturn r = (Ins.TReturn) method.statements().get(1);
                 assertEquals(Ins.TReturn.AReturn, r.returnIns());
-                assertTrue(r.value() instanceof Ins.TLoad);
-                assertEquals(1, ((Ins.TLoad) r.value()).getIndex());
+                assertTrue(r.value() instanceof Ins.CheckCast);
+                assertTrue(((Ins.CheckCast) r.value()).theValueToCheck() instanceof Ins.InvokeVirtual);
         }
 
         @Test
@@ -1158,11 +1158,14 @@ public class TestSemantic {
                 SClassDef classDef = (SClassDef) it.next();
                 assertEquals(1, classDef.methods().size());
                 SMethodDef method = classDef.methods().get(0);
-                assertEquals(1, method.statements().size());
-                Instruction ins = method.statements().get(0);
-                assertTrue(ins instanceof Ins.TLoad);
-                Ins.TLoad tLoad = (Ins.TLoad) ins;
-                assertEquals("i", ((SParameter) tLoad.value()).name());
+                assertEquals(2, method.statements().size());
+                Instruction ins = method.statements().get(1);
+                assertTrue(ins instanceof Ins.CheckCast);
+                Ins.CheckCast checkCast = (Ins.CheckCast) ins;
+                Ins.InvokeVirtual invokeVirtual = (Ins.InvokeVirtual) checkCast.theValueToCheck();
+                SMethodDef pointer_get = (SMethodDef) invokeVirtual.invokable();
+                assertEquals("get", pointer_get.name());
+                assertEquals("lt.lang.Pointer", pointer_get.declaringType().fullName());
         }
 
         @Test
@@ -1182,11 +1185,14 @@ public class TestSemantic {
                 SClassDef classDef = (SClassDef) it.next();
                 assertEquals(1, classDef.methods().size());
                 SMethodDef method = classDef.methods().get(0);
-                assertEquals(1, method.statements().size());
-                Instruction ins = method.statements().get(0);
-                assertTrue(ins instanceof Ins.TLoad);
-                Ins.TLoad tLoad = (Ins.TLoad) ins;
-                assertEquals("i", ((SParameter) tLoad.value()).name());
+                assertEquals(2, method.statements().size());
+                Instruction ins = method.statements().get(1);
+                assertTrue(ins instanceof Ins.CheckCast);
+                Ins.CheckCast checkCast = (Ins.CheckCast) ins;
+                Ins.InvokeVirtual invokeVirtual = (Ins.InvokeVirtual) checkCast.theValueToCheck();
+                SMethodDef pointer_get = (SMethodDef) invokeVirtual.invokable();
+                assertEquals("get", pointer_get.name());
+                assertEquals("lt.lang.Pointer", pointer_get.declaringType().fullName());
         }
 
         @Test
@@ -1233,11 +1239,11 @@ public class TestSemantic {
                 Ins.TStore TStore = (Ins.TStore) ins;
 
                 assertEquals(1, TStore.index());
-                assertTrue(TStore.newValue() instanceof Ins.New);
-                Ins.New aNew = (Ins.New) TStore.newValue();
+                assertTrue(TStore.newValue() instanceof Ins.InvokeVirtual);
+                Ins.InvokeVirtual pointer_set = (Ins.InvokeVirtual) TStore.newValue();
+                Ins.New aNew = (Ins.New) pointer_set.target();
                 assertEquals("lt.lang.Pointer", aNew.constructor().declaringType().fullName());
-                Ins.InvokeVirtual invokeVirtual = (Ins.InvokeVirtual) ((ValuePack) ((Ins.TReturn) method.statements().get(0)).value()).instructions().get(1);
-                assertEquals(new IntValue(1), ((Ins.InvokeStatic) invokeVirtual.arguments().get(0)).arguments().get(0));
+                assertEquals(new IntValue(1), ((Ins.InvokeStatic) pointer_set.arguments().get(0)).arguments().get(0));
         }
 
         @Test
