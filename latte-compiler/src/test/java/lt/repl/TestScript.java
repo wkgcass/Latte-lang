@@ -24,6 +24,7 @@
 
 package lt.repl;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -32,16 +33,21 @@ import static org.junit.Assert.*;
  * script
  */
 public class TestScript {
+        ScriptCompiler scriptCompiler;
+
+        @Before
+        public void setUp() throws Exception {
+                scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
+        }
+
         @Test
         public void testSimpleScript() throws Throwable {
-                ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 ScriptCompiler.Script script = scriptCompiler.compile("script", "return 1");
                 assertEquals(1, script.run().getResult());
         }
 
         @Test
         public void testScriptArgs() throws Throwable {
-                ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 ScriptCompiler.Script script = scriptCompiler.compile("script", "return args");
                 assertArrayEquals(new String[0], (Object[]) script.run().getResult());
                 String[] args = new String[]{"a", "b", "c"};
@@ -50,7 +56,6 @@ public class TestScript {
 
         @Test
         public void testStaticMethod() throws Throwable {
-                ScriptCompiler scriptCompiler = new ScriptCompiler(ClassLoader.getSystemClassLoader());
                 assertEquals(3,
                         scriptCompiler.compile("yy", "" +
                                 "import lt::repl::TestStaticMethod\n" +
@@ -58,5 +63,19 @@ public class TestScript {
                                 "return TestStaticMethod.x(a)"
                         ).run().getResult()
                 );
+        }
+
+        @Test
+        public void testInternalLambdaBug() throws Throwable {
+                String code = "" +
+                        "[1, 2, 3, 4].stream.\n" +
+                        "filter |-it > 2-|.\n" +
+                        "map |-it + 1-|\n" +
+                        "\n" +
+                        "a = 1\n" +
+                        "b = 2\n" +
+                        "val result = (if a>b |-1-| else |-2-|)\n" +
+                        "return result";
+                assertEquals(2, scriptCompiler.compile("testInternalLambdaBug", code).run().getResult());
         }
 }

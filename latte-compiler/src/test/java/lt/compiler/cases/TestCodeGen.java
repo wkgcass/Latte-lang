@@ -2800,7 +2800,7 @@ public class TestCodeGen {
                                 "class TestIndentInternalSyntaxLambda\n" +
                                 "    static\n" +
                                 "        method()=\n" +
-                                "        [1, 2, 3, 4].stream.filter\\\\it > 2\\/.map\\\\it + 1\\/.collect(toList())"
+                                "        [1, 2, 3, 4].stream.filter|-it > 2-|.map|-it + 1-|.collect(toList())"
                         , "TestIndentInternalSyntaxLambda");
                 Method method = cls.getMethod("method");
                 assertEquals(Arrays.asList(4, 5), method.invoke(null));

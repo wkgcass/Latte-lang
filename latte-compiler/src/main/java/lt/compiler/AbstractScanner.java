@@ -25,8 +25,8 @@ public abstract class AbstractScanner implements Scanner {
          *                            +-[a]-[+]-[b]
          * </pre>
          */
-        public final Set<String> LAYER = new HashSet<>(Arrays.asList("->", "\\\\"));
-        public final Set<String> LAYER_END = new HashSet<>(Collections.singletonList("\\/"));
+        public final Set<String> LAYER = new HashSet<>(Arrays.asList("->", "|-"));
+        public final Set<String> LAYER_END = new HashSet<>(Collections.singletonList("-|"));
         /**
          * the input should be split when meets these tokens
          */
@@ -281,6 +281,7 @@ public abstract class AbstractScanner implements Scanner {
                 if (CompileUtil.isSymbol(str)) return TokenType.SYMBOL;
                 if (SPLIT.contains(str)) return TokenType.SYMBOL;
                 if (CompileUtil.isValidName(str)) return TokenType.VALID_NAME;
+                if (LAYER_END.contains(str)) return TokenType.LAYER_END;
                 err.UnknownTokenException(str, lineCol);
                 // ignore the token, and return null
                 return null;

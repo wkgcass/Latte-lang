@@ -56,7 +56,8 @@ import org.junit.runner.RunWith;
         TestJsSupport.class,
         TestBraceScanner.class,
         TestScannerSwitcher.class,
-        VariableTest.class
+        VariableTest.class,
+        TestScannerLayerControl.class
 })
 public class Suite extends TestSuite {
 }

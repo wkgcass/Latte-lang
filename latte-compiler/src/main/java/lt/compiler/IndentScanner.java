@@ -25,6 +25,7 @@
 package lt.compiler;
 
 import lt.compiler.lexical.*;
+import lt.compiler.syntactic.UnknownTokenException;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -495,13 +496,12 @@ public class IndentScanner extends AbstractScanner {
 
                         if (LAYER.contains(token)) {
                                 // start new layer
-                                if (!token.equals("\\\\")) {
-                                        args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
-                                }
+                                args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
                                 createStartNode(args);
                         } else if (LAYER_END.contains(token)) {
                                 // end the layer
                                 redirectToStartNodeByIndent(args, args.startNodeStack.lastElement().getIndent());
+                                args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
                         } else if (SPLIT_X.contains(token)) {
                                 // do split check
                                 if (!NO_RECORD.contains(token)) {
@@ -618,6 +618,51 @@ public class IndentScanner extends AbstractScanner {
                         }
                         // recursively parse
                         scan(line, args);
+                }
+        }
+
+        @Override
+        protected void finalCheck(ElementStartNode root) throws UnknownTokenException {
+                super.finalCheck(root);
+
+                if (root.hasLinkedNode()) {
+                        Node n = root.getLinkedNode();
+                        // remove redundant start node
+                        if (!n.hasNext() && n instanceof ElementStartNode) {
+                                Node newN = ((ElementStartNode) n).getLinkedNode();
+                                root.setLinkedNode(newN);
+                                n = newN;
+                        }
+
+                        // remove |- and -|
+                        while (n != null) {
+                                if (n instanceof Element) {
+                                        if (((Element) n).getContent().equals("|-")
+                                                || ((Element) n).getContent().equals("-|")) {
+                                                removeLayerControlSymbols(root, (Element) n);
+                                        }
+                                }
+                                n = n.next();
+                        }
+                }
+        }
+
+        private void removeLayerControlSymbols(ElementStartNode root, Element n) {
+
+                if (n.hasPrevious()) {
+                        if (n.previous().previous() != null
+                                && n.previous() instanceof EndingNode
+                                && n.next() == null) {
+                                // remove the previous ending node
+                                n.previous().previous().setNext(null);
+                        } else {
+                                n.previous().setNext(n.next());
+                        }
+                } else if (n.getContent().equals("|-")) {
+                        root.setLinkedNode(n.next());
+                }
+                if (n.hasNext()) {
+                        n.next().setPrevious(n.previous());
                 }
         }
 }
