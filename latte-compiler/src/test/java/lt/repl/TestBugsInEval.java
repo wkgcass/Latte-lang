@@ -194,4 +194,14 @@ public class TestBugsInEval {
                         "[1, 2, 3, 4].stream.filter{it > 2}\n" +
                         "1 + 1").result);
         }
+
+        @Test
+        public void testLayerControlSymbolWithoutEnd() throws Exception {
+                Object res = evaluator.eval("" +
+                        "var count = 0\n" +
+                        "(1..10).forEach |- count+=it\n" +
+                        "count").result;
+                assertEquals(55, res);
+
+        }
 }

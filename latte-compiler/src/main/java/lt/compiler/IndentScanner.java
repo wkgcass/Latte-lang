@@ -375,7 +375,7 @@ public class IndentScanner extends AbstractScanner {
                         if (args.startNodeStack.lastElement().getIndent() != indentation) {
                                 if (args.startNodeStack.lastElement().getIndent() > indentation) {
                                         // smaller indent
-                                        redirectToStartNodeByIndent(args, indentation + properties._INDENTATION_);
+                                        redirectToStartNodeByIndent(args, indentation + properties._INDENTATION_, true);
                                 } else if (args.startNodeStack.lastElement().getIndent() == indentation - properties._INDENTATION_) {
                                         // greater indent
                                         createStartNode(args);
@@ -500,7 +500,7 @@ public class IndentScanner extends AbstractScanner {
                                 createStartNode(args);
                         } else if (LAYER_END.contains(token)) {
                                 // end the layer
-                                redirectToStartNodeByIndent(args, args.startNodeStack.lastElement().getIndent());
+                                redirectToStartNodeByIndent(args, args.startNodeStack.lastElement().getIndent(), false);
                                 args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
                         } else if (SPLIT_X.contains(token)) {
                                 // do split check
@@ -588,7 +588,7 @@ public class IndentScanner extends AbstractScanner {
                                 }
 
                                 if (args.startNodeStack.lastElement().getIndent() >= startNode.getIndent()) {
-                                        redirectToStartNodeByIndent(args, startNode.getIndent());
+                                        redirectToStartNodeByIndent(args, startNode.getIndent(), false);
                                 } else if (args.startNodeStack.lastElement().getIndent() == startNode.getIndent() - properties._INDENTATION_) {
                                         args.previous = startNode;
                                 } else {

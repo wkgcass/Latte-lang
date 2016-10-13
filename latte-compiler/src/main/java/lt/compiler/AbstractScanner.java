@@ -323,7 +323,7 @@ public abstract class AbstractScanner implements Scanner {
          * @param indent required indentation
          * @throws UnexpectedTokenException compiling error
          */
-        protected final void redirectToStartNodeByIndent(Args args, int indent) throws UnexpectedTokenException {
+        protected final void redirectToStartNodeByIndent(Args args, int indent, boolean newLine) throws UnexpectedTokenException {
                 if (args.startNodeStack.empty()) {
                         throw new LtBug("this should never happen");
                 }
@@ -336,11 +336,16 @@ public abstract class AbstractScanner implements Scanner {
                         }
                         // do redirect
                         args.previous = startNode;
+                        if (startNode.hasPrevious() && startNode.previous() instanceof Element
+                                && ((Element) startNode.previous()).getContent().equals("|-")
+                                && newLine) {
+                                args.previous = new EndingNode(args, EndingNode.WEAK);
+                        }
                 } else {
                         if (startNode.getIndent() < indent || args.startNodeStack.empty()) {
                                 throw new LtBug("position=" + args.currentLine + ":" + args.currentCol + ",indent=" + indent);
                         }
-                        redirectToStartNodeByIndent(args, indent);
+                        redirectToStartNodeByIndent(args, indent, newLine);
                 }
         }
 }

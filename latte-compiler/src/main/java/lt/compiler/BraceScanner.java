@@ -521,7 +521,7 @@ public class BraceScanner extends AbstractScanner {
                                 }
 
                                 if (args.startNodeStack.lastElement().getIndent() >= startNode.getIndent()) {
-                                        redirectToStartNodeByIndent(args, startNode.getIndent());
+                                        redirectToStartNodeByIndent(args, startNode.getIndent(), false);
                                 } else {
                                         args.previous = startNode;
                                 }
