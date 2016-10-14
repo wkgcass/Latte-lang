@@ -39,10 +39,7 @@ import lt.compiler.syntactic.pre.Import;
 import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
 import lt.generator.SourceGenerator;
-import lt.lang.Dynamic;
-import lt.lang.LtRuntime;
-import lt.lang.LtIterator;
-import lt.lang.Undefined;
+import lt.lang.*;
 import lt.dependencies.asm.MethodVisitor;
 
 import java.io.*;
@@ -363,7 +360,7 @@ public class SemanticProcessor {
                         // all classes occurred in the parsing process will be inside `types` map or is already defined
                 }
 
-                step2(fileNameToClassDef, fileNameToInterfaceDef, fileNameToPackageName);
+                step2(fileNameToClassDef, fileNameToInterfaceDef, fileNameToFunctions, fileNameToPackageName);
                 step3(fileNameToPackageName, fileNameToFunctions);
                 step4();
 
@@ -382,11 +379,13 @@ public class SemanticProcessor {
          */
         public void step2(Map<String, List<ClassDef>> fileNameToClassDef,
                           Map<String, List<InterfaceDef>> fileNameToInterfaceDef,
+                          Map<String, List<FunDef>> fileNameToFunctions,
                           Map<String, String> fileNameToPackageName) throws SyntaxException {
                 for (String fileName : mapOfStatements.keySet()) {
                         List<Import> imports = fileNameToImport.get(fileName);
                         List<ClassDef> classDefs = fileNameToClassDef.get(fileName);
                         List<InterfaceDef> interfaceDefs = fileNameToInterfaceDef.get(fileName);
+                        List<FunDef> funDefs = fileNameToFunctions.get(fileName);
                         String pkg = fileNameToPackageName.get(fileName);
 
                         for (ClassDef classDef : classDefs) {
@@ -670,6 +669,13 @@ public class SemanticProcessor {
                                                 }
                                         }
                                 }
+                        }
+                        for (FunDef funDef : funDefs) {
+                                SClassDef sClassDef = (SClassDef) types.get(pkg + funDef.name);
+                                SAnno latteFun = new SAnno();
+                                latteFun.setAnnoDef((SAnnoDef) getTypeWithName("lt.lang.LatteFun", LineCol.SYNTHETIC));
+                                latteFun.setPresent(sClassDef);
+                                sClassDef.annos().add(latteFun);
                         }
                 }
         }
@@ -7025,15 +7031,31 @@ public class SemanticProcessor {
                 Value possibleFunctionalObject = parseValueFromExpression(exp, null, scope);
 
                 List<Value> arguments = new ArrayList<>();
-                arguments.add(possibleFunctionalObject);
                 for (Expression e : invocation.args) {
                         arguments.add(parseValueFromExpression(e, null, scope));
                 }
 
+                return callFunctionalObject(possibleFunctionalObject, arguments, invocation.line_col());
+        }
+
+        /**
+         * call a functional object
+         *
+         * @param object    the functional object
+         * @param arguments arguments
+         * @param lineCol   lineCol
+         * @return the invocation
+         * @throws SyntaxException compiling error
+         */
+        public Value callFunctionalObject(Value object, List<Value> arguments, LineCol lineCol) throws SyntaxException {
+                List<Value> finalArguments = new ArrayList<>();
+                finalArguments.add(object);
+                finalArguments.addAll(arguments);
+
                 return new Ins.InvokeDynamic(
                         getCallFunctionalObjectBootstrapMethod(),
-                        "_call_functional_object_", arguments,
-                        getObject_Class(), Dynamic.INVOKE_STATIC, invocation.line_col()
+                        "_call_functional_object_", finalArguments,
+                        getObject_Class(), Dynamic.INVOKE_STATIC, lineCol
                 );
         }
 
@@ -7377,7 +7399,16 @@ public class SemanticProcessor {
                         }
                         if (type instanceof SClassDef) {
                                 // only SClassDef have constructors
-                                return constructingNewInst((SClassDef) type, argList, invocation.line_col());
+                                // check whether the type is a function
+                                if (((SClassDef) type).fun()) {
+                                        return callFunctionalObject(
+                                                constructingNewInst((SClassDef) type, Collections.emptyList(), invocation.line_col()),
+                                                argList,
+                                                invocation.line_col()
+                                        );
+                                } else {
+                                        return constructingNewInst((SClassDef) type, argList, invocation.line_col());
+                                }
                         }
                 }
 
@@ -8834,7 +8865,7 @@ public class SemanticProcessor {
         }
 
         /**
-         * get Import/ClassDef/InterfaceDef from Statement object
+         * get Import/ClassDef/InterfaceDef/FunDef from Statement object
          *
          * @param stmt          the statement
          * @param imports       import list
@@ -8908,7 +8939,8 @@ public class SemanticProcessor {
                                                 typeDef = i;
                                                 modifiers = i.modifiers();
                                         } else { // class
-                                                SClassDef c = new SClassDef(false, LineCol.SYNTHETIC);
+                                                SClassDef c = new SClassDef(cls.isAnnotationPresent(LatteFun.class),
+                                                        LineCol.SYNTHETIC);
                                                 c.setFullName(clsName);
 
                                                 typeDef = c;

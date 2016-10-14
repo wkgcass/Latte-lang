@@ -2212,6 +2212,44 @@ public class TestCodeGen {
         }
 
         @Test
+        public void testFunAnno() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "fun TestFunAnno(o)\n" +
+                                "    return o+1"
+                        , "TestFunAnno");
+                assertTrue(cls.isAnnotationPresent(LatteFun.class));
+        }
+
+        @Test
+        public void testGetFunWithTypeName() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "fun TheFun(o)\n" +
+                                "    return o + 1\n" +
+                                "class TestGetFunWithTypeName\n" +
+                                "    static\n" +
+                                "        method()=TheFun"
+                        , "TestGetFunWithTypeName");
+                Method method = cls.getMethod("method");
+                Function1 f1 = (Function1) method.invoke(null);
+                assertEquals(3, f1.apply(2));
+        }
+
+        @Test
+        public void testCallFunWithTypeName() throws Exception {
+                Class<?> cls = retrieveClass(
+                        "" +
+                                "fun TheFun(o)\n" +
+                                "    return o+1\n" +
+                                "class TestCallFunWithTypeName\n" +
+                                "    static\n" +
+                                "        method()=TheFun(3)"
+                        , "TestCallFunWithTypeName"
+                );
+                Method method = cls.getMethod("method");
+                assertEquals(4, method.invoke(null));
+        }
+
+        @Test
         public void testTypeAccess() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +

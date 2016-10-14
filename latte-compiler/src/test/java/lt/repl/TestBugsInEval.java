@@ -204,4 +204,13 @@ public class TestBugsInEval {
                 assertEquals(55, res);
 
         }
+
+        @Test
+        public void testExistingFunction() throws Exception {
+                evaluator.eval("" +
+                        "fun F(o)\n" +
+                        "    o+1");
+                Object res = evaluator.eval("F(2)").result;
+                assertEquals(3, res);
+        }
 }
