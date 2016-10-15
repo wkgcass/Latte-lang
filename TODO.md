@@ -1,6 +1,6 @@
 # Latte-lang TODOs
 
-## 1. Full Function Support
+## Full Function Support /2016-10-14
 
 The current `function type` support is not good enough. Any thing that is invokable should be seen as a function.
 
