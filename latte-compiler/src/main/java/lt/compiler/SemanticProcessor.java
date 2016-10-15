@@ -1537,7 +1537,7 @@ public class SemanticProcessor {
                                                 types.put(t.toString(), t);
                                         }
 
-                                        LocalVariable local = new LocalVariable(t, false);
+                                        LocalVariable local = new LocalVariable(t, p.canChange());
                                         scope.putLeftValue(p.name(), local);
 
                                         // local = new Pointer(p)
@@ -3359,6 +3359,7 @@ public class SemanticProcessor {
                         : getTypeWithAccess(
                         variableDef.getType(),
                         imports);
+                STypeDef rawType = type;
 
                 // try to find field and putField/putStatic
                 SFieldDef field = findFieldFromTypeDef(variableDef.getName(), scope.type(), scope.type(),
@@ -3380,33 +3381,8 @@ public class SemanticProcessor {
                         // variable def with a init value
 
                         Value v;
-                        if (variableDef.getInit() == null) {
-                                if (type instanceof PrimitiveTypeDef) {
-                                        if (type instanceof IntTypeDef) {
-                                                v = new IntValue(0);
-                                        } else if (type instanceof ShortTypeDef || type instanceof ByteTypeDef) {
-                                                v = new ValueAnotherType(type, new IntValue(0), LineCol.SYNTHETIC);
-                                        } else if (type instanceof LongTypeDef) {
-                                                v = new LongValue(0);
-                                        } else if (type instanceof FloatTypeDef) {
-                                                v = new FloatValue(0);
-                                        } else if (type instanceof DoubleTypeDef) {
-                                                v = new DoubleValue(0);
-                                        } else if (type instanceof BoolTypeDef) {
-                                                v = new BoolValue(false);
-                                        } else if (type instanceof CharTypeDef) {
-                                                v = new CharValue((char) 0);
-                                        } else throw new LtBug("unknown primitive type " + type);
-                                } else {
-                                        v = NullValue.get();
-                                }
-                        } else {
-                                v = parseValueFromExpression(
-                                        variableDef.getInit(),
-                                        type,
-                                        scope);
-                        }
 
+                        ValuePack pack = new ValuePack(true);
                         if (isLocalVar) {
                                 boolean canChange = true;
                                 for (Modifier m : variableDef.getModifiers()) {
@@ -3415,16 +3391,44 @@ public class SemanticProcessor {
                                         }
                                 }
 
-                                if (canChange) {
-                                        AST.Access typeAccess = variableDef.getType();
-                                        type = getTypeWithAccess(new AST.Access(typeAccess, "*", typeAccess == null ? LineCol.SYNTHETIC : typeAccess.line_col()), imports);
-                                }
+                                AST.Access typeAccess = variableDef.getType();
+                                type = getTypeWithAccess(new AST.Access(typeAccess, "*", typeAccess == null ? LineCol.SYNTHETIC : typeAccess.line_col()), imports);
 
                                 LocalVariable localVariable = new LocalVariable(type, canChange);
                                 scope.putLeftValue(variableDef.getName(), localVariable);
+
+                                Ins.TStore storePtr = new Ins.TStore(localVariable,
+                                        constructPointer(), scope, LineCol.SYNTHETIC, err);
+                                pack.instructions().add(storePtr);
                         }
 
-                        ValuePack pack = new ValuePack(true);
+                        if (variableDef.getInit() == null) {
+                                if (rawType instanceof PrimitiveTypeDef) {
+                                        if (rawType instanceof IntTypeDef) {
+                                                v = new IntValue(0);
+                                        } else if (rawType instanceof ShortTypeDef || rawType instanceof ByteTypeDef) {
+                                                v = new ValueAnotherType(type, new IntValue(0), LineCol.SYNTHETIC);
+                                        } else if (rawType instanceof LongTypeDef) {
+                                                v = new LongValue(0);
+                                        } else if (rawType instanceof FloatTypeDef) {
+                                                v = new FloatValue(0);
+                                        } else if (rawType instanceof DoubleTypeDef) {
+                                                v = new DoubleValue(0);
+                                        } else if (rawType instanceof BoolTypeDef) {
+                                                v = new BoolValue(false);
+                                        } else if (rawType instanceof CharTypeDef) {
+                                                v = new CharValue((char) 0);
+                                        } else throw new LtBug("unknown primitive type " + type);
+                                } else {
+                                        v = NullValue.get();
+                                }
+                        } else {
+                                v = parseValueFromExpression(
+                                        variableDef.getInit(),
+                                        rawType,
+                                        scope);
+                        }
+
                         if (null != field) {
                                 if (field.modifiers().contains(SModifier.STATIC)) {
                                         // putStatic
@@ -3438,31 +3442,23 @@ public class SemanticProcessor {
                                         pack.instructions().add(getField);
                                 }
                         } else {
+                                assert isPointerType(type);
                                 // else field not found
-                                if (isPointerType(type)) {
-                                        /*
-                                         * tload
-                                         * get and set
-                                         */
-                                        LocalVariable localVariable = (LocalVariable) scope.getLeftValue(variableDef.getName());
+                                /*
+                                 * tload
+                                 * get and set
+                                 */
+                                LocalVariable localVariable = (LocalVariable) scope.getLeftValue(variableDef.getName());
 
-                                        Ins.TStore storePtr = new Ins.TStore(localVariable,
-                                                invokePointerSet(constructPointer(),
-                                                        v, variableDef.line_col()),
-                                                scope, variableDef.line_col(), err);
-                                        pack.instructions().add(storePtr);
+                                Ins.InvokeVirtual invokeSet = invokePointerSet(
+                                        new Ins.TLoad(localVariable, scope, LineCol.SYNTHETIC),
+                                        v, variableDef.line_col());
+                                pack.instructions().add(invokeSet);
 
-                                        Value get = invokePointerGet(new Ins.TLoad(localVariable, scope, variableDef.line_col()),
-                                                variableDef.line_col());
-                                        pack.instructions().add((Instruction) get);
-                                        localVariable.alreadyAssigned();
-                                } else {
-                                        // local variable
-                                        LocalVariable localVariable = (LocalVariable) scope.getLeftValue(variableDef.getName());
-                                        pack.instructions().add(new Ins.TStore(localVariable, v, scope, variableDef.line_col(), err));
-                                        Ins.TLoad tLoad = new Ins.TLoad(localVariable, scope, variableDef.line_col());
-                                        pack.instructions().add(tLoad);
-                                }
+                                Value get = invokePointerGet(new Ins.TLoad(localVariable, scope, variableDef.line_col()),
+                                        variableDef.line_col());
+                                pack.instructions().add((Instruction) get);
+                                localVariable.alreadyAssigned();
                         }
                         return pack;
                 }
@@ -3725,7 +3721,7 @@ public class SemanticProcessor {
                                 v = parseValueFromExpression(((AST.Access) exp).exp, requiredType, scope);
                         } else {
                                 // the result can be getField/getStatic/xload/invokeStatic(dynamically get field)
-                                v = parseValueFromAccess((AST.Access) exp, scope);
+                                v = parseValueFromAccess((AST.Access) exp, scope, false);
                         }
                 } else if (exp instanceof AST.Index) {
                         // parse index
@@ -4389,82 +4385,49 @@ public class SemanticProcessor {
                                 .map(l -> new Ins.TLoad(l, scope, LineCol.SYNTHETIC)).collect(Collectors.toList())
                 );
 
-                // interface and current method is static
-                if (requiredType instanceof SInterfaceDef && scope.getThis() == null) {
-                        // use Lambda Bootstrap method
-                        Ins.InvokeDynamic invokeDynamic = new Ins.InvokeDynamic(
-                                getLambdaMetafactory_metafactory(),
-                                methodToOverride.name(),
-                                args,
-                                methodToOverride.declaringType(),
-                                Dynamic.INVOKE_STATIC,
-                                lambda.line_col());
-                        // samMethodType
-                        invokeDynamic.indyArgs().add(
-                                new MethodTypeValue(methodToOverride.getParameters().stream().map(SParameter::type).collect(Collectors.toList()),
-                                        methodToOverride.getReturnType(),
-                                        getMethodType_Class()));
-                        // implMethod
-                        invokeDynamic.indyArgs().add(
-                                new MethodHandleValue(
-                                        method,
-                                        method.modifiers().contains(SModifier.STATIC)
-                                                ? Dynamic.INVOKE_STATIC
-                                                : Dynamic.INVOKE_SPECIAL,
-                                        getMethodHandle_Class()
-                                ));
-                        // instantiatedMethodType
-                        invokeDynamic.indyArgs().add(
-                                new MethodTypeValue(methodToOverride.getParameters().stream().map(SParameter::type).collect(Collectors.toList()),
-                                        methodToOverride.getReturnType(),
-                                        getMethodType_Class()));
-                        return invokeDynamic;
-                } else {
-                        // inherit from abstract class
-                        if (constructorWithZeroParamAndCanAccess == null && !(requiredType instanceof SInterfaceDef))
-                                throw new LtBug("constructorWithZeroParamAndCanAccess should not be null");
-                        // construct a class
-                        // class XXX(methodHandle:MethodHandle, o:Object, local:List) : C
-                        //     methodToOverride(xxx)
-                        //         local.add(?)
-                        //         ...
-                        //         methodHandle.invokeExact(o,local)
+                if (constructorWithZeroParamAndCanAccess == null && !(requiredType instanceof SInterfaceDef))
+                        throw new LtBug("constructorWithZeroParamAndCanAccess should not be null");
+                // construct a class
+                // class XXX(methodHandle:MethodHandle, o:Object, local:List) : C
+                //     methodToOverride(xxx)
+                //         local.add(?)
+                //         ...
+                //         methodHandle.invokeExact(o,local)
 
-                        // constructor arguments
-                        List<Value> consArgs = new ArrayList<>();
-                        // methodHandle
-                        consArgs.add(new MethodHandleValue(
-                                method,
-                                method.modifiers().contains(SModifier.STATIC)
-                                        ? Dynamic.INVOKE_STATIC
-                                        : Dynamic.INVOKE_SPECIAL,
-                                getMethodHandle_Class()
-                        ));
-                        // o
-                        if (scope.getThis() != null) consArgs.add(scope.getThis());
-                        // local
-                        Ins.NewList newList = new Ins.NewList(getTypeWithName("java.util.LinkedList", LineCol.SYNTHETIC));
-                        for (Value arg : args) {
-                                if (arg.type() instanceof PrimitiveTypeDef) {
-                                        arg = boxPrimitive(arg, LineCol.SYNTHETIC);
-                                }
-                                newList.initValues().add(arg);
+                // constructor arguments
+                List<Value> consArgs = new ArrayList<>();
+                // methodHandle
+                consArgs.add(new MethodHandleValue(
+                        method,
+                        method.modifiers().contains(SModifier.STATIC)
+                                ? Dynamic.INVOKE_STATIC
+                                : Dynamic.INVOKE_SPECIAL,
+                        getMethodHandle_Class()
+                ));
+                // o
+                if (scope.getThis() != null) consArgs.add(scope.getThis());
+                // local
+                Ins.NewList newList = new Ins.NewList(getTypeWithName("java.util.LinkedList", LineCol.SYNTHETIC));
+                for (Value arg : args) {
+                        if (arg.type() instanceof PrimitiveTypeDef) {
+                                arg = boxPrimitive(arg, LineCol.SYNTHETIC);
                         }
-                        consArgs.add(newList);
-
-                        boolean isInterface = requiredType instanceof SInterfaceDef;
-                        SClassDef builtClass = buildAClassForLambda(
-                                scope.type(), scope.getThis() == null, methodToOverride,
-                                constructorWithZeroParamAndCanAccess,
-                                isInterface ? (SInterfaceDef) requiredType : null,
-                                isInterface);
-
-                        SConstructorDef cons = builtClass.constructors().get(0);
-                        Ins.New aNew = new Ins.New(cons, LineCol.SYNTHETIC);
-                        aNew.args().addAll(consArgs);
-
-                        return aNew;
+                        newList.initValues().add(arg);
                 }
+                consArgs.add(newList);
+
+                boolean isInterface = requiredType instanceof SInterfaceDef;
+                SClassDef builtClass = buildAClassForLambda(
+                        scope.type(), scope.getThis() == null, methodToOverride,
+                        constructorWithZeroParamAndCanAccess,
+                        isInterface ? (SInterfaceDef) requiredType : null,
+                        isInterface);
+
+                SConstructorDef cons = builtClass.constructors().get(0);
+                Ins.New aNew = new Ins.New(cons, LineCol.SYNTHETIC);
+                aNew.args().addAll(consArgs);
+
+                return aNew;
         }
 
         private SClassDef Object_Class;
@@ -4744,45 +4707,6 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link java.lang.invoke.MethodType}
-         */
-        private SClassDef MethodType_Class;
-
-        /**
-         * @return {@link java.lang.invoke.MethodType}
-         * @throws SyntaxException exception
-         */
-        public SClassDef getMethodType_Class() throws SyntaxException {
-                if (MethodType_Class == null) {
-                        MethodType_Class = (SClassDef) getTypeWithName("java.lang.invoke.MethodType", LineCol.SYNTHETIC);
-                }
-                return MethodType_Class;
-        }
-
-        /**
-         * {@link java.lang.invoke.LambdaMetafactory}
-         */
-        private SMethodDef LambdaMetafactory_metafactory;
-
-        /**
-         * @return {@link java.lang.invoke.LambdaMetafactory}
-         * @throws SyntaxException exception
-         */
-        public SMethodDef getLambdaMetafactory_metafactory() throws SyntaxException {
-                if (LambdaMetafactory_metafactory == null) {
-                        SClassDef LambdaMetafactory = (SClassDef) getTypeWithName("java.lang.invoke.LambdaMetafactory", LineCol.SYNTHETIC);
-                        assert LambdaMetafactory != null;
-                        for (SMethodDef m : LambdaMetafactory.methods()) {
-                                if (m.name().equals("metafactory") && m.getParameters().size() == 6) {
-                                        LambdaMetafactory_metafactory = m;
-                                        break;
-                                }
-                        }
-                }
-                return LambdaMetafactory_metafactory;
-        }
-
-        /**
          * parse procedure<br>
          * first create an inner method, then invoke it
          *
@@ -4983,7 +4907,7 @@ public class SemanticProcessor {
                 if (exp.assignTo.name == null) {
                         assignTo = parseValueFromExpression(exp.assignTo, null, scope);
                 } else {
-                        assignTo = __parseValueFromAccess(exp.assignTo, scope);
+                        assignTo = __parseValueFromAccess(exp.assignTo, scope, true);
                 }
                 if (!exp.op.equals("=")) {
                         assignFrom = parseValueFromTwoVarOp(
@@ -5728,7 +5652,7 @@ public class SemanticProcessor {
                                  */
                                 ValuePack thePackToReturn = new ValuePack(false);
 
-                                Value v = parseValueFromAccess((AST.Access) e, scope);
+                                Value v = parseValueFromAccess((AST.Access) e, scope, true);
                                 assert v instanceof Instruction;
                                 thePackToReturn.instructions().add((Instruction) v);
                                 thePackToReturn.instructions().add(valuePack);
@@ -5757,7 +5681,7 @@ public class SemanticProcessor {
                                  */
                                 ValuePack thePackToReturn = new ValuePack(false);
 
-                                Value v = parseValueFromAccess((AST.Access) e, scope);
+                                Value v = parseValueFromAccess((AST.Access) e, scope, true);
                                 assert v instanceof Instruction;
                                 thePackToReturn.instructions().add((Instruction) v);
                                 thePackToReturn.instructions().add(valuePack);
@@ -6057,15 +5981,16 @@ public class SemanticProcessor {
         }
 
         /**
-         * proxy for parsing value from access {@link #__parseValueFromAccess(AST.Access, SemanticScope)}
+         * proxy for parsing value from access {@link #__parseValueFromAccess(AST.Access, SemanticScope, boolean)}
          *
-         * @param access access
-         * @param scope  scope
+         * @param access           access
+         * @param scope            scope
+         * @param isTryingToAssign isTryingToAssign
          * @return result that will extract value from the object if it's a pointer
          * @throws SyntaxException compiling error
          */
-        public Value parseValueFromAccess(AST.Access access, SemanticScope scope) throws SyntaxException {
-                Value v = __parseValueFromAccess(access, scope);
+        public Value parseValueFromAccess(AST.Access access, SemanticScope scope, boolean isTryingToAssign) throws SyntaxException {
+                Value v = __parseValueFromAccess(access, scope, isTryingToAssign);
                 assert v != null;
                 if (isPointerType(v.type())) {
                         v = invokePointerGet(v, access.line_col());
@@ -6077,12 +6002,13 @@ public class SemanticProcessor {
          * parse value from access object<br>
          * the access object can be : (null,fieldName),(null,localVariableName),(this,fieldName),(Type,fieldName),((Type,this),fieldName),(exp,fieldName)
          *
-         * @param access access object
-         * @param scope  scope that contains localvariables
+         * @param access           access object
+         * @param scope            scope that contains localvariables
+         * @param isTryingToAssign the value is retrieved to assign new value
          * @return retrieved value can be getField/getStatic/TLoad/arraylength
          * @throws SyntaxException compiling error
          */
-        private Value __parseValueFromAccess(AST.Access access, SemanticScope scope) throws SyntaxException {
+        private Value __parseValueFromAccess(AST.Access access, SemanticScope scope, boolean isTryingToAssign) throws SyntaxException {
                 List<Import> imports = fileNameToImport.get(access.line_col().fileName);
                 if (access.exp == null) {
                         // Access(null,name)
@@ -6126,6 +6052,12 @@ public class SemanticProcessor {
                                 }
                         } else {
                                 // value is local variable
+                                if (isTryingToAssign) {
+                                        // check whether it's final
+                                        if (!v.canChange()) {
+                                                err.SyntaxException("cannot assign an immutable variable", access.line_col());
+                                        }
+                                }
                                 return new Ins.TLoad(v, scope, access.line_col());
                         }
 

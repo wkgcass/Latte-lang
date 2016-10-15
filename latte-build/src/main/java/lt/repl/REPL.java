@@ -217,7 +217,7 @@ public class REPL {
                                 break;
                         case "-v":
                         case "-version":
-                                System.out.println("Latte-lang 0.0.4-ALPHA");
+                                System.out.println("Latte-lang 0.0.5-ALPHA");
                                 break;
                         case "-s":
                                 // run scripts

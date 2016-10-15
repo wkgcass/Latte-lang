@@ -103,6 +103,8 @@ class MyList(ls:List):LinkedList(ls)
 abstract class MyList:List
 ```
 
+详见[3.1 类与继承](#p3-1)
+
 定义`data class`
 
 ```kotlin
@@ -110,6 +112,8 @@ data class User(id: int, name: String)
 ```
 
 定义data class后，编译器会自动生成所有字段的getter/setter，类的toString/hashCode/equals方法。
+
+详见[3.5 Data Class](#p3-5)
 
 <h3 id="p1-1-4">1.1.4 接口</h3>
 
@@ -120,6 +124,8 @@ interface Consumer
     consume()=...
 ```
 
+详见[3.2 接口](#p3-2)
+
 <h3 id="p1-1-5">1.1.5 函数类</h3>
 
 定义函数类sum
@@ -128,6 +134,8 @@ interface Consumer
 fun sum(a, b)
     return a+b
 ```
+
+详见[4.1 函数类](#p4-1)
 
 <h3 id="p1-1-6">1.1.6 变量</h3>
 
@@ -175,6 +183,8 @@ result = (if a > b {a} else {b})
 
 >一个方法需要返回值，那么只要末尾一个值为表达式，Latte就会自动生成方法的return语句
 
+详见[2.3.1 If 语句](#p2-3-1)
+
 <h3 id="p1-1-9">1.1.9 for循环</h3>
 
 ```swift
@@ -189,6 +199,8 @@ for i in 0.:list.size
     println(list[i])
 ```
 
+详见[2.3.2 For 语句](#p2-3-2)
+
 <h3 id="p-1-1-10">1.1.10 while循环</h3>
 
 ```swift
@@ -196,6 +208,8 @@ i = 0
 while i < list.size
     println(list[i++])
 ```
+
+详见[2.3.3 While 语句](#p2-3-3)
 
 <h3 id="p-1-1-11">1.1.11 范围</h3>
 
@@ -213,6 +227,8 @@ for x in 1..5
     print(x)
 ```
 
+详见[5.2 范围](#p5-2)
+
 <h3 id="p1-1-12">1.1.12 Lambda</h3>
 
 ```kotlin
@@ -225,6 +241,8 @@ f = a -> 1 + a
 f(2) /* 结果为 3 */
 ```
 
+详见[4.2 高阶函数和Lambda](#p4-2)
+
 <h3 id="p1-1-13">1.1.13 Json语法</h3>
 
 ```js
@@ -234,6 +252,8 @@ map = {
     "b": 2
 }
 ```
+
+详见[5.1 Json 集合](#p5-1)
 
 <h3 id="p1-1-14">1.1.14 返回对象的"或"</h3>
 
@@ -261,7 +281,7 @@ function method(a) {
 
 <h2 id="p1-2">1.2 文件结构</h2>
 
-Latte源文件以`.lt`或者`.lts`为扩展名。不过实际上后缀名并不重要，手动构造编译器时附加特定参数即可（见第8章）。
+Latte源文件以`.lt`或者`.lts`为扩展名。不过实际上后缀名并不重要，手动构造编译器时附加特定参数即可。
 
 <h3 id="p1-2-1">1.2.1 定义层次结构</h3>
 
@@ -534,9 +554,9 @@ Latte中有6种字面量：
 正则表达式以`//`开头，并以`//`结尾。使用`\//`来表示`//`。
 
 ```
-//hello latte// ; it's (hello latte)
+//hello latte// /* it's (hello latte) */
 
-//a\bc\//d//    ; it's (a\bc//d)
+//a\bc\//d//    /* it's (a\bc//d) */
 ```
 
 <h2 id="p2-2">2.2 基本类型</h2>
@@ -568,10 +588,10 @@ bool
 
 ```scala
 f:float = 3.14
-i:int = f   ; i == 3 丢失了小数部分
+i:int = f   /* i == 3 丢失了小数部分 */
 
 x:int = 10
-b:bool = x  ; b == true 除了数字不是0外，信息都丢失了 (只有0在转换为bool时才会是false)
+b:bool = x  /* b == true 除了数字不是0外，信息都丢失了 (只有0在转换为bool时才会是false) */
 ```
 
 <h3 id="p2-2-2">2.2.2 基本类型运算</h3>
@@ -581,16 +601,16 @@ Latte支持所有Java的运算符，并在其基础上有所扩展
 对于数字的基本运算，其结果均为“精度较高的值”的类型，且最低为`int`型。例如：
 
 ```c#
-r1 = (1 as long) + (2 as int)    ; r1 是 long
-r2 = (1 as byte) + (2 as short)  ; r2 是 int
+r1 = (1 as long) + (2 as int)    /* r1 是 long */
+r2 = (1 as byte) + (2 as short)  /* r2 是 int */
 ```
 
 由于Latte可以任意转换基本类型，所以这么写也可以正常编译并运行：
 
 ```java
 a:short = 1
-a+=1  ; a == 2
-a++   ; a == 3
+a+=1  /* a == 2 */
+a++   /* a == 3 */
 ```
 
 Latte支持所有Java运算符，当然也包括位运算。而位运算必须作用于整数上。Latte支持所有整数类型的位运算：`int/long/short/byte`。
@@ -663,19 +683,19 @@ while boolExp
 `return`可以用在lambda、方法、Procedure、脚本、函数类中:
 
 ```kotlin
-; lambda
+/* lambda */
 foo = ()->return 1
 
-; 方法
+/* 方法 */
 bar()
     return 2
 
-; Procedure
+/* Procedure */
 (
     return 3
 )
 
-; 函数类
+/* 函数类 */
 fun Fun1
     return 4
 ```

@@ -1239,11 +1239,9 @@ public class TestSemantic {
                 Ins.TStore TStore = (Ins.TStore) ins;
 
                 assertEquals(1, TStore.index());
-                assertTrue(TStore.newValue() instanceof Ins.InvokeVirtual);
-                Ins.InvokeVirtual pointer_set = (Ins.InvokeVirtual) TStore.newValue();
-                Ins.New aNew = (Ins.New) pointer_set.target();
-                assertEquals("lt.lang.Pointer", aNew.constructor().declaringType().fullName());
-                assertEquals(new IntValue(1), ((Ins.InvokeStatic) pointer_set.arguments().get(0)).arguments().get(0));
+                assertTrue(TStore.newValue() instanceof Ins.New);
+                Ins.New pointer_new = (Ins.New) TStore.newValue();
+                assertEquals("lt.lang.Pointer", pointer_new.constructor().declaringType().fullName());
         }
 
         @Test
@@ -2511,7 +2509,7 @@ public class TestSemantic {
                         fail();
                 } catch (SyntaxException e) {
                         assertEquals(5, e.lineCol.line);
-                        assertEquals(10, e.lineCol.column);
+                        assertEquals(9, e.lineCol.column);
                 }
         }
 

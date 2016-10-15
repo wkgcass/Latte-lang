@@ -1105,7 +1105,7 @@ public class TestCodeGen {
                                 "        method(a,b):Unit\n" +
                                 "            synchronized(a,b)\n" +
                                 "                t=System.currentTimeMillis()\n" +
-                                "                while(System.currentTimeMillis()+100<t)\n" +
+                                "                while(System.currentTimeMillis()<t+1000)\n" +
                                 "                    ...\n" +
                                 "                a.i+=1\n" +
                                 "                b.i+=2",
@@ -1124,7 +1124,7 @@ public class TestCodeGen {
                         }
                 }).start();
 
-                Thread.sleep(10); // wait 10 ms to let monitorEnter execute
+                Thread.sleep(100); // wait 100 ms to let monitorEnter execute
 
                 class Result {
                         boolean pass1 = false;
@@ -1159,7 +1159,7 @@ public class TestCodeGen {
                                 "        method(a,b)\n" +
                                 "            synchronized(a,b)\n" +
                                 "                t=System.currentTimeMillis()\n" +
-                                "                while(System.currentTimeMillis()+100<t)\n" +
+                                "                while(System.currentTimeMillis()<t + 1000)\n" +
                                 "                    ...\n" +
                                 "                a.i+=1\n" +
                                 "                b.i+=2\n" +
@@ -1186,7 +1186,7 @@ public class TestCodeGen {
                         }
                 }).start();
 
-                Thread.sleep(10); // wait 10 ms to let monitorEnter execute
+                Thread.sleep(100); // wait 100 ms to let monitorEnter execute
 
                 Thread t1 = new Thread(() -> {
                         synchronized (a) {
@@ -1318,14 +1318,14 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testLambdaJDK1() throws Exception {
+        public void testLambdaStatic1() throws Exception {
                 Class<?> cls = retrieveClass("" +
                                 "import java::util::function::_\n" +
-                                "class TestLambdaJDK\n" +
+                                "class TestLambdaStatic1\n" +
                                 "    static\n" +
                                 "        method():Function\n" +
                                 "            return (o)->o+1",
-                        "TestLambdaJDK");
+                        "TestLambdaStatic1");
                 Method m = cls.getDeclaredMethod("method");
                 @SuppressWarnings("unchecked")
                 Function<Object, Object> f = (Function<Object, Object>) m.invoke(null);
@@ -1333,15 +1333,15 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testLambdaJDK2() throws Exception {
+        public void testLambdaStatic2() throws Exception {
                 Class<?> cls = retrieveClass("" +
                                 "import java::util::function::_\n" +
-                                "class TestLambdaJDK\n" +
+                                "class TestLambdaStatic2\n" +
                                 "    static\n" +
                                 "        method():Function\n" +
                                 "            i=1\n" +
                                 "            return (o)->o+1+i",
-                        "TestLambdaJDK");
+                        "TestLambdaStatic2");
                 Method m = cls.getDeclaredMethod("method");
                 @SuppressWarnings("unchecked")
                 Function<Object, Object> f = (Function<Object, Object>) m.invoke(null);
@@ -1349,15 +1349,15 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testLambdaJDK3() throws Throwable {
+        public void testLambdaStatic3() throws Throwable {
                 Class<?> cls = retrieveClass("" +
                                 "import java::util::function::_\n" +
-                                "class TestLambdaJDK\n" +
+                                "class TestLambdaStatic3\n" +
                                 "    static\n" +
                                 "        method()\n" +
                                 "            i=1\n" +
                                 "            return (o)->o+1+i",
-                        "TestLambdaJDK");
+                        "TestLambdaStatic3");
                 Method m = cls.getDeclaredMethod("method");
                 @SuppressWarnings("unchecked")
                 Function1 f = (Function1) m.invoke(null);
@@ -2885,5 +2885,62 @@ public class TestCodeGen {
                                 fail();
                         }
                 }
+        }
+
+        @Test
+        public void testLambdaCallSelf() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestLambdaCallSelf\n" +
+                                "    static\n" +
+                                "        method(x)\n" +
+                                "            var count = 0\n" +
+                                "            var f = a->\n" +
+                                "                if a > 2\n" +
+                                "                    return null\n" +
+                                "                count ++\n" +
+                                "                f(a+1)\n" +
+                                "            f(x)\n" +
+                                "            return count"
+                        , "TestLambdaCallSelf");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(3, method.invoke(null, 0));
+        }
+
+        @Test
+        public void testLambdaCallSelfVal() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestLambdaCallSelfVal\n" +
+                                "    static\n" +
+                                "        method(x)\n" +
+                                "            var count = 0\n" +
+                                "            val f = a->\n" +
+                                "                if a > 2\n" +
+                                "                    return null\n" +
+                                "                count ++\n" +
+                                "                f(a+1)\n" +
+                                "            f(x)\n" +
+                                "            return count"
+                        , "TestLambdaCallSelfVal");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(2, method.invoke(null, 1));
+        }
+
+        @Test
+        public void testLambdaCallSelfField() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestLambdaCallSelfField\n" +
+                                "    static\n" +
+                                "        count = 0\n" +
+                                "        f = a->\n" +
+                                "            if a > 2\n" +
+                                "                return null\n" +
+                                "            count ++\n" +
+                                "            f(a+1)\n" +
+                                "        method(x)\n" +
+                                "            f(x)\n" +
+                                "            return count"
+                        , "TestLambdaCallSelfField");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(4, method.invoke(null, -1));
         }
 }

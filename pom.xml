@@ -51,7 +51,7 @@
 
     <groupId>org.latte-lang</groupId>
     <artifactId>latte-lang</artifactId>
-    <version>0.0.4-ALPHA</version>
+    <version>0.0.5-ALPHA</version>
 
     <build>
         <plugins>
@@ -133,6 +133,5 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <latte-version>0.0.4-ALPHA</latte-version>
     </properties>
 </project>

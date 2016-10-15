@@ -1,5 +1,16 @@
 # Latte-lang TODOs
 
+## Value Avaliable Assurance /2016-10-16
+
+Some language support `null safety` (e.g. Kotlin). Latte would support a better value assurance. However, when calling a java method, there's no guarantee that the result would be safe. So Latte don't provide checking for methods outside, only checking inside the method.
+
+When defining a method, let each param be `null safe` or `value avaliable` or `no assurance` as default.
+
+* add new modifier for variables (`notnull`, `notempty`. The first only checks null/undefined, the second cast the value to bool can check the result).
+* implement the modifiers for params and return values
+* implement the modifiers for local variables
+* implement the modifiers for fields
+
 ## Performance and Accuracy 1 /2016-10-15
 
 There are multiple things can be refactored, especially the lambda expression.
