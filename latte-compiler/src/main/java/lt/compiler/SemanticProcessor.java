@@ -775,7 +775,7 @@ public class SemanticProcessor {
                         }
                 }
 
-                // check annotation (@FunctionalInterface @FunctionalAbstractClass)
+                // check annotation (@FunctionalInterface @FunctionalAbstractClass @Override)
                 for (STypeDef typeDef : typeDefSet) {
                         for (SAnno anno : typeDef.annos()) {
                                 if (anno.type().fullName().equals("java.lang.FunctionalInterface")) {
@@ -8325,6 +8325,10 @@ public class SemanticProcessor {
                         return;
                 }
 
+                if (!overriddenMethod.getReturnType().isAssignableFrom(method.getReturnType())) {
+                        err.SyntaxException("Trying to override " + overriddenMethod + " but return type mismatch", method.line_col());
+                }
+
                 overriddenMethod.overridden().add(method);
                 method.overRide().add(overriddenMethod);
         }
@@ -9405,6 +9409,12 @@ public class SemanticProcessor {
                 }
         }
 
+        /**
+         * the given type is a pointer type (SClassDef lt.lang.Pointer) or (PointerType)
+         *
+         * @param type type
+         * @return true/false
+         */
         public boolean isPointerType(STypeDef type) {
                 return type instanceof PointerType || "lt.lang.Pointer".equals(type.fullName());
         }

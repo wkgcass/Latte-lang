@@ -1,3 +1,5 @@
+It's deprecated. Please check manual if you need help.
+
 #The Latte Language Specification
 #Contents
 1. File Structure

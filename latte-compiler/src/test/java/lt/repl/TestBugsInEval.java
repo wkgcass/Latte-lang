@@ -228,4 +228,23 @@ public class TestBugsInEval {
                         "b = Rational(3, 7)\n" +
                         "c = a + b").result.toString());
         }
+
+        @Test
+        public void testOverrideReturnTypeMismatch() throws Exception {
+                try {
+                        evaluator.eval("" +
+                                "class X\n" +
+                                "    toString()='abc'"
+                        );
+                        fail();
+                }catch (Exception ignore) {
+                }
+                try {
+                        evaluator.eval("" +
+                                "class X\n" +
+                                "    toString():String='abc'"
+                        );
+                }catch (Exception ignore) {
+                }
+        }
 }

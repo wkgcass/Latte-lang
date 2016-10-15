@@ -24,10 +24,14 @@
 
 package lt.repl;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -37,21 +41,25 @@ import static org.junit.Assert.*;
 public class TestEvaluator {
         private static final ClassPathLoader CLASS_PATH_LOADER = new ClassPathLoader(Thread.currentThread().getContextClassLoader());
 
+        Evaluator evaluator;
+
+        @Before
+        public void setUp() throws Exception {
+                evaluator = new Evaluator(CLASS_PATH_LOADER);
+        }
+
         @Test
         public void testSimpleCode() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(1, evaluator.eval("1").result);
         }
 
         @Test
         public void testSimpleExpression() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(2, evaluator.eval("1+1").result);
         }
 
         @Test
         public void testMultipleLineExpression() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(
                         new LinkedHashMap<Object, Object>() {{
                                 put("id", 1);
@@ -67,14 +75,12 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateTwice() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(1, evaluator.eval("1").result);
                 assertEquals(2, evaluator.eval("1+1").result);
         }
 
         @Test
         public void testEvaluateTwiceWithMultipleLineExp() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(
                         new LinkedHashMap<Object, Object>() {{
                                 put("id", 1);
@@ -91,7 +97,6 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateThreeTimes() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(1, evaluator.eval("1").result);
                 assertEquals(2, evaluator.eval("1+1").result);
                 assertEquals(100, evaluator.eval("10*10").result);
@@ -99,7 +104,6 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateThreeTimesWithMultipleLineExp() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 assertEquals(
                         new LinkedHashMap<Object, Object>() {{
                                 put("id", 1);
@@ -117,7 +121,6 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateVariableDef() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 Evaluator.Entry entry = evaluator.eval("i=10*10");
                 assertEquals("i", entry.name);
                 assertEquals(100, entry.result);
@@ -125,7 +128,6 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateFieldSet() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 Evaluator.Entry entry = evaluator.eval("i=10*10");
                 assertEquals("i", entry.name);
                 assertEquals(100, entry.result);
@@ -135,7 +137,6 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateStmt() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 Evaluator.Entry entry = evaluator.eval("method()=1");
                 assertNull(entry.name);
                 Object o = entry.result;
@@ -145,14 +146,12 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateMethod() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 evaluator.eval("method()=1");
                 assertEquals(1, evaluator.eval("method()").result);
         }
 
         @Test
         public void testEvaluateClass() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 @SuppressWarnings("unchecked")
                 java.util.List<Class<?>> list = (java.util.List<Class<?>>) evaluator.eval("class User").result;
                 assertEquals(1, list.size());
@@ -161,7 +160,6 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateClassAndStmt() throws Exception {
-                Evaluator evaluator = new Evaluator(CLASS_PATH_LOADER);
                 Object o = evaluator.eval("" +
                         "class User\n" +
                         "User()").result;
@@ -170,7 +168,7 @@ public class TestEvaluator {
 
         @Test
         public void testPrimitiveCast() throws Exception {
-                Evaluator e = new Evaluator(CLASS_PATH_LOADER);
+                Evaluator e = evaluator;
                 // int to short
                 assertEquals((short) 1, e.eval("int_short:int=1\nint_short as short").result);
                 // int to byte
@@ -283,5 +281,22 @@ public class TestEvaluator {
                 assertEquals(false, e.eval("double_bool2:double=0\ndouble_bool2 as bool").result);
 
                 // bool cannot be number or char
+        }
+
+        @Test
+        public void testJavaInteroperable() throws Exception {
+                List<Integer> list = new ArrayList<>();
+                list.add(1);
+                list.add(2);
+                list.add(3);
+                list.add(4);
+                list.add(5);
+                evaluator.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
+                evaluator.put("list", list);
+                Evaluator.Entry entry = evaluator.eval("" +
+                        "import java::util::stream::Collectors._\n" +
+                        "list.stream.filter{it > 2}.collect(toList())");
+                List newList = (List) entry.result;
+                assertEquals(Arrays.asList(3, 4, 5), newList);
         }
 }
