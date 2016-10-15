@@ -8104,7 +8104,12 @@ public class SemanticProcessor {
                         while (it.hasNext()) {
                                 finalValue = parseValueFromTwoVarOp(finalValue, "+", it.next(), scope, lineCol);
                         }
-                        return finalValue;
+                        STypeDef STRING = getTypeWithName("java.lang.String", LineCol.SYNTHETIC);
+                        if (finalValue.type().equals(STRING)) {
+                                return finalValue;
+                        } else {
+                                return new Ins.CheckCast(finalValue, STRING, LineCol.SYNTHETIC);
+                        }
                 }
         }
 

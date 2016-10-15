@@ -245,6 +245,7 @@ public class Evaluator {
                                 cl.byteCodes.put(entry.getKey(), entry.getValue());
                                 Class<?> c = cl.loadClass(entry.getKey());
                                 classes.add(c);
+                                c.getDeclaredFields(); // check the class format and throw exception
                         }
                 }
                 byte[] EvaluateBytes = byteCodes.get(EvaluateClassName);

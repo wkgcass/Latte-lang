@@ -213,4 +213,19 @@ public class TestBugsInEval {
                 Object res = evaluator.eval("F(2)").result;
                 assertEquals(3, res);
         }
+
+        @Test
+        public void testStringTemplateCast() throws Exception {
+                List list = (List) evaluator.eval("" +
+                        "class Rational(a,b)\n" +
+                        "    add(that:Rational)=Rational(this.a*that.b + that.a*this.b, this.b*that.b)\n" +
+                        "    toString():String='${a}/${b}'"
+                ).result;
+                assertEquals(1, list.size());
+                assertEquals("Rational", ((Class) list.get(0)).getName());
+                assertEquals("19/28", evaluator.eval("" +
+                        "a = Rational(1, 4)\n" +
+                        "b = Rational(3, 7)\n" +
+                        "c = a + b").result.toString());
+        }
 }
