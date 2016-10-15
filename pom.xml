@@ -133,6 +133,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <latte-version>0.0.3-ALPHA</latte-version>
+        <latte-version>0.0.4-ALPHA</latte-version>
     </properties>
 </project>
