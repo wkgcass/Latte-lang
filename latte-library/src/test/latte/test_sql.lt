@@ -12,12 +12,12 @@ data class Tbl
 
 class TestSQL
     static
-        testSelectString()
+        def testSelectString()
             user = User()
 
             return (SQL("`") select [user.id,user.name] from user where user.id > 7 orderBy user.id.desc limit 1,7) buildSQL
 
-        testSelectAlias()
+        def testSelectAlias()
             user = User()
 
             return (SQL("`") select [
@@ -25,33 +25,33 @@ class TestSQL
                     user.name `as` "theName"
                 ] from user) buildSQL
 
-        testSelectWithSubQuery()
+        def testSelectWithSubQuery()
             SQL = SQL("`")
             user = User()
 
             return (SQL select [user.id, user.name] from user where user.id <= (SQL select user.id from user limit 1) orderBy user.id.desc) buildSQL
 
-        testInsertString()
+        def testInsertString()
             user = User()
 
             return (SQL("`") insert_into user _ [user.id, user.name] values [1, 'cass']) buildSQL
 
-        testUpdateString()
+        def testUpdateString()
             user = User()
 
             return (SQL("`") update user set user.id:=1 where user.name=:='cass') buildSQL
 
-        testDeleteString()
+        def testDeleteString()
             user = User()
 
             return (SQL("`") delete_from user where user.id=:=1) buildSQL
 
-        testAndOr()
+        def testAndOr()
             user = User()
 
             return (SQL() select user.name from user where user.id > 10 & user.name!:='abc' | user.id < 5) buildSQL
 
-        testAllQueries()
+        def testAllQueries()
             user = User()
             tbl = Tbl()
             s1 = SQL()

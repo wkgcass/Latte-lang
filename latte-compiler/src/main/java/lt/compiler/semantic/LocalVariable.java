@@ -29,13 +29,17 @@ package lt.compiler.semantic;
  */
 public class LocalVariable implements LeftValue {
         private final boolean canChange;
-        private final STypeDef type;
+        private STypeDef type;
 
         private boolean alreadyAssigned = false;
 
         public LocalVariable(STypeDef type, boolean canChange) {
                 this.type = type;
                 this.canChange = canChange;
+        }
+
+        public void setType(STypeDef type) {
+                this.type = type;
         }
 
         @Override

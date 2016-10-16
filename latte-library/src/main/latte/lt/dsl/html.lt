@@ -201,7 +201,7 @@ The base of all DOM that should have a closing tag
 abstract data class HTMLElementWithClosing : HTMLElement
     children : List
 
-    add(children:List)
+    def add(children:List)
         this.children=children
         return this
 

@@ -232,14 +232,14 @@ class CallbackWrapper2(callback):CallbackWrapper(callback)
 
 class WaterfallFunNext(f, next, callback)
     callback = CallbackWrapper2(callback)
-    apply(res)
+    def apply(res)
         try
             f(res, next)
         catch e
             callback(e, null)
 
 class ParallelFunNext(resultMap, cursor, functionLength, callback)
-    apply(res)
+    def apply(res)
         try
             resultMap[cursor] = res
             checkAndInvokeCallback()
@@ -255,7 +255,7 @@ class ParallelFunNext(resultMap, cursor, functionLength, callback)
         callback(null, list)
 
 class SeriesFunNext(f, next, callback, resultList, cursor)
-    apply(res)
+    def apply(res)
         if cursor > 0
             resultList + res
         try
@@ -264,7 +264,7 @@ class SeriesFunNext(f, next, callback, resultList, cursor)
             callback(e, null)
 
 class EachFunNext(taskStatus, cursor, arrayLength, callback)
-    apply()
+    def apply()
         taskStatus[cursor] = true
         checkAndInvokeCallback()
     private checkAndInvokeCallback():Unit
@@ -274,7 +274,7 @@ class EachFunNext(taskStatus, cursor, arrayLength, callback)
         callback(null)
 
 class EachSeriesFunNext(item, it, next, callback)
-    apply()
+    def apply()
         try
             it(item, next)
         catch e

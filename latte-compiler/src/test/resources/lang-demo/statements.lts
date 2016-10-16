@@ -32,7 +32,7 @@ while index<arr.size()
 ;     ...
 ; else
 ;     ...
-method_if_elseif_else(a,b)
+def method_if_elseif_else(a,b)
     if a
         return 1
     elseif b
@@ -50,7 +50,7 @@ method_if_elseif_else(a,b)
 ;     ...
 ; finally
 ;     ...
-method_try_catch_finally(func)
+def method_try_catch_finally(func)
     a=0
     try
         func.apply()

@@ -28,6 +28,7 @@ import lt.compiler.LineCol;
 import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.pre.Modifier;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,7 +53,7 @@ public class MethodDef implements Definition {
                 this.returnType = returnType;
                 this.params = params;
                 this.annos = new HashSet<>(annos);
-                this.body = body;
+                this.body = new ArrayList<>(body);
         }
 
         @Override
@@ -92,9 +93,11 @@ public class MethodDef implements Definition {
 
                 if (!name.equals(methodDef.name)) return false;
                 if (!modifiers.equals(methodDef.modifiers)) return false;
-                if (returnType != null ? !returnType.equals(methodDef.returnType) : methodDef.returnType != null) return false;
+                if (returnType != null ? !returnType.equals(methodDef.returnType) : methodDef.returnType != null)
+                        return false;
                 if (!params.equals(methodDef.params)) return false;
                 if (!annos.equals(methodDef.annos)) return false;
+                //
                 return body.equals(methodDef.body);
         }
 

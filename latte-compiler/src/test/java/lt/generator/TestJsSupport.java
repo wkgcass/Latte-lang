@@ -293,4 +293,15 @@ public class TestJsSupport {
         public void testBreak() throws Exception {
                 assertEquals("break;", compile("break"));
         }
+
+        @Test
+        public void testMethod() throws Exception {
+                assertEquals("" +
+                        "function method() {\n" +
+                        "    return 1 + 1;\n" +
+                        "}", compile("" +
+                        "def method()\n" +
+                        "    return 1 + 1"));
+
+        }
 }

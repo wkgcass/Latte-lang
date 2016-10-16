@@ -5,7 +5,7 @@ import lt::dsl::html::_
 class TestHtml
     static
         testConstructHtml()=html
-        testHtmlFormat()
+        def testHtmlFormat()
             return html + [
                 head
                 body + [
@@ -14,11 +14,11 @@ class TestHtml
                     ]
                 ]
             ]
-        testHtmlEscape()
+        def testHtmlEscape()
             return html(onload='window.location.href="page"') + [
                 " ><&\""
             ]
-        testHtmlPretty()
+        def testHtmlPretty()
             return (
                 html + [
                     head + [
@@ -35,13 +35,13 @@ class TestHtml
                     ]
                 ]
             ).pretty
-        testCss()
+        def testCss()
             return (
                 css('body') + {
                     'background-color':'#123456'
                 }
             ).pretty
-        testHtmlAndCss()
+        def testHtmlAndCss()
             return (
                 html + [
                     style + [
@@ -51,5 +51,5 @@ class TestHtml
                     ]
                 ]
             ).pretty
-        testHtmlClass()
+        def testHtmlClass()
             return button(typ='submit').btn.btn_default toString

@@ -1222,7 +1222,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    method()\n" +
+                        "    def method()\n" +
                         "        a=1");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
@@ -1372,7 +1372,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    method()\n" +
+                        "    def method()\n" +
                         "        if true\n" +
                         "            return 1\n" +
                         "        elseif false\n" +
@@ -2130,7 +2130,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    method()\n" +
+                        "    def method()\n" +
                         "        try\n" +
                         "            return 1\n" +
                         "        catch e\n" +
@@ -2229,7 +2229,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    method()\n" +
+                        "    def method()\n" +
                         "        inner():Unit");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
@@ -2252,7 +2252,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    method()\n" +
+                        "    def method()\n" +
                         "        i:int=1\n" +
                         "        inner():Unit\n" +
                         "        j=2");

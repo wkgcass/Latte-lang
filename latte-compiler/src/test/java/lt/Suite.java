@@ -28,6 +28,7 @@ import junit.framework.TestSuite;
 import lt.compiler.cases.*;
 import lt.compiler.err_rec.TestParserErrorRecovery;
 import lt.compiler.err_rec.TestScannerErrorRecovery;
+import lt.compiler.err_rec.TestSemanticError;
 import lt.generator.TestJsSupport;
 import lt.repl.TestBugsInEval;
 import lt.repl.TestEvaluator;
@@ -57,7 +58,8 @@ import org.junit.runner.RunWith;
         TestBraceScanner.class,
         TestScannerSwitcher.class,
         VariableTest.class,
-        TestScannerLayerControl.class
+        TestScannerLayerControl.class,
+        TestSemanticError.class
 })
 public class Suite extends TestSuite {
 }

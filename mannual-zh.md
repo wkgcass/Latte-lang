@@ -120,8 +120,8 @@ data class User(id: int, name: String)
 定义接口Consumer
 
 ```kotlin
-interface Consumer
-    consume()=...
+interface Supplier
+    def supply
 ```
 
 详见[3.2 接口](#p3-2)
@@ -267,7 +267,7 @@ a = a || 1
 
 ```
 #js
-    method(a)
+    def method(a)
         return a+1
 ```
 
@@ -680,14 +680,14 @@ while boolExp
 
 在循环中可以使用 `break` 和 `continue` 来控制循环。break将直接跳出循环，continue会跳到循环末尾，然后立即开始下一次循环。它的含义与Java完全一致。
 
-`return`可以用在lambda、方法、Procedure、脚本、函数类中:
+`return`可以用在lambda、方法（包括“内部方法”）、Procedure、脚本、函数类中:
 
 ```kotlin
 /* lambda */
 foo = ()->return 1
 
 /* 方法 */
-bar()
+def bar()
     return 2
 
 /* Procedure */
@@ -701,6 +701,19 @@ fun Fun1
 ```
 
 脚本中的return语句表示将这个值返回到外部，在`require`这个脚本时将返回这个值。
+
+如果`return`是这个函数/方法最后的一条语句，或者该函数任意一条逻辑分支的最末尾，那么`return`都可以被省略:
+
+```kotlin
+fun add(a, b)
+    a+b
+
+val result = add(1, 2)
+/* result is 3 */
+```
+
+转换方式很简单，首先取出这个函数/方法的最后一条语句，如果是表达式，而且这个函数/方法要求返回值，则直接将其包装在`AST.Return`中。  
+如果最后一条语句是`if`，那么对其每一个逻辑分支进行该算法。
 
 <h1 id="p3">3. 类和对象</h1>
 
@@ -789,7 +802,7 @@ val class NoInher
 
 ```kotlin
 abstract class MyAbsClass
-    abstract f()=...
+    abstract f()
 ```
 
 抽象类规则与Java完全一致。抽象类可以拥有未实现的方法。
@@ -799,7 +812,7 @@ abstract class MyAbsClass
 ```kotlin
 class MyImpl : MyAbsClass
     @Override
-    f()=1
+    def f=1
 ```
 
 <h3 id="p3-1-4">3.1.4 静态成员</h3>
@@ -893,24 +906,51 @@ Latte提供所谓的`property`支持：使用`getter`和`setter`来定义`proper
 
 <h3 id="p3-3-2">3.3.2 方法</h3>
 
-定义方法需要方法名、参数表和方法体，返回类型可选：
+Latte支持多种定义方法的语法，先看一个最完整的方法定义：
 
-```js
-foo(x)
-    ...
+```scala
+def foo(x:int, y:int):int
+    return x + y
 ```
 
-如果方法体只有一句，并且返回一个表达式的值，那么可以这么写：
+如果方法没有参数，那么可以省略里面的内容，甚至省略括号：
 
-```js
-bar(x)=...
+```scala
+/* 无参数 */
+def foo:int
+    return 1
 ```
 
-如果明确需要返回类型，可以在右括号`)`后加类型符号`:`来规定返回类型。
+返回类型可以不指定，默认为`java.lang.Object`
 
-```kotlin
-foobar(x):String = 'the result string'
+```scala
+def foo
+    return 1
 ```
+
+如果方法体只有一行并返回一个值，可以把在方法定义后直接接`=value`
+
+```scala
+def foo = 1
+```
+
+如果方法体不存在（即空方法），可以只写一个方法名称（如果有参数再把参数加上）
+
+```scala
+def foo
+```
+
+上述定义的缩写方式可以混合使用。
+
+此外，如果在定义方法的时候（使用了括号）并且（附带一个修饰符/注解，或者定义了返回值，或者使用了`=`语法），那么可以省略`def`
+
+```
+bar():int
+foobar()='hello'
+fizz():int=1
+```
+
+--
 
 如果明确方法不返回值，那么可以附加`Unit`类型或者`void`类型。它们两个是等价的。  
 但是，在Latte中所有方法都会返回一个值，对于Unit/void类型的方法，会返回`undefined`，它是`lt.lang.Undefined`类型。
@@ -921,6 +961,36 @@ foobar(x):String = 'the result string'
 foo(a, b=1)=a+b
 foo(1)  /* result is 2 */
 ```
+
+**注意**，`def`实际上是一个“修饰符”(虽然它什么都不做)，并不属于“关键字”。设置`def`是为了和“省略参数的lambda”进行语法上的区分。
+
+例如：
+
+```js
+foo(x)
+    ...
+```
+
+实际上会被转化为[4.2.2 Lambda](#p4-2-2)中描述的形式：
+
+```js
+foo(x)(it->...)
+```
+
+所以使用类似于这种方式(`VALID_NAME ( [PARAM [, PARAM, ...]] ) |- ...`)定义的方法，如果没有注解，也没有其他修饰符，会造成歧义，所以不可省略`def`。
+
+#### 内部方法
+
+Latte支持“内部方法”。所谓内部方法是指在方法内部再定义一个方法。
+
+```
+def outer
+    def inner
+```
+
+内部方法可以访问外部的所有变量，并且可以修改它们。
+
+>实际上，Lambda、Procedure都基于“内部方法”特性。所以它们也可以修改捕获到的所有变量。
 
 <h3 id="p3-3-3">3.3.3 Accessor</h3>
 
@@ -933,12 +1003,12 @@ accessor分为两种，一种是取值：getter，一种是赋值：setter。
 
 对于setter只有一种定义方式：定义为`set{Name}(name)`
 
-```js
+```scala
 class User(id, name)
-    getId()=id
+    def getId=id
     setId(id)
         this.id = id
-    name()=name
+    def name=name  /* 放心，这么写是正确的 */
     setName(name)
         this.name = name
 ```
@@ -1362,7 +1432,7 @@ var y:Sub = x
 ```kotlin
 class Data
     i:int
-    setI(i:int) |- this.i=i
+    def setI(i:int) |- this.i=i
 
 fun call(x)
     var data:Data = Data

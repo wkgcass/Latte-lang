@@ -5,7 +5,7 @@ import lt::async::Async
 class TestAsync
     static
         val async = Async()
-        testWaterfall()
+        def testWaterfall()
             arr = []
             async.waterfall(
                 [
@@ -24,7 +24,7 @@ class TestAsync
                         throw err
             )
             return arr
-        testParallel()
+        def testParallel()
             result = []
             async.parallel(
                 [
@@ -41,7 +41,7 @@ class TestAsync
                         result addAll results
             )
             return result
-        testSeries()
+        def testSeries()
             result = []
             async.series(
                 [
@@ -55,7 +55,7 @@ class TestAsync
                     result addAll results
             )
             return result
-        testEach()
+        def testEach()
             result = []
             async.each(
                 [1, 2, 3]
@@ -66,7 +66,7 @@ class TestAsync
                     ...
             )
             return result
-        testEachSeries()
+        def testEachSeries()
             result = []
             async.eachSeries(
                 [1, 2, 3]

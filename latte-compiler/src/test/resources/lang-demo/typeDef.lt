@@ -44,7 +44,7 @@ class I_Have_Methods
     ; a method definition can be:
 
     ; method with java.lang.Object return type
-    i_am_a_simple_method()
+    def i_am_a_simple_method()
         ...   ; statements in the method
 
     ; you can specify the return type
@@ -136,7 +136,7 @@ interface Interface_Have_Methods
     ; method with 0 statements are considered as abstract methods
     i_am_an_abstract_method()=...
     ; method with return value are "default methods" (java 8)
-    i_am_a_default_method()
+    def i_am_a_default_method()
         return "default method"
 
 class TesterForInterface_Have_Methods : Interface_Have_Methods

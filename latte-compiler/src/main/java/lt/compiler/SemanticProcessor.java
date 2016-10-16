@@ -48,7 +48,10 @@ import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.*;
+import java.net.URL;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -106,6 +109,10 @@ public class SemanticProcessor {
          * access which represents a type can be converted into instantiation
          */
         public boolean enableTypeAccess = true;
+        /**
+         * rt.jar file
+         */
+        private static JarFile rtJar;
 
         /**
          * initialize the Processor
@@ -196,10 +203,9 @@ public class SemanticProcessor {
                 Map<String, List<InterfaceDef>> fileNameToInterfaceDef = new HashMap<>();
                 Map<String, List<FunDef>> fileNameToFunctions = new HashMap<>();
                 Map<String, String> fileNameToPackageName = new HashMap<>();
+                // record types and packages
                 for (String fileName : mapOfStatements.keySet()) {
                         List<Statement> statements = mapOfStatements.get(fileName);
-                        // package
-                        String pkg; // if no package, then it's an empty string, otherwise, it's 'packageName.' with dot at the end
                         Iterator<Statement> statementIterator = statements.iterator();
 
                         // import
@@ -217,6 +223,8 @@ public class SemanticProcessor {
                         fileNameToInterfaceDef.put(fileName, interfaceDefs);
                         fileNameToFunctions.put(fileName, funDefs);
 
+                        // package
+                        String pkg; // if no package, then it's an empty string, otherwise, it's 'packageName.' with dot at the end
                         if (statementIterator.hasNext()) {
                                 Statement statement = statementIterator.next();
                                 if (statement instanceof PackageDeclare) {
@@ -230,10 +238,7 @@ public class SemanticProcessor {
                                         Statement stmt = statementIterator.next();
                                         select_import_class_interface_fun(stmt, imports, classDefs, interfaceDefs, funDefs);
                                 }
-                        } else {
-                                // no statements,then continue
-                                continue;
-                        }
+                        } else continue;
 
                         // add package into import list at index 0
                         imports.add(0, new Import(new AST.PackageRef(
@@ -250,7 +255,20 @@ public class SemanticProcessor {
                         imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Utils", LineCol.SYNTHETIC), true, LineCol.SYNTHETIC));
 
                         fileNameToPackageName.put(fileName, pkg);
+                }
+                for (String fileName : mapOfStatements.keySet()) {
+                        // import
+                        List<Import> imports = fileNameToImport.get(fileName);
+                        // class definition
+                        List<ClassDef> classDefs = fileNameToClassDef.get(fileName);
+                        // interface definition
+                        List<InterfaceDef> interfaceDefs = fileNameToInterfaceDef.get(fileName);
+                        // fun definition
+                        List<FunDef> funDefs = fileNameToFunctions.get(fileName);
+                        // package name
+                        String pkg = fileNameToPackageName.get(fileName);
 
+                        // check importing same simple name
                         Set<String> importSimpleNames = new HashSet<>();
                         for (Import i : imports) {
                                 if (i.pkg == null && !i.importAll) {
@@ -360,11 +378,73 @@ public class SemanticProcessor {
                         // all classes occurred in the parsing process will be inside `types` map or is already defined
                 }
 
+                // check package and type exists
+                for (String fileName : mapOfStatements.keySet()) {
+                        // import
+                        List<Import> imports = fileNameToImport.get(fileName);
+                        for (Import i : imports) {
+                                if (i.pkg == null) {
+                                        // class exists
+                                        try {
+                                                getTypeWithAccess(i.access, Collections.emptyList());
+                                        } catch (SyntaxException e) {
+                                                err.SyntaxException("Type " + i.access + " not found", i.access.line_col());
+                                        }
+                                } else {
+                                        // package exists
+                                        String pkg = i.pkg.pkg.replace("::", ".");
+                                        if (!fileNameToPackageName.containsValue(pkg + ".")
+                                                && !packageExistsInClassPath(pkg, classLoader)
+                                                && !packageExistInRtJar(pkg)) {
+                                                err.SyntaxException("Package " + i.pkg.pkg + " not found", i.pkg.line_col());
+                                        }
+                                }
+                        }
+                }
+
                 step2(fileNameToClassDef, fileNameToInterfaceDef, fileNameToFunctions, fileNameToPackageName);
                 step3(fileNameToPackageName, fileNameToFunctions);
                 step4();
 
                 return typeDefSet;
+        }
+
+        public static boolean packageExistsInClassPath(String pkg, ClassLoader classLoader) {
+                if (classLoader == null) return false;
+                String path = pkg.replace(".", "/");
+                URL url = classLoader.getResource(path);
+                return url != null || packageExistsInClassPath(pkg, classLoader.getParent());
+        }
+
+        public static boolean packageExistInRtJar(String pkg) {
+                if (rtJar == null) {
+                        String binPath = System.getProperty("sun.boot.library.path");
+                        if (binPath == null) return true; // assume it's a valid import
+                        File binPathFile = new File(binPath);
+                        File[] libFileA = binPathFile.getParentFile().listFiles(f -> f.getName().equals("lib"));
+                        if (libFileA == null || libFileA.length == 0) return true;
+                        File libFile = libFileA[0];
+                        File[] rtFileA = libFile.listFiles(f -> f.getName().equals("rt.jar"));
+                        if (rtFileA == null || rtFileA.length == 0) return true;
+                        File rtFile = rtFileA[0];
+                        if (!rtFile.exists()) return true;
+                        try {
+                                rtJar = new JarFile(rtFile);
+                        } catch (IOException e) {
+                                return true;
+                        }
+                }
+                return findPackage(pkg, rtJar.entries());
+        }
+
+        private static boolean findPackage(String pkg, Enumeration<JarEntry> entries) {
+                while (entries.hasMoreElements()) {
+                        JarEntry entry = entries.nextElement();
+                        if (entry.getName().startsWith(pkg.replace(".", "/"))) {
+                                return true;
+                        }
+                }
+                return false;
         }
 
         /**
@@ -1551,15 +1631,19 @@ public class SemanticProcessor {
                                 }
                         }
                         // fill statements
-                        for (Statement stmt : statements) {
-                                parseStatement(
-                                        stmt,
-                                        methodDef.getReturnType(),
-                                        scope,
-                                        methodDef.statements(),
-                                        methodDef.exceptionTables(),
-                                        null, null,
-                                        false);
+                        if (statements.isEmpty()) {
+                                methodDef.statements().add(new Ins.Nop());
+                        } else {
+                                for (Statement stmt : statements) {
+                                        parseStatement(
+                                                stmt,
+                                                methodDef.getReturnType(),
+                                                scope,
+                                                methodDef.statements(),
+                                                methodDef.exceptionTables(),
+                                                null, null,
+                                                false);
+                                }
                         }
                 }
         }
@@ -2053,7 +2137,9 @@ public class SemanticProcessor {
                 }
 
                 // inner method cannot have modifiers or annotations
-                if (!methodDef.modifiers.isEmpty()) {
+                if (!methodDef.modifiers.isEmpty() &&
+                        (methodDef.modifiers.size() != 1 || !methodDef.modifiers.iterator().next().modifier.equals(Modifier.Available.DEF))
+                        ) {
                         err.SyntaxException("inner method cannot have modifiers", methodDef.line_col());
                         return null;
                 }
@@ -3388,6 +3474,11 @@ public class SemanticProcessor {
                                 for (Modifier m : variableDef.getModifiers()) {
                                         if (m.modifier.equals(Modifier.Available.VAL)) {
                                                 canChange = false;
+                                        } else {
+                                                if (!m.modifier.equals(Modifier.Available.VAR)) {
+                                                        err.SyntaxException("invalid modifier for local variable "
+                                                                + m.modifier.name().toLowerCase(), m.line_col());
+                                                }
                                         }
                                 }
 
@@ -3459,6 +3550,17 @@ public class SemanticProcessor {
                                         variableDef.line_col());
                                 pack.instructions().add((Instruction) get);
                                 localVariable.alreadyAssigned();
+
+                                if (!localVariable.canChange()) {
+                                        // set type for val values
+                                        PointerType tmp = new PointerType(v.type());
+                                        if (types.containsKey(tmp.toString())) {
+                                                tmp = (PointerType) types.get(tmp.toString());
+                                        } else {
+                                                types.put(tmp.toString(), tmp);
+                                        }
+                                        localVariable.setType(tmp);
+                                }
                         }
                         return pack;
                 }
@@ -8742,6 +8844,9 @@ public class SemanticProcessor {
                                         break;
                                 case SYNCHRONIZED:
                                         methodDef.modifiers().add(SModifier.SYNCHRONIZED);
+                                        break;
+                                case DEF:
+                                        // a flag for defining a method
                                         break;
                                 default:
                                         err.UnexpectedTokenException("valid modifier for methods (class:(public|private|protected|pkg|val)|interface:(pub|val))", m.toString(), m.line_col());

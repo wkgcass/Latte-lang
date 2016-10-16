@@ -48,6 +48,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -207,7 +208,7 @@ public class TestCodeGen {
                                 "import java::util::_\n" +
                                 "class TestInvokeInterface\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return Collections.singletonList('abc').size()",
                         "TestInvokeInterface");
 
@@ -223,7 +224,7 @@ public class TestCodeGen {
                                 "class TestInvokeSpecial\n" +
                                 "    private priMethod()\n" +
                                 "        return 1\n" +
-                                "    method()\n" +
+                                "    def method()\n" +
                                 "        return priMethod()",
                         "TestInvokeSpecial");
 
@@ -239,7 +240,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestInvokeDynamic\n" +
                                 "    static\n" +
-                                "        method(o)\n" +
+                                "        def method(o)\n" +
                                 "            return o.size()",
                         "TestInvokeDynamic");
 
@@ -257,7 +258,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestInvokeDynamic\n" +
                                 "    static\n" +
-                                "        method(o)\n" +
+                                "        def method(o)\n" +
                                 "            return o.add(3)",
                         "TestInvokeDynamic");
 
@@ -275,7 +276,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestInvokeDynamic\n" +
                                 "    static\n" +
-                                "        method(o)\n" +
+                                "        def method(o)\n" +
                                 "            return o.add(0,3)",
                         "TestInvokeDynamic");
 
@@ -293,7 +294,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestInvokeDynamic\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            i=1\n" +
                                 "            return i",
                         "TestInvokeDynamic");
@@ -309,7 +310,7 @@ public class TestCodeGen {
                                 "import java::util::_\n" +
                                 "class TestNew\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return ArrayList()",
                         "TestNew");
 
@@ -325,7 +326,7 @@ public class TestCodeGen {
                                 "import java::util::_\n" +
                                 "class TestTwoVarOp\n" +
                                 "    static\n" +
-                                "        method(a,b)\n" +
+                                "        def method(a,b)\n" +
                                 "            return a|b",
                         "TestTwoVarOp");
 
@@ -343,13 +344,13 @@ public class TestCodeGen {
                         "" +
                                 "class TestRange\n" +
                                 "    static\n" +
-                                "        method1()\n" +
+                                "        def method1()\n" +
                                 "            return 1..10\n" +
-                                "        method2()\n" +
+                                "        def method2()\n" +
                                 "            return 1.:10\n" +
-                                "        method3()\n" +
+                                "        def method3()\n" +
                                 "            return 10..1\n" +
-                                "        method4()\n" +
+                                "        def method4()\n" +
                                 "            return 10.:1",
                         "TestRange");
 
@@ -376,7 +377,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestPow\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return 2^^4\n",
                         "TestPow");
                 Method method = cls.getMethod("method");
@@ -389,7 +390,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestPowObj\n" +
                                 "    static\n" +
-                                "        method(a,b)\n" +
+                                "        def method(a,b)\n" +
                                 "            return a^^b\n",
                         "TestPowObj");
                 Method method = cls.getMethod("method", Object.class, Object.class);
@@ -403,7 +404,7 @@ public class TestCodeGen {
                                 "import java::util::_\n" +
                                 "class TestIn\n" +
                                 "    static\n" +
-                                "        method(a,ls)\n" +
+                                "        def method(a,ls)\n" +
                                 "            return a in ls\n",
                         "TestIn");
                 Method method = cls.getMethod("method", Object.class, Object.class);
@@ -418,7 +419,7 @@ public class TestCodeGen {
                                 "import java::util::_\n" +
                                 "class TestInRange\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return 2 in 1..2\n",
                         "TestInRange");
                 Method method = cls.getMethod("method");
@@ -431,7 +432,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestIf\n" +
                                 "    static\n" +
-                                "        method(a)\n" +
+                                "        def method(a)\n" +
                                 "            if a\n" +
                                 "                return 1\n" +
                                 "            else\n" +
@@ -456,7 +457,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestIfComplex\n" +
                                 "    static\n" +
-                                "        method(a,b,c)\n" +
+                                "        def method(a,b,c)\n" +
                                 "            i=0\n" +
                                 "            if a\n" +
                                 "                i=1\n" +
@@ -489,7 +490,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestWhile\n" +
                                 "    static\n" +
-                                "        method(a:int)\n" +
+                                "        def method(a:int)\n" +
                                 "            s=StringBuilder()\n" +
                                 "            while a\n" +
                                 "                s.append(a)\n" +
@@ -507,7 +508,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestWhile\n" +
                                 "    static\n" +
-                                "        method(a:int)\n" +
+                                "        def method(a:int)\n" +
                                 "            s=StringBuilder()\n" +
                                 "            do\n" +
                                 "                s.append(a)\n" +
@@ -526,7 +527,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestFor\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            s=StringBuilder()\n" +
                                 "            for i in 1..3\n" +
                                 "                s.append(i)\n" +
@@ -543,7 +544,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestThrow\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            throw RuntimeException('ex')",
                         "TestThrow");
 
@@ -563,7 +564,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestTryCatch\n" +
                                 "    static\n" +
-                                "        method(func)\n" +
+                                "        def method(func)\n" +
                                 "            try\n" +
                                 "                func.apply()\n" +
                                 "            catch e\n" +
@@ -604,7 +605,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestTryCatch\n" +
                                 "    static\n" +
-                                "        method(func)\n" +
+                                "        def method(func)\n" +
                                 "            try\n" +
                                 "                func.apply()\n" +
                                 "            catch e\n" +
@@ -632,7 +633,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestContinualAssign\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            b=a=2\n" +
                                 "            return b",
                         "TestContinualAssign");
@@ -647,7 +648,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestUndefined\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return undefined",
                         "TestUndefined");
 
@@ -661,7 +662,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestStringAdd\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return 'abc'+'d'+1",
                         "TestStringAdd");
 
@@ -675,7 +676,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestLogicAnd\n" +
                                 "    static\n" +
-                                "        method(a,b)\n" +
+                                "        def method(a,b)\n" +
                                 "            return a&&b",
                         "TestLogicAnd");
 
@@ -692,7 +693,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestLogicAnd\n" +
                                 "    static\n" +
-                                "        method(a,ls)\n" +
+                                "        def method(a,ls)\n" +
                                 "            a&&ls.add(1)",
                         "TestLogicAnd");
 
@@ -713,7 +714,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestLogicAnd\n" +
                                 "    static\n" +
-                                "        method(a,b,c)\n" +
+                                "        def method(a,b,c)\n" +
                                 "            return a&&b&&c",
                         "TestLogicAnd");
 
@@ -735,7 +736,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestLogicOr\n" +
                                 "    static\n" +
-                                "        method(a,b)\n" +
+                                "        def method(a,b)\n" +
                                 "            return a||b",
                         "TestLogicOr");
 
@@ -752,7 +753,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestLogicOr\n" +
                                 "    static\n" +
-                                "        method(a,ls)\n" +
+                                "        def method(a,ls)\n" +
                                 "            return a||(\n" +
                                 "                ls.add(1)\n" +
                                 "                return 10\n" +
@@ -776,7 +777,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestLogicOr\n" +
                                 "    static\n" +
-                                "        method(a,b,c)\n" +
+                                "        def method(a,b,c)\n" +
                                 "            return a||b||c",
                         "TestLogicOr");
 
@@ -798,7 +799,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestLogicAndOr\n" +
                                 "    static\n" +
-                                "        method(a,b,c)\n" +
+                                "        def method(a,b,c)\n" +
                                 "            return a or b and c",
                         "TestLogicAndOr");
 
@@ -820,7 +821,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestUnaryInc\n" +
                                 "    static\n" +
-                                "        method(a:int)\n" +
+                                "        def method(a:int)\n" +
                                 "            return ++a",
                         "TestUnaryInc");
                 Method method = cls.getMethod("method", int.class);
@@ -833,7 +834,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestSelfInc\n" +
                                 "    static\n" +
-                                "        method(a:int)\n" +
+                                "        def method(a:int)\n" +
                                 "            return a++",
                         "TestSelfInc");
                 Method method = cls.getMethod("method", int.class);
@@ -847,7 +848,7 @@ public class TestCodeGen {
                                 "class TestInvokeVoidMethodReturnUndefined\n" +
                                 "    static\n" +
                                 "        private m():Unit\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return m()",
                         "TestInvokeVoidMethodReturnUndefined");
                 Method method = cls.getMethod("method");
@@ -863,7 +864,7 @@ public class TestCodeGen {
                                 "        i:int\n" +
                                 "        private m():Unit\n" +
                                 "            i=100\n" +
-                                "        method(a)\n" +
+                                "        def method(a)\n" +
                                 "            return a&&m()\n" +
                                 "        getI()=i",
                         "TestVoidMethodLogicAnd");
@@ -883,7 +884,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestTAStore\n" +
                                 "    static\n" +
-                                "        method(a:[]int)\n" +
+                                "        def method(a:[]int)\n" +
                                 "            return a[1]=100",
                         "TestTAStore");
                 Method method = cls.getMethod("method", int[].class);
@@ -899,7 +900,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestIndexAccessObject\n" +
                                 "    static\n" +
-                                "        method(a)\n" +
+                                "        def method(a)\n" +
                                 "            return a[1]=100",
                         "TestIndexAccessObject");
                 Method method = cls.getMethod("method", Object.class);
@@ -1102,29 +1103,32 @@ public class TestCodeGen {
                         "" +
                                 "class TestAnnotation\n" +
                                 "    static\n" +
-                                "        method(a,b):Unit\n" +
+                                "        method(a,b,c):Unit\n" +
                                 "            synchronized(a,b)\n" +
-                                "                t=System.currentTimeMillis()\n" +
-                                "                while(System.currentTimeMillis()<t+1000)\n" +
-                                "                    ...\n" +
+                                "                c.i=1\n" +
+                                "                Thread.sleep(1000)\n" +
                                 "                a.i+=1\n" +
                                 "                b.i+=2",
                         "TestAnnotation");
                 class Container {
                         public int i = 0;
                 }
-                Method method = cls.getMethod("method", Object.class, Object.class);
+                Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
                 Container a = new Container();
                 Container b = new Container();
+                Container c = new Container();
                 new Thread(() -> {
                         try {
-                                method.invoke(null, a, b);
+                                method.invoke(null, a, b, c);
                         } catch (Exception e) {
                                 e.printStackTrace();
                         }
                 }).start();
 
-                Thread.sleep(100); // wait 100 ms to let monitorEnter execute
+                //noinspection StatementWithEmptyBody
+                while (c.i == 0) {
+                        Thread.sleep(1);
+                }
 
                 class Result {
                         boolean pass1 = false;
@@ -1156,11 +1160,10 @@ public class TestCodeGen {
                         "" +
                                 "class TestSynchronizedReturn\n" +
                                 "    static\n" +
-                                "        method(a,b)\n" +
+                                "        def method(a,b,c)\n" +
                                 "            synchronized(a,b)\n" +
-                                "                t=System.currentTimeMillis()\n" +
-                                "                while(System.currentTimeMillis()<t + 1000)\n" +
-                                "                    ...\n" +
+                                "                c.i=1\n" +
+                                "                Thread.sleep(1000)\n" +
                                 "                a.i+=1\n" +
                                 "                b.i+=2\n" +
                                 "                return 10",
@@ -1168,9 +1171,10 @@ public class TestCodeGen {
                 class Container {
                         public int i = 0;
                 }
-                Method method = cls.getMethod("method", Object.class, Object.class);
+                Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
                 Container a = new Container();
                 Container b = new Container();
+                Container c = new Container();
                 class Result {
                         boolean result = false;
                         boolean pass1 = false;
@@ -1179,14 +1183,17 @@ public class TestCodeGen {
                 Result result = new Result();
                 new Thread(() -> {
                         try {
-                                Object res = method.invoke(null, a, b);
+                                Object res = method.invoke(null, a, b, c);
                                 if (res.equals(10)) result.result = true;
                         } catch (Exception e) {
                                 e.printStackTrace();
                         }
                 }).start();
 
-                Thread.sleep(100); // wait 100 ms to let monitorEnter execute
+                //noinspection StatementWithEmptyBody
+                while (c.i == 0) {
+                        Thread.sleep(1);
+                }
 
                 Thread t1 = new Thread(() -> {
                         synchronized (a) {
@@ -1261,7 +1268,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestInnerMethod\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            inner():int=1\n" +
                                 "            return inner()",
                         "TestInnerMethod");
@@ -1275,7 +1282,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestInnerMethod\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            i:int=1\n" +
                                 "            j:int=2\n" +
                                 "            inner():int=i+j\n" +
@@ -1290,7 +1297,7 @@ public class TestCodeGen {
         public void testInnerMethod3() throws Exception {
                 Class<?> cls = retrieveClass("" +
                                 "class TestInnerMethod\n" +
-                                "    method()\n" +
+                                "    def method()\n" +
                                 "        i:int=1\n" +
                                 "        j:int=2\n" +
                                 "        inner():int=i+j\n" +
@@ -1306,7 +1313,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestInnerMethod\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            i:int=1\n" +
                                 "            j:int=2\n" +
                                 "            inner(k:int):int=i+j+k\n" +
@@ -1354,7 +1361,7 @@ public class TestCodeGen {
                                 "import java::util::function::_\n" +
                                 "class TestLambdaStatic3\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            i=1\n" +
                                 "            return (o)->o+1+i",
                         "TestLambdaStatic3");
@@ -1534,9 +1541,9 @@ public class TestCodeGen {
                                 "import java::util::_\n" +
                                 "class TestInvokeInterface\n" +
                                 "    static\n" +
-                                "        methodRemoveInt1(ls)\n" +
+                                "        def methodRemoveInt1(ls)\n" +
                                 "            ls.remove(1)\n" +
-                                "        methodRemoveInteger1(ls)\n" +
+                                "        def methodRemoveInteger1(ls)\n" +
                                 "            ls.remove(Integer(1))",
                         "TestInvokeInterface");
 
@@ -1564,7 +1571,7 @@ public class TestCodeGen {
                                 "class TestArrayAccess\n" +
                                 "    static\n" +
                                 "        arr:[]String = ['test1','test2']\n" +
-                                "        method(i,o)\n" +
+                                "        def method(i,o)\n" +
                                 "            arr[i]=o",
                         "TestArrayAccess");
                 Field f = cls.getDeclaredField("arr");
@@ -1632,9 +1639,9 @@ public class TestCodeGen {
                         "" +
                                 "class TestThrowAnyObject\n" +
                                 "    static\n" +
-                                "        testThrow()\n" +
+                                "        def testThrow()\n" +
                                 "            throw 'abc'\n" +
-                                "        testCatch(func)\n" +
+                                "        def testCatch(func)\n" +
                                 "            try\n" +
                                 "                func.apply()\n" +
                                 "            catch e\n" +
@@ -1664,7 +1671,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestForBreak\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            sum=0\n" +
                                 "            for i in 1..10\n" +
                                 "                if i==7\n" +
@@ -1682,7 +1689,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestForContinue\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            sum=0\n" +
                                 "            for i in 1..10\n" +
                                 "                if i==7\n" +
@@ -1700,7 +1707,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestWhileBreak\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            sum=0\n" +
                                 "            i=1\n" +
                                 "            while i<=10\n" +
@@ -1719,7 +1726,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestWhileContinue\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            sum=0\n" +
                                 "            i=1\n" +
                                 "            while i<=10\n" +
@@ -1739,7 +1746,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestWhileBreak\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            sum=0\n" +
                                 "            i=1\n" +
                                 "            do\n" +
@@ -1759,7 +1766,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestWhileContinue\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            sum=0\n" +
                                 "            i=1\n" +
                                 "            do\n" +
@@ -1780,7 +1787,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestForTryBreak\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            n=0\n" +
                                 "            for i in 1..10\n" +
                                 "                try\n" +
@@ -1814,10 +1821,10 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass(
                         "" +
                                 "class TestMethodDefaultParam\n" +
-                                "    methodNonStatic(a,b=1)\n" +
+                                "    def methodNonStatic(a,b=1)\n" +
                                 "        return a+b\n" +
                                 "    static\n" +
-                                "        methodStatic(a,b=1)\n" +
+                                "        def methodStatic(a,b=1)\n" +
                                 "            return a-b",
                         "TestMethodDefaultParam");
                 Object o = cls.newInstance();
@@ -1835,9 +1842,9 @@ public class TestCodeGen {
                         "" +
                                 "class TestConcatOp\n" +
                                 "    static\n" +
-                                "        method(a,b)\n" +
+                                "        def method(a,b)\n" +
                                 "            return a:::b\n" +
-                                "        method2()\n" +
+                                "        def method2()\n" +
                                 "            return [\"a\",\"b\"]:::[\"c\"]",
                         "TestConcatOp");
 
@@ -1856,7 +1863,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestInvokeMethodWithoutPar\n" +
                                 "    static\n" +
-                                "        method(o)\n" +
+                                "        def method(o)\n" +
                                 "            return o.toString",
                         "TestInvokeMethodWithoutPar");
 
@@ -1870,7 +1877,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestFunctionalInterfaces\n" +
                                 "    static\n" +
-                                "        method(list)\n" +
+                                "        def method(list)\n" +
                                 "            return list.stream().map((e)->e.toString).collect(java::util::stream::Collectors.toList())",
                         "TestFunctionalInterfaces");
                 Method method = cls.getMethod("method", Object.class);
@@ -1883,7 +1890,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestImplicitArray\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return (type TestImplicitArray).getMethod('method', [])",
                         "TestImplicitArray");
                 Method method = cls.getMethod("method");
@@ -1896,7 +1903,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestFunctionalAbstractClass\n" +
                                 "    m(c:lt::compiler::F)=c\n" +
-                                "    method()\n" +
+                                "    def method()\n" +
                                 "        return m((e)->e)",
                         "TestFunctionalAbstractClass");
                 Object TestFunctionalAbstractClass_inst = cls.newInstance();
@@ -1912,12 +1919,12 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass(
                         "" +
                                 "class TestInvokeDynamicThisAndStatic\n" +
-                                "    m(list:java::util::List)\n" +
+                                "    def m(list:java::util::List)\n" +
                                 "        list add 1\n" +
                                 "        return list\n" +
                                 "    indyThis(ls)=m(ls)\n" +
                                 "    static\n" +
-                                "        mm(list:java::util::List)\n" +
+                                "        def mm(list:java::util::List)\n" +
                                 "            list add 0\n" +
                                 "            return list\n" +
                                 "        indyStatic(ls)=mm(ls)",
@@ -1951,8 +1958,8 @@ public class TestCodeGen {
                         "" +
                                 "class TestInnerMethodRecursive\n" +
                                 "    static\n" +
-                                "        method(a:int,b:int)\n" +
-                                "            gcd(i:int, j:int)\n" +
+                                "        def method(a:int,b:int)\n" +
+                                "            def gcd(i:int, j:int)\n" +
                                 "                if j\n" +
                                 "                    return gcd(j, i % j)\n" +
                                 "                else\n" +
@@ -2157,7 +2164,7 @@ public class TestCodeGen {
                                 "    assign(x)=x+1\n" +
                                 "class TestAssignOp\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return X():=1\n",
                         "TestAssignOp");
                 Method method = cls.getMethod("method");
@@ -2170,12 +2177,12 @@ public class TestCodeGen {
                         "" +
                                 "class TestIndexAccessAssign\n" +
                                 "    static\n" +
-                                "        method(arr)\n" +
+                                "        def method(arr)\n" +
                                 "            i=0\n" +
                                 "            a=0\n" +
                                 "            while i<arr.size\n" +
                                 "                a+=arr[i++]\n" +
-                                "            m()\n" +
+                                "            def m()\n" +
                                 "                return 1+1\n" +
                                 "            return a"
                         , "TestIndexAccessAssign");
@@ -2190,7 +2197,7 @@ public class TestCodeGen {
                                 "import lt::util::List\n" +
                                 "class TestDynamicConstruct\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            a=[1]\n" +
                                 "            return List(a)"
                         , "TestDynamicConstruct"
@@ -2356,9 +2363,9 @@ public class TestCodeGen {
                         "" +
                                 "class TestRegex\n" +
                                 "    static\n" +
-                                "        method1()\n" +
+                                "        def method1()\n" +
                                 "            return //a\\bc//\n" +
-                                "        method2()\n" +
+                                "        def method2()\n" +
                                 "            return //a\\//b//"
                         , "TestRegex"
                 );
@@ -2378,14 +2385,14 @@ public class TestCodeGen {
                                 "import java::util::Arrays\n" +
                                 "class C\n" +
                                 "    static\n" +
-                                "        call(o,m:String,b:[]bool,args:[]Object)\n" +
+                                "        def call(o,m:String,b:[]bool,args:[]Object)\n" +
                                 "            return '' + (o==null) +\n" +
                                 "            m +\n" +
                                 "            Arrays.toString(b) +\n" +
                                 "            Arrays.toString(args)\n" +
                                 "class TestCall\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            c=C\n" +
                                 "            return c.go(1,1.2,'abc')"
                         , "TestCall"
@@ -2467,13 +2474,13 @@ public class TestCodeGen {
                                 "class TestFunctionalObject\n" +
                                 "    static\n" +
                                 "        b = ()->2\n" +
-                                "        method1()\n" +
+                                "        def method1()\n" +
                                 "            a = ()->1\n" +
                                 "            return a()\n" +
-                                "        method2()\n" +
+                                "        def method2()\n" +
                                 "            return b()\n" +
                                 "    c = ()->3\n" +
-                                "    method3()\n" +
+                                "    def method3()\n" +
                                 "        return c()"
                         , "TestFunctionalObject");
                 Method method1 = cls.getMethod("method1");
@@ -2513,7 +2520,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestFunctionalObject\n" +
                                 "    static\n" +
-                                "        method(n)\n" +
+                                "        def method(n)\n" +
                                 "            a = (x,y)->x+1+y\n" +
                                 "            return a(n,3)"
                         , "TestFunctionalObject");
@@ -2529,7 +2536,7 @@ public class TestCodeGen {
                                 "    reverse_add(n) = n + 10\n" +
                                 "class TestCallingReverse\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            return 1 + X()"
                         , "TestCallingReverse"
                 );
@@ -2543,10 +2550,10 @@ public class TestCodeGen {
                         "" +
                                 "class TestFunctionalObjectUpgradeVersion\n" +
                                 "    static\n" +
-                                "        method1(n)\n" +
+                                "        def method1(n)\n" +
                                 "            a = (x,y)->(z)->x+y+z\n" +
                                 "            return a(n,3)(2)\n" +
-                                "        method2(o)\n" +
+                                "        def method2(o)\n" +
                                 "            return o[0](3)"
                         , "TestFunctionalObjectUpgradeVersion");
                 Method method1 = cls.getMethod("method1", Object.class);
@@ -2562,7 +2569,7 @@ public class TestCodeGen {
                         "" +
                                 "class TestOperatorAssign\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            i = 2\n" +
                                 "            i <<= 3\n" +
                                 "            return i"
@@ -2577,8 +2584,8 @@ public class TestCodeGen {
                         "" +
                                 "class TestInternalSyntaxLambda\n" +
                                 "    static\n" +
-                                "        method()\n" +
-                                "            return (T())\n" +
+                                "        def method()\n" +
+                                "            return T()\n" +
                                 "                return 1 + 2\n" +
                                 "class T\n" +
                                 "    apply(o)=o(this)"
@@ -2674,7 +2681,7 @@ public class TestCodeGen {
                                 "    test3()=\"${1}abc\"\n" + // exp at the start
                                 "    test4()=\"ab${1}c\"\n" + // exp at the middle
                                 "    test5()=\"ab${test1()}c\"\n" + // exp outside
-                                "    test6() {\n" +
+                                "    def test6() {\n" +
                                 "      \"ab${x=1}c\"\n" +
                                 "      return x\n" +
                                 "    }\n" + // exp define a variable
@@ -2713,7 +2720,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestCompileMultipleIndexAccess\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            arr:[][]int = [[1,2],[3,4]]\n" +
                                 "            return arr[1,0]"
                         , "TestCompileMultipleIndexAccess");
@@ -2757,7 +2764,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestAutoReturn\n" +
                                 "    static\n" +
-                                "        method()\n" +
+                                "        def method()\n" +
                                 "            1"
                         , "TestAutoReturn");
                 Method method = cls.getMethod("method");
@@ -2787,7 +2794,7 @@ public class TestCodeGen {
                                 ";; :scanner-brace\n" +
                                 "class TestAutoReturnIf {\n" +
                                 "    static {\n" +
-                                "        method(a) {\n" +
+                                "        def method(a) {\n" +
                                 "            if a { 1 } else { 2 }\n" +
                                 "        }\n" +
                                 "    }\n" +
@@ -2804,7 +2811,7 @@ public class TestCodeGen {
                                 ";; :scanner-brace\n" +
                                 "class TestBraceLambda {\n" +
                                 "    static {\n" +
-                                "        method() {\n" +
+                                "        def method() {\n" +
                                 "            x = 1\n" +
                                 "            f = ()->2\n" +
                                 "            x + f()\n" +
@@ -2849,8 +2856,8 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestInnerMethodChangeParam\n" +
                                 "    static\n" +
-                                "        method(a)\n" +
-                                "            inner()\n" +
+                                "        def method(a)\n" +
+                                "            def inner()\n" +
                                 "                a=2\n" +
                                 "            inner()\n" +
                                 "            return a"
@@ -2864,8 +2871,8 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestInnerMethodContainRealType\n" +
                                 "    static\n" +
-                                "        method(a:int)\n" +
-                                "            inner()\n" +
+                                "        def method(a:int)\n" +
+                                "            def inner()\n" +
                                 "                a=Object()\n" +
                                 "            inner()\n" +
                                 "            return a"
@@ -2892,7 +2899,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestLambdaCallSelf\n" +
                                 "    static\n" +
-                                "        method(x)\n" +
+                                "        def method(x)\n" +
                                 "            var count = 0\n" +
                                 "            var f = a->\n" +
                                 "                if a > 2\n" +
@@ -2911,7 +2918,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestLambdaCallSelfVal\n" +
                                 "    static\n" +
-                                "        method(x)\n" +
+                                "        def method(x)\n" +
                                 "            var count = 0\n" +
                                 "            val f = a->\n" +
                                 "                if a > 2\n" +
@@ -2936,11 +2943,44 @@ public class TestCodeGen {
                                 "                return null\n" +
                                 "            count ++\n" +
                                 "            f(a+1)\n" +
-                                "        method(x)\n" +
+                                "        def method(x)\n" +
                                 "            f(x)\n" +
                                 "            return count"
                         , "TestLambdaCallSelfField");
                 Method method = cls.getMethod("method", Object.class);
                 assertEquals(4, method.invoke(null, -1));
+        }
+
+        @Test
+        public void testMethodWithoutPar() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                        "class TestMethodWithoutPar\n" +
+                        "    def m\n" +
+                        "    def n\n" +
+                        "        ...\n" +
+                        "    def o:int\n" +
+                        "    def p:int\n" +
+                        "        ...\n" +
+                        "    def q=1\n" +
+                        "    def r:int=1", "TestMethodWithoutPar");
+                Method m = cls.getMethod("m");
+                Method n = cls.getMethod("n");
+                Method o = cls.getMethod("o");
+                Method p = cls.getMethod("p");
+                Method q = cls.getMethod("q");
+                Method r = cls.getMethod("r");
+
+                Consumer<Method> noParam = method -> assertEquals(0, method.getParameterCount());
+                noParam.accept(m);
+                noParam.accept(n);
+                noParam.accept(o);
+                noParam.accept(p);
+                noParam.accept(q);
+                noParam.accept(r);
+
+                Consumer<Method> returnInt = method -> assertEquals(int.class, method.getReturnType());
+                returnInt.accept(o);
+                returnInt.accept(p);
+                returnInt.accept(r);
         }
 }

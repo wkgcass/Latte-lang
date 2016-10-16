@@ -534,7 +534,7 @@ public class TestParser {
         public void testMethodNormal_NoParam() throws Exception {
                 List<Statement> list = parse(
                         "" +
-                                "method()\n" +
+                                "def method()\n" +
                                 "    a=false"
                 );
 
@@ -545,7 +545,9 @@ public class TestParser {
                 v.setInit(new BoolLiteral("false", LineCol.SYNTHETIC));
 
                 MethodDef methodDef = new MethodDef("method",
-                        Collections.emptySet(),
+                        Collections.singleton(
+                                new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC)
+                        ),
                         null,
                         Collections.emptyList(),
                         Collections.emptySet(),
@@ -1888,12 +1890,14 @@ public class TestParser {
 
         @Test
         public void testPass() throws Exception {
-                List<Statement> list = parse("method()\n    ...");
+                List<Statement> list = parse("def method()\n    ...");
 
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                MethodDef m = new MethodDef("method", Collections.emptySet(), null, Collections.emptyList(), Collections.emptySet(), Collections.singletonList(
+                MethodDef m = new MethodDef("method", Collections.singleton(
+                        new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC)
+                ), null, Collections.emptyList(), Collections.emptySet(), Collections.singletonList(
                         new AST.Pass(LineCol.SYNTHETIC)
                 ), LineCol.SYNTHETIC);
                 assertEquals(m, stmt);
@@ -2258,6 +2262,27 @@ public class TestParser {
                         new AST.MapExp(map, LineCol.SYNTHETIC),
                         new AST.MapExp(map, LineCol.SYNTHETIC),
                         new AST.MapExp(map, LineCol.SYNTHETIC)
+                ), stmts);
+        }
+
+        @Test
+        public void testDefNoPar() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "def m\n" +
+                        "def n\n" +
+                        "    ...\n" +
+                        "def o:int\n" +
+                        "def p:int\n" +
+                        "    ...\n" +
+                        "def q=1\n" +
+                        "def r:int=1");
+                assertEquals(Arrays.asList(
+                        new MethodDef("m", Collections.singleton(new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC)), null, Collections.emptyList(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
+                        new MethodDef("n", Collections.singleton(new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC)), null, Collections.emptyList(), Collections.emptySet(), Collections.singletonList(new AST.Pass(LineCol.SYNTHETIC)), LineCol.SYNTHETIC),
+                        new MethodDef("o", Collections.singleton(new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC)), new AST.Access(null, "int", LineCol.SYNTHETIC), Collections.emptyList(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
+                        new MethodDef("p", Collections.singleton(new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC)), new AST.Access(null, "int", LineCol.SYNTHETIC), Collections.emptyList(), Collections.emptySet(), Collections.singletonList(new AST.Pass(LineCol.SYNTHETIC)), LineCol.SYNTHETIC),
+                        new MethodDef("q", Collections.singleton(new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC)), null, Collections.emptyList(), Collections.emptySet(), Collections.singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)), LineCol.SYNTHETIC),
+                        new MethodDef("r", Collections.singleton(new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC)), new AST.Access(null, "int", LineCol.SYNTHETIC), Collections.emptyList(), Collections.emptySet(), Collections.singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)), LineCol.SYNTHETIC)
                 ), stmts);
         }
 }

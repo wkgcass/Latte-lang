@@ -177,7 +177,7 @@ public class CompileUtil {
         private static Set<String> modifiers = new HashSet<>(Arrays.asList(
                 "public", "protected", "private", "pkg",
                 "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp",
-                "data", "var"
+                "data", "var", "def"
         ));
 
         private static Set<String> accessModifiers = new HashSet<>(Arrays.asList(
@@ -245,6 +245,8 @@ public class CompileUtil {
                                 return Modifier.Available.DATA;
                         case "var":
                                 return Modifier.Available.VAR;
+                        case "def":
+                                return Modifier.Available.DEF;
                         default:
                                 throw new LtBug("invalid modifier " + str);
                 }
@@ -336,7 +338,9 @@ public class CompileUtil {
                                 }
                         } else {
                                 if (nodeAfterRightPar instanceof ElementStartNode) {
-                                        return METHOD_DEF_NORMAL;
+                                        if (annosOrModifiersNotEmpty) {
+                                                return METHOD_DEF_NORMAL;
+                                        }
                                 } else if (nodeAfterRightPar instanceof Element) {
                                         String s = ((Element) nodeAfterRightPar).getContent();
                                         if (s.equals(":")) {

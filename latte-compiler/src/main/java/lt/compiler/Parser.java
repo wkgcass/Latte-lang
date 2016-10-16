@@ -478,7 +478,7 @@ public class Parser {
                                         // method():Type
                                         return parse_method_def_type();
                                 } else if (def_method_type == METHOD_DEF_EMPTY) {
-                                        // method()=pass
+                                        // method()=...
                                         return parse_method_def_empty();
                                 } else if (def_method_type == METHOD_DEF_NORMAL) {
                                         // method()
@@ -487,6 +487,8 @@ public class Parser {
                                 } else if (def_method_type == METHOD_DEF_ONE_STMT) {
                                         // method()=....
                                         return parse_method_def_one_stmt();
+                                } else if (modifiers.contains(new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC))) {
+                                        return parse_method_def_no_par();
                                 }
                         }
 
@@ -1931,6 +1933,9 @@ public class Parser {
                                                                                                 args.add((Expression) stmt);
 
                                                                                                 if (stmt instanceof VariableDef) {
+                                                                                                        if (((VariableDef) stmt).getType() != null) {
+                                                                                                                err.UnexpectedTokenException("argument", "variable definition", stmt.line_col());
+                                                                                                        }
                                                                                                         if (((VariableDef) stmt).getInit() == null
                                                                                                                 ||
                                                                                                                 !((VariableDef) stmt).getAnnos().isEmpty()
@@ -2039,6 +2044,52 @@ public class Parser {
                         }
                 }
                 // else
+        }
+
+        /**
+         * parse method def and there's no `(` after the name
+         */
+        private MethodDef parse_method_def_no_par() throws SyntaxException {
+                LineCol lineCol = current.getLineCol();
+                String name = ((Element) current).getContent();
+                Set<AST.Anno> annoSet = new HashSet<>(annos);
+                annos.clear();
+                Set<Modifier> modSet = new HashSet<>(modifiers);
+                modifiers.clear();
+                nextNode(true);
+                if (current == null || current instanceof EndingNode) {
+                        return new MethodDef(name, modSet, null, Collections.emptyList(), annoSet, Collections.emptyList(), lineCol);
+                } else if (current instanceof ElementStartNode) {
+                        return new MethodDef(name, modSet, null, Collections.emptyList(), annoSet,
+                                parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false), lineCol);
+                } else if (current instanceof Element) {
+                        try {
+                                expecting(":", current.previous(), current, err);
+                        } catch (SyntaxException ignore) {
+                                // =
+                                expecting("=", current.previous(), current, err);
+                                return new MethodDef(name, modSet, null, Collections.emptyList(), annoSet,
+                                        Collections.singletonList(next_exp(false)), lineCol);
+                        }
+                        // :
+                        nextNode(false);
+                        AST.Access type = parse_cls_for_type_spec();
+                        if (current == null || current instanceof EndingNode) {
+                                return new MethodDef(name, modSet, type, Collections.emptyList(), annoSet,
+                                        Collections.emptyList(), lineCol);
+                        } else if (current instanceof ElementStartNode) {
+                                return new MethodDef(name, modSet, type, Collections.emptyList(), annoSet,
+                                        parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false), lineCol);
+                        } else if (current instanceof Element && ((Element) current).getContent().equals("=")) {
+                                return new MethodDef(name, modSet, type, Collections.emptyList(), annoSet,
+                                        Collections.singletonList(next_exp(false)), lineCol);
+                        } else {
+                                err.UnexpectedTokenException("end of definition or method body", current.toString(), current.getLineCol());
+                                err.debug("assume it's empty body");
+                                return new MethodDef(name, modSet, type, Collections.emptyList(), annoSet,
+                                        Collections.emptyList(), lineCol);
+                        }
+                } else throw new LtBug("unknown node type");
         }
 
         /**

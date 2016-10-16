@@ -22,7 +22,7 @@ class Num(public i)
     unsignedShiftRight(o)=Num(i>>>o); bind >>>
     equal(o)=i==o              ; bind =:=
     notEqual(o)=i!=o           ; bind !:=
-    contains(o)                ; bind (this in o)
+    def contains(o)            ; bind (this in o)
         throw UnsupportedOperationException('contains')
     gt(o)=i>o                  ; bind >
     ge(o)=i>=o                 ; bind >=
@@ -31,11 +31,11 @@ class Num(public i)
     `and`(o)=Num(i&o)          ; bind &
     xor(o)=Num(i^o)            ; bind ^
     `or`(o)=Num(i|o)           ; bind |
-    logicNot()                 ; bind unary !
+    def logicNot()             ; bind unary !
         throw UnsupportedOperationException('logicNot')
     `not`()=Num(~i)            ; bind ~
     negate()=Num(-i)           ; bind -
-    concat(o)                  ; bind :::
+    def concat(o)                  ; bind :::
         throw UnsupportedOperationException('concat')
 
     toString():String="Num("+i+")"

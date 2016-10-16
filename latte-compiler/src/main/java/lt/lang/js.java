@@ -128,7 +128,9 @@ public class js implements SourceGenerator {
          */
         private void assertNoModifier(Collection<Modifier> modifiers) throws SyntaxException {
                 if (!modifiers.isEmpty()) {
-                        err.SyntaxException("JavaScript don't have modifiers", modifiers.iterator().next().line_col());
+                        if (modifiers.size() != 1 || !modifiers.contains(new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC))) {
+                                err.SyntaxException("JavaScript don't have modifiers", modifiers.iterator().next().line_col());
+                        }
                 }
         }
 
