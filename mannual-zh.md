@@ -1105,7 +1105,7 @@ user = User(1, 'latte')
 
 ```scala
 empty = new Empty
-user = new User(1, 'latte')
+user = new User(1, "latte")
 ```
 
 不过，Latte中的`new`的“优先级”非常低，java中的`new X().doSth()`的写法在Latte中必须写为`(new X).doSth`这样的写法。
@@ -1361,9 +1361,9 @@ Json对象：
 
 ```js
 var map = {
-		'one': 1,
-		'two': 2,
-		'three', 3
+    'one': 1,
+    'two': 2,
+    'three', 3
 }
 ```
 
@@ -1374,8 +1374,8 @@ var map = {
 ```js
 ;; :scanner-brace
 var map = {{
-		'one': 1,
-		'two': 2
+    'one': 1,
+    'two': 2
 }}
 ```
 
@@ -1383,8 +1383,8 @@ var map = {{
 
 ```js
 var map = [
-		'one': 1,
-		'two': 2
+    'one': 1,
+    'two': 2
 ]
 ```
 
@@ -1495,8 +1495,11 @@ c = a + b           /* 19/28 */
 | !a       | a.logicNot()  |
 | ~a       | a.not()       |
 | -a       | a.negate()    |
+| a\[0\]    | a.get(0)      |
+| a\[0, 1\] | a.get(0, 1)   |
 
 > `+a` 这种用法在Latte中不对`+`做任何处理，当做`a`
+> 上面的`a[0, 1]`用法，如果a是一个数组，则相当于java的`a[0][1]`
 
 Latte的运算符优先级和Java完全一致，而Latte特有的运算符优先级如下：
 
@@ -1521,7 +1524,12 @@ Latte的运算符优先级和Java完全一致，而Latte特有的运算符优先
 
 <h2 id="p5-5">5.5 反向调用</h3>
 
-在绑定运算符时，只能在左侧对象上调用方法。但是有时候顺序很重要，比如`1 - Rational(1, 2)`，这么写会报错` cannot find method to invoke: java.lang.Integer#subtract(Rational)`  
+在绑定运算符时，只能在左侧对象上调用方法。但是有时候顺序很重要，比如 `1 - Rational(1, 2)` ，这么写会报错
+
+```
+cannot find method to invoke: java.lang.Integer#subtract(Rational)
+```
+
 这时可以使用反向调用方法解决。
 
 在任何只有一个参数的方法前加上`reverse_`，都可以使用该特性。
@@ -1529,7 +1537,7 @@ Latte的运算符优先级和Java完全一致，而Latte特有的运算符优先
 ```kotlin
 class Rational(a, b)
     reverse_subtract(that:int)=Rational(that*b - a, b)
-		toString():String="${a}/${b}"
+    toString():String="${a}/${b}"
 
 1 - Rational(1,4)    /* result is 3/4 */
 ```
@@ -1551,7 +1559,7 @@ var a = -1
 try
     isGreaterThanZero(a)
 catch e
-    e.toCharArray  ; succeed. `e` is a String
+    e.toCharArray  /* succeed. `e` is a String */
 finally
     a = 1
 ```
@@ -1712,7 +1720,7 @@ Evaluator evaluator = new Evaluator(new ClassPathLoader(Thread.currentThread().g
 evaluator.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
 evaluator.put("list", list); // 把list对象放进Evaluator上下文中
 Evaluator.Entry entry = evaluator.eval("" +
-	"java::util::stream::Collectors._\n" +
+	"import java::util::stream::Collectors._\n" +
 	"list.stream.filter{it > 0}.collect(toList())");
 List newList = (List) entry.result;
 // newList is [3, 4, 5]

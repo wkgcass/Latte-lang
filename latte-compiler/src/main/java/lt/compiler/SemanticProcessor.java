@@ -455,6 +455,7 @@ public class SemanticProcessor {
          * @param fileNameToClassDef     file name to class defintion
          * @param fileNameToInterfaceDef file name to interface definition
          * @param fileNameToPackageName  file name to package name
+         * @param fileNameToFunctions    file name to function def
          * @throws SyntaxException exception
          */
         public void step2(Map<String, List<ClassDef>> fileNameToClassDef,

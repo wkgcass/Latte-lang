@@ -36,7 +36,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * repl
@@ -48,7 +47,7 @@ public class REPL {
         private REPL() {
         }
 
-        public static void main(String[] args) {
+        public static void main(String[] args) throws Exception {
                 if (args != null && args.length != 0) {
                         runCommands(args);
                 } else {
@@ -62,10 +61,15 @@ public class REPL {
                         ClassPathLoader classPathLoader = new ClassPathLoader(Thread.currentThread().getContextClassLoader());
 
                         Evaluator evaluator = new Evaluator(classPathLoader);
-                        Scanner scanner = new Scanner(System.in);
+                        LineReader reader;
+                        if (System.console() == null) {
+                                reader = new ScannerLineReader();
+                        } else {
+                                reader = new JLineLineReader();
+                        }
                         StringBuilder sb = new StringBuilder();
                         while (true) {
-                                String str = scanner.nextLine();
+                                String str = reader.readLine();
                                 if (str.trim().startsWith(":")) {
                                         String cmd = str.trim();
                                         // some functions that controls the REPL
@@ -188,7 +192,7 @@ public class REPL {
          *
          * @param args arguments
          */
-        private static void runCommands(String[] args) {
+        private static void runCommands(String[] args) throws Exception {
                 String command = args[0];
                 switch (command) {
                         case "help":

@@ -319,8 +319,9 @@ public abstract class AbstractScanner implements Scanner {
         /**
          * pop one or more nodes from {@link Args#startNodeStack}, the last popped node's indentation should be the same as required indent
          *
-         * @param args   args context
-         * @param indent required indentation
+         * @param args    args context
+         * @param indent  required indentation
+         * @param newLine reaching a "new line"
          * @throws UnexpectedTokenException compiling error
          */
         protected final void redirectToStartNodeByIndent(Args args, int indent, boolean newLine) throws UnexpectedTokenException {

@@ -79,5 +79,10 @@
             <artifactId>latte-library</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 </project>
