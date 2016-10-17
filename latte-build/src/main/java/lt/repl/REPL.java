@@ -56,7 +56,6 @@ public class REPL {
                         System.out.println("Type :help for more information.");
                         System.out.println("for syntax help, please visit https://github.com/wkgcass/Latte-lang/");
                         System.out.println();
-                        System.out.print(lineStarter);
 
                         ClassPathLoader classPathLoader = new ClassPathLoader(Thread.currentThread().getContextClassLoader());
 
@@ -65,8 +64,15 @@ public class REPL {
                         if (System.console() == null) {
                                 reader = new ScannerLineReader();
                         } else {
-                                reader = new JLineLineReader();
+                                try {
+                                        Class.forName("jline.console.ConsoleReader"); // check exists
+                                        reader = new JLineLineReader();
+                                } catch (ClassNotFoundException ignore) {
+                                        reader = new ScannerLineReader();
+                                }
                         }
+                        System.out.println();
+                        System.out.print(lineStarter);
                         StringBuilder sb = new StringBuilder();
                         while (true) {
                                 String str = reader.readLine();
