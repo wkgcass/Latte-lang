@@ -36,6 +36,8 @@ public class SParameter implements LeftValue, SAnnotationPresentable {
         private STypeDef type;
         private SInvokable target;
         private boolean canChange = true;
+        private boolean notNull = false;
+        private boolean notEmpty = false;
 
         public void setTarget(SInvokable target) {
                 this.target = target;
@@ -51,6 +53,22 @@ public class SParameter implements LeftValue, SAnnotationPresentable {
 
         public void setCanChange(boolean canChange) {
                 this.canChange = canChange;
+        }
+
+        public boolean isNotNull() {
+                return notNull;
+        }
+
+        public void setNotNull(boolean notNull) {
+                this.notNull = notNull;
+        }
+
+        public boolean isNotEmpty() {
+                return notEmpty;
+        }
+
+        public void setNotEmpty(boolean notEmpty) {
+                this.notEmpty = notEmpty;
         }
 
         public String name() {

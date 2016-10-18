@@ -1397,6 +1397,8 @@ public class CodeGenerator {
          * @see lt.compiler.semantic.Ins.PutStatic
          * @see lt.compiler.semantic.Ins.IfNe
          * @see lt.compiler.semantic.Ins.IfEq
+         * @see lt.compiler.semantic.Ins.IfNonNull
+         * @see lt.compiler.semantic.Ins.IfACmpNe
          * @see lt.compiler.semantic.Ins.Goto
          * @see lt.compiler.semantic.Ins.Nop
          * @see lt.compiler.semantic.Ins.AThrow
@@ -1453,6 +1455,29 @@ public class CodeGenerator {
                         }
                         methodVisitor.visitJumpInsn(Opcodes.IFEQ, l);
                         info.pop(1);
+                } else if (ins instanceof Ins.IfNonNull) {
+                        buildValueAccess(methodVisitor, info, ((Ins.IfNonNull) ins).object(), true);
+                        Label l;
+                        if (info.insToLabel.containsKey(((Ins.IfNonNull) ins).gotoIns())) {
+                                l = info.insToLabel.get(((Ins.IfNonNull) ins).gotoIns()).label;
+                        } else {
+                                l = new Label();
+                                info.insToLabel.put(((Ins.IfNonNull) ins).gotoIns(), new CodeInfo.Container(l));
+                        }
+                        methodVisitor.visitJumpInsn(Opcodes.IFNONNULL, l);
+                        info.pop(1);
+                } else if (ins instanceof Ins.IfACmpNe) {
+                        buildValueAccess(methodVisitor, info, ((Ins.IfACmpNe) ins).value1(), true);
+                        buildValueAccess(methodVisitor, info, ((Ins.IfACmpNe) ins).value2(), true);
+                        Label l;
+                        if (info.insToLabel.containsKey(((Ins.IfACmpNe) ins).gotoIns())) {
+                                l = info.insToLabel.get(((Ins.IfACmpNe) ins).gotoIns()).label;
+                        } else {
+                                l = new Label();
+                                info.insToLabel.put(((Ins.IfACmpNe) ins).gotoIns(), new CodeInfo.Container(l));
+                        }
+                        methodVisitor.visitJumpInsn(Opcodes.IF_ACMPNE, l);
+                        info.pop(2);
                 } else if (ins instanceof Ins.Goto) {
                         Label l;
                         if (info.insToLabel.containsKey(((Ins.Goto) ins).gotoIns())) {

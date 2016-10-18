@@ -349,6 +349,40 @@ public class Ins {
         }
 
         /**
+         * ifACmpNe
+         */
+        public static class IfACmpNe implements Instruction {
+                private final Value value1;
+                private final Value value2;
+                private final Instruction gotoIns;
+                private final LineCol lineCol;
+
+                public IfACmpNe(Value value1, Value value2, Instruction gotoIns, LineCol lineCol) {
+                        this.value1 = value1;
+                        this.value2 = value2;
+                        this.gotoIns = gotoIns;
+                        this.lineCol = lineCol;
+                }
+
+                public Value value1() {
+                        return value1;
+                }
+
+                public Value value2() {
+                        return value2;
+                }
+
+                public Instruction gotoIns() {
+                        return gotoIns;
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return lineCol;
+                }
+        }
+
+        /**
          * ifEq (i == 0)
          */
         public static class IfEq implements Instruction {
@@ -405,6 +439,34 @@ public class Ins {
 
                 public void setGotoIns(Instruction gotoIns) {
                         this.gotoIns = gotoIns;
+                }
+        }
+
+        /**
+         * ifNonNull ( != null )
+         */
+        public static class IfNonNull implements Instruction {
+                private final Value object;
+                private final Instruction gotoIns;
+                private final LineCol lineCol;
+
+                public IfNonNull(Value object, Instruction gotoIns, LineCol lineCol) {
+                        this.object = object;
+                        this.gotoIns = gotoIns;
+                        this.lineCol = lineCol;
+                }
+
+                public Value object() {
+                        return object;
+                }
+
+                public Instruction gotoIns() {
+                        return gotoIns;
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return lineCol;
                 }
         }
 

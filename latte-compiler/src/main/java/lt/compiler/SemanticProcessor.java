@@ -621,7 +621,7 @@ public class SemanticProcessor {
 
                                 // parse field from constructor parameters
                                 for (VariableDef v : classDef.params) {
-                                        parseField(v, sClassDef, imports, PARSING_CLASS, false);
+                                        parseField(v, sClassDef, imports, PARSING_CLASS, false, true);
                                 }
 
                                 // get static scope and parse non-static fields/methods
@@ -631,7 +631,7 @@ public class SemanticProcessor {
                                                 staticScopes.add((AST.StaticScope) stmt);
                                         } else if (stmt instanceof VariableDef) {
                                                 // define a non-static field
-                                                parseField((VariableDef) stmt, sClassDef, imports, PARSING_CLASS, false);
+                                                parseField((VariableDef) stmt, sClassDef, imports, PARSING_CLASS, false, false);
                                         } else if (stmt instanceof MethodDef) {
                                                 // define a non-static method
                                                 MethodDef methodDef = (MethodDef) stmt;
@@ -657,7 +657,7 @@ public class SemanticProcessor {
                                         for (Statement stmt : scope.statements) {
                                                 if (stmt instanceof VariableDef) {
                                                         // define a static field
-                                                        parseField((VariableDef) stmt, sClassDef, imports, PARSING_CLASS, true);
+                                                        parseField((VariableDef) stmt, sClassDef, imports, PARSING_CLASS, true, false);
                                                 } else if (stmt instanceof MethodDef) {
                                                         // define a static method
                                                         MethodDef methodDef = (MethodDef) stmt;
@@ -696,7 +696,7 @@ public class SemanticProcessor {
                                 List<AST.StaticScope> staticScopes = new ArrayList<>();
                                 for (Statement stmt : interfaceDef.statements) {
                                         if (stmt instanceof VariableDef) {
-                                                parseField((VariableDef) stmt, sInterfaceDef, imports, PARSING_INTERFACE, false);
+                                                parseField((VariableDef) stmt, sInterfaceDef, imports, PARSING_INTERFACE, false, false);
                                         } else if (stmt instanceof MethodDef) {
                                                 MethodDef m = (MethodDef) stmt;
                                                 int generateIndex = -1;
@@ -725,7 +725,7 @@ public class SemanticProcessor {
                                 for (AST.StaticScope staticScope : staticScopes) {
                                         for (Statement stmt : staticScope.statements) {
                                                 if (stmt instanceof VariableDef) {
-                                                        parseField((VariableDef) stmt, sInterfaceDef, imports, PARSING_INTERFACE, true);
+                                                        parseField((VariableDef) stmt, sInterfaceDef, imports, PARSING_INTERFACE, true, false);
                                                 } else if (stmt instanceof MethodDef) {
                                                         MethodDef m = (MethodDef) stmt;
                                                         int generateIndex = -1;
@@ -1033,6 +1033,10 @@ public class SemanticProcessor {
                                                 for (SParameter param : constructorToFillStatements.getParameters()) {
                                                         constructorScope.putLeftValue(constructorScope.generateTempName(), param);
                                                 }
+
+                                                paramValueAvaliable(constructorToFillStatements.getParameters(),
+                                                        constructorToFillStatements.statements(), constructorScope,
+                                                        constructorToFillStatements.line_col());
 
                                                 // parse this constructor
                                                 for (Statement stmt : astClass.statements) {
@@ -1608,6 +1612,7 @@ public class SemanticProcessor {
                                         scope.putLeftValue(p.name(), p);
                                 }
                         }
+                        paramValueAvaliable(methodDef.getParameters(), methodDef.statements(), scope, methodDef.line_col());
                         for (SParameter p : methodDef.getParameters()) {
                                 if (p.canChange() && !isPointerType(p.type()) && CompileUtil.isValidName(p.name())) {
                                         // get the value and put into container
@@ -1645,6 +1650,90 @@ public class SemanticProcessor {
                                                 null, null,
                                                 false);
                                 }
+                        }
+                }
+        }
+
+        private SConstructorDef java_lang_NullPointerException_cons;
+
+        private SConstructorDef getJava_lang_NullPointerException_cons() throws SyntaxException {
+                if (java_lang_NullPointerException_cons == null) {
+                        SClassDef NPE = (SClassDef) getTypeWithName("java.lang.NullPointerException", LineCol.SYNTHETIC);
+                        for (SConstructorDef cons : NPE.constructors()) {
+                                if (cons.getParameters().isEmpty()) {
+                                        java_lang_NullPointerException_cons = cons;
+                                        break;
+                                }
+                        }
+                }
+                return java_lang_NullPointerException_cons;
+        }
+
+        private SConstructorDef java_lang_IllegalArgumentException_cons;
+
+        private SConstructorDef getJava_lang_IllegalArgumentException_cons() throws SyntaxException {
+                if (java_lang_IllegalArgumentException_cons == null) {
+                        SClassDef IAE = (SClassDef) getTypeWithName("java.lang.IllegalArgumentException", LineCol.SYNTHETIC);
+                        for (SConstructorDef cons : IAE.constructors()) {
+                                if (cons.getParameters().isEmpty()) {
+                                        java_lang_IllegalArgumentException_cons = cons;
+                                        break;
+                                }
+                        }
+                }
+                return java_lang_IllegalArgumentException_cons;
+        }
+
+        /**
+         * handle nonnull/nonempty modifiers on parameters
+         *
+         * @param params       parameters
+         * @param instructions instructions
+         * @param scope        current scope
+         * @param lineCol      line and column
+         * @throws SyntaxException compiling error
+         */
+        public void paramValueAvaliable(List<SParameter> params, List<Instruction> instructions, SemanticScope scope, LineCol lineCol) throws SyntaxException {
+                for (SParameter param : params) {
+                        if (param.isNotEmpty()) {
+                                Ins.Nop nop = new Ins.Nop();
+                                Ins.IfNe ifNe = new Ins.IfNe(
+                                        cast(BoolTypeDef.get(), new Ins.TLoad(param, scope, lineCol), lineCol),
+                                        nop, lineCol);
+                                instructions.add(ifNe);
+                                instructions.add(new Ins.AThrow(
+                                        new Ins.New(
+                                                getJava_lang_IllegalArgumentException_cons(), lineCol
+                                        ), lineCol));
+                                instructions.add(nop);
+                        } else if (param.isNotNull()) {
+                                if (param.type() instanceof PrimitiveTypeDef) {
+                                        continue;
+                                }
+                                // null
+                                Ins.Nop nop = new Ins.Nop();
+                                Ins.IfNonNull ifNonNull = new Ins.IfNonNull(
+                                        new Ins.TLoad(param, scope, lineCol),
+                                        nop, lineCol);
+                                instructions.add(ifNonNull);
+                                instructions.add(new Ins.AThrow(
+                                        new Ins.New(
+                                                getJava_lang_NullPointerException_cons(), lineCol
+                                        ), lineCol));
+                                instructions.add(nop);
+                                // undefined
+                                Ins.Nop nop2 = new Ins.Nop();
+                                Ins.IfACmpNe ifACmpNe = new Ins.IfACmpNe(
+                                        new Ins.TLoad(param, scope, lineCol),
+                                        invoke_Undefined_get(lineCol),
+                                        nop2, lineCol
+                                );
+                                instructions.add(ifACmpNe);
+                                instructions.add(new Ins.AThrow(
+                                        new Ins.New(
+                                                getJava_lang_IllegalArgumentException_cons(), lineCol
+                                        ), lineCol));
+                                instructions.add(nop2);
                         }
                 }
         }
@@ -8636,6 +8725,12 @@ public class SemanticProcessor {
                                                         return;
                                                 }
                                                 break;
+                                        case NONNULL:
+                                                param.setNotNull(true);
+                                                break;
+                                        case NONEMPTY:
+                                                param.setNotEmpty(true);
+                                                break;
                                         default:
                                                 err.UnexpectedTokenException("valid modifier for parameters (val)", m.toString(), m.line_col());
                                                 return;
@@ -8660,9 +8755,10 @@ public class SemanticProcessor {
          * @param imports  imports
          * @param mode     {@link #PARSING_CLASS} {@link #PARSING_INTERFACE}
          * @param isStatic whether the field is static
+         * @param isParam  the field is parsed from param
          * @throws SyntaxException exception
          */
-        public void parseField(VariableDef v, STypeDef type, List<Import> imports, int mode, boolean isStatic) throws SyntaxException {
+        public void parseField(VariableDef v, STypeDef type, List<Import> imports, int mode, boolean isStatic, boolean isParam) throws SyntaxException {
                 // field, set its name|type|modifier|annos|declaringClass
                 SFieldDef fieldDef = new SFieldDef(v.line_col());
                 fieldDef.setName(v.getName()); // name
@@ -8705,29 +8801,33 @@ public class SemanticProcessor {
                                         break;
                                 case PRIVATE:
                                         if (mode == PARSING_INTERFACE) {
-                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString(), m.line_col());
+                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString().toLowerCase(), m.line_col());
                                                 return;
                                         }
                                         fieldDef.modifiers().add(SModifier.PRIVATE);
                                         break;
                                 case PROTECTED:
                                         if (mode == PARSING_INTERFACE) {
-                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString(), m.line_col());
+                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString().toLowerCase(), m.line_col());
                                                 return;
                                         }
                                         fieldDef.modifiers().add(SModifier.PROTECTED);
                                         break;
                                 case PKG: // no need to assign modifier
                                         if (mode == PARSING_INTERFACE) {
-                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString(), m.line_col());
+                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString().toLowerCase(), m.line_col());
                                                 return;
                                         }
                                         break;
                                 case VAL:
                                         fieldDef.modifiers().add(SModifier.FINAL);
                                         break;
+                                case NONNULL:
+                                        if (isParam) break;
+                                case NONEMPTY:
+                                        if (isParam) break;
                                 default:
-                                        err.UnexpectedTokenException("valid modifier for fields (class:(public|private|protected|pkg|val)|interface:(pub|val))", m.toString(), m.line_col());
+                                        err.UnexpectedTokenException("valid modifier for fields (class:(public|private|protected|pkg|val)|interface:(pub|val))", m.toString().toLowerCase(), m.line_col());
                                         return;
                         }
                 }

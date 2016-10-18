@@ -177,7 +177,7 @@ public class CompileUtil {
         private static Set<String> modifiers = new HashSet<>(Arrays.asList(
                 "public", "protected", "private", "pkg",
                 "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp",
-                "data", "var", "def"
+                "data", "var", "def", "nonnull", "nonempty"
         ));
 
         private static Set<String> accessModifiers = new HashSet<>(Arrays.asList(
@@ -247,6 +247,10 @@ public class CompileUtil {
                                 return Modifier.Available.VAR;
                         case "def":
                                 return Modifier.Available.DEF;
+                        case "nonnull":
+                                return Modifier.Available.NONNULL;
+                        case "nonempty":
+                                return Modifier.Available.NONEMPTY;
                         default:
                                 throw new LtBug("invalid modifier " + str);
                 }

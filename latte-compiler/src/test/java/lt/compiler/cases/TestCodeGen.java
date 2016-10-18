@@ -2983,4 +2983,161 @@ public class TestCodeGen {
                 returnInt.accept(p);
                 returnInt.accept(r);
         }
+
+        @Test
+        public void testNotNull() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestNotNull\n" +
+                                "    static\n" +
+                                "        def method(nonnull a, nonnull b)= a + b"
+                        , "TestNotNull");
+                Method method = cls.getMethod("method", Object.class, Object.class);
+                assertEquals(3, method.invoke(null, 1, 2));
+                try {
+                        method.invoke(null, null, 1);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof NullPointerException);
+                }
+                try {
+                        method.invoke(null, 1, null);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof NullPointerException);
+                }
+                try {
+                        method.invoke(null, null, null);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof NullPointerException);
+                }
+                try {
+                        method.invoke(null, Undefined.get(), 1);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        method.invoke(null, 1, Undefined.get());
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        method.invoke(null, Undefined.get(), Undefined.get());
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+        }
+
+        @Test
+        public void testNotEmpty() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestNotEmpty\n" +
+                                "    static\n" +
+                                "        def method(nonempty a, nonempty b)= a + b"
+                        , "TestNotEmpty");
+                Method method = cls.getMethod("method", Object.class, Object.class);
+                assertEquals(3, method.invoke(null, 1, 2));
+                try {
+                        method.invoke(null, 0, 1);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        method.invoke(null, 1, 0);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        method.invoke(null, 0, 0);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+        }
+
+        @Test
+        public void testNotNullCons() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestNotNullCons(nonnull a, nonnull b)"
+                        , "TestNotNullCons");
+                Constructor<?> cons = cls.getConstructor(Object.class, Object.class);
+                cons.newInstance(1, 2); // pass
+                try {
+                        cons.newInstance(null, 1);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof NullPointerException);
+                }
+                try {
+                        cons.newInstance(1, null);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof NullPointerException);
+                }
+                try {
+                        cons.newInstance(null, null);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof NullPointerException);
+                }
+                try {
+                        cons.newInstance(Undefined.get(), 1);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        cons.newInstance(1, Undefined.get());
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        cons.newInstance(Undefined.get(), Undefined.get());
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+        }
+
+        @Test
+        public void testNotEmptyCons() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestNotEmptyCons(nonempty a, nonempty b)"
+                        , "TestNotEmptyCons");
+                Constructor<?> cons = cls.getConstructor(Object.class, Object.class);
+                cons.newInstance(1, 2); // pass
+                try {
+                        cons.newInstance(0, 1);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        cons.newInstance(1, 0);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        cons.newInstance(0, 0);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+        }
+
+        @Test
+        public void testNullEmptyCapability() throws Exception {
+                retrieveClass("" +
+                                "fun TestNullEmptyCapability(nonnull a, nonempty b)\n" +
+                                "    (nonnull c, nonempty d)->a+b+c+d\n" +
+                                "    def xx(nonnull e, nonempty f)=1"
+                        , "TestNullEmptyCapability");
+        }
 }

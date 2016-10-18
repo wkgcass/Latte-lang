@@ -25,9 +25,10 @@
 	3. [类型检查与转换](#p5-3)
 	4. [运算符绑定](#p5-4)
 	5. [反向调用](#p5-5)
-	5. [异常](#p5-6)
-	6. [注解](#p5-7)
-	7. [过程(Procedure)](#p5-8)
+	6. [异常](#p5-6)
+	7. [注解](#p5-7)
+	8. [过程(Procedure)](#p5-8)
+    9. [参数可用性检查](#p5-9)
 6. [Java 交互](#p6)
 	1. [在Latte中调用Java代码](#p6-1)
 	2. [在Java中调用Latte代码](#p6-2)
@@ -584,7 +585,7 @@ bool
 
 在使用字面量赋值时，只能对字面量支持的类型赋值。详见 [2.1 字面量](#p2-1)
 
-但是，在转换时，所有基本类型都可以互相转换（除了bool，它可以被任何类型转换到，但不能转换为其他类型）而不会出现任何错误。但是，在高精度向低精度转换时可能会丢失信息。例如：
+但是，在转换时，所有基本类型都可以互相转换（除了bool，它可以被任何类型转换到，但不能转换为其他类型，详见[5.9 参数可用性检查](#p5-9)）而不会出现任何错误。但是，在高精度向低精度转换时可能会丢失信息。例如：
 
 ```scala
 f:float = 3.14
@@ -1611,6 +1612,40 @@ class Rational(a, b)
 class Rational(a, b)
     toString():String = a + ( if b==1 {""} else {"/" + b} )
 ```
+
+<h2 id="p5-9">5.9 参数可用性检查</h2>
+
+Latte支持**参数**上的null值或“空”值检查，分别使用`nonnull`和`nonempty`修饰符。
+
+由于Latte的`Unit/void`方法也返回一个值（`undefined`），所以在`nonnull`中不光会检查null值，还会检查undefined。  
+如果出现null则会立即抛出`java.lang.NullPointerException`异常  
+如果出现undefined则会立即抛出`java.lang.IllegalArgumentException`异常
+
+```scala
+def add(nonnull a, nonnull b)= a + b
+
+add(null, 1)      /* 抛出NullPointerException */
+add(undefined, 2) /* 抛出IllegalArgumentException */
+```
+
+对于`nonempty`，检查的范围更广。首先Latte会将这个值转换为`bool`类型（Latte中任何类型都可以转为bool)  
+如果结果为`false`则会抛出异常`java.lang.IllegalArgumentException`
+
+```scala
+def listNotEmpty(nonempty list)
+
+listNotEmpty([])  /* 抛出 IllegalArgumentException */
+```
+
+在转换为`bool`时，Latte会尝试
+
+1. 如果是null，则返回false
+2. 如果是undefined，则返回false
+3. 如果是Boolean类型，则返回其对应的`bool`值
+4. 如果是数字类型，则：如果转换为`double`的结果是0，那么返回false，否则返回true
+5. 如果是Character类型，则：如果转换为`int`的结果是0，那么返回false，否则返回true
+6. 如果这个对象带有`def isEmpty:bool`或者`def isEmpty:Boolean`方法，那么调用之，并返回相应结果
+7. 返回true
 
 <h1 id="p6">6. Java交互</h1>
 

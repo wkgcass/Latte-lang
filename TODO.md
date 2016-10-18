@@ -6,10 +6,10 @@ Some language support `null safety` (e.g. Kotlin). Latte would support a better 
 
 When defining a method, let each param be `null safe` or `value avaliable` or `no assurance` as default.
 
-* add new modifier for variables (`notnull`, `notempty`. The first only checks null/undefined, the second cast the value to bool can check the result).
-* implement the modifiers for params and return values
+* ~~add new modifier for variables (`notnull`, `notempty`. The first only checks null/undefined, the second cast the value to bool can check the result).~~ / 2016-10-18 **DONE**
+* ~~implement the modifiers for params and return values~~ / 2016-10-18 **DONE**
 * implement the modifiers for local variables
-* implement the modifiers for fields
+* ~~implement the modifiers for fields~~ /2016-10-18 **REMOVED**
 
 ## Performance and Accuracy 1 /2016-10-15
 

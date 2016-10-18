@@ -65,4 +65,10 @@ public class SimpleTest {
 
                 // System.out.println("\033[0;32;40mabc");
         }
+
+        public static boolean test() {
+                Object a = new Object();
+                Object b = new Object();
+                return a == b;
+        }
 }
