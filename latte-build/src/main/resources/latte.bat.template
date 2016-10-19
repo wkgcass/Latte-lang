@@ -1,0 +1,54 @@
+setlocal EnableDelayedExpansion
+set JAVA_ARGS=
+set JAVA_CP=%LATTE_JAR%
+set LATTE_ARGS=
+
+:START_FLAG
+if "%1" == "" goto END
+    set arg=%1
+    shift
+    set first_two=%arg:~0,2%
+    if "%first_two%" == "-D" (
+        set JAVA_ARGS=%JAVA_ARGS% %arg%
+        goto D_
+    ) else (
+        if "%first_two%" == "-X" (
+            set JAVA_ARGS=%JAVA_ARGS% %arg%
+            goto START_FLAG
+        )
+    )
+    if "%arg%" == "-cp" (
+        goto CHECK_CP_FLAG
+    ) else (
+        if %arg% == "-classpath" goto CHECK_CP_FLAG
+    )
+
+    goto OTHER
+
+    :D_
+    if "%1" == "" (
+        echo Error: %arg% requires a value
+        exit 1
+    ) else (
+        set JAVA_ARGS=%JAVA_ARGS%=%1
+    )
+    shift
+    goto START_FLAG
+
+    :CHECK_CP_FLAG
+    set tmp=%1
+    shift
+    if "%tmp%" == "" (
+        echo Error: %arg% requires class path specification
+        java -jar $LATTE_JAR -h
+        exit 1
+    ) else (
+        set JAVA_CP=%JAVA_CP%;%tmp%
+    )
+    goto START_FLAG
+    :OTHER
+    set LATTE_ARGS=%LATTE_ARGS% %arg%
+    goto START_FLAG
+:END
+java %JAVA_ARGS% -classpath "%JAVA_CP%" lt.repl.REPL %LATTE_ARGS%
+endlocal EnableDelayedExpansion
