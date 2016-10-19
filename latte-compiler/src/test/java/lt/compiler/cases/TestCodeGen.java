@@ -58,7 +58,7 @@ import static org.junit.Assert.*;
  * test code generator
  */
 public class TestCodeGen {
-        private Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
+        public static Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
                 ErrorManager err = new ErrorManager(true);
                 Scanner lexicalProcessor = new ScannerSwitcher("test.lt", new StringReader(code), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
@@ -1095,123 +1095,6 @@ public class TestCodeGen {
                 assertNotNull(myAnno);
                 assertEquals("abc", myAnno.str());
                 assertEquals(100, myAnno.i());
-        }
-
-        @Test
-        public void testSynchronized() throws Exception {
-                Class<?> cls = retrieveClass(
-                        "" +
-                                "class TestAnnotation\n" +
-                                "    static\n" +
-                                "        method(a,b,c):Unit\n" +
-                                "            synchronized(a,b)\n" +
-                                "                c.i=1\n" +
-                                "                Thread.sleep(1000)\n" +
-                                "                a.i+=1\n" +
-                                "                b.i+=2",
-                        "TestAnnotation");
-                class Container {
-                        public int i = 0;
-                }
-                Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
-                Container a = new Container();
-                Container b = new Container();
-                Container c = new Container();
-                new Thread(() -> {
-                        try {
-                                method.invoke(null, a, b, c);
-                        } catch (Exception e) {
-                                e.printStackTrace();
-                        }
-                }).start();
-
-                //noinspection StatementWithEmptyBody
-                while (c.i == 0) {
-                        Thread.sleep(1);
-                }
-
-                class Result {
-                        boolean pass1 = false;
-                        boolean pass2 = false;
-                }
-                Result result = new Result();
-
-                Thread t1 = new Thread(() -> {
-                        synchronized (a) {
-                                if (1 == a.i) result.pass1 = true;
-                        }
-                });
-                t1.start();
-                Thread t2 = new Thread(() -> {
-                        synchronized (b) {
-                                if (2 == b.i) result.pass2 = true;
-                        }
-                });
-                t2.start();
-                t1.join();
-                t2.join();
-                assertTrue(result.pass1);
-                assertTrue(result.pass2);
-        }
-
-        @Test
-        public void testSynchronizedReturn() throws Exception {
-                Class<?> cls = retrieveClass(
-                        "" +
-                                "class TestSynchronizedReturn\n" +
-                                "    static\n" +
-                                "        def method(a,b,c)\n" +
-                                "            synchronized(a,b)\n" +
-                                "                c.i=1\n" +
-                                "                Thread.sleep(1000)\n" +
-                                "                a.i+=1\n" +
-                                "                b.i+=2\n" +
-                                "                return 10",
-                        "TestSynchronizedReturn");
-                class Container {
-                        public int i = 0;
-                }
-                Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
-                Container a = new Container();
-                Container b = new Container();
-                Container c = new Container();
-                class Result {
-                        boolean result = false;
-                        boolean pass1 = false;
-                        boolean pass2 = false;
-                }
-                Result result = new Result();
-                new Thread(() -> {
-                        try {
-                                Object res = method.invoke(null, a, b, c);
-                                if (res.equals(10)) result.result = true;
-                        } catch (Exception e) {
-                                e.printStackTrace();
-                        }
-                }).start();
-
-                //noinspection StatementWithEmptyBody
-                while (c.i == 0) {
-                        Thread.sleep(1);
-                }
-
-                Thread t1 = new Thread(() -> {
-                        synchronized (a) {
-                                if (1 == a.i) result.pass1 = true;
-                        }
-                });
-                t1.start();
-                Thread t2 = new Thread(() -> {
-                        synchronized (b) {
-                                if (2 == b.i) result.pass2 = true;
-                        }
-                });
-                t2.start();
-                t1.join();
-                t2.join();
-                assertTrue(result.result);
-                assertTrue(result.pass1);
-                assertTrue(result.pass2);
         }
 
         @Test

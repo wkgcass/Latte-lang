@@ -3,6 +3,7 @@ package org.lattelang.compiler.build;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * generate shell command when doing mvn package
@@ -31,10 +32,6 @@ public class ShellCommandGenerator {
                         "\n" +
                         "endlocal EnableDelayedExpansion";
 
-                String sh = "" +
-                        "#!/bin/bash\n" +
-                        "java -jar \"" + jarDir + "/" + fullName + "\" $*\n";
-
                 File latte_bat = new File(output + File.separator + "latte.bat");
                 if (!latte_bat.exists()) {
                         //noinspection ResultOfMethodCallIgnored
@@ -51,7 +48,14 @@ public class ShellCommandGenerator {
                         latte_sh.createNewFile();
                 }
                 FileOutputStream latte_sh_fos = new FileOutputStream(latte_sh);
-                latte_sh_fos.write(sh.getBytes());
+                InputStream latte_sh_is = ShellCommandGenerator.class.getClassLoader().getResourceAsStream("latte.sh.template");
+                latte_sh_fos.write("#!/bin/bash\n".getBytes());
+                latte_sh_fos.write(("LATTE_JAR=\"" + jarDir + File.separator + fullName + "\"\n").getBytes());
+                byte[] buf = new byte[1024];
+                int c;
+                while (-1 != (c = latte_sh_is.read(buf))) {
+                        latte_sh_fos.write(buf, 0, c);
+                }
                 latte_sh_fos.flush();
                 latte_sh_fos.close();
         }
