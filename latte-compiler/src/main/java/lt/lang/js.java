@@ -396,8 +396,6 @@ public class js implements SourceGenerator {
                 } else if (exp instanceof AST.TypeOf) {
                         err.SyntaxException("JavaScript don't have type", exp.line_col());
                         sb.append("'compile error'");
-                } else if (exp instanceof AST.UndefinedExp) {
-                        sb.append("undefined");
                 } else throw new LtBug("unknown token " + exp);
         }
 

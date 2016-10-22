@@ -178,11 +178,6 @@ public class TestJsSupport {
         }
 
         @Test
-        public void testUndefinedExp() throws Exception {
-                assertEquals("undefined;", compile("undefined"));
-        }
-
-        @Test
         public void testClassDef() throws Exception {
                 assertEquals("" +
                                 "function A(a, b, c) {\n" +

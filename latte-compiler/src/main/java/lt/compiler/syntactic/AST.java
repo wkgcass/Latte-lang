@@ -1158,32 +1158,6 @@ public class AST {
         }
 
         /**
-         * undefined expression
-         */
-        public static class UndefinedExp implements Expression {
-                private final LineCol lineCol;
-
-                public UndefinedExp(LineCol lineCol) {
-                        this.lineCol = lineCol;
-                }
-
-                @Override
-                public boolean equals(Object obj) {
-                        return this == obj || obj instanceof UndefinedExp;
-                }
-
-                @Override
-                public int hashCode() {
-                        return 0;
-                }
-
-                @Override
-                public LineCol line_col() {
-                        return lineCol;
-                }
-        }
-
-        /**
          * while
          */
         public static class While implements Statement {

@@ -448,7 +448,7 @@ public class TestCodeGen {
 
                 assertEquals(2, method.invoke(null, (Object) null)); // if null
 
-                assertEquals(2, method.invoke(null, Undefined.get())); // undefined
+                assertEquals(2, method.invoke(null, Unit.get())); // unit
         }
 
         @Test
@@ -643,17 +643,17 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testUndefined() throws Exception {
+        public void testUnit() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "class TestUndefined\n" +
+                                "class TestUnit\n" +
                                 "    static\n" +
                                 "        def method()\n" +
-                                "            return undefined",
-                        "TestUndefined");
+                                "            return Unit",
+                        "TestUnit");
 
                 Method method = cls.getMethod("method");
-                assertEquals(Undefined.get(), method.invoke(null));
+                assertEquals(Unit.get(), method.invoke(null));
         }
 
         @Test
@@ -842,17 +842,17 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testInvokeVoidMethodReturnUndefined() throws Exception {
+        public void testInvokeVoidMethodReturnUnit() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "class TestInvokeVoidMethodReturnUndefined\n" +
+                                "class TestInvokeVoidMethodReturnUnit\n" +
                                 "    static\n" +
                                 "        private m():Unit\n" +
                                 "        def method()\n" +
                                 "            return m()",
-                        "TestInvokeVoidMethodReturnUndefined");
+                        "TestInvokeVoidMethodReturnUnit");
                 Method method = cls.getMethod("method");
-                assertEquals(Undefined.get(), method.invoke(null));
+                assertEquals(Unit.get(), method.invoke(null));
         }
 
         @Test
@@ -1480,7 +1480,6 @@ public class TestCodeGen {
                                 "        typeBool=type bool\n" +
                                 "        typeFloat=type float\n" +
                                 "        typeDouble=type double\n" +
-                                "        typeVoid=type void\n" +
                                 "        typeUnit=type Unit",
                         "TestPrimitiveType");
                 Field typeInt = cls.getDeclaredField("typeInt");
@@ -1499,8 +1498,6 @@ public class TestCodeGen {
                 typeFloat.setAccessible(true);
                 Field typeDouble = cls.getDeclaredField("typeDouble");
                 typeDouble.setAccessible(true);
-                Field typeVoid = cls.getDeclaredField("typeVoid");
-                typeVoid.setAccessible(true);
                 Field typeUnit = cls.getDeclaredField("typeUnit");
                 typeUnit.setAccessible(true);
 
@@ -1512,7 +1509,6 @@ public class TestCodeGen {
                 assertEquals(boolean.class, typeBool.get(null));
                 assertEquals(float.class, typeFloat.get(null));
                 assertEquals(double.class, typeDouble.get(null));
-                assertEquals(void.class, typeVoid.get(null));
                 assertEquals(void.class, typeUnit.get(null));
         }
 
@@ -2895,19 +2891,19 @@ public class TestCodeGen {
                         assertTrue(e.getTargetException() instanceof NullPointerException);
                 }
                 try {
-                        method.invoke(null, Undefined.get(), 1);
+                        method.invoke(null, Unit.get(), 1);
                         fail();
                 } catch (InvocationTargetException e) {
                         assertTrue(e.getTargetException() instanceof IllegalArgumentException);
                 }
                 try {
-                        method.invoke(null, 1, Undefined.get());
+                        method.invoke(null, 1, Unit.get());
                         fail();
                 } catch (InvocationTargetException e) {
                         assertTrue(e.getTargetException() instanceof IllegalArgumentException);
                 }
                 try {
-                        method.invoke(null, Undefined.get(), Undefined.get());
+                        method.invoke(null, Unit.get(), Unit.get());
                         fail();
                 } catch (InvocationTargetException e) {
                         assertTrue(e.getTargetException() instanceof IllegalArgumentException);
@@ -2969,19 +2965,19 @@ public class TestCodeGen {
                         assertTrue(e.getTargetException() instanceof NullPointerException);
                 }
                 try {
-                        cons.newInstance(Undefined.get(), 1);
+                        cons.newInstance(Unit.get(), 1);
                         fail();
                 } catch (InvocationTargetException e) {
                         assertTrue(e.getTargetException() instanceof IllegalArgumentException);
                 }
                 try {
-                        cons.newInstance(1, Undefined.get());
+                        cons.newInstance(1, Unit.get());
                         fail();
                 } catch (InvocationTargetException e) {
                         assertTrue(e.getTargetException() instanceof IllegalArgumentException);
                 }
                 try {
-                        cons.newInstance(Undefined.get(), Undefined.get());
+                        cons.newInstance(Unit.get(), Unit.get());
                         fail();
                 } catch (InvocationTargetException e) {
                         assertTrue(e.getTargetException() instanceof IllegalArgumentException);

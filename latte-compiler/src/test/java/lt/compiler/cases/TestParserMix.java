@@ -402,18 +402,6 @@ public class TestParserMix {
         }
 
         @Test
-        public void testUndefinedAssign() throws Exception {
-                List<Statement> list = parse("a=undefined");
-
-                assertEquals(1, list.size());
-
-                Statement stmt = list.get(0);
-                VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
-                v.setInit(new AST.UndefinedExp(LineCol.SYNTHETIC));
-                assertEquals(v, stmt);
-        }
-
-        @Test
         public void testStaticStatement() throws Exception {
                 List<Statement> list = parse("" +
                         "static method():Unit\n" +

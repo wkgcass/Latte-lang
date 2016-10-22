@@ -25,20 +25,21 @@
 package lt.lang;
 
 /**
- * undefined object
+ * the unit object
  */
-public class Undefined {
-        private static final Undefined undefined = new Undefined();
+@LatteObject
+public class Unit {
+        public static final Unit singletonInstance = new Unit();
 
-        private Undefined() {
+        private Unit() {
         }
 
-        public static Undefined get() {
-                return undefined;
+        public static Unit get() {
+                return singletonInstance;
         }
 
         @Override
         public String toString() {
-                return "undefined";
+                return "Unit";
         }
 }

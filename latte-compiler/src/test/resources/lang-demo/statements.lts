@@ -137,7 +137,7 @@ list2 clear
 ; =========
 res5 = this.list1  ; get this.list
 ; if field not found, it invokes lt::lang::Lang.getField(o,fieldname,callerClass) to get field
-; the result will be undefined if field not found
+; the result will be Unit if field not found
 
 ; ============
 ; index access

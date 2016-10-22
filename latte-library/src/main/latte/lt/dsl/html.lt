@@ -145,7 +145,7 @@ abstract data class HTMLElement(cls)
     attrMap={}
     set(attrName:String, o):HTMLElement
         str = (
-            if o==null || o==undefined
+            if o==null || o==Unit
                 return ""
             else
                 return o
@@ -154,7 +154,7 @@ abstract data class HTMLElement(cls)
         return this
     attr(attrName:String, o):HTMLElement
         attrMap[attrName] = (
-            if o==null || o==undefined
+            if o==null || o==Unit
                 return ""
             else
                 return o

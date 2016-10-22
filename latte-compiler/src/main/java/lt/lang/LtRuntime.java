@@ -25,7 +25,6 @@
 package lt.lang;
 
 import lt.lang.function.Function;
-import lt.lang.function.Function0;
 import lt.lang.function.Function1;
 import lt.repl.ScriptCompiler;
 
@@ -35,10 +34,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.*;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Defines Latte Runtime behavior.
@@ -362,7 +359,7 @@ public class LtRuntime {
 
         /**
          * Cast the object to boolean value. All types can be cast to bool.
-         * If the object is null or undefined, the result is false.
+         * If the object is null or Unit, the result is false.
          * Else if the object is {@link Boolean}, the result is the unboxing value.
          * Else if the object is {@link Number}, the result is number != 0.
          * Else the result is true.
@@ -372,8 +369,8 @@ public class LtRuntime {
          * @throws Throwable exceptions
          */
         public static boolean castToBool(Object o) throws Throwable {
-                // check null and undefined
-                if (o == null || o instanceof Undefined) return false;
+                // check null and Unit
+                if (o == null || o instanceof Unit) return false;
                 // check Boolean object
                 if (o instanceof Boolean) return (Boolean) o;
                 // check number not 0
@@ -419,12 +416,12 @@ public class LtRuntime {
         /**
          * get field value.<br>
          * if field not found , then the method would try to invoke get(fieldName)<br>
-         * or the method would return <tt>undefined</tt>
+         * or the method would return <tt>Unit</tt>
          *
          * @param o           object
          * @param fieldName   field name
          * @param callerClass caller class
-         * @return the value or undefined
+         * @return the value or Unit
          * @throws Throwable exceptions
          */
         public static Object getField(Object o, String fieldName, Class<?> callerClass) throws Throwable {
@@ -438,7 +435,7 @@ public class LtRuntime {
                                 } catch (NumberFormatException ignore) {
                                 }
                         }
-                        return Undefined.get();
+                        return Unit.get();
                 }
 
                 // try to get field
@@ -485,7 +482,7 @@ public class LtRuntime {
                 } catch (Throwable t) {
                         throwNonRuntime(invocationState, t);
                 }
-                return Undefined.get();
+                return Unit.get();
         }
 
         /**

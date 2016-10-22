@@ -692,7 +692,7 @@ public class CodeGenerator {
                                         buildLastStmt = false;
                                 } else {
                                         // not read only
-                                        // check LtRuntime.getField and Undefined.get
+                                        // check LtRuntime.getField and Unit.get
                                         if (ins instanceof Ins.InvokeStatic) {
                                                 Ins.InvokeStatic is = (Ins.InvokeStatic) ins;
                                                 SMethodDef theMethod = (SMethodDef) is.invokable();
@@ -705,8 +705,8 @@ public class CodeGenerator {
                                                 } else if (
                                                         theMethod.name().equals("get")
                                                                 &&
-                                                                theMethod.declaringType().fullName().equals("lt.lang.Undefined")) {
-                                                        // lt.lang.Undefined.get
+                                                                theMethod.declaringType().fullName().equals("lt.lang.Unit")) {
+                                                        // lt.lang.Unit.get
                                                         buildLastStmt = false;
                                                 } else {
                                                         buildLastStmt = true;
@@ -1137,12 +1137,12 @@ public class CodeGenerator {
 
                 if (invoke.invokable().getReturnType().equals(VoidType.get()) && requireValue) {
                         // void methods
-                        // push Undefined into stack
+                        // push Unit into stack
                         methodVisitor.visitMethodInsn(
                                 Opcodes.INVOKESTATIC,
-                                "lt/lang/Undefined",
+                                "lt/lang/Unit",
                                 "get",
-                                "()Llt/lang/Undefined;",
+                                "()Llt/lang/Unit;",
                                 false);
                         info.push(CodeInfo.Size._1);
                 }

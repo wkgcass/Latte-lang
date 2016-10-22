@@ -758,7 +758,7 @@ public class Dynamic {
          * @param method           method name
          * @param primitives       whether the argument is primitive
          * @param args             the arguments
-         * @return the method result (void methods' results are <tt>undefined</tt>)
+         * @return the method result (void methods' results are <tt>Unit</tt>)
          * @throws Throwable exception
          */
         public static Object invoke(InvocationState invocationState,
@@ -895,10 +895,10 @@ public class Dynamic {
                         }
 
                         // dynamically get field `o.methodName`
-                        // if it's not `null` and not `undefined` then invoke the retrieved object
+                        // if it's not `null` and not `Unit` then invoke the retrieved object
                         if (!invocationState.fromField && !invocationState.isCallingReverse) {
                                 Object result = LtRuntime.getField(o, method, invoker);
-                                if (result != null && !result.equals(Undefined.get())) {
+                                if (result != null && !result.equals(Unit.get())) {
                                         invocationState.methodFound = true;
                                         return callFunctionalObject(result, invoker, args);
                                 }
@@ -931,7 +931,7 @@ public class Dynamic {
 
                 try {
                         Object res = methodToInvoke.invoke(o, args);
-                        if (methodToInvoke.getReturnType() == void.class) return Undefined.get();
+                        if (methodToInvoke.getReturnType() == void.class) return Unit.get();
                         else return res;
                 } catch (InvocationTargetException e) {
                         throw e.getTargetException();
@@ -988,7 +988,7 @@ public class Dynamic {
                 try {
                         Object theRes = theMethodToInvoke.invoke(functionalObject, args);
                         if (theMethodToInvoke.getReturnType().equals(Void.TYPE)) {
-                                return Undefined.get();
+                                return Unit.get();
                         }
                         return theRes;
                 } catch (InvocationTargetException e) {
@@ -1006,7 +1006,7 @@ public class Dynamic {
          * @param method           method name
          * @param primitives       whether the argument is primitive
          * @param args             the arguments
-         * @return the method result (void methods' results are <tt>undefined</tt>)
+         * @return the method result (void methods' results are <tt>Unit</tt>)
          * @throws Throwable exception
          */
         @SuppressWarnings("unused")

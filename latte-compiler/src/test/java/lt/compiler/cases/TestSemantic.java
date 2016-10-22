@@ -1663,30 +1663,6 @@ public class TestSemantic {
         }
 
         @Test
-        public void testUndefined() throws Exception {
-                Map<String, String> map = new HashMap<>();
-                map.put("test", "" +
-                        "package test\n" +
-                        "class A\n" +
-                        "    a=undefined");
-                Set<STypeDef> set = parse(map);
-                assertEquals(1, set.size());
-
-                Iterator<STypeDef> it = set.iterator();
-
-                SClassDef classDef = (SClassDef) it.next();
-                SConstructorDef con = classDef.constructors().get(0);
-
-                Instruction i1 = ((ValuePack) con.statements().get(1)).instructions().get(0);
-                assertTrue(i1 instanceof Ins.PutField);
-                assertTrue(((Ins.PutField) i1).value() instanceof Ins.InvokeStatic);
-                assertTrue(((Ins.InvokeStatic) ((Ins.PutField) i1).value()).invokable() instanceof SMethodDef);
-                SMethodDef m = (SMethodDef) ((Ins.InvokeStatic) ((Ins.PutField) i1).value()).invokable();
-                assertEquals("get", m.name());
-                assertEquals("lt.lang.Undefined", m.declaringType().fullName());
-        }
-
-        @Test
         public void testUnaryInc() throws Exception {
                 Map<String, String> map = new HashMap<>();
                 map.put("test", "" +

@@ -965,7 +965,7 @@ fizz():int=1
 --
 
 如果明确方法不返回值，那么可以附加`Unit`类型或者`void`类型。它们两个是等价的。  
-但是，在Latte中所有方法都会返回一个值，对于Unit/void类型的方法，会返回`undefined`，它是`lt.lang.Undefined`类型。
+但是，在Latte中所有方法都会返回一个值，对于Unit类型的方法，虽然会被编译为void类型，但是依然会返回`Unit`，它是`lt.lang.Unit`类型。
 
 和构造函数参数一样，方法参数也可以设定默认值：
 
@@ -1655,15 +1655,15 @@ class Rational(a, b)
 
 Latte支持**参数**上的null值或“空”值检查，分别使用`nonnull`和`nonempty`修饰符。
 
-由于Latte的`Unit/void`方法也返回一个值（`undefined`），所以在`nonnull`中不光会检查null值，还会检查undefined。  
+由于Latte的`Unit`方法也返回一个值（`Unit`），所以在`nonnull`中不光会检查null值，还会检查Unit。  
 如果出现null则会立即抛出`java.lang.NullPointerException`异常  
-如果出现undefined则会立即抛出`java.lang.IllegalArgumentException`异常
+如果出现Unit则会立即抛出`java.lang.IllegalArgumentException`异常
 
 ```scala
 def add(nonnull a, nonnull b)= a + b
 
 add(null, 1)      /* 抛出NullPointerException */
-add(undefined, 2) /* 抛出IllegalArgumentException */
+add(Unit, 2) /* 抛出IllegalArgumentException */
 ```
 
 对于`nonempty`，检查的范围更广。首先Latte会将这个值转换为`bool`类型（Latte中任何类型都可以转为bool)  
@@ -1678,7 +1678,7 @@ listNotEmpty([])  /* 抛出 IllegalArgumentException */
 在转换为`bool`时，Latte会尝试
 
 1. 如果是null，则返回false
-2. 如果是undefined，则返回false
+2. 如果是Unit，则返回false
 3. 如果是Boolean类型，则返回其对应的`bool`值
 4. 如果是数字类型，则：如果转换为`double`的结果是0，那么返回false，否则返回true
 5. 如果是Character类型，则：如果转换为`int`的结果是0，那么返回false，否则返回true

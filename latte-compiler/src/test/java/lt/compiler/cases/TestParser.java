@@ -1926,16 +1926,6 @@ public class TestParser {
         }
 
         @Test
-        public void testUndefined() throws Exception {
-                List<Statement> list = parse("undefined");
-
-                assertEquals(1, list.size());
-
-                Statement stmt = list.get(0);
-                assertEquals(new AST.UndefinedExp(LineCol.SYNTHETIC), stmt);
-        }
-
-        @Test
         public void testUnaryInc() throws Exception {
                 List<Statement> list = parse("++i");
 

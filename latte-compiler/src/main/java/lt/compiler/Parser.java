@@ -1752,16 +1752,6 @@ public class Parser {
                                                                         parsedExps.push(asType);
                                                                 }
                                                                 break;
-                                                        case "undefined":
-
-                                                                annosIsEmpty();
-                                                                modifiersIsEmpty();
-
-                                                                parsedExps.push(new AST.UndefinedExp(current.getLineCol()));
-                                                                nextNode(true);
-                                                                parse_expression();
-
-                                                                break;
                                                         case "require":
 
                                                                 annosIsEmpty();

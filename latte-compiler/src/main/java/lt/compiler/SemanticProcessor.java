@@ -141,8 +141,6 @@ public class SemanticProcessor {
                 types.put("char", CharTypeDef.get());
                 types.put("short", ShortTypeDef.get());
                 types.put("byte", ByteTypeDef.get());
-                types.put("void", VoidType.get());
-                types.put("Unit", VoidType.get());
         }
 
         public static String byte2hex(byte[] b) {
@@ -949,7 +947,9 @@ public class SemanticProcessor {
                                 // method name, declaringType, return type, params
                                 SMethodDef method = new SMethodDef(LineCol.SYNTHETIC);
                                 method.setDeclaringType(sClassDef);
-                                method.setReturnType(methodToOverride[0].getReturnType());
+                                method.setReturnType(
+                                        getRealReturnType(
+                                                methodToOverride[0].getReturnType(), true));
                                 method.setName(methodToOverride[0].name());
                                 sClassDef.methods().add(method);
                                 parseAnnos(fun.annos, method, imports, ElementType.METHOD, Arrays.asList(ElementType.TYPE, ElementType.CONSTRUCTOR));
@@ -1861,11 +1861,11 @@ public class SemanticProcessor {
                                                 getJava_lang_NullPointerException_cons(), lineCol
                                         ), lineCol));
                                 instructions.add(nop);
-                                // undefined
+                                // unit
                                 Ins.Nop nop2 = new Ins.Nop();
                                 Ins.IfACmpNe ifACmpNe = new Ins.IfACmpNe(
                                         new Ins.TLoad(param, scope, lineCol),
-                                        invoke_Undefined_get(lineCol),
+                                        invoke_Unit_get(lineCol),
                                         nop2, lineCol
                                 );
                                 instructions.add(ifACmpNe);
@@ -3899,7 +3899,6 @@ public class SemanticProcessor {
          * <li>{@link OneVariableOperation} {@link UnaryOneVariableOperation}</li>
          * <li>{@link TwoVariableOperation}</li>
          * <li>{@link lt.compiler.syntactic.AST.Assignment}</li>
-         * <li>{@link lt.compiler.syntactic.AST.UndefinedExp}</li>
          * <li>{@link lt.compiler.syntactic.AST.Null}</li>
          * <li>{@link lt.compiler.syntactic.AST.ArrayExp} =&gt; array/lt.util.List</li>
          * <li>{@link lt.compiler.syntactic.AST.MapExp} =&gt; lt.util.Map</li>
@@ -4067,8 +4066,6 @@ public class SemanticProcessor {
                         v = parseValueFromTwoVarOp((TwoVariableOperation) exp, scope);
                 } else if (exp instanceof AST.Assignment) {
                         v = parseValueFromAssignment((AST.Assignment) exp, scope);
-                } else if (exp instanceof AST.UndefinedExp) {
-                        v = invoke_Undefined_get(exp.line_col());
                 } else if (exp instanceof AST.Null) {
                         v = NullValue.get();
                 } else if (exp instanceof AST.ArrayExp) {
@@ -4080,12 +4077,15 @@ public class SemanticProcessor {
                 } else if (exp instanceof AST.Lambda) {
                         v = parseValueFromLambda((AST.Lambda) exp, requiredType, scope);
                 } else if (exp instanceof AST.TypeOf) {
+                        STypeDef t = getTypeWithAccess(((AST.TypeOf) exp).type, imports);
+                        if (t.fullName().equals("lt.lang.Unit")) {
+                                t = VoidType.get();
+                        }
                         v = new Ins.GetClass(
-                                getTypeWithAccess(((AST.TypeOf) exp).type, imports),
-                                (SClassDef) getTypeWithName(
-                                        "java.lang.Class",
-                                        LineCol.SYNTHETIC
-                                ));
+                                t, (SClassDef) getTypeWithName(
+                                "java.lang.Class",
+                                LineCol.SYNTHETIC
+                        ));
                 } else if (exp instanceof AST.AnnoExpression) {
                         SAnno anno = new SAnno();
                         AST.Anno astAnno = ((AST.AnnoExpression) exp).anno;
@@ -5273,29 +5273,30 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Undefined#get()}
+         * {@link Unit#get()}
          */
-        private SMethodDef Undefined_get;
+        private SMethodDef Unit_get;
 
         /**
-         * invoke {@link Undefined#get()}
+         * invoke {@link Unit#get()}
          *
          * @param lineCol caller's line and column
          * @return InvokeStatic
          * @throws SyntaxException exception
          */
-        public Ins.InvokeStatic invoke_Undefined_get(LineCol lineCol) throws SyntaxException {
-                if (Undefined_get == null) {
-                        SClassDef UndefiendClass = (SClassDef) getTypeWithName("lt.lang.Undefined", lineCol);
+        public Ins.InvokeStatic invoke_Unit_get(LineCol lineCol) throws SyntaxException {
+                if (Unit_get == null) {
+                        SClassDef UndefiendClass = (SClassDef) getTypeWithName("lt.lang.Unit", lineCol);
                         assert UndefiendClass != null;
                         for (SMethodDef m : UndefiendClass.methods()) {
                                 if (m.name().equals("get")) {
-                                        Undefined_get = m;
+                                        Unit_get = m;
                                         break;
                                 }
                         }
+                        Unit_get.setReturnType(getTypeWithName("lt.lang.Unit", lineCol));
                 }
-                return new Ins.InvokeStatic(Undefined_get, lineCol);
+                return new Ins.InvokeStatic(Unit_get, lineCol);
         }
 
         /**
@@ -5408,7 +5409,7 @@ public class SemanticProcessor {
 
                                 if (invokeStatic.type().equals(VoidType.get())) {
                                         return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                 invokeStatic, invokeStatic.line_col()
                                         );
                                 }
@@ -5421,7 +5422,7 @@ public class SemanticProcessor {
 
                                 if (invokeSpecial.type().equals(VoidType.get())) {
                                         return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                 invokeSpecial, invokeSpecial.line_col()
                                         );
                                 }
@@ -5434,7 +5435,7 @@ public class SemanticProcessor {
 
                                 if (invokeInterface.type().equals(VoidType.get())) {
                                         return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                 invokeInterface, invokeInterface.line_col()
                                         );
                                 }
@@ -5447,7 +5448,7 @@ public class SemanticProcessor {
 
                                 if (invokeVirtual.type().equals(VoidType.get())) {
                                         return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                 invokeVirtual, invokeVirtual.line_col()
                                         );
                                 }
@@ -6239,7 +6240,7 @@ public class SemanticProcessor {
 
                                 if (invokeSpecial.type().equals(VoidType.get())) {
                                         return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                 invokeSpecial, invokeSpecial.line_col()
                                         );
                                 }
@@ -6252,7 +6253,7 @@ public class SemanticProcessor {
 
                                 if (invokeInterface.type().equals(VoidType.get())) {
                                         return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                 invokeInterface, invokeInterface.line_col()
                                         );
                                 }
@@ -6265,7 +6266,7 @@ public class SemanticProcessor {
 
                                 if (invokeVirtual.type().equals(VoidType.get())) {
                                         return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                 invokeVirtual, invokeVirtual.line_col()
                                         );
                                 }
@@ -7805,7 +7806,7 @@ public class SemanticProcessor {
 
                                 if (invoke.type().equals(VoidType.get()))
                                         return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                 invoke, invoke.line_col()
                                         );
 
@@ -7820,7 +7821,7 @@ public class SemanticProcessor {
 
                                         if (invokeStatic.type().equals(VoidType.get()))
                                                 return new ValueAnotherType(
-                                                        getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                        getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                         invokeStatic, invokeStatic.line_col()
                                                 );
 
@@ -7836,7 +7837,7 @@ public class SemanticProcessor {
 
                                         if (invokeInterface.type().equals(VoidType.get()))
                                                 return new ValueAnotherType(
-                                                        getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                        getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                         invokeInterface, invokeInterface.line_col()
                                                 );
 
@@ -7852,7 +7853,7 @@ public class SemanticProcessor {
 
                                         if (invokeSpecial.type().equals(VoidType.get()))
                                                 return new ValueAnotherType(
-                                                        getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                        getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                         invokeSpecial, invokeSpecial.line_col()
                                                 );
 
@@ -7868,7 +7869,7 @@ public class SemanticProcessor {
 
                                         if (invokeVirtual.type().equals(VoidType.get()))
                                                 return new ValueAnotherType(
-                                                        getTypeWithName("lt.lang.Undefined", LineCol.SYNTHETIC),
+                                                        getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
                                                         invokeVirtual, invokeVirtual.line_col()
                                                 );
 
@@ -9040,7 +9041,7 @@ public class SemanticProcessor {
                 methodDef.setReturnType(
                         m.returnType == null
                                 ? getTypeWithName("java.lang.Object", m.line_col())
-                                : getTypeWithAccess(m.returnType, imports)
+                                : getRealReturnType(getTypeWithAccess(m.returnType, imports), true)
                 );
                 parseParameters(m.params, i, methodDef, imports, false);
 
@@ -9480,7 +9481,8 @@ public class SemanticProcessor {
                         if (m.getReturnType().equals(Void.TYPE)) {
                                 methodDef.setReturnType(VoidType.get());
                         } else {
-                                methodDef.setReturnType(getTypeWithName(m.getReturnType().getName(), LineCol.SYNTHETIC));
+                                methodDef.setReturnType(
+                                        getRealReturnType(getTypeWithName(m.getReturnType().getName(), LineCol.SYNTHETIC), true));
                         }
 
                         getAnnotationFromAnnotatedElement(m, methodDef);
@@ -9715,5 +9717,19 @@ public class SemanticProcessor {
          */
         public boolean isPointerType(STypeDef type) {
                 return type instanceof PointerType || "lt.lang.Pointer".equals(type.fullName());
+        }
+
+        /**
+         * cast the `return` type to "void" if type is Unit and doCast is true
+         *
+         * @param type   type
+         * @param doCast do cast if type is Unit
+         * @return the final result
+         */
+        public STypeDef getRealReturnType(STypeDef type, boolean doCast) {
+                if (doCast && type.fullName().equals("lt.lang.Unit")) {
+                        return VoidType.get();
+                }
+                return type;
         }
 }

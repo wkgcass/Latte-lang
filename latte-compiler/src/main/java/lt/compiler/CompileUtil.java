@@ -79,7 +79,7 @@ public class CompileUtil {
 
         private static Set<String> keys = new HashSet<>(Arrays.asList(
                 "is", "not", "bool", "yes", "no", "type", "as",
-                "undefined", "in", "elseif", "package", "import",
+                "in", "elseif", "package", "import",
                 "break", "continue", "return", "fun", "require",
                 "new", "object"
         ));
@@ -91,7 +91,7 @@ public class CompileUtil {
                 "float", "for", "if", "implements", "import", "instanceof",
                 "int", "interface", "long", "native", "new", "null", "package",
                 "private", "protected", "public", "return", "short", "static",
-                "strictfp", "throw", "try", "while"
+                "strictfp", "throw", "try", "while", "void"
         ));
 
         public static boolean isKey(String str) {
