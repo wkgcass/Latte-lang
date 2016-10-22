@@ -2285,4 +2285,30 @@ public class TestParser {
                         new MethodDef("r", Collections.singleton(new Modifier(Modifier.Available.DEF, LineCol.SYNTHETIC)), new AST.Access(null, "int", LineCol.SYNTHETIC), Collections.emptyList(), Collections.emptySet(), Collections.singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)), LineCol.SYNTHETIC)
                 ), stmts);
         }
+
+        @Test
+        public void testObject() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "object Test1\n" +
+                        "object Test2:Object\n" +
+                        "object Test3:ArrayList([])\n" +
+                        "object Test4:ArrayList([]),List"
+                );
+                assertEquals(Arrays.asList(
+                        new ObjectDef("Test1", null, Collections.emptyList(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
+                        new ObjectDef("Test2", null, Collections.singletonList(new AST.Access(null, "Object", LineCol.SYNTHETIC)), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
+                        new ObjectDef("Test3", new AST.Invocation(
+                                new AST.Access(null, "ArrayList", LineCol.SYNTHETIC),
+                                Collections.singletonList(new AST.ArrayExp(Collections.emptyList(), LineCol.SYNTHETIC)),
+                                false, LineCol.SYNTHETIC
+                        ), Collections.emptyList(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
+                        new ObjectDef("Test4", new AST.Invocation(
+                                new AST.Access(null, "ArrayList", LineCol.SYNTHETIC),
+                                Collections.singletonList(new AST.ArrayExp(Collections.emptyList(), LineCol.SYNTHETIC)),
+                                false, LineCol.SYNTHETIC
+                        ), Collections.singletonList(
+                                new AST.Access(null, "List", LineCol.SYNTHETIC)
+                        ), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC)
+                ), stmts);
+        }
 }

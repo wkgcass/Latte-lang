@@ -81,7 +81,7 @@ public class CompileUtil {
                 "is", "not", "bool", "yes", "no", "type", "as",
                 "undefined", "in", "elseif", "package", "import",
                 "break", "continue", "return", "fun", "require",
-                "new"
+                "new", "object"
         ));
 
         private static Set<String> javaKeys = new HashSet<>(Arrays.asList(
@@ -97,6 +97,8 @@ public class CompileUtil {
         public static boolean isKey(String str) {
                 return keys.contains(str);
         }
+
+        public static String SingletonFieldName = "singletonInstance";
 
         /**
          * check whether the given string can be a valid java name

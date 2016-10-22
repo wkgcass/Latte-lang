@@ -35,7 +35,7 @@ import java.util.Stack;
  * stack depth and local variable count
  */
 public class CodeInfo {
-        public static enum Size {
+        public enum Size {
                 _1, _2
         }
 

@@ -66,10 +66,10 @@ public class TestEvaluator {
                                 put("name", "cass");
                         }},
                         evaluator.eval("" +
-                                        "{\n" +
-                                        "    'id':1\n" +
-                                        "    'name':'cass'\n" +
-                                        "}"
+                                "{\n" +
+                                "    'id':1\n" +
+                                "    'name':'cass'\n" +
+                                "}"
                         ).result);
         }
 
@@ -87,10 +87,10 @@ public class TestEvaluator {
                                 put("name", "cass");
                         }},
                         evaluator.eval("" +
-                                        "{\n" +
-                                        "    'id':1\n" +
-                                        "    'name':'cass'\n" +
-                                        "}"
+                                "{\n" +
+                                "    'id':1\n" +
+                                "    'name':'cass'\n" +
+                                "}"
                         ).result);
                 assertEquals(2, evaluator.eval("1+1").result);
         }
@@ -110,10 +110,10 @@ public class TestEvaluator {
                                 put("name", "cass");
                         }},
                         evaluator.eval("" +
-                                        "{\n" +
-                                        "    'id':1\n" +
-                                        "    'name':'cass'\n" +
-                                        "}"
+                                "{\n" +
+                                "    'id':1\n" +
+                                "    'name':'cass'\n" +
+                                "}"
                         ).result);
                 assertEquals(2, evaluator.eval("1+1").result);
                 assertEquals(100, evaluator.eval("10*10").result);
@@ -298,5 +298,13 @@ public class TestEvaluator {
                         "list.stream.filter{it > 2}.collect(toList())");
                 List newList = (List) entry.result;
                 assertEquals(Arrays.asList(3, 4, 5), newList);
+        }
+
+        @Test
+        public void testObject() throws Exception {
+                evaluator.eval("" +
+                        "object O");
+                Object o = evaluator.eval("O").result;
+                assertEquals("O", o.getClass().getName());
         }
 }

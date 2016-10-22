@@ -33,7 +33,11 @@ import java.util.List;
  * class definition
  */
 public class SClassDef extends STypeDef {
-        private final boolean fun;
+        public static final int OBJECT = 2;
+        public static final int FUN = 1;
+        public static final int NORMAL = 0;
+
+        private final int type;
         private final List<SModifier> modifiers = new ArrayList<>();
         private final List<SFieldDef> fields = new ArrayList<>();
         private final List<SConstructorDef> constructors = new ArrayList<>();
@@ -44,9 +48,10 @@ public class SClassDef extends STypeDef {
         private final List<ExceptionTable> staticExceptionTable = new ArrayList<>();
         private boolean isDataClass;
 
-        public SClassDef(boolean fun, LineCol lineCol) {
+        public SClassDef(int type, LineCol lineCol) {
                 super(lineCol);
-                this.fun = fun;
+                if (type != OBJECT && type != FUN && type != NORMAL) throw new IllegalArgumentException();
+                this.type = type;
         }
 
         public void setParent(SClassDef parent) {
@@ -93,8 +98,8 @@ public class SClassDef extends STypeDef {
                 this.isDataClass = isDataClass;
         }
 
-        public boolean fun() {
-                return fun;
+        public int classType() {
+                return type;
         }
 
         @Override

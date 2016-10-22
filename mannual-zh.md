@@ -16,6 +16,7 @@
 	4. [修饰符](#p3-4)
 	5. [Data Class](#p3-5)
 	6. [实例化](#p3-6)
+	7. [object class](#p3-7)
 4. [函数类和Lambda](#p4)
 	1. [函数类](#p4-1)
 	2. [高阶函数和Lambda](#p4-2)
@@ -115,6 +116,16 @@ data class User(id: int, name: String)
 定义data class后，编译器会自动生成所有字段的getter/setter，类的toString/hashCode/equals方法。
 
 详见[3.5 Data Class](#p3-5)
+
+定义`object class`
+
+```kotlin
+object Singleton
+```
+
+可以直接使用类名获取该对象。
+
+详见[3.7 object class](#p3-7)
 
 <h3 id="p1-1-4">1.1.4 接口</h3>
 
@@ -1149,6 +1160,33 @@ class User {
         this.name = name;
     }
 }
+```
+
+<h2 id="p3-7">3.7 object class</h2>
+
+```scala
+object DataProviderManager
+    def registerDataProvider(provider: DataProvider)
+        ...
+    val allDataProviders: Collection<DataProvider> get() = ...
+```
+
+本质上，`object class`定义了一个类，但是这个类不能拥有构造函数的参数，构造函数为private，并拥有一个`static public val`的字段来存放单例。
+
+object class可以继承父类、实现接口，其规则与普通的class完全相同
+
+```scala
+object DefaultListener : MouseAdapter()
+    def mouseClicked(e: MouseEvent):Unit
+        ...
+    def mouseEntered(e: MouseEvent):Unit
+        ...
+```
+
+你可以直接使用类名来获取这个单例对象：
+
+```
+val o = DataProviderManager
 ```
 
 <h1 id="p4">4. 函数类和Lambda</h1>

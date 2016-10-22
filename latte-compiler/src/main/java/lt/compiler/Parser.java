@@ -398,6 +398,8 @@ public class Parser {
                                                 return parse_class();
                                         case "interface":
                                                 return parse_interface();
+                                        case "object":
+                                                return parse_object();
                                         case "fun":
                                                 return parse_fun();
 
@@ -508,7 +510,31 @@ public class Parser {
         }
 
         /**
-         * parse synchornized<br>
+         * parse object<br>
+         * <p>
+         * <code>
+         * object XXX [:YYY(...),ZZZ]
+         * &nbsp;&nbsp;&nbsp;&nbsp;...
+         * </code>
+         *
+         * @return ObjectDef
+         * @throws SyntaxException compiling error
+         */
+        private ObjectDef parse_object() throws SyntaxException {
+                ClassDef classDef = parse_class();
+                if (!classDef.modifiers.isEmpty()) {
+                        err.SyntaxException("object do not have modifiers", classDef.line_col());
+                }
+                if (!classDef.params.isEmpty()) {
+                        err.SyntaxException("object do not have params", classDef.params.get(0).line_col());
+                }
+                return new ObjectDef(classDef.name,
+                        classDef.superWithInvocation, classDef.superWithoutInvocation,
+                        classDef.annos, classDef.statements, classDef.line_col());
+        }
+
+        /**
+         * parse synchronized<br>
          * <code>
          * sync(expression,...)<br>
          * &nbsp;&nbsp;&nbsp;&nbsp;...

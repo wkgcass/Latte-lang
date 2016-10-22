@@ -3023,4 +3023,50 @@ public class TestCodeGen {
                                 "    def xx(nonnull e, nonempty f)=1"
                         , "TestNullEmptyCapability");
         }
+
+        @Test
+        public void testObject() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "object TestObject\n" +
+                                "    public a=1\n" +
+                                "    def method=2\n" +
+                                "    static\n" +
+                                "        public val b=3\n" +
+                                "        def staticMethod=4"
+                        , "TestObject");
+                Constructor<?> cons = cls.getDeclaredConstructor();
+                assertTrue(Modifier.isPrivate(cons.getModifiers()));
+                Field singletonInstance = cls.getField("singletonInstance");
+                Object o = singletonInstance.get(null);
+
+                Field a = cls.getField("a");
+                Method method = cls.getMethod("method");
+                Field b = cls.getField("b");
+                Method staticMethod = cls.getMethod("staticMethod");
+                assertEquals(1, a.get(o));
+                assertEquals(2, method.invoke(o));
+                assertEquals(3, b.get(null));
+                assertEquals(4, staticMethod.invoke(null));
+        }
+
+        @Test
+        public void testConstructSingletonObject() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "object Test\n" +
+                                "class TestConstructSingletonObject\n" +
+                                "    static\n" +
+                                "        def method=Test\n" +
+                                "        def getCls = type Test"
+                        , "TestConstructSingletonObject");
+                Method method = cls.getMethod("method");
+
+                Object o1 = method.invoke(null);
+
+                Method getCls = cls.getMethod("getCls");
+                Class<?> Test = (Class<?>) getCls.invoke(null);
+                Field f = Test.getField("singletonInstance");
+                Object o = f.get(null);
+
+                assertTrue(o1 == o);
+        }
 }

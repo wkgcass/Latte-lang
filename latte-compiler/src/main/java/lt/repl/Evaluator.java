@@ -166,7 +166,7 @@ public class Evaluator {
                 List<Statement> defList = new ArrayList<>();
 
                 for (Statement s : statements) {
-                        if (s instanceof ClassDef || s instanceof InterfaceDef || s instanceof FunDef) {
+                        if (s instanceof ClassDef || s instanceof InterfaceDef || s instanceof FunDef || s instanceof ObjectDef) {
                                 defList.add(s);
                         } else if (s instanceof Import) {
                                 imports.add((Import) s);

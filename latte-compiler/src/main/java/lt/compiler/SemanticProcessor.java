@@ -81,6 +81,10 @@ public class SemanticProcessor {
          */
         public Map<String, InterfaceDef> originalInterfaces = new HashMap<>();
         /**
+         * full name to {@link ObjectDef} from {@link Parser}
+         */
+        public Map<String, ObjectDef> originalObjects = new HashMap<>();
+        /**
          * {@link SMethodDef} to it's containing statements
          */
         public Map<SMethodDef, List<Statement>> methodToStatements = new HashMap<>();
@@ -202,6 +206,7 @@ public class SemanticProcessor {
                 Map<String, List<ClassDef>> fileNameToClassDef = new HashMap<>();
                 Map<String, List<InterfaceDef>> fileNameToInterfaceDef = new HashMap<>();
                 Map<String, List<FunDef>> fileNameToFunctions = new HashMap<>();
+                Map<String, List<ObjectDef>> fileNameToObjectDef = new HashMap<>();
                 Map<String, String> fileNameToPackageName = new HashMap<>();
                 // record types and packages
                 for (String fileName : mapOfStatements.keySet()) {
@@ -216,12 +221,15 @@ public class SemanticProcessor {
                         List<InterfaceDef> interfaceDefs = new ArrayList<>();
                         // fun definition
                         List<FunDef> funDefs = new ArrayList<>();
+                        // object definition
+                        List<ObjectDef> objectDefs = new ArrayList<>();
 
                         // put into map
                         fileNameToImport.put(fileName, imports);
                         fileNameToClassDef.put(fileName, classDefs);
                         fileNameToInterfaceDef.put(fileName, interfaceDefs);
                         fileNameToFunctions.put(fileName, funDefs);
+                        fileNameToObjectDef.put(fileName, objectDefs);
 
                         // package
                         String pkg; // if no package, then it's an empty string, otherwise, it's 'packageName.' with dot at the end
@@ -232,11 +240,13 @@ public class SemanticProcessor {
                                         pkg = p.pkg.pkg.replace("::", ".") + ".";
                                 } else {
                                         pkg = "";
-                                        select_import_class_interface_fun(statement, imports, classDefs, interfaceDefs, funDefs);
+                                        select_import_class_interface_fun_object(
+                                                statement, imports, classDefs, interfaceDefs, funDefs, objectDefs);
                                 }
                                 while (statementIterator.hasNext()) {
                                         Statement stmt = statementIterator.next();
-                                        select_import_class_interface_fun(stmt, imports, classDefs, interfaceDefs, funDefs);
+                                        select_import_class_interface_fun_object(
+                                                stmt, imports, classDefs, interfaceDefs, funDefs, objectDefs);
                                 }
                         } else continue;
 
@@ -267,6 +277,8 @@ public class SemanticProcessor {
                         List<FunDef> funDefs = fileNameToFunctions.get(fileName);
                         // package name
                         String pkg = fileNameToPackageName.get(fileName);
+                        // object definition
+                        List<ObjectDef> objectDefs = fileNameToObjectDef.get(fileName);
 
                         // check importing same simple name
                         Set<String> importSimpleNames = new HashSet<>();
@@ -295,7 +307,7 @@ public class SemanticProcessor {
                                         return null;
                                 }
 
-                                SClassDef sClassDef = new SClassDef(false, c.line_col());
+                                SClassDef sClassDef = new SClassDef(SClassDef.NORMAL, c.line_col());
                                 sClassDef.setFullName(className);
                                 sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
                                 sClassDef.modifiers().add(SModifier.PUBLIC);
@@ -365,13 +377,31 @@ public class SemanticProcessor {
                                         return null;
                                 }
 
-                                SClassDef sClassDef = new SClassDef(true, f.line_col());
+                                SClassDef sClassDef = new SClassDef(SClassDef.FUN, f.line_col());
                                 sClassDef.setFullName(className);
                                 sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
                                 sClassDef.modifiers().add(SModifier.PUBLIC);
                                 sClassDef.modifiers().add(SModifier.FINAL);
 
                                 types.put(className, sClassDef); // record the class
+                                typeDefSet.add(sClassDef);
+                        }
+                        for (ObjectDef o : objectDefs) {
+                                String className = pkg + o.name;
+                                // check occurrence
+                                if (typeExists(className)) {
+                                        err.SyntaxException("duplicate type names " + className, o.line_col());
+                                        return null;
+                                }
+
+                                SClassDef sClassDef = new SClassDef(SClassDef.OBJECT, o.line_col());
+                                sClassDef.setFullName(className);
+                                sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
+                                sClassDef.modifiers().add(SModifier.PUBLIC);
+                                sClassDef.modifiers().add(SModifier.FINAL);
+
+                                types.put(className, sClassDef);
+                                originalObjects.put(className, o);
                                 typeDefSet.add(sClassDef);
                         }
 
@@ -402,7 +432,9 @@ public class SemanticProcessor {
                         }
                 }
 
-                step2(fileNameToClassDef, fileNameToInterfaceDef, fileNameToFunctions, fileNameToPackageName);
+                step2(fileNameToClassDef, fileNameToInterfaceDef,
+                        fileNameToFunctions, fileNameToPackageName,
+                        fileNameToObjectDef);
                 step3(fileNameToPackageName, fileNameToFunctions);
                 step4();
 
@@ -456,76 +488,27 @@ public class SemanticProcessor {
          * @param fileNameToInterfaceDef file name to interface definition
          * @param fileNameToPackageName  file name to package name
          * @param fileNameToFunctions    file name to function def
+         * @param fileNameToObjectDefs   file name to object def
          * @throws SyntaxException exception
          */
         public void step2(Map<String, List<ClassDef>> fileNameToClassDef,
                           Map<String, List<InterfaceDef>> fileNameToInterfaceDef,
                           Map<String, List<FunDef>> fileNameToFunctions,
-                          Map<String, String> fileNameToPackageName) throws SyntaxException {
+                          Map<String, String> fileNameToPackageName,
+                          Map<String, List<ObjectDef>> fileNameToObjectDefs) throws SyntaxException {
                 for (String fileName : mapOfStatements.keySet()) {
                         List<Import> imports = fileNameToImport.get(fileName);
                         List<ClassDef> classDefs = fileNameToClassDef.get(fileName);
                         List<InterfaceDef> interfaceDefs = fileNameToInterfaceDef.get(fileName);
                         List<FunDef> funDefs = fileNameToFunctions.get(fileName);
                         String pkg = fileNameToPackageName.get(fileName);
+                        List<ObjectDef> objectDefs = fileNameToObjectDefs.get(fileName);
 
                         for (ClassDef classDef : classDefs) {
                                 SClassDef sClassDef = (SClassDef) types.get(pkg + classDef.name);
 
-                                // parse parent
-                                Iterator<AST.Access> superWithoutInvocationAccess;
-                                if (classDef.superWithInvocation == null) {
-                                        if (classDef.superWithoutInvocation.isEmpty()) {
-                                                // no interfaces, no parent class
-                                                sClassDef.setParent((SClassDef) getTypeWithName("java.lang.Object", classDef.line_col()));
-                                                superWithoutInvocationAccess = null;
-                                        } else {
-                                                superWithoutInvocationAccess = classDef.superWithoutInvocation.iterator();
-                                                AST.Access mightBeClassAccess = superWithoutInvocationAccess.next();
-                                                STypeDef tmp = getTypeWithAccess(mightBeClassAccess, imports);
-                                                if (tmp instanceof SClassDef) {
-                                                        // constructor without constructor invocation
-                                                        sClassDef.setParent((SClassDef) tmp);
-                                                } else if (tmp instanceof SInterfaceDef) {
-                                                        // interface
-                                                        sClassDef.superInterfaces().add((SInterfaceDef) tmp);
-                                                        // set java.lang.Object as super class
-                                                        sClassDef.setParent((SClassDef) getTypeWithName("java.lang.Object", classDef.line_col()));
-                                                } else {
-                                                        err.SyntaxException(mightBeClassAccess.toString() + " is not class or interface",
-                                                                mightBeClassAccess.line_col());
-                                                        return;
-                                                }
-                                        }
-                                } else {
-                                        // super class
-                                        if (!(classDef.superWithInvocation.exp instanceof AST.Access)) {
-                                                throw new LtBug("classDef.superWithInvocation.exp should always be AST.Access");
-                                        }
-
-                                        AST.Access access = (AST.Access) classDef.superWithInvocation.exp;
-                                        STypeDef tmp = getTypeWithAccess(access, imports);
-                                        if (tmp instanceof SClassDef) {
-                                                sClassDef.setParent((SClassDef) tmp);
-                                        } else {
-                                                err.SyntaxException(access.toString() + " is not class or interface",
-                                                        access.line_col());
-                                                return;
-                                        }
-                                        superWithoutInvocationAccess = classDef.superWithoutInvocation.iterator();
-                                }
-                                // interfaces to be parsed
-                                while (superWithoutInvocationAccess != null && superWithoutInvocationAccess.hasNext()) {
-                                        AST.Access interfaceAccess = superWithoutInvocationAccess.next();
-                                        STypeDef tmp = getTypeWithAccess(interfaceAccess, imports);
-                                        if (tmp instanceof SInterfaceDef) {
-                                                sClassDef.superInterfaces().add((SInterfaceDef) tmp);
-                                        } else {
-                                                err.SyntaxException(interfaceAccess.toString() + " is not interface",
-                                                        interfaceAccess.line_col());
-                                                return;
-                                        }
-                                }
+                                parseClassDefInfo(sClassDef, classDef.superWithInvocation,
+                                        classDef.superWithoutInvocation, imports, classDef.line_col());
 
                                 // annos
                                 parseAnnos(classDef.annos, sClassDef, imports, ElementType.TYPE,
@@ -560,8 +543,6 @@ public class SemanticProcessor {
                                         // constructor should be filled with
                                         // parameters|declaringType(class)|modifiers
                                         // in this step
-
-                                        constructor.setDeclaringType(sClassDef);
 
                                         // annotation
                                         parseAnnos(classDef.annos, constructor, imports, ElementType.CONSTRUCTOR,
@@ -619,66 +600,12 @@ public class SemanticProcessor {
                                 }
                                 // constructor finished
 
+                                // fields and methods
                                 // parse field from constructor parameters
                                 for (VariableDef v : classDef.params) {
                                         parseField(v, sClassDef, imports, PARSING_CLASS, false, true);
                                 }
-
-                                // get static scope and parse non-static fields/methods
-                                List<AST.StaticScope> staticScopes = new ArrayList<>();
-                                for (Statement stmt : classDef.statements) {
-                                        if (stmt instanceof AST.StaticScope) {
-                                                staticScopes.add((AST.StaticScope) stmt);
-                                        } else if (stmt instanceof VariableDef) {
-                                                // define a non-static field
-                                                parseField((VariableDef) stmt, sClassDef, imports, PARSING_CLASS, false, false);
-                                        } else if (stmt instanceof MethodDef) {
-                                                // define a non-static method
-                                                MethodDef methodDef = (MethodDef) stmt;
-                                                generateIndex = -1;
-                                                for (VariableDef v : methodDef.params) {
-                                                        if (v.getInit() == null) {
-                                                                ++generateIndex;
-                                                        } else break;
-                                                }
-
-                                                SMethodDef lastMethod = null;
-                                                for (int i = methodDef.params.size(); i > generateIndex; --i) {
-                                                        parseMethod((MethodDef) stmt, i, sClassDef, lastMethod, imports, PARSING_CLASS, false);
-                                                        lastMethod = sClassDef.methods().get(sClassDef.methods().size() - 1);
-
-                                                        // record the method
-                                                        methodToStatements.put(lastMethod, methodDef.body);
-                                                }
-                                        }
-                                }
-                                // get static field and methods
-                                for (AST.StaticScope scope : staticScopes) {
-                                        for (Statement stmt : scope.statements) {
-                                                if (stmt instanceof VariableDef) {
-                                                        // define a static field
-                                                        parseField((VariableDef) stmt, sClassDef, imports, PARSING_CLASS, true, false);
-                                                } else if (stmt instanceof MethodDef) {
-                                                        // define a static method
-                                                        MethodDef methodDef = (MethodDef) stmt;
-                                                        generateIndex = -1;
-                                                        for (VariableDef v : methodDef.params) {
-                                                                if (v.getInit() == null) {
-                                                                        ++generateIndex;
-                                                                } else break;
-                                                        }
-
-                                                        SMethodDef lastMethod = null;
-                                                        for (int i = methodDef.params.size(); i > generateIndex; --i) {
-                                                                parseMethod((MethodDef) stmt, i, sClassDef, lastMethod, imports, PARSING_CLASS, true);
-                                                                lastMethod = sClassDef.methods().get(sClassDef.methods().size() - 1);
-
-                                                                // record the method
-                                                                methodToStatements.put(lastMethod, methodDef.body);
-                                                        }
-                                                }
-                                        }
-                                }
+                                parseFieldsAndMethodsForClass(sClassDef, classDef.statements, imports);
                         }
                         for (InterfaceDef interfaceDef : interfaceDefs) {
                                 SInterfaceDef sInterfaceDef = (SInterfaceDef) types.get(pkg + interfaceDef.name);
@@ -757,6 +684,188 @@ public class SemanticProcessor {
                                 latteFun.setAnnoDef((SAnnoDef) getTypeWithName("lt.lang.LatteFun", LineCol.SYNTHETIC));
                                 latteFun.setPresent(sClassDef);
                                 sClassDef.annos().add(latteFun);
+                        }
+                        for (ObjectDef objectDef : objectDefs) {
+                                // present annotation
+                                SClassDef sClassDef = (SClassDef) types.get(pkg + objectDef.name);
+                                SAnno objectAnno = new SAnno();
+                                objectAnno.setAnnoDef((SAnnoDef) getTypeWithName("lt.lang.LatteObject", LineCol.SYNTHETIC));
+                                objectAnno.setPresent(sClassDef);
+                                sClassDef.annos().add(objectAnno);
+
+                                parseClassDefInfo(sClassDef, objectDef.superWithInvocation,
+                                        objectDef.superWithoutInvocation, imports, objectDef.line_col());
+
+                                // annos
+                                parseAnnos(objectDef.annos, sClassDef, imports, ElementType.TYPE,
+                                        Collections.singletonList(ElementType.CONSTRUCTOR));
+
+                                // build constructor
+                                SConstructorDef constructor = new SConstructorDef(LineCol.SYNTHETIC);
+                                constructor.setDeclaringType(sClassDef);
+
+                                // annotation
+                                parseAnnos(objectDef.annos, constructor, imports, ElementType.CONSTRUCTOR,
+                                        Collections.singletonList(ElementType.TYPE));
+
+                                // modifier
+                                constructor.modifiers().add(SModifier.PRIVATE);
+
+                                // declaring
+                                constructor.setDeclaringType(sClassDef);
+                                sClassDef.constructors().add(constructor);
+
+                                // static public val singletonInstance = XXX
+                                VariableDef v = new VariableDef(CompileUtil.SingletonFieldName,
+                                        new HashSet<>(Arrays.asList(
+                                                new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC),
+                                                new Modifier(Modifier.Available.PUBLIC, LineCol.SYNTHETIC)
+                                        )), Collections.emptySet(), LineCol.SYNTHETIC);
+                                v.setType(new AST.Access(pkg.isEmpty() ? null : new AST.PackageRef(pkg, LineCol.SYNTHETIC),
+                                        objectDef.name, LineCol.SYNTHETIC));
+                                objectDef.statements.add(0, new AST.StaticScope(Collections.singletonList(v),
+                                        LineCol.SYNTHETIC));
+                                // fields methods
+                                parseFieldsAndMethodsForClass(sClassDef, objectDef.statements, imports);
+                        }
+                }
+        }
+
+        /**
+         * parse class info
+         *
+         * @param sClassDef              SClassDef object
+         * @param superWithInvocation    :???(...)
+         * @param superWithoutInvocation :???
+         * @param imports                imports
+         * @param lineCol                lineCol
+         * @throws SyntaxException compiling error
+         */
+        private void parseClassDefInfo(SClassDef sClassDef,
+                                       AST.Invocation superWithInvocation,
+                                       List<AST.Access> superWithoutInvocation,
+                                       List<Import> imports,
+                                       LineCol lineCol) throws SyntaxException {
+                // parse parent
+                Iterator<AST.Access> superWithoutInvocationAccess;
+                if (superWithInvocation == null) {
+                        if (superWithoutInvocation.isEmpty()) {
+                                // no interfaces, no parent class
+                                sClassDef.setParent((SClassDef) getTypeWithName("java.lang.Object", lineCol));
+                                superWithoutInvocationAccess = null;
+                        } else {
+                                superWithoutInvocationAccess = superWithoutInvocation.iterator();
+                                AST.Access mightBeClassAccess = superWithoutInvocationAccess.next();
+                                STypeDef tmp = getTypeWithAccess(mightBeClassAccess, imports);
+                                if (tmp instanceof SClassDef) {
+                                        // constructor without constructor invocation
+                                        sClassDef.setParent((SClassDef) tmp);
+                                } else if (tmp instanceof SInterfaceDef) {
+                                        // interface
+                                        sClassDef.superInterfaces().add((SInterfaceDef) tmp);
+                                        // set java.lang.Object as super class
+                                        sClassDef.setParent((SClassDef) getTypeWithName("java.lang.Object", lineCol));
+                                } else {
+                                        err.SyntaxException(mightBeClassAccess.toString() + " is not class or interface",
+                                                mightBeClassAccess.line_col());
+                                        return;
+                                }
+                        }
+                } else {
+                        // super class
+                        if (!(superWithInvocation.exp instanceof AST.Access)) {
+                                throw new LtBug("classDef.superWithInvocation.exp should always be AST.Access");
+                        }
+
+                        AST.Access access = (AST.Access) superWithInvocation.exp;
+                        STypeDef tmp = getTypeWithAccess(access, imports);
+                        if (tmp instanceof SClassDef) {
+                                sClassDef.setParent((SClassDef) tmp);
+                        } else {
+                                err.SyntaxException(access.toString() + " is not class or interface",
+                                        access.line_col());
+                                return;
+                        }
+                        superWithoutInvocationAccess = superWithoutInvocation.iterator();
+                }
+                // interfaces to be parsed
+                while (superWithoutInvocationAccess != null && superWithoutInvocationAccess.hasNext()) {
+                        AST.Access interfaceAccess = superWithoutInvocationAccess.next();
+                        STypeDef tmp = getTypeWithAccess(interfaceAccess, imports);
+                        if (tmp instanceof SInterfaceDef) {
+                                sClassDef.superInterfaces().add((SInterfaceDef) tmp);
+                        } else {
+                                err.SyntaxException(interfaceAccess.toString() + " is not interface",
+                                        interfaceAccess.line_col());
+                                return;
+                        }
+                }
+        }
+
+        /**
+         * parse fields and methods for class
+         *
+         * @param sClassDef  SClassDef object
+         * @param statements statements
+         * @param imports    imports
+         * @throws SyntaxException compiling error
+         */
+        private void parseFieldsAndMethodsForClass(SClassDef sClassDef,
+                                                   List<Statement> statements,
+                                                   List<Import> imports) throws SyntaxException {
+                // get static scope and parse non-static fields/methods
+                List<AST.StaticScope> staticScopes = new ArrayList<>();
+                for (Statement stmt : statements) {
+                        if (stmt instanceof AST.StaticScope) {
+                                staticScopes.add((AST.StaticScope) stmt);
+                        } else if (stmt instanceof VariableDef) {
+                                // define a non-static field
+                                parseField((VariableDef) stmt, sClassDef, imports, PARSING_CLASS, false, false);
+                        } else if (stmt instanceof MethodDef) {
+                                // define a non-static method
+                                MethodDef methodDef = (MethodDef) stmt;
+                                int generateIndex = -1;
+                                for (VariableDef v : methodDef.params) {
+                                        if (v.getInit() == null) {
+                                                ++generateIndex;
+                                        } else break;
+                                }
+
+                                SMethodDef lastMethod = null;
+                                for (int i = methodDef.params.size(); i > generateIndex; --i) {
+                                        parseMethod((MethodDef) stmt, i, sClassDef, lastMethod, imports, PARSING_CLASS, false);
+                                        lastMethod = sClassDef.methods().get(sClassDef.methods().size() - 1);
+
+                                        // record the method
+                                        methodToStatements.put(lastMethod, methodDef.body);
+                                }
+                        }
+                }
+                // get static field and methods
+                for (AST.StaticScope scope : staticScopes) {
+                        for (Statement stmt : scope.statements) {
+                                if (stmt instanceof VariableDef) {
+                                        // define a static field
+                                        parseField((VariableDef) stmt, sClassDef, imports, PARSING_CLASS, true, false);
+                                } else if (stmt instanceof MethodDef) {
+                                        // define a static method
+                                        MethodDef methodDef = (MethodDef) stmt;
+                                        int generateIndex = -1;
+                                        for (VariableDef v : methodDef.params) {
+                                                if (v.getInit() == null) {
+                                                        ++generateIndex;
+                                                } else break;
+                                        }
+
+                                        SMethodDef lastMethod = null;
+                                        for (int i = methodDef.params.size(); i > generateIndex; --i) {
+                                                parseMethod((MethodDef) stmt, i, sClassDef, lastMethod, imports, PARSING_CLASS, true);
+                                                lastMethod = sClassDef.methods().get(sClassDef.methods().size() - 1);
+
+                                                // record the method
+                                                methodToStatements.put(lastMethod, methodDef.body);
+                                        }
+                                }
                         }
                 }
         }
@@ -954,6 +1063,7 @@ public class SemanticProcessor {
                         if (sTypeDef instanceof SClassDef) {
                                 SClassDef sClassDef = (SClassDef) sTypeDef;
                                 ClassDef astClass = originalClasses.get(sClassDef.fullName());
+                                ObjectDef astObject = originalObjects.get(sClassDef.fullName());
 
                                 parseAnnoValues(sClassDef.annos());
 
@@ -978,24 +1088,29 @@ public class SemanticProcessor {
                                                 // parse invoke super constructor statement
                                                 SClassDef parent = sClassDef.parent();
                                                 Ins.InvokeSpecial invokeConstructor = null;
-                                                if (null == astClass.superWithInvocation) {
+
+                                                AST.Invocation superWithInvocation = (
+                                                        astClass == null) ? astObject.superWithInvocation
+                                                        : astClass.superWithInvocation;
+
+                                                if (null == superWithInvocation) {
                                                         // invoke super();
                                                         for (SConstructorDef cons : parent.constructors()) {
                                                                 if (cons.getParameters().size() == 0) {
                                                                         invokeConstructor = new Ins.InvokeSpecial(new Ins.This(sClassDef), cons,
-                                                                                astClass.line_col());
+                                                                                sClassDef.line_col());
                                                                         break;
                                                                 }
                                                         }
                                                 } else {
                                                         // invoke super with args
                                                         for (SConstructorDef cons : parent.constructors()) {
-                                                                if (cons.getParameters().size() == astClass.superWithInvocation.args.size()) {
+                                                                if (cons.getParameters().size() == superWithInvocation.args.size()) {
                                                                         invokeConstructor = new Ins.InvokeSpecial(new Ins.This(sClassDef), cons,
-                                                                                astClass.superWithInvocation.line_col());
+                                                                                superWithInvocation.line_col());
 
                                                                         List<SParameter> parameters = cons.getParameters();
-                                                                        List<Expression> args = astClass.superWithInvocation.args;
+                                                                        List<Expression> args = superWithInvocation.args;
                                                                         for (int i = 0; i < parameters.size(); ++i) {
                                                                                 Value v = parseValueFromExpression(args.get(i), parameters.get(i).type(), constructorScope);
                                                                                 invokeConstructor.arguments().add(v);
@@ -1039,7 +1154,10 @@ public class SemanticProcessor {
                                                         constructorToFillStatements.line_col());
 
                                                 // parse this constructor
-                                                for (Statement stmt : astClass.statements) {
+                                                List<Statement> statements = (
+                                                        astClass == null) ? astObject.statements
+                                                        : astClass.statements;
+                                                for (Statement stmt : statements) {
                                                         parseStatement(
                                                                 stmt,
                                                                 VoidType.get(),
@@ -1062,11 +1180,33 @@ public class SemanticProcessor {
                                         parseMethod(method, methodToStatements.get(method), scope);
                                 }
 
-                                // astClass == null means it's function instead of normal class
-                                if (astClass != null) {
+                                // if not function
+                                if (sClassDef.classType() != SClassDef.FUN) {
+                                        List<Statement> statements = (
+                                                astClass == null) ? astObject.statements
+                                                : astClass.statements;
                                         // parse static
                                         SemanticScope staticScope = new SemanticScope(scope);
-                                        for (Statement statement : astClass.statements) {
+
+                                        if (sClassDef.classType() == SClassDef.OBJECT) {
+                                                SFieldDef singletonInstanceField = null;
+                                                for (SFieldDef f : sClassDef.fields()) {
+                                                        if (f.name().equals(CompileUtil.SingletonFieldName)) {
+                                                                singletonInstanceField = f;
+                                                                break;
+                                                        }
+                                                }
+                                                if (singletonInstanceField == null)
+                                                        throw new LtBug("object class should have field " + CompileUtil.SingletonFieldName);
+                                                Ins.New aNew = new Ins.New(
+                                                        sClassDef.constructors().get(0), LineCol.SYNTHETIC
+                                                );
+                                                Ins.PutStatic ps = new Ins.PutStatic(singletonInstanceField,
+                                                        aNew, LineCol.SYNTHETIC, err);
+                                                sClassDef.staticStatements().add(ps);
+                                        }
+
+                                        for (Statement statement : statements) {
                                                 if (statement instanceof AST.StaticScope) {
                                                         AST.StaticScope sta = (AST.StaticScope) statement;
                                                         for (Statement stmt : sta.statements) {
@@ -4649,7 +4789,7 @@ public class SemanticProcessor {
                                               SInterfaceDef interfaceType,
                                               boolean isInterface) throws SyntaxException {
                 // class
-                SClassDef sClassDef = new SClassDef(false, LineCol.SYNTHETIC);
+                SClassDef sClassDef = new SClassDef(SClassDef.NORMAL, LineCol.SYNTHETIC);
                 typeDefSet.add(sClassDef);
                 SemanticScope scope = new SemanticScope(sClassDef);
 
@@ -6141,17 +6281,17 @@ public class SemanticProcessor {
          * @param access      the type
          * @param imports     imports
          * @param currentType caller type
-         * @return New instruction
+         * @return New instruction or get_static
          * @throws SyntaxException exception
          */
-        public Ins.New parseValueFromAccessType(AST.Access access, List<Import> imports, STypeDef currentType) throws SyntaxException {
+        public Value parseValueFromAccessType(AST.Access access, List<Import> imports, STypeDef currentType) throws SyntaxException {
                 SClassDef type = (SClassDef) getTypeWithAccess(access, imports);
                 assert type != null;
                 SConstructorDef zeroParamCons = null;
                 for (SConstructorDef c : type.constructors()) {
                         if (c.getParameters().isEmpty()) {
                                 if (c.modifiers().contains(SModifier.PRIVATE)) {
-                                        if (!type.equals(currentType)) continue;
+                                        if (!type.equals(currentType) && type.classType() != SClassDef.OBJECT) continue;
                                 } else if (c.modifiers().contains(SModifier.PROTECTED)) {
                                         if (!type.pkg().equals(currentType.pkg())
                                                 && !type.isAssignableFrom(currentType))
@@ -6167,6 +6307,17 @@ public class SemanticProcessor {
                 if (zeroParamCons == null) {
                         err.SyntaxException(type + " do not have zero parameter constructor", access.line_col());
                         return null;
+                } else if (type.classType() == SClassDef.OBJECT) {
+                        SFieldDef singletonInstance = null;
+                        for (SFieldDef f : type.fields()) {
+                                if (f.name().equals(CompileUtil.SingletonFieldName)) {
+                                        singletonInstance = f;
+                                        break;
+                                }
+                        }
+                        if (singletonInstance == null)
+                                throw new LtBug("object class should have field " + CompileUtil.SingletonFieldName);
+                        return new Ins.GetStatic(singletonInstance, access.line_col());
                 } else {
                         return new Ins.New(zeroParamCons, access.line_col());
                 }
@@ -7524,7 +7675,7 @@ public class SemanticProcessor {
                         if (type instanceof SClassDef) {
                                 // only SClassDef have constructors
                                 // check whether the type is a function
-                                if (((SClassDef) type).fun()) {
+                                if (((SClassDef) type).classType() == SClassDef.FUN) {
                                         return callFunctionalObject(
                                                 constructingNewInst((SClassDef) type, Collections.emptyList(), invocation.line_col()),
                                                 argList,
@@ -9019,13 +9170,15 @@ public class SemanticProcessor {
          * @param classDefs     classDef list
          * @param interfaceDefs interfaceDef list
          * @param funDefs       functionDef list
+         * @param objectDefs    objectDef list
          * @throws UnexpectedTokenException the statement is not import/class/interface
          */
-        public void select_import_class_interface_fun(Statement stmt,
-                                                      List<Import> imports,
-                                                      List<ClassDef> classDefs,
-                                                      List<InterfaceDef> interfaceDefs,
-                                                      List<FunDef> funDefs) throws UnexpectedTokenException {
+        public void select_import_class_interface_fun_object(Statement stmt,
+                                                             List<Import> imports,
+                                                             List<ClassDef> classDefs,
+                                                             List<InterfaceDef> interfaceDefs,
+                                                             List<FunDef> funDefs,
+                                                             List<ObjectDef> objectDefs) throws UnexpectedTokenException {
                 if (stmt instanceof Import) {
                         imports.add((Import) stmt);
                 } else if (stmt instanceof ClassDef) {
@@ -9034,8 +9187,10 @@ public class SemanticProcessor {
                         interfaceDefs.add((InterfaceDef) stmt);
                 } else if (stmt instanceof FunDef) {
                         funDefs.add((FunDef) stmt);
+                } else if (stmt instanceof ObjectDef) {
+                        objectDefs.add((ObjectDef) stmt);
                 } else {
-                        err.UnexpectedTokenException("class/interface definition or import", stmt.toString(), stmt.line_col());
+                        err.UnexpectedTokenException("class/interface/object definition or import", stmt.toString(), stmt.line_col());
                         // code won't reach here
                 }
         }
@@ -9086,8 +9241,13 @@ public class SemanticProcessor {
                                                 typeDef = i;
                                                 modifiers = i.modifiers();
                                         } else { // class
-                                                SClassDef c = new SClassDef(cls.isAnnotationPresent(LatteFun.class),
-                                                        LineCol.SYNTHETIC);
+                                                // check class type (normal/fun/object)
+                                                int classType;
+                                                if (cls.isAnnotationPresent(LatteFun.class)) classType = SClassDef.FUN;
+                                                else if (cls.isAnnotationPresent(LatteObject.class))
+                                                        classType = SClassDef.OBJECT;
+                                                else classType = SClassDef.NORMAL;
+                                                SClassDef c = new SClassDef(classType, LineCol.SYNTHETIC);
                                                 c.setFullName(clsName);
 
                                                 typeDef = c;
