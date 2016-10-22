@@ -3065,4 +3065,80 @@ public class TestCodeGen {
 
                 assertTrue(o1 == o);
         }
+
+        @Test
+        public void testVarNonnull() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestVarNonnull\n" +
+                                "    static\n" +
+                                "        def method(a, b)\n" +
+                                "            nonnull c = a\n" +
+                                "            nonnull d = b"
+                        , "TestVarNonnull");
+                Method method = cls.getMethod("method", Object.class, Object.class);
+                method.invoke(null, 1, 2);
+
+                try {
+                        method.invoke(null, null, 2);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof NullPointerException);
+                }
+                try {
+                        method.invoke(null, 1, null);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof NullPointerException);
+                }
+                try {
+                        method.invoke(null, Unit.get(), 2);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        method.invoke(null, 1, Unit.get());
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+        }
+
+        @Test
+        public void testVarNonempty() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestVarNonempty\n" +
+                                "    static\n" +
+                                "        def method(a, b)\n" +
+                                "            nonempty c = a\n" +
+                                "            nonempty d = b"
+                        , "TestVarNonempty");
+                Method method = cls.getMethod("method", Object.class, Object.class);
+                method.invoke(null, 1, 2);
+
+                try {
+                        method.invoke(null, null, 2);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        method.invoke(null, 1, null);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        method.invoke(null, Unit.get(), 2);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+                try {
+                        method.invoke(null, 1, Unit.get());
+                        fail();
+                } catch (InvocationTargetException e) {
+                        assertTrue(e.getTargetException() instanceof IllegalArgumentException);
+                }
+        }
 }

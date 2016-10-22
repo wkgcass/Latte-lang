@@ -1769,7 +1769,7 @@ public class SemanticProcessor {
                                         // local = new Pointer(p)
                                         Ins.TStore tStore = new Ins.TStore(
                                                 local, invokePointerSet(
-                                                constructPointer(),
+                                                constructPointer(p.isNotNull(), p.isNotEmpty()),
                                                 new Ins.TLoad(p, scope, LineCol.SYNTHETIC),
                                                 LineCol.SYNTHETIC),
                                                 scope, LineCol.SYNTHETIC, err);
@@ -3694,6 +3694,8 @@ public class SemanticProcessor {
                 }
 
                 if (variableDef.getInit() != null || isLocalVar) {
+                        boolean nonnull = false;
+                        boolean nonempty = false;
                         // variable def with a init value
 
                         Value v;
@@ -3704,11 +3706,13 @@ public class SemanticProcessor {
                                 for (Modifier m : variableDef.getModifiers()) {
                                         if (m.modifier.equals(Modifier.Available.VAL)) {
                                                 canChange = false;
-                                        } else {
-                                                if (!m.modifier.equals(Modifier.Available.VAR)) {
-                                                        err.SyntaxException("invalid modifier for local variable "
-                                                                + m.modifier.name().toLowerCase(), m.line_col());
-                                                }
+                                        } else if (m.modifier.equals(Modifier.Available.NONNULL)) {
+                                                nonnull = true;
+                                        } else if (m.modifier.equals(Modifier.Available.NONEMPTY)) {
+                                                nonempty = true;
+                                        } else if (!m.modifier.equals(Modifier.Available.VAR)) {
+                                                err.SyntaxException("invalid modifier for local variable "
+                                                        + m.modifier.name().toLowerCase(), m.line_col());
                                         }
                                 }
 
@@ -3719,7 +3723,7 @@ public class SemanticProcessor {
                                 scope.putLeftValue(variableDef.getName(), localVariable);
 
                                 Ins.TStore storePtr = new Ins.TStore(localVariable,
-                                        constructPointer(), scope, LineCol.SYNTHETIC, err);
+                                        constructPointer(nonnull, nonempty), scope, LineCol.SYNTHETIC, err);
                                 pack.instructions().add(storePtr);
                         }
 
@@ -3805,7 +3809,9 @@ public class SemanticProcessor {
                 if (Pointer_con == null) {
                         SClassDef Pointer = (SClassDef) getTypeWithName("lt.lang.Pointer", LineCol.SYNTHETIC);
                         for (SConstructorDef con : Pointer.constructors()) {
-                                if (con.getParameters().size() == 0) {
+                                if (con.getParameters().size() == 2
+                                        && con.getParameters().get(0).type().equals(BoolTypeDef.get())
+                                        && con.getParameters().get(1).type().equals(BoolTypeDef.get())) {
                                         Pointer_con = con;
                                         break;
                                 }
@@ -3814,8 +3820,11 @@ public class SemanticProcessor {
                 return Pointer_con;
         }
 
-        public Ins.New constructPointer() throws SyntaxException {
-                return new Ins.New(getPointer_con(), LineCol.SYNTHETIC);
+        public Ins.New constructPointer(boolean nonnull, boolean nonempty) throws SyntaxException {
+                Ins.New aNew = new Ins.New(getPointer_con(), LineCol.SYNTHETIC);
+                aNew.args().add(new BoolValue(nonnull));
+                aNew.args().add(new BoolValue(nonempty));
+                return aNew;
         }
 
         private SMethodDef Pointer_set;
