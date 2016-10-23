@@ -5,7 +5,7 @@ $(document).ready(function () {
     var app = angular.module('syntax', []);
     app.controller('controller', ['$scope', '$sce', function ($scope, $sce) {
         $scope.navs = common_navs();
-        $scope.navs[3].active = true;
+        $scope.navs[2].active = true;
 
         $scope.git_repo = common_git_repo();
 
@@ -41,6 +41,9 @@ $(document).ready(function () {
                 "<a href='https://github.com/wkgcass/Latte-lang/tree/master/src/test/java/lt/compiler/cases/TestDemo.java'>" +
                     (zh?"测试用例":"test cases") +
                 "</a>");
+        $scope.mannual = $sce.trustAsHtml("" +
+            zh?"详细的语法手册见<a href='https://github.com/wkgcass/Latte-lang/blob/master/mannual-zh.md'>这里</a>"
+            :"Check <a href='https://github.com/wkgcass/Latte-lang/blob/master/mannual-zh.md'>here</a> for detailed syntax manual");
 
         $scope.files = files;
 

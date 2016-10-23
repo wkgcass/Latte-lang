@@ -91,7 +91,7 @@ $(document).ready(function () {
                     "        \"source file directory\",\".*\\\\.lt\"\n" +
                     "    ))" +
                     "</textarea>" +
-                    "<script>var editor = CodeMirror.fromTextArea(document.getElementById('compile_java'));editor.setSize('auto', '150px');</script>")
+                    "<script>var editor = CodeMirror.fromTextArea(document.getElementById('compile_java'));editor.setSize('auto', '160px');</script>")
             ]
         };
         $scope.compile = {

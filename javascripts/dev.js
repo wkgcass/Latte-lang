@@ -7,7 +7,7 @@ $(document).ready(function () {
         var zh=useZh();
 
         $scope.navs = common_navs();
-        $scope.navs[5].active = true;
+        $scope.navs[4].active = true;
 
         $scope.git_repo = common_git_repo();
 
@@ -16,7 +16,7 @@ $(document).ready(function () {
             content: zh
                 ?$sce.trustAsHtml("若发现任何BUG, 有更好的建议或是希望拥有的特性, 都可以在<a href=\"https://github.com/wkgcass/Latte-lang/issues\">issue</a>中提出")
                 :$sce.trustAsHtml("If you find any bug, or have advises or request for new features, submit them via <a href=\"https://github.com/wkgcass/Latte-lang/issues\">issue</a>.")
-        }
+        };
 
         $scope.compiler = {
             title: zh?"编译器":"Compiler",

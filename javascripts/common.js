@@ -42,11 +42,6 @@ function common_navs() {
             link: "download.html" + suffix
         },
         {
-            name: isZh ? "介绍" : "Intro",
-            active: false,
-            link: "tutorial.html" + suffix
-        },
-        {
             name: isZh ? "基础语法" : "Basic Syntax",
             active: false,
             link: "syntax.html" + suffix

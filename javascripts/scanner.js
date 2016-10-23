@@ -162,14 +162,16 @@ var javaKeys = ["abstract", "assert", "boolean", "break", "byte", "case",
     "float", "for", "if", "implements", "import", "instanceof",
     "int", "interface", "long", "native", "new", "null", "package",
     "private", "protected", "public", "return", "short", "static",
-    "strictfp", "throw", "try", "while"];
+    "strictfp", "throw", "try", "while", "void"];
 
 var keys = ["is", "not", "bool", "yes", "no",
     "type", "as", "undefined", "in", "elseif",
-    "package", "import", "break", "continue", "return", "fun"];
+    "package", "import", "break", "continue",
+    "return", "fun", "object", "def"];
 
-var modifiers = ["public", "protected", "private", "pkg", "data",
-    "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp", "var"];
+var modifiers = ["public", "protected", "private", "internal", "data",
+    "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp", "var",
+    "nonnull", "nonempty"];
 
 var oneVarOperatorsPost = ["++", "--"];
 
