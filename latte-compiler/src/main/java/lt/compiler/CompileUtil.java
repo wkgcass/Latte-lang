@@ -177,13 +177,13 @@ public class CompileUtil {
         }
 
         private static Set<String> modifiers = new HashSet<>(Arrays.asList(
-                "public", "protected", "private", "pkg",
+                "public", "protected", "private", "internal",
                 "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp",
                 "data", "var", "def", "nonnull", "nonempty"
         ));
 
         private static Set<String> accessModifiers = new HashSet<>(Arrays.asList(
-                "public", "protected", "private", "pkg"
+                "public", "protected", "private", "internal"
         ));
 
         public static boolean isModifier(String str) {
@@ -227,7 +227,7 @@ public class CompileUtil {
                                 return Modifier.Available.PRIVATE;
                         case "protected":
                                 return Modifier.Available.PROTECTED;
-                        case "pkg":
+                        case "internal":
                                 return Modifier.Available.PKG;
                         case "abstract":
                                 return Modifier.Available.ABSTRACT;

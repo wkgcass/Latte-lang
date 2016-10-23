@@ -16,7 +16,7 @@
 	4. [修饰符](#p3-4)
 	5. [Data Class](#p3-5)
 	6. [实例化](#p3-6)
-	7. [object class](#p3-7)
+	7. [Object Class](#p3-7)
 4. [函数类和Lambda](#p4)
 	1. [函数类](#p4-1)
 	2. [高阶函数和Lambda](#p4-2)
@@ -1162,13 +1162,13 @@ class User {
 }
 ```
 
-<h2 id="p3-7">3.7 object class</h2>
+<h2 id="p3-7">3.7 Object Class</h2>
 
 ```scala
 object DataProviderManager
     def registerDataProvider(provider: DataProvider)
         ...
-    val allDataProviders: Collection<DataProvider> get() = ...
+    val allDataProviders: Collection = ...
 ```
 
 本质上，`object class`定义了一个类，但是这个类不能拥有构造函数的参数，构造函数为private，并拥有一个`static public val`的字段来存放单例。

@@ -328,7 +328,7 @@ public class SemanticProcessor {
                                                         sClassDef.setIsDataClass(true);
                                                         break;
                                                 default:
-                                                        err.UnexpectedTokenException("valid modifier for class (val|abstract|public|private|protected|pkg)", m.toString(), m.line_col());
+                                                        err.UnexpectedTokenException("valid modifier for class (val|abstract|public|private|protected|internal)", m.toString(), m.line_col());
                                                         return null;
                                         }
                                 }
@@ -577,7 +577,7 @@ public class SemanticProcessor {
                                                                 // data, val and abs are presented on class
                                                                 break; // pkg don't need to sign modifier
                                                         default:
-                                                                err.UnexpectedTokenException("valid constructor modifier (public|private|protected|pkg)", m.toString(), m.line_col());
+                                                                err.UnexpectedTokenException("valid constructor modifier (public|private|protected|internal)", m.toString(), m.line_col());
                                                                 return;
                                                 }
                                         }
@@ -2424,6 +2424,8 @@ public class SemanticProcessor {
                 List<VariableDef> param4Locals = new ArrayList<>();
                 List<PointerType> realPointerTypes = new ArrayList<>();
                 localVariables.forEach((k, v) -> {
+                        if (!CompileUtil.isValidName(k)) return;
+
                         // construct a synthetic VariableDef as param
                         VariableDef variable = new VariableDef(k, Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
                         if (v instanceof SArrayTypeDef) {
@@ -8988,7 +8990,7 @@ public class SemanticProcessor {
                                 case NONEMPTY:
                                         if (isParam) break;
                                 default:
-                                        err.UnexpectedTokenException("valid modifier for fields (class:(public|private|protected|pkg|val)|interface:(pub|val))", m.toString().toLowerCase(), m.line_col());
+                                        err.UnexpectedTokenException("valid modifier for fields (class:(public|private|protected|internal|val)|interface:(pub|val))", m.toString().toLowerCase(), m.line_col());
                                         return;
                         }
                 }
@@ -9111,7 +9113,7 @@ public class SemanticProcessor {
                                         // a flag for defining a method
                                         break;
                                 default:
-                                        err.UnexpectedTokenException("valid modifier for methods (class:(public|private|protected|pkg|val)|interface:(pub|val))", m.toString(), m.line_col());
+                                        err.UnexpectedTokenException("valid modifier for methods (class:(public|private|protected|internal|val)|interface:(pub|val))", m.toString(), m.line_col());
                                         return;
                         }
                 }

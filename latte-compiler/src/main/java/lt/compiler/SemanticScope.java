@@ -100,9 +100,12 @@ public class SemanticScope {
                 List<LeftValue> list;
                 if (parent != null) list = parent.getLeftValues(count);
                 else list = new ArrayList<>();
-                Iterator<LeftValue> it = leftValueMap.values().iterator();
+                Iterator<Map.Entry<String, LeftValue>> it = leftValueMap.entrySet().iterator();
                 while (list.size() != count && it.hasNext()) {
-                        list.add(it.next());
+                        Map.Entry<String, LeftValue> entry = it.next();
+                        if (CompileUtil.isValidName(entry.getKey())) {
+                                list.add(entry.getValue());
+                        }
                 }
                 return list;
         }

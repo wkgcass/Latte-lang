@@ -28,12 +28,11 @@ Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about L
 * Data Class
 * Pre-Processing define/undef
 * Inner Method
-* Lambda
+* Lambda and High-Order Function
 * JSON Literal
 * Regular Expression
-* Generator Specifying
 * Read Eval Print Loop
-* Compiling to JavaScript (based on `Generator Specifying`)
+* Compiling to JavaScript
 * Latte Maven Plugin
 * many other features
 
@@ -225,12 +224,11 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 * Data Class
 * 预处理 define/undef
 * 内部方法
-* Lambda
+* Lambda 和 高阶函数
 * JSON 字面量
 * 正则表达式
-* 生成器指定
 * Read Eval Print Loop
-* 编译到JavaScript (基于`生成器指定`)
+* 编译到JavaScript
 * Latte Maven Plugin
 * 许多其它特性
 

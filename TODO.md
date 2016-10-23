@@ -1,10 +1,19 @@
 # Latte-lang TODOs
 
-## Value Avaliable Assurance /2016-10-16
+## Modularization /2016-10-23
+
+latte-compiler can be divided into 4 parts:
+
+* latte-compiler-scanner-parser takes string input and produce AST
+* latte-compiler-semantic takes AST and produce bytecode-like semantic objects
+* latte-compiler-code-gen produce bytecode
+* latte-compiler contains Latte lang, repl and other runtime necessary dependencies
+
+## Value Available Assurance /2016-10-16
 
 Some language support `null safety` (e.g. Kotlin). Latte would support a better value assurance. However, when calling a java method, there's no guarantee that the result would be safe. So Latte don't provide checking for methods outside, only checking inside the method.
 
-When defining a method, let each param be `null safe` or `value avaliable` or `no assurance` as default.
+When defining a method, let each param be `null safe` or `value available` or `no assurance` as default.
 
 * ~~add new modifier for variables (`notnull`, `notempty`. The first only checks null/Unit, the second cast the value to bool can check the result).~~ / 2016-10-18 **DONE**
 * ~~implement the modifiers for params and return values~~ / 2016-10-18 **DONE**
@@ -17,7 +26,7 @@ There are multiple things can be refactored, especially the lambda expression.
 First step would be these tasks:
 
 * ~~`val` variable types can be predicted. (EASY)~~ / 2016-10-16 **DONE**
-* when generating lambda expression, non-accessible variables (those with an invalid name) can be ignored. (HARD)
+* ~~when generating lambda expression, non-accessible variables (those with an invalid name) can be ignored. (HARD)~~ / 2016-10-23 **DONE**
 * scanner can be refactored. (HARD)
 * ~~step 1 should be refactored. first retrieve all packages that's defined in source code, then check import. (MEDIUM)~~ / 2016-10-16 **DONE**
 * ~~scan class path to see whether a package exist. (EASY)~~ / 2016-10-16 **DONE**

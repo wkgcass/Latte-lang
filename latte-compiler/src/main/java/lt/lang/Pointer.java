@@ -3,9 +3,12 @@ package lt.lang;
 /**
  * the pointer object.
  * use p[] to access/modify the contained value.
+ *
+ * @param <T> the contained object type
  */
-public class Pointer {
-        private Object item;
+@SuppressWarnings("unused")
+public class Pointer<T> {
+        private T item;
         private final boolean nonnull;
         private final boolean nonempty;
 
@@ -19,7 +22,7 @@ public class Pointer {
          *
          * @return the contained object
          */
-        public Object get() {
+        public T get() {
                 return item;
         }
 
@@ -30,7 +33,7 @@ public class Pointer {
          * @return input object
          * @throws Throwable exception when trying to cast the object
          */
-        public Pointer set(Object item) throws Throwable {
+        public Pointer set(T item) throws Throwable {
                 if (nonempty) {
                         if (!LtRuntime.castToBool(item)) throw new IllegalArgumentException();
                 }
