@@ -214,7 +214,8 @@ public class LtRuntime {
 
                                 return arr;
                         }
-                } else if (Dynamic.isFunctionalAbstractClass(targetType)) {
+                } else if (Dynamic.isFunctionalAbstractClass(targetType)
+                        || Dynamic.isFunctionalInterface(targetType)) {
                         if (lambdaFunctionMap.containsKey(targetType)) {
                                 return lambdaFunctionMap.get(targetType).apply(o);
                         }
@@ -233,18 +234,22 @@ public class LtRuntime {
                                         }
                                         StringBuilder sb = new StringBuilder();
                                         sb.append("class ").append(targetType.getSimpleName()).append("$Latte$lambda$").append(i)
-                                                .append("(func:").append(funcMethod.getDeclaringClass().getInterfaces()[0].getName().replace(".", "::"))
-                                                .append("):").append(targetType.getName().replace(".", "::")).append("\n")
+                                                .append("(func:").append(
+                                                getLatteTypeName(funcMethod.getDeclaringClass().getInterfaces()[0].getName()))
+                                                .append("):").append(
+                                                getLatteTypeName(targetType.getName())).append("\n")
                                                 .append("    ").append(method.getName()).append("(");
                                         boolean isFirst = true;
                                         int index = 0;
                                         for (Class<?> param : method.getParameterTypes()) {
                                                 if (isFirst) isFirst = false;
                                                 else sb.append(",");
-                                                sb.append("p").append(index++).append(":").append(param.getName().replace(".", "::"));
+                                                sb.append("p").append(index++).append(":").append(
+                                                        getLatteTypeName(param.getName()));
                                         }
-                                        sb.append("):").append(method.getReturnType().getName().replace(".", "::")).append("\n")
-                                                .append("        ");
+                                        sb.append("):").append(
+                                                getLatteTypeName(method.getReturnType().getName())).append("\n")
+                                                .append("        func.self = this\n").append("        ");
                                         if (method.getReturnType() != void.class) sb.append("return ");
                                         sb.append("func.apply(");
                                         isFirst = true;
@@ -255,9 +260,13 @@ public class LtRuntime {
                                         }
                                         sb.append(")\n");
 
+                                        ClassLoader targetTypeCL = targetType.getClassLoader();
+                                        if (targetTypeCL == null) {
+                                                targetTypeCL = Thread.currentThread().getContextClassLoader();
+                                        }
                                         @SuppressWarnings("unchecked")
                                         Class<?> cls = ((java.util.List<Class<?>>) Utils.eval(
-                                                targetType.getClassLoader(),
+                                                targetTypeCL,
                                                 sb.toString())).get(0);
                                         Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
                                         Function1 func = con::newInstance;
@@ -265,29 +274,14 @@ public class LtRuntime {
                                         return func.apply(o);
                                 }
                         }
-                } else if (Dynamic.isFunctionalInterface(targetType)) {
-                        if (o instanceof Function) {
-                                Method method = Dynamic.findAbstractMethod(targetType);
-                                Method funcMethod = o.getClass().getDeclaredMethods()[0];
-                                if (method.getParameterCount() == funcMethod.getParameterCount()) {
-                                        return Proxy.newProxyInstance(o.getClass().getClassLoader(), new Class[]{method.getDeclaringClass()},
-                                                (proxy, method1, args) -> {
-                                                        if (method1.equals(method)) {
-                                                                funcMethod.setAccessible(true);
-                                                                Object res = funcMethod.invoke(o, args);
-                                                                if (method1.getReturnType() == void.class) {
-                                                                        return null;
-                                                                } else {
-                                                                        return res;
-                                                                }
-                                                        } else {
-                                                                return method1.invoke(proxy, args);
-                                                        }
-                                                });
-                                }
-                        }
                 }// else throw new LtBug("unsupported type cast (targetType:" + targetType.getName() + ", o:" + o.getClass().getName() + ")");
                 throw generateClassCastException(o, targetType);
+        }
+
+        private static String getLatteTypeName(String javaTypeName) {
+                if (javaTypeName.equals("boolean")) return "bool";
+                if (javaTypeName.equals("void")) return "Unit";
+                return javaTypeName.replace(".", "::");
         }
 
         /**
@@ -628,7 +622,7 @@ public class LtRuntime {
          * @return true/false
          * @throws Throwable exceptions
          */
-        public static boolean is(Object a, Object b, Class<?> callerClass) throws Throwable {
+        public static boolean is(Object a, Object b, @SuppressWarnings("unused") Class<?> callerClass) throws Throwable {
                 if (a == null && b == null) return true;
                 // not both a and b are null
                 if (a == null || b == null) return false;
@@ -649,7 +643,7 @@ public class LtRuntime {
          * @return true/false
          * @throws Throwable exceptions
          */
-        public static boolean not(Object a, Object b, Class<?> callerClass) throws Throwable {
+        public static boolean not(Object a, Object b, @SuppressWarnings("unused") Class<?> callerClass) throws Throwable {
                 if (a == null && b == null) return false;
                 // not both a and b are null
                 if (a == null || b == null) return true;

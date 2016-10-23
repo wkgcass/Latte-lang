@@ -36,6 +36,7 @@ import lt.compiler.syntactic.literal.NumberLiteral;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
 import lt.generator.SourceGenerator;
 import lt.lang.*;
+import lt.lang.function.Function0;
 import lt.lang.function.Function1;
 import lt.lang.function.Function3;
 import lt.repl.ScriptCompiler;
@@ -1293,7 +1294,7 @@ public class TestCodeGen {
                 TestLambdaFunc func = (TestLambdaFunc) TestLambdaLT.getDeclaredMethod("method").invoke(null);
                 assertEquals(3, func.apply(1));
 
-                assertEquals(2, lambda.getDeclaredFields().length);
+                assertEquals(3, lambda.getDeclaredFields().length);
         }
 
         @Test
@@ -1334,7 +1335,7 @@ public class TestCodeGen {
                 TestLambdaFunc func = (TestLambdaFunc) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(3, func.apply(1));
 
-                assertEquals(3, lambda.getDeclaredFields().length);
+                assertEquals(4, lambda.getDeclaredFields().length);
         }
 
         @Test
@@ -1375,7 +1376,7 @@ public class TestCodeGen {
                 Function func = (Function) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(3, func.apply(1));
 
-                assertEquals(3, lambda.getDeclaredFields().length);
+                assertEquals(4, lambda.getDeclaredFields().length);
         }
 
         @Test
@@ -1414,7 +1415,7 @@ public class TestCodeGen {
                 Function3 func = (Function3) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(6, func.apply(1, 2, 3));
 
-                assertEquals(3, lambda.getDeclaredFields().length);
+                assertEquals(4, lambda.getDeclaredFields().length);
         }
 
         @Test
@@ -3140,5 +3141,67 @@ public class TestCodeGen {
                 } catch (InvocationTargetException e) {
                         assertTrue(e.getTargetException() instanceof IllegalArgumentException);
                 }
+        }
+
+        @Test
+        public void testLambdaGetSelf() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestLambdaGetSelf\n" +
+                                "    static\n" +
+                                "        method1()=()->$\n" +
+                                "    method2()=()->$"
+                        , "TestLambdaGetSelf");
+                Method method1 = cls.getMethod("method1");
+                Function0 lambda1 = (Function0) method1.invoke(null);
+                Class<?> lambdaClass1 = lambda1.getClass();
+                assertEquals(3, lambdaClass1.getDeclaredFields().length);
+
+                Field field_self = lambdaClass1.getField("self");
+                assertTrue(lambda1 == field_self.get(lambda1));
+                assertTrue(lambda1 == lambda1.apply());
+
+                Method method2 = cls.getMethod("method2");
+                Object o = cls.newInstance();
+                Function0 lambda2 = (Function0) method2.invoke(o);
+                Class<?> lambdaClass2 = lambda2.getClass();
+
+                assertEquals(4, lambdaClass2.getDeclaredFields().length);
+
+                field_self = lambdaClass2.getField("self");
+
+                assertTrue(lambda2 == field_self.get(lambda2));
+                assertTrue(lambda2 == lambda2.apply());
+        }
+
+        @Test
+        public void testLambdaSelfName() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestLambdaSelfName\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            $=1\n" +
+                                "            ()->$$"
+                        , "TestLambdaSelfName");
+                Method method = cls.getMethod("method");
+                Function0 func = (Function0) method.invoke(null);
+                assertTrue(func == func.apply());
+        }
+
+        @Test
+        public void testLambdaSelfChange() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestLambdaSelfChange\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            invoke(()->$ defaultMethod)\n" +
+                                "        def invoke(f:F)=f()\n" +
+                                "@FunctionalInterface\n" +
+                                "interface F\n" +
+                                "    def method\n" +
+                                "    def defaultMethod=1"
+                        , "TestLambdaSelfChange");
+                Method method = cls.getMethod("method");
+                Object res = method.invoke(null);
+                assertEquals(1, res);
         }
 }

@@ -2411,12 +2411,14 @@ public class TestSemantic {
                 Instruction i0 = lambda.methods().get(0).statements().get(0); // tstore new LinkedList(local)
                 i1 = lambda.methods().get(0).statements().get(1); // invoke virtual (add x)
                 i2 = lambda.methods().get(0).statements().get(2); // invoke virtual (add 0,o)
-                i3 = lambda.methods().get(0).statements().get(3); // return(invoke virtual (tload))
+                i3 = lambda.methods().get(0).statements().get(3); // invoke virtual (add self)
+                Instruction i4 = lambda.methods().get(0).statements().get(4); // return(invoke virtual (tload))
 
                 assertTrue(i0 instanceof Ins.TStore);
                 assertTrue(i1 instanceof Ins.InvokeVirtual);
                 assertTrue(i2 instanceof Ins.InvokeVirtual);
-                assertTrue(i3 instanceof Ins.TReturn);
+                assertTrue(i3 instanceof Ins.InvokeVirtual);
+                assertTrue(i4 instanceof Ins.TReturn);
         }
 
         @Test

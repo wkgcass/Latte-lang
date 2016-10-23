@@ -2201,7 +2201,7 @@ public class SemanticProcessor {
          * <li>{@link lt.compiler.syntactic.AST.Throw} =&gt; {@link lt.compiler.semantic.Ins.AThrow}</li>
          * <li>{@link lt.compiler.syntactic.AST.Try} =&gt; a list of Instructions and some ExceptionTable</li>
          * <li>{@link lt.compiler.syntactic.AST.Synchronized} =&gt; {@link lt.compiler.semantic.Ins.MonitorEnter} and {@link lt.compiler.semantic.Ins.MonitorExit}</li>
-         * <li>{@link MethodDef} =&gt; {@link #parseInnerMethod(MethodDef, SemanticScope)}</li>
+         * <li>{@link MethodDef} =&gt; {@link #parseInnerMethod(MethodDef, SemanticScope, boolean)}</li>
          * <li>{@link lt.compiler.syntactic.AST.Break =&gt; goto instruction}</li>
          * <li>{@link lt.compiler.syntactic.AST.Continue =&gt; goto instruction}</li>
          * </ul>
@@ -2269,7 +2269,7 @@ public class SemanticProcessor {
                                 breakIns, continueIns);
                 } else if (statement instanceof MethodDef) {
                         if (!doNotParseMethodDef)
-                                parseInnerMethod((MethodDef) statement, scope);
+                                parseInnerMethod((MethodDef) statement, scope, false);
                 } else if (statement instanceof AST.Break) {
                         if (breakIns == null) {
                                 err.SyntaxException("break should be inside a loop", statement.line_col());
@@ -2349,12 +2349,13 @@ public class SemanticProcessor {
          * both final and not-final variables can be captured, <br>
          * but the variable inside the inner method would NOT have effect on the outer one
          *
-         * @param methodDef method def object, defines the inner method
-         * @param scope     current scope
+         * @param methodDef   method def object, defines the inner method
+         * @param scope       current scope
+         * @param lambdaParam add one param for lambda
          * @return the new method (the inner method)
          * @throws SyntaxException compile error
          */
-        public SMethodDef parseInnerMethod(MethodDef methodDef, SemanticScope scope) throws SyntaxException {
+        public SMethodDef parseInnerMethod(MethodDef methodDef, SemanticScope scope, boolean lambdaParam) throws SyntaxException {
                 if (scope.parent == null) throw new LtBug("scope.parent should not be null");
 
                 SemanticScope theTopScope = scope.parent;
@@ -2471,6 +2472,25 @@ public class SemanticProcessor {
                         methodDef.line_col()
                 );
                 newMethodDef.params.addAll(0, param4Locals);
+                if (lambdaParam) {
+                        String varName = "$";
+                        boolean found;
+                        while (true) {
+                                found = false;
+                                for (VariableDef v : newMethodDef.params) {
+                                        if (v.getName().equals(varName)) {
+                                                varName += "$";
+                                                found = true;
+                                                break;
+                                        }
+                                }
+                                if (found) continue;
+                                break;
+                        }
+                        newMethodDef.params.add(
+                                new VariableDef(varName,
+                                        Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC));
+                }
 
                 // parse the method
                 parseMethod(newMethodDef, newMethodDef.params.size(), scope.type(), null, fileNameToImport.get(newMethodDef.line_col().fileName),
@@ -4717,7 +4737,7 @@ public class SemanticProcessor {
                         lambda.statements,
                         LineCol.SYNTHETIC
                 );
-                SMethodDef method = parseInnerMethod(methodDef, scope);
+                SMethodDef method = parseInnerMethod(methodDef, scope, true);
                 methodToStatements.put(method, lambda.statements);
 
                 List<Value> args = new ArrayList<>();
@@ -4732,6 +4752,7 @@ public class SemanticProcessor {
                         throw new LtBug("constructorWithZeroParamAndCanAccess should not be null");
                 // construct a class
                 // class XXX(methodHandle:MethodHandle, o:Object, local:List) : C
+                //     public self = this
                 //     methodToOverride(xxx)
                 //         local.add(?)
                 //         ...
@@ -4842,6 +4863,13 @@ public class SemanticProcessor {
                 f3.setType(getTypeWithName("java.util.List", LineCol.SYNTHETIC));
                 sClassDef.fields().add(f3);
                 f3.setDeclaringType(sClassDef);
+                // self
+                SFieldDef f4 = new SFieldDef(LineCol.SYNTHETIC);
+                f4.setName("self");
+                f4.setType(getTypeWithName("java.lang.Object", LineCol.SYNTHETIC));
+                sClassDef.fields().add(f4);
+                f4.setDeclaringType(sClassDef);
+                f4.modifiers().add(SModifier.PUBLIC);
 
                 // constructor
                 SConstructorDef con = new SConstructorDef(LineCol.SYNTHETIC);
@@ -4862,6 +4890,10 @@ public class SemanticProcessor {
                                 LineCol.SYNTHETIC
                         ));
                 }
+                // self = this
+                con.statements().add(new Ins.PutField(
+                        f4, new Ins.This(sClassDef),
+                        new Ins.This(sClassDef), LineCol.SYNTHETIC, err));
                 con.modifiers().add(SModifier.PUBLIC);
                 // p1
                 SParameter p1 = new SParameter();
@@ -4980,6 +5012,16 @@ public class SemanticProcessor {
                         invokeVirtual.arguments().add(new Ins.GetField(f2, meScope.getThis(), LineCol.SYNTHETIC));
                         theMethod.statements().add(invokeVirtual);
                 }
+                // linkedList.add(self)
+                Ins.InvokeVirtual addSelfInvokeVirtual = new Ins.InvokeVirtual(
+                        new Ins.TLoad(localVariable, meScope, LineCol.SYNTHETIC),
+                        LinkedList_add,
+                        LineCol.SYNTHETIC
+                );
+                addSelfInvokeVirtual.arguments().add(
+                        new Ins.GetField(f4, new Ins.This(sClassDef), LineCol.SYNTHETIC)
+                );
+                theMethod.statements().add(addSelfInvokeVirtual);
 
                 /* invoke println(list)
                 SClassDef cls = (SClassDef) getTypeWithName("lt.lang.Utils", LineCol.SYNTHETIC);
@@ -5084,7 +5126,7 @@ public class SemanticProcessor {
                         , Collections.emptyList(), Collections.emptySet(),
                         procedure.statements, procedure.line_col()
                 );
-                parseInnerMethod(methodDef, scope);
+                parseInnerMethod(methodDef, scope, false);
                 AST.Invocation invocation = new AST.Invocation(
                         new AST.Access(null, methodName, procedure.line_col()), Collections.emptyList(), false, procedure.line_col());
                 return parseValueFromInvocation(invocation, scope);
