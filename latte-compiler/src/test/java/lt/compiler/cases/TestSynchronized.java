@@ -114,6 +114,7 @@ public class TestSynchronized {
                         try {
                                 Object res = method.invoke(null, a, b, c);
                                 if (res.equals(10)) result.result = true;
+                                c.i = 2;
                         } catch (Exception e) {
                                 e.printStackTrace();
                         }
@@ -137,6 +138,11 @@ public class TestSynchronized {
                 t2.start();
                 t1.join();
                 t2.join();
+
+                while (c.i == 1) {
+                        Thread.sleep(1);
+                }
+
                 assertTrue(result.result);
                 assertTrue(result.pass1);
                 assertTrue(result.pass2);

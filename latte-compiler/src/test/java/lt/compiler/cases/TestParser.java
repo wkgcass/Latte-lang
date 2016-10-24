@@ -1947,8 +1947,7 @@ public class TestParser {
                 assertEquals(invocation, stmt);
 
                 stmt = list.get(1);
-                invocation = new AST.Invocation(new AST.Access(new AST.Access(null, "a", LineCol.SYNTHETIC), "op", LineCol.SYNTHETIC), Collections.emptyList(), false, LineCol.SYNTHETIC);
-                assertEquals(invocation, stmt);
+                assertEquals(new AST.Access(new AST.Access(null, "a", LineCol.SYNTHETIC), "op", LineCol.SYNTHETIC), stmt);
         }
 
         @Test

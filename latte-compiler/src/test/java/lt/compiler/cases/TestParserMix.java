@@ -450,16 +450,8 @@ public class TestParserMix {
                                         Collections.singletonList(new AST.Access(null, "b", null)),
                                         false, null
                                 ), new StringLiteral("'b'", null));
-                                put(new StringLiteral("'a'", null), new AST.Invocation(
-                                        new AST.Access(new AST.Access(null, "a", null), "op", null),
-                                        Collections.emptyList(),
-                                        false, null
-                                ));
-                                put(new AST.Invocation(
-                                        new AST.Access(new AST.Access(null, "a", null), "op", null),
-                                        Collections.emptyList(),
-                                        false, null
-                                ), new StringLiteral("'b'", null));
+                                put(new StringLiteral("'a'", null), new AST.Access(new AST.Access(null, "a", null), "op", null));
+                                put(new AST.Access(new AST.Access(null, "a", null), "op", null), new StringLiteral("'b'", null));
                         }
                 }, null);
                 assertEquals(mapExp, list.get(0));
@@ -471,44 +463,40 @@ public class TestParserMix {
                 assertEquals(1, list.size());
 
                 // ((a op (b+1)) op 2) op
-                AST.Invocation invocation = new AST.Invocation(
-                        new AST.Access(
-                                new AST.Invocation(
-                                        new AST.Access(
-                                                new AST.Invocation(
-                                                        new AST.Access(
-                                                                new AST.Access(null, "a", null),
-                                                                "op",
-                                                                null
-                                                        ),
-                                                        Collections.singletonList(
-                                                                new TwoVariableOperation(
-                                                                        "+",
-                                                                        new AST.Access(
-                                                                                null,
-                                                                                "b",
-                                                                                null
-                                                                        ),
-                                                                        new NumberLiteral("1", null),
-                                                                        null
-                                                                )
-                                                        ),
-                                                        false, null
+                AST.Access access = new AST.Access(
+                        new AST.Invocation(
+                                new AST.Access(
+                                        new AST.Invocation(
+                                                new AST.Access(
+                                                        new AST.Access(null, "a", null),
+                                                        "op",
+                                                        null
                                                 ),
-                                                "op",
-                                                null
+                                                Collections.singletonList(
+                                                        new TwoVariableOperation(
+                                                                "+",
+                                                                new AST.Access(
+                                                                        null,
+                                                                        "b",
+                                                                        null
+                                                                ),
+                                                                new NumberLiteral("1", null),
+                                                                null
+                                                        )
+                                                ),
+                                                false, null
                                         ),
-                                        Collections.singletonList(new NumberLiteral("2", null)),
-                                        false, null
+                                        "op",
+                                        null
                                 ),
-                                "op",
-                                null
+                                Collections.singletonList(new NumberLiteral("2", null)),
+                                false, null
                         ),
-                        Collections.emptyList(),
-                        false, null
+                        "op",
+                        null
                 );
 
-                assertEquals(invocation, list.get(0));
+                assertEquals(access, list.get(0));
         }
 
         @Test

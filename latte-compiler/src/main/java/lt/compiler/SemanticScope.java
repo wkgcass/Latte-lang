@@ -93,17 +93,19 @@ public class SemanticScope {
         /**
          * get a list of leftValue
          *
-         * @param count size of the required list (may be less, but won't be more)
+         * @param count       size of the required list (may be less, but won't be more)
+         * @param lambdaParam lambda param
          * @return a list of LeftValue(s)
          */
-        public List<LeftValue> getLeftValues(int count) {
+        public List<LeftValue> getLeftValues(int count, boolean lambdaParam) {
                 List<LeftValue> list;
-                if (parent != null) list = parent.getLeftValues(count);
+                if (parent != null) list = parent.getLeftValues(count, lambdaParam);
                 else list = new ArrayList<>();
                 Iterator<Map.Entry<String, LeftValue>> it = leftValueMap.entrySet().iterator();
                 while (list.size() != count && it.hasNext()) {
                         Map.Entry<String, LeftValue> entry = it.next();
-                        if (CompileUtil.isValidName(entry.getKey())) {
+                        if ((!lambdaParam || !entry.getKey().equals("$"))
+                                && CompileUtil.isValidName(entry.getKey())) {
                                 list.add(entry.getValue());
                         }
                 }

@@ -1941,12 +1941,22 @@ public class Parser {
                                                                         if (!parsedExps.empty()) {
                                                                                 // method(...) or xx[i]() or xx()()()...()
                                                                                 Expression invocationExp = parsedExps.pop();
-                                                                                List<Expression> args = new ArrayList<>();
+                                                                                List<Expression> args = new LinkedList<>();
 
-                                                                                boolean allVarDef = !statements.isEmpty();
-                                                                                for (Statement stmt : statements) {
+                                                                                Statement lastStmt = null;
+                                                                                if (!statements.isEmpty()) {
+                                                                                        lastStmt = statements.get(statements.size() - 1);
+                                                                                }
+                                                                                boolean endWithVarDef = !statements.isEmpty()
+                                                                                        && lastStmt instanceof VariableDef
+                                                                                        && ((VariableDef) lastStmt).getInit() != null
+                                                                                        && ((VariableDef) lastStmt).getModifiers().isEmpty()
+                                                                                        && ((VariableDef) lastStmt).getAnnos().isEmpty();
+                                                                                boolean hasNonVarDef = false;
+                                                                                for (int i = statements.size() - 1; i >= 0; --i) {
+                                                                                        Statement stmt = statements.get(i);
                                                                                         if ((stmt instanceof Expression)) {
-                                                                                                args.add((Expression) stmt);
+                                                                                                args.add(0, (Expression) stmt);
 
                                                                                                 if (stmt instanceof VariableDef) {
                                                                                                         if (((VariableDef) stmt).getType() != null) {
@@ -1957,21 +1967,23 @@ public class Parser {
                                                                                                                 !((VariableDef) stmt).getAnnos().isEmpty()
                                                                                                                 ||
                                                                                                                 !((VariableDef) stmt).getModifiers().isEmpty()) {
-                                                                                                                allVarDef = false;
+                                                                                                                hasNonVarDef = true;
+                                                                                                        } else {
+                                                                                                                if (hasNonVarDef) {
+                                                                                                                        err.SyntaxException("params with assignment should be at the end", stmt.line_col());
+                                                                                                                }
                                                                                                         }
                                                                                                 } else {
-                                                                                                        allVarDef = false;
+                                                                                                        hasNonVarDef = true;
                                                                                                 }
                                                                                         } else {
                                                                                                 err.UnexpectedTokenException("expression", stmt.toString(), stmt.line_col());
                                                                                                 err.debug("ignore the argument");
-
-                                                                                                allVarDef = false;
                                                                                         }
                                                                                 }
 
                                                                                 AST.Invocation invocation = new AST.Invocation(invocationExp,
-                                                                                        args, allVarDef, current.getLineCol());
+                                                                                        args, endWithVarDef, current.getLineCol());
                                                                                 parsedExps.push(invocation);
                                                                         } else {
                                                                                 if (statements.size() == 1) {
@@ -2169,8 +2181,8 @@ public class Parser {
                                 return;
                         }
                         nextNode(true);
-                        AST.Invocation invocation = new AST.Invocation(new AST.Access(a, op, opLineCol), Collections.emptyList(), false, opLineCol);
-                        parsedExps.push(invocation);
+                        AST.Access access = new AST.Access(a, op, opLineCol);
+                        parsedExps.push(access);
                 }
 
                 parse_expression();

@@ -3180,7 +3180,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        def method\n" +
                                 "            $=1\n" +
-                                "            ()->$$"
+                                "            ()->$"
                         , "TestLambdaSelfName");
                 Method method = cls.getMethod("method");
                 Function0 func = (Function0) method.invoke(null);
@@ -3203,5 +3203,27 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 Object res = method.invoke(null);
                 assertEquals(1, res);
+        }
+
+        @Test
+        public void testInvokeWithNameParams() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestInvokeWithNameParams\n" +
+                                "    static\n" +
+                                "        def method = open('file', \"w\", encoding='utf-8')\n" +
+                                "class open(file, mode)\n" +
+                                "    public encoding"
+                        , "TestInvokeWithNameParams");
+                Method method = cls.getMethod("method");
+                Object result = method.invoke(null);
+                Field field_file = result.getClass().getDeclaredField("file");
+                field_file.setAccessible(true);
+                Field field_mode = result.getClass().getDeclaredField("mode");
+                field_mode.setAccessible(true);
+                Field field_encoding = result.getClass().getDeclaredField("encoding");
+
+                assertEquals("file", field_file.get(result));
+                assertEquals("w", field_mode.get(result));
+                assertEquals("utf-8", field_encoding.get(result));
         }
 }

@@ -1127,19 +1127,21 @@ user = new User(1, "latte")
 此外，Latte提供另外一种特殊的实例化方式  
 调用无参构造函数，并依次赋值：
 
-```kotlin
-data class User(name, age)
+```python
+class open(file, mode)
+    public encoding 
 
-john = User(name='john', age=42)
+f = open('/User/a', "r", encoding='utf-8')
 ```
 
 这是一个语法糖，相当于如下Latte代码：
 
 ```kotlin
-john = User
-john.name = 'john'
-john.age = 42
+john = open('/User/a', "r")
+john.encoding = 'utf-8'
 ```
+
+即：首先使用不带`=`的参数进行类型的实例化，然后把剩余“参数”看作对accessor的赋值操作。
 
 这个语法糖不光适用于Latte定义的data class，还可以支持任意具有无参构造函数，并有可访问的field或者[accessor](#p3-3-3)的对象。例如标准Java Bean就可以使用这个语法。
 

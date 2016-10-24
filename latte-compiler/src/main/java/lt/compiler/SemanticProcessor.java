@@ -1889,6 +1889,12 @@ public class SemanticProcessor {
                         for (AST.If.IfPair pair : ((AST.If) lastStmt).ifs) {
                                 transformLastExpToReturn(pair.body);
                         }
+                } else if (lastStmt instanceof AST.Synchronized) {
+                        transformLastExpToReturn(((AST.Synchronized) lastStmt).statements);
+                } else if (lastStmt instanceof AST.Try) {
+                        AST.Try aTry = (AST.Try) lastStmt;
+                        transformLastExpToReturn(aTry.statements);
+                        transformLastExpToReturn(aTry.catchStatements);
                 }
         }
 
@@ -2426,6 +2432,7 @@ public class SemanticProcessor {
                 List<PointerType> realPointerTypes = new ArrayList<>();
                 localVariables.forEach((k, v) -> {
                         if (!CompileUtil.isValidName(k)) return;
+                        if (k.equals("$")) return;
 
                         // construct a synthetic VariableDef as param
                         VariableDef variable = new VariableDef(k, Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
@@ -2473,22 +2480,8 @@ public class SemanticProcessor {
                 );
                 newMethodDef.params.addAll(0, param4Locals);
                 if (lambdaParam) {
-                        String varName = "$";
-                        boolean found;
-                        while (true) {
-                                found = false;
-                                for (VariableDef v : newMethodDef.params) {
-                                        if (v.getName().equals(varName)) {
-                                                varName += "$";
-                                                found = true;
-                                                break;
-                                        }
-                                }
-                                if (found) continue;
-                                break;
-                        }
                         newMethodDef.params.add(
-                                new VariableDef(varName,
+                                new VariableDef("$",
                                         Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC));
                 }
 
@@ -4433,17 +4426,16 @@ public class SemanticProcessor {
                 SClassDef classType = (SClassDef) theType;
                 assert classType != null;
 
-                SConstructorDef con = null;
-                for (SConstructorDef c : classType.constructors()) {
-                        if (c.getParameters().isEmpty()) {
-                                con = c;
-                                break;
+                int count = 0;
+                List<Value> constructingArgs = new ArrayList<>();
+                for (Expression exp : invocation.args) {
+                        if (!(exp instanceof VariableDef)
+                                || ((VariableDef) exp).getInit() == null) {
+                                ++count;
+                                constructingArgs.add(
+                                        parseValueFromExpression(exp, null, scope)
+                                );
                         }
-                }
-
-                if (con == null) {
-                        err.SyntaxException("cannot find constructor with 0 parameters", invocation.line_col());
-                        return null;
                 }
 
                 ValuePack valuePack = new ValuePack(true);
@@ -4453,11 +4445,12 @@ public class SemanticProcessor {
                 String name = scope.generateTempName();
                 scope.putLeftValue(name, local);
 
-                Ins.New aNew = new Ins.New(con, invocation.line_col());
+                Value aNew = constructingNewInst(classType, constructingArgs, invocation.line_col());
                 Ins.TStore store = new Ins.TStore(local, aNew, scope, invocation.line_col(), err);
                 valuePack.instructions().add(store);
 
-                for (Expression exp : invocation.args) {
+                for (int i = count; i < invocation.args.size(); ++i) {
+                        Expression exp = invocation.args.get(i);
                         VariableDef v = (VariableDef) exp;
                         Expression initValue = v.getInit();
 
@@ -4743,7 +4736,7 @@ public class SemanticProcessor {
                 List<Value> args = new ArrayList<>();
                 assert method != null;
                 args.addAll(
-                        scope.getLeftValues(method.getParameters().size() - lambda.params.size())
+                        scope.getLeftValues(method.getParameters().size() - lambda.params.size(), true)
                                 .stream()
                                 .map(l -> new Ins.TLoad(l, scope, LineCol.SYNTHETIC)).collect(Collectors.toList())
                 );
@@ -7850,7 +7843,7 @@ public class SemanticProcessor {
                                         invoke = new Ins.InvokeSpecial(scope.getThis(), innerMethod.method, invocation.line_col());
                                 }
                                 int requiredLocalVariableCount = innerMethod.method.getParameters().size() - innerMethod.paramCount;
-                                List<LeftValue> leftValues = scope.getLeftValues(requiredLocalVariableCount);
+                                List<LeftValue> leftValues = scope.getLeftValues(requiredLocalVariableCount, false);
                                 if (leftValues.size() != requiredLocalVariableCount)
                                         throw new LtBug("require " + requiredLocalVariableCount + " local variable(s), got " + leftValues.size());
 
