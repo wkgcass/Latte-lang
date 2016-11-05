@@ -700,11 +700,10 @@ public class TestParserErrorRecovery {
                                 "}\n" +
                                 "{\n" +
                                 "    'a'\n" +
-                /*           ^syntax */
                                 "}"
                         , err);
 
-                assertEquals(4, err.errorList.size());
+                assertEquals(3, err.errorList.size());
                 assertEquals(2, err.errorList.get(0).lineCol.line);
                 assertEquals(8, err.errorList.get(0).lineCol.column);
                 assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(0).type);
@@ -716,10 +715,6 @@ public class TestParserErrorRecovery {
                 assertEquals(7, err.errorList.get(2).lineCol.line);
                 assertEquals(15, err.errorList.get(2).lineCol.column);
                 assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(2).type);
-
-                assertEquals(11, err.errorList.get(3).lineCol.line);
-                assertEquals(5, err.errorList.get(3).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(3).type);
 
                 assertEquals(
                         Arrays.asList(
@@ -734,10 +729,6 @@ public class TestParserErrorRecovery {
                                                 put(new StringLiteral("'a'", LineCol.SYNTHETIC), new NumberLiteral("1", LineCol.SYNTHETIC));
                                                 put(new StringLiteral("'c'", LineCol.SYNTHETIC), new NumberLiteral("3", LineCol.SYNTHETIC));
                                         }},
-                                        LineCol.SYNTHETIC
-                                ),
-                                new AST.MapExp(
-                                        new LinkedHashMap<>(),
                                         LineCol.SYNTHETIC
                                 )
                         ),

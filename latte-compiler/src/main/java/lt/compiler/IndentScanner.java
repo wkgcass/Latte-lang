@@ -634,17 +634,50 @@ public class IndentScanner extends AbstractScanner {
                                 n = newN;
                         }
 
-                        // remove |- and -|
                         while (n != null) {
                                 if (n instanceof Element) {
+                                        // remove |- and -|
                                         if (((Element) n).getContent().equals("|-")
                                                 || ((Element) n).getContent().equals("-|")) {
                                                 removeLayerControlSymbols(root, (Element) n);
                                         }
+
+                                        // remove {...} without `:` between them and not empty
+                                        if (((Element) n).getContent().equals("{")) {
+                                                Node afterBraceStart = n.next();
+                                                if (!(afterBraceStart instanceof Element)
+                                                        || !((Element) afterBraceStart).getContent().equals("}")) {
+                                                        assert afterBraceStart instanceof ElementStartNode;
+                                                        ElementStartNode startNode = (ElementStartNode) afterBraceStart;
+                                                        if (!startNodeHasColon(startNode)) {
+                                                                removeLayerControlSymbols(root, (Element) n);
+                                                                while (true) {
+                                                                        n = n.next();
+                                                                        if (n instanceof Element
+                                                                                && ((Element) n).getContent().equals("}")) {
+                                                                                removeLayerControlSymbols(root, (Element) n);
+                                                                                break;
+                                                                        }
+                                                                }
+                                                        }
+                                                }
+                                        }
                                 }
                                 n = n.next();
                         }
+
                 }
+        }
+
+        private boolean startNodeHasColon(ElementStartNode startNode) {
+                Node n = startNode.getLinkedNode();
+                while (n != null) {
+                        if (n instanceof Element && ((Element) n).getContent().equals(":")) {
+                                return true;
+                        }
+                        n = n.next();
+                }
+                return false;
         }
 
         private void removeLayerControlSymbols(ElementStartNode root, Element n) {
@@ -658,7 +691,7 @@ public class IndentScanner extends AbstractScanner {
                         } else {
                                 n.previous().setNext(n.next());
                         }
-                } else if (n.getContent().equals("|-")) {
+                } else if (n.getContent().equals("|-") || n.getContent().equals("{")) {
                         root.setLinkedNode(n.next());
                 }
                 if (n.hasNext()) {

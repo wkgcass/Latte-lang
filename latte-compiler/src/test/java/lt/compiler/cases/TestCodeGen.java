@@ -3226,4 +3226,50 @@ public class TestCodeGen {
                 assertEquals("w", field_mode.get(result));
                 assertEquals("utf-8", field_encoding.get(result));
         }
+
+        @Test
+        public void testIndentBrace() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                ";; :scanner-indent\n" +
+                                "class TestIndentBrace\n" +
+                                "    static\n" +
+                                "        def method1 = {}\n" +
+                                "        def method2 {1}\n" +
+                                "        def method3 = {\"a\":1, \"b\":2}\n" +
+                                "        def method4(a,b) = (if a > b {1} else {2})\n" +
+                                "        def method5 {" +
+                                "            {   \"a\": 1\n" +
+                                "                \"b\": 2}\n" +
+                                "        }"
+                        , "TestIndentBrace");
+                Method method1 = cls.getMethod("method1");
+                Method method2 = cls.getMethod("method2");
+                Method method3 = cls.getMethod("method3");
+                Method method4 = cls.getMethod("method4", Object.class, Object.class);
+                Method method5 = cls.getMethod("method5");
+
+                assertEquals(new LinkedHashMap<>(), method1.invoke(null));
+                assertEquals(1, method2.invoke(null));
+                Map<Object, Object> map = new LinkedHashMap<Object, Object>() {{
+                        put("a", 1);
+                        put("b", 2);
+                }};
+                assertEquals(map, method3.invoke(null));
+                assertEquals(1, method4.invoke(null, 3, 2));
+                assertEquals(2, method4.invoke(null, 2, 3));
+                assertEquals(map, method5.invoke(null));
+        }
+
+        @Test
+        public void testMapCast() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestMapCast\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            {'hello': 'world', 'foo': 'bar'} as Bean\n" +
+                                "data class Bean(hello, foo)"
+                        , "TestMapCast");
+                Method method = cls.getMethod("method");
+                assertEquals("Bean(hello=world, foo=bar)", method.invoke(null).toString());
+        }
 }

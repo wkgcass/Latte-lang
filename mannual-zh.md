@@ -411,6 +411,33 @@ map |-it.toUpperCase()-|.
 forEach |-print(it)-|
 ```
 
+在缩进模式下，Latte还支持直接使用`{`和`}`定义层次结构。但是有一定限制：在比`{`和`}`低一层的token中不能出现`:`否则会当作map来解析。
+
+例如：
+
+```kotlin
+if a > b {1} else {2}
+/* 相当于 */
+if a > b
+    1
+else
+    2
+```
+
+```js
+{"a": 1} /* 这是一个map */
+```
+
+```js
+/* 可以正常编译，定义了一个方法，其中定义一个局部变量，赋值一个map */
+def method {
+    map = {
+        "a": 1
+        "b": 2
+    }
+}
+```
+
 <h3 id="p1-2-4">1.2.4 预处理</h3>
 
 Latte源文件分为两个部分：1. 预处理(pre-processing)；2. 代码(code)。
@@ -1317,6 +1344,8 @@ filter |-it > 10-|.
 collect(Collectors.toList())
 ```
 
+> Latte也允许在某些限制条件下，把`|-`,`-|`换成`{`,`}`，除了需要遵循缩进外和"大括号模式"一样。见[1.2.4 层次控制字符](#p1-2-4)
+
 <h3 id="p4-2-2">4.2.2 Lambda</h3>
 
 Latte支持和Java完全一样的Lambda语法：
@@ -1428,6 +1457,20 @@ var map = [
     'two': 2
 ]
 ```
+
+在Latte中，你还可以把一个"所有键都是string"的map转换为制定类型的对象。
+
+```kotlin
+data class Bean(hello, foo)
+res = {
+    "hello" : "world"
+    "foo"   : "bar
+} as Bean
+
+/* res will be Bean(hello=world, foo=bar) */
+```
+
+该类型转换将首先用无参构造函数构造指定类型，然后对map中每一个键，进行Latte的赋值操作。
 
 <h2 id="p5-2">5.2 范围</h2>
 

@@ -214,6 +214,31 @@ public class LtRuntime {
 
                                 return arr;
                         }
+                } else if (o instanceof java.util.Map) {
+                        @SuppressWarnings("unchecked")
+                        java.util.Map<Object, Object> map = (java.util.Map) o;
+                        boolean canInject = true;
+                        for (Object tmp : map.keySet()) {
+                                if (!(tmp instanceof String)) {
+                                        canInject = false;
+                                        break;
+                                }
+                        }
+                        if (canInject) {
+                                Object targetNewInstance = null;
+                                try {
+                                        targetNewInstance = targetType.newInstance();
+                                } catch (Exception ignore) {
+                                }
+                                if (targetNewInstance != null) {
+                                        for (Map.Entry entry : map.entrySet()) {
+                                                String k = (String) entry.getKey();
+                                                Object v = entry.getValue();
+                                                putField(targetNewInstance, k, v, LtRuntime.class);
+                                        }
+                                        return targetNewInstance;
+                                }
+                        }
                 } else if (Dynamic.isFunctionalAbstractClass(targetType)
                         || Dynamic.isFunctionalInterface(targetType)) {
                         if (lambdaFunctionMap.containsKey(targetType)) {
