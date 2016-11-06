@@ -55,6 +55,7 @@ public class Dynamic {
         public static final int INVOKE_INTERFACE = 9;
 
         private static final int PRIMITIVE_BOX_CAST_BASE = 233;
+        private static final int MAP_OBJECT_CAST_BASE = 2333;
 
         private Dynamic() {
         }
@@ -189,6 +190,31 @@ public class Dynamic {
                                         if (!(obj instanceof Float)) return false;
                                 } else if (cls.isArray()) {
                                         if (!(obj instanceof java.util.List)) return false;
+                                } else if (!cls.isArray() && !cls.isInterface() && !cls.isAnonymousClass()
+                                        && !cls.isAnnotation() && !cls.isEnum() && !cls.isLocalClass()
+                                        && !cls.isMemberClass() && !cls.isPrimitive() && !cls.isSynthetic()
+                                        && obj instanceof java.util.Map) {
+                                        // obj is map
+                                        // and cast to a java object
+                                        Constructor<?> con;
+                                        try {
+                                                con = cls.getConstructor();
+                                        } catch (Exception e) {
+                                                // constructor without parameter
+                                                return false;
+                                        }
+                                        // constructor modifier public
+                                        if (!Modifier.isPublic(con.getModifiers())) return false;
+                                        // each key is string
+                                        Map map = (Map) obj;
+                                        for (Object key : map.keySet()) {
+                                                if (!(key instanceof String)) {
+                                                        return false;
+                                                }
+                                        }
+
+                                        return true;
+
                                 } else if (cls.isInterface() && isFunctionalInterface(cls)) {
                                         if (!(obj instanceof Function)) return false;
                                 } else if (!cls.isAnnotation() && !cls.isAnonymousClass() && !cls.isArray() &&
@@ -635,6 +661,8 @@ public class Dynamic {
                                                                 || isFunctionalAbstractClass(type)
                                                                 || isFunctionalInterface(type)) {
                                                                 step[i] = 1;
+                                                        } else if (args[i] instanceof Map) {
+                                                                step[i] = MAP_OBJECT_CAST_BASE;
                                                         } else throw new LtBug("unsupported type cast");
                                                 }
                                         }

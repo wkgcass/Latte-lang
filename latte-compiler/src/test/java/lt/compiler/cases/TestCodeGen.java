@@ -3272,4 +3272,34 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals("Bean(hello=world, foo=bar)", method.invoke(null).toString());
         }
+
+        @Test
+        public void testMapCastInvokeMethod() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestMapCastInvokeMethod\n" +
+                                "    static\n" +
+                                "        def method=invoke(1, {'foo':'bar'})\n" +
+                                "        private invoke(i, x:Bean)=[i,x]\n" +
+                                "data class Bean(foo)"
+                        , "TestMapCastInvokeMethod");
+                Method method = cls.getMethod("method");
+                List list = (List) method.invoke(null);
+                Object i = list.get(0);
+                Object x = list.get(1);
+                assertEquals(1, i);
+                assertEquals("Bean(foo=bar)", x.toString());
+        }
+
+        @Test
+        public void testMapCastInvokeConstructor() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestMapCastInvokeConstructor\n" +
+                                "    static\n" +
+                                "        def method = Container(1, {'foo':'bar'})\n" +
+                                "data class Bean(foo)\n" +
+                                "data class Container(i, x:Bean)"
+                        , "TestMapCastInvokeConstructor");
+                Method method = cls.getMethod("method");
+                assertEquals("Container(i=1, x=Bean(foo=bar))", method.invoke(null).toString());
+        }
 }

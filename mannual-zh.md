@@ -1458,7 +1458,7 @@ var map = [
 ]
 ```
 
-在Latte中，你还可以把一个"所有键都是string"的map转换为制定类型的对象。
+在Latte中，你还可以把一个"所有键都是string"的map转换为指定类型的对象。
 
 ```kotlin
 data class Bean(hello, foo)
@@ -1470,7 +1470,8 @@ res = {
 /* res will be Bean(hello=world, foo=bar) */
 ```
 
-该类型转换将首先用无参构造函数构造指定类型，然后对map中每一个键，进行Latte的赋值操作。
+该类型转换将首先用无参构造函数构造指定类型，然后对map中每一个键，进行Latte的赋值操作。  
+不光可以显式的转换，还可以作为方法参数隐式转换过去。
 
 <h2 id="p5-2">5.2 范围</h2>
 
