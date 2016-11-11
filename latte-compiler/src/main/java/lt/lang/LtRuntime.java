@@ -114,7 +114,7 @@ public class LtRuntime {
         /**
          * the lambda function map. maps "required class" to "create the required object"
          */
-        private static final Map<Class<?>, Function1> lambdaFunctionMap = new WeakHashMap<>();
+        private static final Map<Class<?>, Function1<Object>> lambdaFunctionMap = new WeakHashMap<>();
 
         /**
          * Check whether the given type is {@link Integer} {@link Short}
@@ -239,6 +239,21 @@ public class LtRuntime {
                                         return targetNewInstance;
                                 }
                         }
+                } else if (o instanceof java.util.List) {
+                        @SuppressWarnings("unchecked")
+                        java.util.List<Object> list = (java.util.List<Object>) o;
+                        Object targetNewInstance = null;
+                        try {
+                                targetNewInstance = targetType.newInstance();
+                        } catch (Exception ignore) {
+                        }
+                        if (targetNewInstance != null) {
+                                for (Object item : list) {
+                                        Dynamic.invoke(new Dynamic.InvocationState(), targetType, targetNewInstance, null,
+                                                LtRuntime.class, "add", new boolean[]{false}, new Object[]{item});
+                                }
+                                return targetNewInstance;
+                        }
                 } else if (Dynamic.isFunctionalAbstractClass(targetType)
                         || Dynamic.isFunctionalInterface(targetType)) {
                         if (lambdaFunctionMap.containsKey(targetType)) {
@@ -294,7 +309,7 @@ public class LtRuntime {
                                                 targetTypeCL,
                                                 sb.toString())).get(0);
                                         Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
-                                        Function1 func = con::newInstance;
+                                        Function1<Object> func = con::newInstance;
                                         lambdaFunctionMap.put(targetType, func); // put into map
                                         return func.apply(o);
                                 }

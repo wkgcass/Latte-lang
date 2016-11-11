@@ -3302,4 +3302,61 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals("Container(i=1, x=Bean(foo=bar))", method.invoke(null).toString());
         }
+
+        @Test
+        public void testListCast() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestListCast\n" +
+                                "    static\n" +
+                                "        def method:Bean=[1,2,3]\n" +
+                                "class Bean\n" +
+                                "    public list = []\n" +
+                                "    def add(o)=list.add(o)"
+                        , "TestListCast");
+                Method method = cls.getMethod("method");
+                Object bean = method.invoke(null);
+                assertEquals("Bean", bean.getClass().getName());
+                List list = (List) bean.getClass().getField("list").get(bean);
+                assertEquals(Arrays.asList(1, 2, 3), list);
+        }
+
+        @Test
+        public void testListCastInvokeMethod() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestListCastInvokeMethod\n" +
+                                "    static\n" +
+                                "        def method=invoke(10, [1,2,3])\n" +
+                                "        private invoke(i,b:Bean)=[i,b]\n" +
+                                "data class Bean\n" +
+                                "    public list = []\n" +
+                                "    def add(o)=list.add(o)"
+                        , "TestListCastInvokeMethod");
+                Method method = cls.getMethod("method");
+                List resultPair = (List) method.invoke(null);
+                Object result = resultPair.get(1);
+                List list = (List) result.getClass().getField("list").get(result);
+                assertEquals(Arrays.asList(1, 2, 3), list);
+                assertEquals(10, resultPair.get(0));
+        }
+
+        @Test
+        public void testListCastInvokeConstructor() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestListCastInvokeMethod\n" +
+                                "    static\n" +
+                                "        def method=Container(10, [1,2,3])\n" +
+                                "data class Bean\n" +
+                                "    public list = []\n" +
+                                "    def add(o)=list.add(o)\n" +
+                                "data class Container(i, x:Bean)"
+                        , "TestListCastInvokeMethod");
+                Method method = cls.getMethod("method");
+                Object result = method.invoke(null);
+                Object i = result.getClass().getMethod("getI").invoke(result);
+                assertEquals(10, i);
+
+                Object bean = result.getClass().getMethod("getX").invoke(result);
+                List list = (List) bean.getClass().getField("list").get(bean);
+                assertEquals(Arrays.asList(1, 2, 3), list);
+        }
 }

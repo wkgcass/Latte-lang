@@ -1427,6 +1427,21 @@ Object数组:
 [1, 2, 3, 4] as []Object
 ```
 
+在Latte中，你可以将一个`java.util.List`类型的对象转换为其它种类的Object。将尝试使用无参构造函数构造目标类型对象，然后对每一个List中的元素，调用add方法。
+
+```kotlin
+class JsonArray
+    list = []
+    def add(o)=list.add(o)
+res = [1,2,3] as JsonArray
+/*
+ same as:
+ res = JsonArray()
+ for item in [1,2,3]
+     res.add(item)
+ */
+```
+
 Json对象：
 
 ```js
