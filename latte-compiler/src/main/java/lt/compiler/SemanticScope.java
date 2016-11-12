@@ -25,6 +25,8 @@
 package lt.compiler;
 
 import lt.compiler.semantic.*;
+import lt.compiler.semantic.builtin.DoubleTypeDef;
+import lt.compiler.semantic.builtin.LongTypeDef;
 
 import java.util.*;
 
@@ -155,13 +157,25 @@ public class SemanticScope {
                 SemanticScope scope = parent;
 
                 while (scope != null) {
-                        i += scope.leftValueMap.size();
+                        for (LeftValue lv : scope.leftValueMap.values()) {
+                                if (lv.type().equals(LongTypeDef.get())
+                                        || lv.type().equals(DoubleTypeDef.get())) {
+                                        i += 2;
+                                } else {
+                                        i += 1;
+                                }
+                        }
                         scope = scope.parent;
                 }
 
                 for (LeftValue v : leftValueMap.values()) {
                         if (v.equals(leftValue)) return i;
-                        ++i;
+                        if (v.type().equals(LongTypeDef.get())
+                                || v.type().equals(DoubleTypeDef.get())) {
+                                i += 2;
+                        } else {
+                                i += 1;
+                        }
                 }
 
                 throw new RuntimeException(leftValue + " is not recorded in the scope");

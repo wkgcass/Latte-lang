@@ -237,14 +237,33 @@ public class TestBugsInEval {
                                 "    toString()='abc'"
                         );
                         fail();
-                }catch (Exception ignore) {
+                } catch (Exception ignore) {
                 }
                 try {
                         evaluator.eval("" +
                                 "class X\n" +
                                 "    toString():String='abc'"
                         );
-                }catch (Exception ignore) {
+                } catch (Exception ignore) {
                 }
+        }
+
+        @Test
+        public void testMethodParamLongDouble() throws Exception {
+                List list = (List) evaluator.eval("" +
+                        "class X\n" +
+                        "    def method(a:int, b:long, c:float)=a+b+c").result;
+                Class<?> X = (Class<?>) list.get(0);
+                Object x = X.newInstance();
+                assertEquals(6f, x.getClass().getMethod("method", int.class, long.class, float.class).invoke(x, 1, 2L, 3F));
+        }
+
+        @Test
+        public void testMethodDefAssign() throws Exception {
+                evaluator.eval("" +
+                        "class X\n" +
+                        "    a:int = 1\n" +
+                        "    def method():int = a\n" +
+                        "    private method2():int = a");
         }
 }

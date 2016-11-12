@@ -1492,6 +1492,8 @@ public class Parser {
                 String methodName = ((Element) current).getContent();
                 Set<AST.Anno> annos = new HashSet<>(this.annos);
                 this.annos.clear();
+                Set<Modifier> modifiers = new HashSet<>(this.modifiers);
+                this.modifiers.clear();
 
                 List<VariableDef> variableList = new ArrayList<>();
                 Set<String> names = new HashSet<>();
@@ -1500,10 +1502,7 @@ public class Parser {
                 nextNode(false); // 口
 
                 List<Statement> stmts = parseElemStart((ElementStartNode) current, true, names, false);
-                MethodDef def = new MethodDef(methodName, modifiers, null, variableList, annos, stmts, lineCol);
-                annos.clear();
-                modifiers.clear();
-                return def;
+                return new MethodDef(methodName, modifiers, null, variableList, annos, stmts, lineCol);
         }
 
         /**
@@ -1588,6 +1587,8 @@ public class Parser {
                 String methodName = ((Element) current).getContent();
                 Set<AST.Anno> annos = new HashSet<>(this.annos);
                 this.annos.clear();
+                Set<Modifier> modifiers = new HashSet<>(this.modifiers);
+                this.modifiers.clear();
 
                 List<VariableDef> variableList = new ArrayList<>();
                 Set<String> names = new HashSet<>();
