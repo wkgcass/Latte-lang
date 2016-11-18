@@ -1017,6 +1017,7 @@ public class Dynamic {
                 // continue processing `theMethodToInvoke`
                 invocationState.methodFound = true;
                 try {
+                        transToRequiredType(args, theMethodToInvoke.getParameterTypes());
                         Object theRes = theMethodToInvoke.invoke(functionalObject, args);
                         if (theMethodToInvoke.getReturnType().equals(Void.TYPE)) {
                                 return Unit.get();

@@ -459,6 +459,8 @@ public class LtRuntime {
          * @throws Throwable exceptions
          */
         public static Object getField(Object o, String fieldName, Class<?> callerClass) throws Throwable {
+                if (o == null) throw new NullPointerException("null." + fieldName + " not exist");
+                if (o.equals(Unit.get())) throw new IllegalArgumentException("Unit." + fieldName + " not exist");
                 if (o.getClass().isArray()) {
                         if (fieldName.equals("length")) {
                                 return Array.getLength(o);
@@ -575,6 +577,8 @@ public class LtRuntime {
          * @throws Throwable exceptions
          */
         public static void putField(Object o, String fieldName, Object value, Class<?> callerClass) throws Throwable {
+                if (o == null) throw new NullPointerException("null." + fieldName + " not exist");
+                if (o.equals(Unit.get())) throw new IllegalArgumentException("Unit." + fieldName + " not exist");
                 // try to put field
                 try {
                         Field f = o.getClass().getDeclaredField(fieldName);

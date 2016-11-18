@@ -256,6 +256,13 @@ public class TestBugsInEval {
                 Class<?> X = (Class<?>) list.get(0);
                 Object x = X.newInstance();
                 assertEquals(6f, x.getClass().getMethod("method", int.class, long.class, float.class).invoke(x, 1, 2L, 3F));
+
+                list = (List) evaluator.eval("" +
+                        "class Y\n" +
+                        "    def method(a:int, b:double, c:float)=a+b+c").result;
+                X = (Class<?>) list.get(0);
+                x = X.newInstance();
+                assertEquals(6d, x.getClass().getMethod("method", int.class, double.class, float.class).invoke(x, 1, 2d, 3F));
         }
 
         @Test
@@ -265,5 +272,20 @@ public class TestBugsInEval {
                         "    a:int = 1\n" +
                         "    def method():int = a\n" +
                         "    private method2():int = a");
+        }
+
+        @Test
+        public void testCallFunctionalObjectWithCast() throws Exception {
+                Evaluator e = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
+                e.eval("" +
+                        "@FunctionalAbstractClass\n" +
+                        "abstract class X\n" +
+                        "    abstract x(o:B)=...\n" +
+                        "class A : X\n" +
+                        "    x(o:B)=o\n" +
+                        "data class B(i:int)\n" +
+                        "a = A");
+                Object o = e.eval("a({\"i\": 10})").result;
+                assertEquals(10, o.getClass().getMethod("getI").invoke(o));
         }
 }

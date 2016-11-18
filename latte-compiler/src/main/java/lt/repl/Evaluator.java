@@ -240,9 +240,12 @@ public class Evaluator {
                 CodeGenerator codeGen = new CodeGenerator(processor.parse(), processor.getTypes());
                 Map<String, byte[]> byteCodes = codeGen.generate();
                 List<Class<?>> classes = new ArrayList<>();
+                byteCodes.entrySet().stream()
+                        .filter(entry -> !entry.getKey()
+                                .equals(EvaluateClassName))
+                        .forEach(entry -> cl.byteCodes.put(entry.getKey(), entry.getValue()));
                 for (Map.Entry<String, byte[]> entry : byteCodes.entrySet()) {
                         if (!entry.getKey().equals(EvaluateClassName)) {
-                                cl.byteCodes.put(entry.getKey(), entry.getValue());
                                 Class<?> c = cl.loadClass(entry.getKey());
                                 classes.add(c);
                                 c.getDeclaredFields(); // check the class format and throw exception
