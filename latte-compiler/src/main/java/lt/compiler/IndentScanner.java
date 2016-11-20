@@ -577,14 +577,18 @@ public class IndentScanner extends AbstractScanner {
 
                                 ElementStartNode startNode = entry.startNode;
                                 if (startNode.hasNext()) {
-                                        err.SyntaxException(
-                                                "indentation of " + startNode.next() + " should be " + startNode.getIndent(),
-                                                startNode.next().getLineCol());
-                                        // fill the LinkedNode with all nodes after the startNode
-                                        Node n = startNode.next();
-                                        n.setPrevious(null);
-                                        startNode.setNext(null);
-                                        startNode.setLinkedNode(n);
+                                        if (startNode.next() instanceof EndingNode && !startNode.next().hasNext()) {
+                                                startNode.setNext(null);
+                                        } else {
+                                                err.SyntaxException(
+                                                        "indentation of " + startNode.next() + " should be " + startNode.getIndent(),
+                                                        startNode.next().getLineCol());
+                                                // fill the LinkedNode with all nodes after the startNode
+                                                Node n = startNode.next();
+                                                n.setPrevious(null);
+                                                startNode.setNext(null);
+                                                startNode.setLinkedNode(n);
+                                        }
                                 }
 
                                 if (args.startNodeStack.lastElement().getIndent() >= startNode.getIndent()) {

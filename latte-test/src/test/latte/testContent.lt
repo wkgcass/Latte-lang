@@ -1,0 +1,32 @@
+package lt::test
+
+class TestContentImpl : TestContent
+    @Override
+    def testFail():Unit
+        AsyncTest.run(1000, ass->
+                Thread(()->
+                        ass.fail('testFail')
+                ).start()
+        )
+
+    def testSuccess():Unit
+        AsyncTest.run(1000, ass->
+                Thread(()->
+                        ass()
+                ).start()
+        )
+
+    def testTimeout():Unit
+        AsyncTest.run(1000, ass->
+                Thread(()->
+                        Thread.sleep(2000)
+                ).start()
+        )
+
+    def testJunit():Unit
+        AsyncTest.run(1000, ass->
+                Thread(()->
+                        ass.assertEquals(1, 1)
+                        ass()
+                ).start()
+        )

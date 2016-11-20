@@ -337,9 +337,7 @@ public abstract class AbstractScanner implements Scanner {
                         }
                         // do redirect
                         args.previous = startNode;
-                        if (startNode.hasPrevious() && startNode.previous() instanceof Element
-                                && ((Element) startNode.previous()).getContent().equals("|-")
-                                && newLine) {
+                        if (newLine) {
                                 args.previous = new EndingNode(args, EndingNode.WEAK);
                         }
                 } else {

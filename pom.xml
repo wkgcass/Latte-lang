@@ -9,6 +9,7 @@
         <module>latte-maven-plugin</module>
         <module>latte-library</module>
         <module>latte-build</module>
+        <module>latte-test</module>
     </modules>
 
     <distributionManagement>

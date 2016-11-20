@@ -522,4 +522,30 @@ public class TestParserMix {
                         list
                 );
         }
+
+        @Test
+        public void testManyInternalSyntax() throws Exception {
+                List<Statement> list = parse("" +
+                        "a\n" +
+                        "    b\n" +
+                        "c\n" +
+                        "    d"
+                );
+                assertEquals(Arrays.asList(
+                        new AST.Invocation(new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                Collections.singletonList(
+                                        new AST.Lambda(
+                                                Collections.singletonList(new VariableDef("it", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)),
+                                                Collections.singletonList(new AST.Access(null, "b", LineCol.SYNTHETIC)), LineCol.SYNTHETIC
+                                        )
+                                ), false, LineCol.SYNTHETIC),
+                        new AST.Invocation(new AST.Access(null, "c", LineCol.SYNTHETIC),
+                                Collections.singletonList(
+                                        new AST.Lambda(
+                                                Collections.singletonList(new VariableDef("it", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)),
+                                                Collections.singletonList(new AST.Access(null, "d", LineCol.SYNTHETIC)), LineCol.SYNTHETIC
+                                        )
+                                ), false, LineCol.SYNTHETIC)
+                ), list);
+        }
 }

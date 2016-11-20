@@ -159,7 +159,8 @@ public class TestScannerErrorRecovery {
                 Element brace2 = (Element) end2.next();
                 assertNull(brace2.next());
 
-                Element id = (Element) braceStart.getLinkedNode();
+                EndingNode endNode = (EndingNode) braceStart.getLinkedNode();
+                Element id = (Element) endNode.next();
                 Element colon = (Element) id.next();
                 Element one = (Element) colon.next();
                 assertNull(one.next());
