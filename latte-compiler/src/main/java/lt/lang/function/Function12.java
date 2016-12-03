@@ -28,8 +28,8 @@ package lt.lang.function;
  * function with 12 args
  */
 @FunctionalInterface
-public interface Function12<A, B, C, D, E, F, G, H, I, J, K, L> extends Function {
-        Object apply(A a, B b, C c, D d, E e,
-                     F f, G g, H h, I i, J j,
-                     K k, L l) throws Exception;
+public interface Function12<R, A, B, C, D, E, F, G, H, I, J, K, L> extends Function {
+        R apply(A a, B b, C c, D d, E e,
+                F f, G g, H h, I i, J j,
+                K k, L l) throws Exception;
 }

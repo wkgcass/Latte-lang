@@ -2300,4 +2300,20 @@ public class TestParser {
                         ), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC)
                 ), stmts);
         }
+
+        @Test
+        public void testAwait() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "await method\n" +
+                        "await invocation()\n" +
+                        "await mi(1)"
+                );
+                assertEquals(Arrays.asList(
+                        new AST.Await(new AST.Invocation(new AST.Access(null, "method", LineCol.SYNTHETIC), Collections.emptyList(), false, LineCol.SYNTHETIC), LineCol.SYNTHETIC),
+                        new AST.Await(new AST.Invocation(new AST.Access(null, "invocation", LineCol.SYNTHETIC), Collections.emptyList(), false, LineCol.SYNTHETIC), LineCol.SYNTHETIC),
+                        new AST.Await(new AST.Invocation(new AST.Access(null, "mi", LineCol.SYNTHETIC), Collections.singletonList(
+                                new NumberLiteral("1", LineCol.SYNTHETIC)
+                        ), false, LineCol.SYNTHETIC), LineCol.SYNTHETIC)
+                ), stmts);
+        }
 }

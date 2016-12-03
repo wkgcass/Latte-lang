@@ -28,6 +28,6 @@ package lt.lang.function;
  * function with 1 arg
  */
 @FunctionalInterface
-public interface Function1<A> extends Function {
-        Object apply(A a) throws Exception;
+public interface Function1<R, A> extends Function {
+        R apply(A a) throws Exception;
 }

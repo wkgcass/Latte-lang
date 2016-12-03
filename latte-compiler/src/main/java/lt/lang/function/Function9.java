@@ -28,7 +28,7 @@ package lt.lang.function;
  * function with 9 args
  */
 @FunctionalInterface
-public interface Function9<A, B, C, D, E, F, G, H, I> extends Function {
-        Object apply(A a, B b, C c, D d, E e,
-                     F f, G g, H h, I i) throws Exception;
+public interface Function9<R, A, B, C, D, E, F, G, H, I> extends Function {
+        R apply(A a, B b, C c, D d, E e,
+                F f, G g, H h, I i) throws Exception;
 }

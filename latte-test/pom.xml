@@ -15,7 +15,7 @@
         <dependency>
             <groupId>org.latte-lang</groupId>
             <artifactId>latte-compiler</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

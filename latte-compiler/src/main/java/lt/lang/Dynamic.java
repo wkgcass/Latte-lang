@@ -25,6 +25,8 @@
 package lt.lang;
 
 import lt.compiler.LtBug;
+import lt.lang.callback.AsyncResultFunc;
+import lt.lang.callback.CallbackFunc;
 import lt.lang.function.Function;
 
 import java.lang.invoke.*;
@@ -870,6 +872,28 @@ public class Dynamic {
                         }
 
                         if (!invocationState.isCallingReverse) {
+                                // await
+                                if (args.length > 0 && args[args.length - 1] instanceof CallbackFunc) {
+                                        //noinspection unchecked
+                                        boolean[] newPrimitives = new boolean[args.length];
+                                        Object[] newArgs = new Object[args.length];
+                                        System.arraycopy(args, 0, newArgs, 0, newArgs.length - 1);
+                                        System.arraycopy(primitives, 0, newPrimitives, 0, newPrimitives.length);
+
+                                        //noinspection unchecked
+                                        newArgs[newArgs.length - 1] = new AsyncResultFunc((CallbackFunc) args[args.length - 1]);
+
+                                        InvocationState state = new InvocationState();
+                                        try {
+                                                return invoke(state, targetClass, o, functionalObject, invoker, method,
+                                                        newPrimitives, newArgs);
+                                        } catch (Throwable t) {
+                                                if (state.methodFound) {
+                                                        throw t;
+                                                }
+                                        }
+                                }
+
                                 // reversed invocation
                                 if (o != null && args.length == 1 && args[0] != null) {
                                         String methodName = "reverse_" + method;

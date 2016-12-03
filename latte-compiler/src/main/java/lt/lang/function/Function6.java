@@ -28,7 +28,7 @@ package lt.lang.function;
  * function with 6 args
  */
 @FunctionalInterface
-public interface Function6<A, B, C, D, E, F> extends Function {
-        Object apply(A a, B b, C c, D d, E e,
-                     F f) throws Exception;
+public interface Function6<R, A, B, C, D, E, F> extends Function {
+        R apply(A a, B b, C c, D d, E e,
+                F f) throws Exception;
 }

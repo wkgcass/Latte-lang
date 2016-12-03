@@ -3359,4 +3359,113 @@ public class TestCodeGen {
                 List list = (List) bean.getClass().getField("list").get(bean);
                 assertEquals(Arrays.asList(1, 2, 3), list);
         }
+
+        @Test
+        public void testAwaitCallback0() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import lt::lang::function::Callback0\n" +
+                                "class TestAwaitCallback0\n" +
+                                "    static\n" +
+                                "        def method1\n" +
+                                "            x = X\n" +
+                                "            await x.perform(1, 2)\n" +
+                                "        def method2\n" +
+                                "            x = X\n" +
+                                "            await x.perform(2, 1)\n" +
+                                "class X\n" +
+                                "    def perform(a, b, cb:Callback0)\n" +
+                                "        Thread(()->" +
+                                "                Thread.sleep(100)\n" +
+                                "                if a > b\n" +
+                                "                    cb(IllegalArgumentException('a > b'))\n" +
+                                "                else\n" +
+                                "                    cb(null)\n" +
+                                "        ).start()"
+                        , "TestAwaitCallback0");
+                Method method1 = cls.getMethod("method1");
+                method1.invoke(null);
+                Method method2 = cls.getMethod("method2");
+                try {
+                        method2.invoke(null);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        Throwable t = e.getTargetException();
+                        assertTrue(t instanceof IllegalArgumentException);
+                        assertEquals("a > b", t.getMessage());
+                }
+        }
+
+        @Test
+        public void testAwaitCallback1() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import lt::lang::function::Callback1\n" +
+                                "class TestAwaitCallback1\n" +
+                                "    static\n" +
+                                "        def method1\n" +
+                                "            x = X\n" +
+                                "            await x.perform(1, 2)\n" +
+                                "        def method2\n" +
+                                "            x = X\n" +
+                                "            await x.perform(2, 1)\n" +
+                                "class X\n" +
+                                "    def perform(a, b, cb:Callback1)\n" +
+                                "        Thread(()->" +
+                                "                Thread.sleep(100)\n" +
+                                "                if a > b\n" +
+                                "                    cb(IllegalArgumentException('a > b'), null)\n" +
+                                "                else\n" +
+                                "                    cb(null, a + b)\n" +
+                                "        ).start()"
+                        , "TestAwaitCallback1");
+                Method method1 = cls.getMethod("method1");
+                assertEquals(3, method1.invoke(null));
+                Method method2 = cls.getMethod("method2");
+                try {
+                        method2.invoke(null);
+                        fail();
+                } catch (InvocationTargetException e) {
+                        Throwable t = e.getTargetException();
+                        assertTrue(t instanceof IllegalArgumentException);
+                        assertEquals("a > b", t.getMessage());
+                }
+        }
+
+        @Test
+        public void testAwaitAsyncResult() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import lt::lang::function::Function1\n" +
+                                "class TestAwaitCallback1\n" +
+                                "    static\n" +
+                                "        def method1\n" +
+                                "            x = X\n" +
+                                "            await x.perform(1, 2)\n" +
+                                "        def method2\n" +
+                                "            x = X\n" +
+                                "            await x.perform(2, 1)\n" +
+                                "class X\n" +
+                                "    def perform(a, b, cb:Function1)\n" +
+                                "        Thread(()->" +
+                                "                Thread.sleep(100)\n" +
+                                "                if a > b\n" +
+                                "                    cb({'err': IllegalArgumentException('a > b'), 'result': null})\n" +
+                                "                else\n" +
+                                "                    cb({'err': null, 'result': a + b})\n" +
+                                "        ).start()"
+                        , "TestAwaitCallback1");
+                Method method1 = cls.getMethod("method1");
+                Map res1 = (Map) method1.invoke(null);
+                Throwable t1 = (Throwable) res1.get("err");
+                assertNull(t1);
+                Object r1 = res1.get("result");
+                assertEquals(3, r1);
+
+                Method method2 = cls.getMethod("method2");
+                Map res2 = (Map) method2.invoke(null);
+                Throwable t2 = (Throwable) res2.get("err");
+                Object r2 = res2.get("result");
+
+                assertTrue(t2 instanceof IllegalArgumentException);
+                assertEquals("a > b", t2.getMessage());
+                assertNull(r2);
+        }
 }

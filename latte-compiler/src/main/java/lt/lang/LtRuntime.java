@@ -114,7 +114,7 @@ public class LtRuntime {
         /**
          * the lambda function map. maps "required class" to "create the required object"
          */
-        private static final Map<Class<?>, Function1<Object>> lambdaFunctionMap = new WeakHashMap<>();
+        private static final Map<Class<?>, Function1<Object, Object>> lambdaFunctionMap = new WeakHashMap<>();
 
         /**
          * Check whether the given type is {@link Integer} {@link Short}
@@ -309,7 +309,7 @@ public class LtRuntime {
                                                 targetTypeCL,
                                                 sb.toString())).get(0);
                                         Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
-                                        Function1<Object> func = con::newInstance;
+                                        Function1<Object, Object> func = con::newInstance;
                                         lambdaFunctionMap.put(targetType, func); // put into map
                                         return func.apply(o);
                                 }
