@@ -3419,19 +3419,28 @@ public class SemanticProcessor {
         public void parseInstructionFromReturn(AST.Return ret, STypeDef methodReturnType, SemanticScope scope, List<Instruction> instructions) throws SyntaxException {
                 Ins.TReturn tReturn;
                 if (ret.exp == null) {
-                        if (!methodReturnType.equals(VoidType.get())) {
-                                err.SyntaxException("the method is not void but returns nothing", ret.line_col());
-                                return;
-                        }
-                        tReturn = new Ins.TReturn(null, ret.line_col());
-                } else {
                         if (methodReturnType.equals(VoidType.get())) {
-                                err.SyntaxException("the method is void but returns a value", ret.line_col());
-                                return;
+                                tReturn = new Ins.TReturn(null, ret.line_col());
+                        } else {
+                                if (methodReturnType.fullName().equals("lt.lang.Unit")
+                                        || methodReturnType.fullName().equals("java.lang.Object")) {
+                                        tReturn = new Ins.TReturn(invoke_Unit_get(LineCol.SYNTHETIC), ret.line_col());
+                                } else {
+                                        err.SyntaxException("the method is not void but returns nothing", ret.line_col());
+                                        return;
+                                }
                         }
-                        Value v = parseValueFromExpression(ret.exp, methodReturnType, scope);
-
-                        tReturn = new Ins.TReturn(v, ret.line_col());
+                } else {
+                        Value v = parseValueFromExpression(ret.exp,
+                                methodReturnType.equals(VoidType.get()) ? null : methodReturnType, scope);
+                        if (methodReturnType.equals(VoidType.get())) {
+                                if (v instanceof Instruction) {
+                                        instructions.add((Instruction) v);
+                                }
+                                tReturn = new Ins.TReturn(null, ret.line_col());
+                        } else {
+                                tReturn = new Ins.TReturn(v, ret.line_col());
+                        }
                 }
                 instructions.add(tReturn);
         }
@@ -3499,7 +3508,10 @@ public class SemanticProcessor {
                                 lineCol, err));
                 } else if (assignTo instanceof Ins.GetStatic) {
                         // static
-                        instructions.add(new Ins.PutStatic(((Ins.GetStatic) assignTo).field(), assignFrom, lineCol, err));
+                        instructions.add(new Ins.PutStatic(
+                                ((Ins.GetStatic) assignTo).field(),
+                                cast(((Ins.GetStatic) assignTo).field().type(), assignFrom, ((Ins.GetStatic) assignTo).line_col()),
+                                lineCol, err));
                 } else if (assignTo instanceof Ins.TALoad) {
                         // arr[?]
                         Ins.TALoad TALoad = (Ins.TALoad) assignTo;

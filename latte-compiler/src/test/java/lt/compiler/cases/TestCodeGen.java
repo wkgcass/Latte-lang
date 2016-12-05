@@ -3468,4 +3468,27 @@ public class TestCodeGen {
                 assertEquals("a > b", t2.getMessage());
                 assertNull(r2);
         }
+
+        @Test
+        public void testUnitReturnValue() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestUnitReturnValue\n" +
+                                "    static\n" +
+                                "        public field1 = 0\n" +
+                                "        private def x()\n" +
+                                "            field1 = 1\n" +
+                                "        def method1:Unit\n" +
+                                "            return x()\n" +
+                                "        def method2\n" +
+                                "            return"
+                        , "TestUnitReturnValue");
+                Method method1 = cls.getMethod("method1");
+                assertEquals(void.class, method1.getReturnType());
+                assertEquals(null, method1.invoke(null));
+                Field field1 = cls.getField("field1");
+                assertEquals(1, field1.get(null));
+
+                Method method2 = cls.getMethod("method2");
+                assertEquals(Unit.get(), method2.invoke(null));
+        }
 }
