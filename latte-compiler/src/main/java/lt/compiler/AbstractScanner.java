@@ -47,7 +47,8 @@ public abstract class AbstractScanner implements Scanner {
                 "...", // pass
                 ":::", // concat
                 ":=", // assign
-                "#" // generator
+                "#", // generator
+                "<-" // pattern matching destructing
         ));
         public final Set<String> SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN = new HashSet<>(Arrays.asList(
                 "+", "-", "*", "/", "%",

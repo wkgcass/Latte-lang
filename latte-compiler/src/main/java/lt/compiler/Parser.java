@@ -207,7 +207,7 @@ public class Parser {
                                         jumpToTheNearestEndingNode();
                                         continue;
                                 } catch (SyntaxException e) {
-                                        err.SyntaxException(e.msg, e.lineCol);
+                                        err.SyntaxException(e.msg, e.lineCol, e);
                                         jumpToTheNearestEndingNode();
                                         continue;
                                 }
@@ -1927,6 +1927,47 @@ public class Parser {
                                                                         new AST.GeneratorSpec(generator,
                                                                                 Collections.singletonList(next_exp(false)), lineCol));
                                                         }
+
+                                                } else if (isDestructing(content)) {
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
+
+                                                        LineCol lineCol = current.getLineCol();
+
+                                                        if (parsedExps.isEmpty()) {
+                                                                err.UnexpectedTokenException(content, lineCol);
+                                                                throw new ParseFail();
+                                                        }
+
+                                                        Expression deInto = parsedExps.pop();
+                                                        if (deInto instanceof AST.Access) {
+                                                                deInto = new AST.Invocation(
+                                                                        deInto, Collections.emptyList(), false, deInto.line_col());
+                                                        }
+                                                        if (!(deInto instanceof AST.Invocation)
+                                                                || !(((AST.Invocation) deInto).exp instanceof AST.Access)) {
+                                                                err.SyntaxException("cannot destruct into " + deInto, deInto.line_col());
+                                                                throw new ParseFail();
+                                                        }
+                                                        List<String> names = new ArrayList<>();
+                                                        for (Expression exp : ((AST.Invocation) deInto).args) {
+                                                                if (!(exp instanceof AST.Access)
+                                                                        || ((AST.Access) exp).exp != null) {
+                                                                        err.SyntaxException("cannot destruct into " + deInto, deInto.line_col());
+                                                                        continue;
+                                                                }
+                                                                String name = ((AST.Access) exp).name;
+                                                                if (usedVarNames.contains(name)) {
+                                                                        err.DuplicateVariableNameException(name, exp.line_col());
+                                                                }
+                                                                if (!name.equals("_")) {
+                                                                        usedVarNames.add(name);
+                                                                }
+                                                                names.add(name);
+                                                        }
+                                                        Expression e = next_exp(false);
+                                                        parsedExps.push(new AST.Destruct(
+                                                                (AST.Access) ((AST.Invocation) deInto).exp, names, e, lineCol));
 
                                                 } else if (content.equals("(")) {
                                                         annosIsEmpty();

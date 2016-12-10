@@ -351,6 +351,47 @@ public class AST {
                 }
         }
 
+        public static class Destruct implements Expression {
+                public final Access type;
+                public final List<String> variableNames;
+                public final Expression exp;
+                private final LineCol lineCol;
+
+                public Destruct(Access type, List<String> variableNames, Expression exp, LineCol lineCol) {
+                        this.type = type;
+                        this.variableNames = variableNames;
+                        this.exp = exp;
+                        this.lineCol = lineCol;
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return lineCol;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+
+                        Destruct destruct = (Destruct) o;
+
+                        if (!type.equals(destruct.type)) return false;
+                        if (!variableNames.equals(destruct.variableNames)) return false;
+                        //
+                        return exp.equals(destruct.exp);
+
+                }
+
+                @Override
+                public int hashCode() {
+                        int result = type.hashCode();
+                        result = 31 * result + variableNames.hashCode();
+                        result = 31 * result + exp.hashCode();
+                        return result;
+                }
+        }
+
         /**
          * procedure
          */

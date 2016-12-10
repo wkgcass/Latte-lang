@@ -468,6 +468,10 @@ public class CompileUtil {
                 return false;
         }
 
+        public static boolean isDestructing(String s) {
+                return "<-".equals(s);
+        }
+
         public static boolean isSync(Element elem) {
                 String content = elem.getContent();
                 if (content.equals("synchronized")) {
@@ -511,7 +515,8 @@ public class CompileUtil {
                         || isOneVariableOperatorPost(str)
                         || isOneVariableOperatorPreMustCheckExps(str)
                         || isOneVariableOperatorPreWithoutCheckingExps(str)
-                        || isAssign(str);
+                        || isAssign(str)
+                        || isDestructing(str);
         }
 
         public static String getRegexStr(String rawRegex) {

@@ -219,6 +219,19 @@ public class ErrorManager {
         }
 
         /**
+         * directly throw the exception if fastFail is true. otherwise call {@link #SyntaxException(String, LineCol)}
+         *
+         * @param msg     message
+         * @param lineCol lineCol
+         * @param e       exception to throw
+         * @throws SyntaxException compiling error
+         */
+        public void SyntaxException(String msg, LineCol lineCol, SyntaxException e) throws SyntaxException {
+                if (fastFail) throw e;
+                SyntaxException(msg, lineCol);
+        }
+
+        /**
          * got an unexpected end
          *
          * @param lineCol file,line,column info

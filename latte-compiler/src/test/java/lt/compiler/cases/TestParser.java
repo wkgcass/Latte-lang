@@ -2316,4 +2316,43 @@ public class TestParser {
                         ), false, LineCol.SYNTHETIC), LineCol.SYNTHETIC)
                 ), stmts);
         }
+
+        @Test
+        public void testDestruct() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "List(a,b) <- [1,2]\n" +
+                        "B() <- 123\n" +
+                        "C <- 456\n" +
+                        "D(d, _) <- 789"
+                );
+                assertEquals(Arrays.asList(
+                        new AST.Destruct(
+                                new AST.Access(null, "List", LineCol.SYNTHETIC),
+                                Arrays.asList("a", "b"),
+                                new AST.ArrayExp(Arrays.asList(
+                                        new NumberLiteral("1", LineCol.SYNTHETIC),
+                                        new NumberLiteral("2", LineCol.SYNTHETIC)
+                                ), LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Destruct(
+                                new AST.Access(null, "B", LineCol.SYNTHETIC),
+                                Collections.emptyList(),
+                                new NumberLiteral("123", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Destruct(
+                                new AST.Access(null, "C", LineCol.SYNTHETIC),
+                                Collections.emptyList(),
+                                new NumberLiteral("456", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Destruct(
+                                new AST.Access(null, "D", LineCol.SYNTHETIC),
+                                Arrays.asList("d", "_"),
+                                new NumberLiteral("789", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        )
+                ), stmts);
+        }
 }
