@@ -352,14 +352,12 @@ public class AST {
         }
 
         public static class Destruct implements Expression {
-                public final Access type;
-                public final List<String> variableNames;
+                public final Pattern_Destruct pattern;
                 public final Expression exp;
                 private final LineCol lineCol;
 
-                public Destruct(Access type, List<String> variableNames, Expression exp, LineCol lineCol) {
-                        this.type = type;
-                        this.variableNames = variableNames;
+                public Destruct(Pattern_Destruct pattern, Expression exp, LineCol lineCol) {
+                        this.pattern = pattern;
                         this.exp = exp;
                         this.lineCol = lineCol;
                 }
@@ -376,8 +374,7 @@ public class AST {
 
                         Destruct destruct = (Destruct) o;
 
-                        if (!type.equals(destruct.type)) return false;
-                        if (!variableNames.equals(destruct.variableNames)) return false;
+                        if (!pattern.equals(destruct.pattern)) return false;
                         //
                         return exp.equals(destruct.exp);
 
@@ -385,10 +382,249 @@ public class AST {
 
                 @Override
                 public int hashCode() {
-                        int result = type.hashCode();
-                        result = 31 * result + variableNames.hashCode();
+                        int result = pattern.hashCode();
                         result = 31 * result + exp.hashCode();
                         return result;
+                }
+
+                @Override
+                public String toString() {
+                        return "(" + pattern + " <- " + exp + ')';
+                }
+        }
+
+        /**
+         * pattern
+         */
+        public static class Pattern {
+                public final PatternType patternType;
+
+                public Pattern(PatternType patternType) {
+                        this.patternType = patternType;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+
+                        Pattern pattern = (Pattern) o;
+
+                        return patternType == pattern.patternType;
+
+                }
+
+                @Override
+                public int hashCode() {
+                        return patternType.hashCode();
+                }
+
+                @Override
+                public String toString() {
+                        return "Pattern(" + patternType + ")";
+                }
+        }
+
+        /**
+         * something like
+         * case _:XXX
+         */
+        public static class Pattern_Type extends Pattern {
+                public final Access type;
+
+                public Pattern_Type(Access type) {
+                        super(PatternType.TYPE);
+                        this.type = type;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+                        if (!super.equals(o)) return false;
+
+                        Pattern_Type that = (Pattern_Type) o;
+
+                        return type.equals(that.type);
+
+                }
+
+                @Override
+                public int hashCode() {
+                        int result = super.hashCode();
+                        result = 31 * result + type.hashCode();
+                        return result;
+                }
+
+                @Override
+                public String toString() {
+                        return "(_:" + type + ")";
+                }
+        }
+
+        /**
+         * explicit value
+         */
+        public static class Pattern_Value extends Pattern {
+                public final Expression exp;
+
+                public Pattern_Value(Expression exp) {
+                        super(PatternType.VALUE);
+                        this.exp = exp;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+                        if (!super.equals(o)) return false;
+
+                        Pattern_Value that = (Pattern_Value) o;
+
+                        return exp.equals(that.exp);
+
+                }
+
+                @Override
+                public int hashCode() {
+                        int result = super.hashCode();
+                        result = 31 * result + exp.hashCode();
+                        return result;
+                }
+
+                @Override
+                public String toString() {
+                        return "(" + exp + ")";
+                }
+        }
+
+        /**
+         * destruct:
+         * case Bean(_, a, 1)
+         */
+        public static class Pattern_Destruct extends Pattern {
+                public final Access type;
+                public final List<Pattern> subPatterns;
+
+                public Pattern_Destruct(Access type, List<Pattern> subPatterns) {
+                        super(PatternType.DESTRUCT);
+                        this.type = type;
+                        this.subPatterns = subPatterns;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+                        if (!super.equals(o)) return false;
+
+                        Pattern_Destruct that = (Pattern_Destruct) o;
+
+                        if (!type.equals(that.type)) return false;
+                        //
+                        return subPatterns.equals(that.subPatterns);
+
+                }
+
+                @Override
+                public int hashCode() {
+                        int result = super.hashCode();
+                        result = 31 * result + type.hashCode();
+                        result = 31 * result + subPatterns.hashCode();
+                        return result;
+                }
+
+                @Override
+                public String toString() {
+                        return "(" + type + subPatterns + ")";
+                }
+        }
+
+        public static class Pattern_Define extends Pattern {
+                public final String name;
+                public final Access type;
+
+                public Pattern_Define(String name, Access type) {
+                        super(PatternType.DEFINE);
+                        this.name = name;
+                        this.type = type;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+                        if (!super.equals(o)) return false;
+
+                        Pattern_Define that = (Pattern_Define) o;
+
+                        if (!name.equals(that.name)) return false;
+                        //
+                        return type != null ? type.equals(that.type) : that.type == null;
+
+                }
+
+                @Override
+                public int hashCode() {
+                        int result = super.hashCode();
+                        result = 31 * result + name.hashCode();
+                        result = 31 * result + (type != null ? type.hashCode() : 0);
+                        return result;
+                }
+
+                @Override
+                public String toString() {
+                        return "(" + name + ":" + type + ")";
+                }
+        }
+
+        public enum PatternType {
+                TYPE, VALUE, DESTRUCT, DEFAULT, DEFINE
+        }
+
+        /**
+         * pattern matching
+         */
+        public static class PatternMatching implements Expression {
+                public final Expression expToMatch;
+                public final LinkedHashMap<Pattern, List<Statement>> patternsToStatements;
+                private final LineCol lineCol;
+
+                public PatternMatching(Expression expToMatch, LinkedHashMap<Pattern, List<Statement>> patternsToStatements, LineCol lineCol) {
+                        this.expToMatch = expToMatch;
+                        this.patternsToStatements = patternsToStatements;
+                        this.lineCol = lineCol;
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return lineCol;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+
+                        PatternMatching that = (PatternMatching) o;
+
+                        if (!expToMatch.equals(that.expToMatch)) return false;
+                        //
+                        return patternsToStatements.equals(that.patternsToStatements);
+
+                }
+
+                @Override
+                public int hashCode() {
+                        int result = expToMatch.hashCode();
+                        result = 31 * result + patternsToStatements.hashCode();
+                        return result;
+                }
+
+                @Override
+                public String toString() {
+                        return "PatternMatching(" + expToMatch +
+                                ", " + patternsToStatements + ')';
                 }
         }
 

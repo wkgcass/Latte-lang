@@ -81,7 +81,7 @@ public class CompileUtil {
                 "is", "not", "bool", "yes", "no", "type", "as",
                 "in", "elseif", "package", "import",
                 "break", "continue", "return", "fun", "require",
-                "new", "object", "await"
+                "new", "object", "await", "match", "case"
         ));
 
         private static Set<String> javaKeys = new HashSet<>(Arrays.asList(
@@ -453,9 +453,9 @@ public class CompileUtil {
                 if (got == null) {
                         err.UnexpectedEndException(previous.getLineCol());
                 } else if (!(got instanceof Element)) {
-                        throw new UnexpectedTokenException(token, got.getClass().getSimpleName(), got.getLineCol());
+                        throw new UnexpectedTokenException("", token, got.getClass().getSimpleName(), got.getLineCol());
                 } else if (!((Element) got).getContent().endsWith(token)) {
-                        throw new UnexpectedTokenException(token, ((Element) got).getContent(), got.getLineCol());
+                        throw new UnexpectedTokenException("", token, ((Element) got).getContent(), got.getLineCol());
                 }
         }
 
