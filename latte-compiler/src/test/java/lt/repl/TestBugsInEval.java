@@ -288,4 +288,20 @@ public class TestBugsInEval {
                 Object o = e.eval("a({\"i\": 10})").result;
                 assertEquals(10, o.getClass().getMethod("getI").invoke(o));
         }
+
+        @Test
+        public void testForEachCast() throws Exception {
+                Evaluator e = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
+                e.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
+                try {
+                        e.eval("(1..100).forEach(()->{...})");
+                        fail();
+                } catch (Exception ex) {
+                        Object res = e.eval("" +
+                                "var res = 0\n" +
+                                "(1..100).forEach { res += it }\n" +
+                                "res").result;
+                        assertEquals(5050, res);
+                }
+        }
 }

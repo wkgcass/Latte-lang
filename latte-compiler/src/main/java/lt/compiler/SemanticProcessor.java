@@ -4924,7 +4924,7 @@ public class SemanticProcessor {
                 sClassDef.setPkg(lambdaClassType.pkg());
                 String className = lambdaClassType.fullName() + "$Latte$Lambda$";
                 int i = 0;
-                while (types.containsKey(className + i)) ++i;
+                while (typeExists(className + i)) ++i;
                 className += i;
                 sClassDef.setFullName(className);
                 types.put(className, sClassDef);
