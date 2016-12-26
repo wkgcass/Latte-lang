@@ -2140,7 +2140,7 @@ public class Parser {
                                 err.DuplicateVariableNameException(name, exp.line_col());
                         }
                         if (name.equals("_")) {
-                                subPatterns.add(new AST.Pattern(AST.PatternType.DEFAULT));
+                                subPatterns.add(AST.Pattern_Default.get());
                         } else {
                                 subPatterns.add(new AST.Pattern_Define(name, null));
                                 usedVarNames.add(name);
@@ -2247,7 +2247,7 @@ public class Parser {
                         // check _/123/"xxx"/true/a
                         if (current.getTokenType() == TokenType.VALID_NAME) {
                                 if (((Element) current).getContent().equals("_")) {
-                                        subPattern = new AST.Pattern(AST.PatternType.DEFAULT);
+                                        subPattern = AST.Pattern_Default.get();
                                 } else if (usedVarNames.contains(((Element) current).getContent())) {
                                         // use the var
                                         subPattern = new AST.Pattern_Value(

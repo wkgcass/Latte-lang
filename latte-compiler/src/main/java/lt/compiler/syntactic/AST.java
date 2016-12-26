@@ -27,6 +27,7 @@ package lt.compiler.syntactic;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.def.VariableDef;
 
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -396,7 +397,7 @@ public class AST {
         /**
          * pattern
          */
-        public static class Pattern {
+        public abstract static class Pattern implements Serializable {
                 public final PatternType patternType;
 
                 public Pattern(PatternType patternType) {
@@ -422,6 +423,23 @@ public class AST {
                 @Override
                 public String toString() {
                         return "Pattern(" + patternType + ")";
+                }
+        }
+
+        public static class Pattern_Default extends Pattern {
+                private static final Pattern_Default def = new Pattern_Default();
+
+                public static Pattern_Default get() {
+                        return def;
+                }
+
+                private Pattern_Default() {
+                        super(PatternType.DEFAULT);
+                }
+
+                @Override
+                public String toString() {
+                        return "(_)";
                 }
         }
 

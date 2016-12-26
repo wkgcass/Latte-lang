@@ -2367,7 +2367,7 @@ public class TestParser {
                                         new AST.Access(null, "D", LineCol.SYNTHETIC),
                                         Arrays.asList(
                                                 new AST.Pattern_Define("d", null),
-                                                new AST.Pattern(AST.PatternType.DEFAULT)
+                                                AST.Pattern_Default.get()
                                         )
                                 ),
                                 new NumberLiteral("789", LineCol.SYNTHETIC),
@@ -2394,7 +2394,7 @@ public class TestParser {
                 v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
                 LinkedHashMap<AST.Pattern, List<Statement>> linkedHashMap = new LinkedHashMap<>();
                 List<Statement> stmt = Collections.singletonList(new AST.Pass(LineCol.SYNTHETIC));
-                linkedHashMap.put(new AST.Pattern(AST.PatternType.DEFAULT), stmt);
+                linkedHashMap.put(AST.Pattern_Default.get(), stmt);
                 linkedHashMap.put(new AST.Pattern_Define("x", null), stmt);
                 linkedHashMap.put(new AST.Pattern_Value(new AST.Access(null, "a", LineCol.SYNTHETIC)), stmt);
                 linkedHashMap.put(new AST.Pattern_Value(new BoolLiteral("true", LineCol.SYNTHETIC)), stmt);
@@ -2454,7 +2454,7 @@ public class TestParser {
                 map.put(new AST.Pattern_Destruct(
                         new AST.Access(null, "C", LineCol.SYNTHETIC),
                         Arrays.asList(
-                                new AST.Pattern(AST.PatternType.DEFAULT),
+                                AST.Pattern_Default.get(),
                                 new AST.Pattern_Type(new AST.Access(null, "X", LineCol.SYNTHETIC))
                         )
                 ), stmt);
