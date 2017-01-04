@@ -5938,44 +5938,73 @@ public class SemanticProcessor {
                         case "!:=":
                                 return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, LtRuntime.notEqual, right, scope, lineCol);
                         case "is": {
-                                // invoke static LtRuntime.is
-                                SMethodDef m = getLang_is();
-                                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
-                                if (left.type() instanceof PrimitiveTypeDef) {
-                                        left = boxPrimitive(left, lineCol);
+                                // check second param
+                                if (right instanceof Ins.GetClass) {
+                                        // is type XXX
+                                        // use instance of
+                                        if (left.type() instanceof PrimitiveTypeDef) {
+                                                left = boxPrimitive(left, lineCol);
+                                        }
+                                        return new Ins.InstanceOf(left, (Ins.GetClass) right, lineCol);
+                                } else {
+                                        // invoke static LtRuntime.is
+                                        SMethodDef m = getLang_is();
+                                        Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
+                                        if (left.type() instanceof PrimitiveTypeDef) {
+                                                left = boxPrimitive(left, lineCol);
+                                        }
+                                        if (right.type() instanceof PrimitiveTypeDef) {
+                                                right = boxPrimitive(right, lineCol);
+                                        }
+                                        invokeStatic.arguments().add(left);
+                                        invokeStatic.arguments().add(right);
+                                        invokeStatic.arguments().add(
+                                                new Ins.GetClass(scope.type(),
+                                                        (SClassDef) getTypeWithName(
+                                                                "java.lang.Class",
+                                                                invokeStatic.line_col()))
+                                        );
+                                        return invokeStatic;
                                 }
-                                if (right.type() instanceof PrimitiveTypeDef) {
-                                        right = boxPrimitive(right, lineCol);
-                                }
-                                invokeStatic.arguments().add(left);
-                                invokeStatic.arguments().add(right);
-                                invokeStatic.arguments().add(
-                                        new Ins.GetClass(scope.type(),
-                                                (SClassDef) getTypeWithName(
-                                                        "java.lang.Class",
-                                                        invokeStatic.line_col()))
-                                );
-                                return invokeStatic;
                         }
                         case "not": {
-                                // invoke static LtRuntime.not
-                                SMethodDef m = getLang_not();
-                                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
-                                if (left.type() instanceof PrimitiveTypeDef) {
-                                        left = boxPrimitive(left, lineCol);
+                                // check second param
+                                if (right instanceof Ins.GetClass) {
+                                        // not type XXX
+                                        // use instanceof
+                                        if (left.type() instanceof PrimitiveTypeDef) {
+                                                left = boxPrimitive(left, lineCol);
+                                        }
+                                        return new Ins.TwoVarOp(
+                                                new Ins.TwoVarOp(
+                                                        new Ins.InstanceOf(left, (Ins.GetClass) right, lineCol),
+                                                        new IntValue(1),
+                                                        Ins.TwoVarOp.Iand, BoolTypeDef.get(),
+                                                        lineCol),
+                                                new IntValue(1),
+                                                Ins.TwoVarOp.Ixor,
+                                                BoolTypeDef.get(),
+                                                lineCol);
+                                } else {
+                                        // invoke static LtRuntime.not
+                                        SMethodDef m = getLang_not();
+                                        Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
+                                        if (left.type() instanceof PrimitiveTypeDef) {
+                                                left = boxPrimitive(left, lineCol);
+                                        }
+                                        if (right.type() instanceof PrimitiveTypeDef) {
+                                                right = boxPrimitive(right, lineCol);
+                                        }
+                                        invokeStatic.arguments().add(left);
+                                        invokeStatic.arguments().add(right);
+                                        invokeStatic.arguments().add(
+                                                new Ins.GetClass(scope.type(),
+                                                        (SClassDef) getTypeWithName(
+                                                                "java.lang.Class",
+                                                                invokeStatic.line_col()))
+                                        );
+                                        return invokeStatic;
                                 }
-                                if (right.type() instanceof PrimitiveTypeDef) {
-                                        right = boxPrimitive(right, lineCol);
-                                }
-                                invokeStatic.arguments().add(left);
-                                invokeStatic.arguments().add(right);
-                                invokeStatic.arguments().add(
-                                        new Ins.GetClass(scope.type(),
-                                                (SClassDef) getTypeWithName(
-                                                        "java.lang.Class",
-                                                        invokeStatic.line_col()))
-                                );
-                                return invokeStatic;
                         }
                         case "in":
                                 List<Value> args = new ArrayList<>();

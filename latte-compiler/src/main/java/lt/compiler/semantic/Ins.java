@@ -471,6 +471,39 @@ public class Ins {
         }
 
         /**
+         * instanceof
+         */
+        public static class InstanceOf implements Instruction, Value {
+                private final Value object;
+                private final GetClass aClass;
+                private final LineCol lineCol;
+
+                public InstanceOf(Value object, GetClass aClass, LineCol lineCol) {
+                        this.object = object;
+                        this.aClass = aClass;
+                        this.lineCol = lineCol;
+                }
+
+                @Override
+                public STypeDef type() {
+                        return BoolTypeDef.get();
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return lineCol;
+                }
+
+                public Value object() {
+                        return object;
+                }
+
+                public GetClass aClass() {
+                        return aClass;
+                }
+        }
+
+        /**
          * invoke
          */
         public abstract static class Invoke implements Instruction, Value {

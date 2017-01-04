@@ -474,14 +474,18 @@ public class LtRuntime {
                         return Unit.get();
                 }
 
+                ExceptionContainer ec = new ExceptionContainer();
                 // try to get field
                 try {
                         Field f = o.getClass().getDeclaredField(fieldName);
                         if (haveAccess(f.getModifiers(), o.getClass(), callerClass)) {
                                 f.setAccessible(true);
                                 return f.get(o);
+                        } else {
+                                ec.add("Cannot access " + o.getClass().getName() + "#" + fieldName + " from " + callerClass);
                         }
                 } catch (Throwable ignore) {
+                        ec.add("Cannot find field " + o.getClass().getName() + "#" + fieldName);
                 }
 
                 Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
@@ -492,24 +496,30 @@ public class LtRuntime {
                         return Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, fieldName, new boolean[0], new Object[0]);
                 } catch (Throwable t) {
                         throwNonRuntime(invocationState, t);
+                        ec.add("Cannot invoke method " + o.getClass().getName() + "#" + fieldName + "()\n\t" + t.getMessage());
                 }
                 // try to find `getFieldName()`
+                String getter = null;
                 try {
-                        String getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+                        getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
                         return Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, getter, new boolean[0], new Object[0]);
                 } catch (Throwable t) {
                         throwNonRuntime(invocationState, t);
+                        assert getter != null;
+                        ec.add("Cannot invoke method " + o.getClass().getName() + "#" + getter + "()\n\t" + t.getMessage());
                 }
                 // try _number
                 if (fieldName.startsWith("_")) {
                         try {
-                                Integer i = Integer.parseInt(fieldName.substring(1));
+                                int i = Integer.parseInt(fieldName.substring(1));
                                 try {
-                                        return Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, "get", new boolean[]{false}, new Object[]{i});
+                                        return Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, "get", new boolean[]{true}, new Object[]{i});
                                 } catch (Throwable t) {
                                         throwNonRuntime(invocationState, t);
+                                        ec.add("Cannot invoke method " + o.getClass().getName() + "#get(" + i + ")\n\t" + t.getMessage());
                                 }
                         } catch (NumberFormatException ignore) {
+                                ec.add("Field name is not `_{int}`, cannot be transformed into #get({int})");
                         }
                 }
                 // try to find `get(fieldName)`
@@ -517,8 +527,11 @@ public class LtRuntime {
                         return Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, "get", new boolean[]{false}, new Object[]{fieldName});
                 } catch (Throwable t) {
                         throwNonRuntime(invocationState, t);
+                        ec.add("Cannot invoke method " + o.getClass().getName() + "#get(" + fieldName + ")\n\t" + t.getMessage());
                 }
-                return Unit.get();
+                ec.throwIfNotEmpty(fieldName, NoSuchFieldException::new);
+                // won't reach here
+                return null;
         }
 
         /**
@@ -580,25 +593,32 @@ public class LtRuntime {
                 if (o == null) throw new NullPointerException("null." + fieldName + " not exist");
                 if (o.equals(Unit.get())) throw new IllegalArgumentException("Unit." + fieldName + " not exist");
                 // try to put field
+                ExceptionContainer ec = new ExceptionContainer();
                 try {
                         Field f = o.getClass().getDeclaredField(fieldName);
                         if (haveAccess(f.getModifiers(), o.getClass(), callerClass)) {
                                 f.setAccessible(true);
                                 f.set(o, cast(value, f.getType()));
                                 return;
+                        } else {
+                                ec.add("Cannot access " + o.getClass().getName() + "#" + fieldName + " from " + callerClass);
                         }
                 } catch (Throwable ignore) {
+                        ec.add("Cannot find field " + o.getClass().getName() + "#" + fieldName);
                 }
 
                 Dynamic.InvocationState invocationState = new Dynamic.InvocationState();
                 invocationState.fromField = true;
 
                 // try `setFieldName(value)`
+                String setter = null;
                 try {
-                        String setter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+                        setter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
                         Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, setter, new boolean[]{false}, new Object[]{value});
                 } catch (Throwable t) {
                         throwNonRuntime(invocationState, t);
+                        assert setter != null;
+                        ec.add("Cannot invoke method " + o.getClass().getName() + "#" + setter + "(...)\n\t" + t.getMessage());
                         // try to find `set(fieldName,value)`
                         // invoke dynamic would try to find set then try to find put
                         try {
@@ -607,8 +627,9 @@ public class LtRuntime {
                                         new boolean[]{false, false},
                                         new Object[]{fieldName, value});
                         } catch (Throwable t2) {
-                                // failed to invoke, throw `t`
-                                throw new LtRuntimeException("cannot find field to put: " + o.getClass().getName() + "#" + fieldName);
+                                throwNonRuntime(invocationState, t2);
+                                ec.add("Cannot invoke method " + o.getClass().getName() + "#set(" + fieldName + ",...)\n\t" + t2.getMessage());
+                                ec.throwIfNotEmpty(fieldName, NoSuchFieldException::new);
                         }
                 }
         }
@@ -673,8 +694,6 @@ public class LtRuntime {
                 // a and b are not null
                 if (a == b || a.equals(b)) return true;
                 // a!=b and a.equals(b) is false
-                if (b instanceof Class) if (((Class) b).isInstance(a)) return true;
-                // b is not class or (b is class and a not instanceof b)
                 return false;
         }
 
@@ -694,8 +713,6 @@ public class LtRuntime {
                 // a and b are not null
                 if (a == b || a.equals(b)) return false;
                 // a!=b and a.equals(b) is false
-                if (b instanceof Class) if (((Class) b).isInstance(a)) return false;
-                // b is not class or (b is class and a not instanceof b)
                 return true;
         }
 

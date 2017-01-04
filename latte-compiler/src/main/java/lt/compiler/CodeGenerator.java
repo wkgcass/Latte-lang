@@ -881,6 +881,12 @@ public class CodeGenerator {
 
                         VisitLineNumber(methodVisitor, ((Ins.CheckCast) value).line_col(), label);
 
+                } else if (value instanceof Ins.InstanceOf) {
+                        buildValueAccess(methodVisitor, info, ((Ins.InstanceOf) value).object(), true);
+                        methodVisitor.visitTypeInsn(Opcodes.INSTANCEOF,
+                                typeToInternalName(((Ins.InstanceOf) value).aClass().targetType()));
+                        info.pop(1);
+                        info.push(CodeInfo.Size._1);
                 } else if (value instanceof ValueAnotherType) {
                         buildValueAccess(methodVisitor, info, ((ValueAnotherType) value).value(), requireValue);
                 } else {

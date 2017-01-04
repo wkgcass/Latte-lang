@@ -3491,4 +3491,16 @@ public class TestCodeGen {
                 Method method2 = cls.getMethod("method2");
                 assertEquals(Unit.get(), method2.invoke(null));
         }
+
+        @Test
+        public void testNotType() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestNotType\n" +
+                                "    static\n" +
+                                "        def method(o) = o not type Integer"
+                        , "TestNotType");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(true, method.invoke(null, 1.2));
+                assertEquals(false, method.invoke(null, 1));
+        }
 }

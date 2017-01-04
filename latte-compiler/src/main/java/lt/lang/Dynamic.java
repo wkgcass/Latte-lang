@@ -822,6 +822,7 @@ public class Dynamic {
                         Collections.addAll(interfaces, i.getInterfaces());
                 }
 
+                ExceptionContainer ec = new ExceptionContainer();
                 if (methodList.isEmpty()) {
 
                         if (c.isArray()) {
@@ -853,6 +854,9 @@ public class Dynamic {
 
                                                 return invoke(invocationState, targetClass, elem, null, invoker, "set", bs, as);
                                         }
+                                } else {
+                                        ec.add("Target is array but method is not get(int)");
+                                        ec.add("Target is array but method is not set(int, ...)");
                                 }
                         } else {
                                 if (args.length == 1 && isBoxType(c) && isBoxType(args[0].getClass())) {
@@ -868,6 +872,9 @@ public class Dynamic {
                                         return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args);
                                 } else if (method.equals("logicNot") && args.length == 0) {
                                         return !LtRuntime.castToBool(o);
+                                } else {
+                                        ec.add("Is not primitive method invocation");
+                                        ec.add("Is not string concatenation");
                                 }
                         }
 
@@ -891,7 +898,10 @@ public class Dynamic {
                                                 if (state.methodFound) {
                                                         throw t;
                                                 }
+                                                ec.add("Cannot invoke callback function");
                                         }
+                                } else {
+                                        ec.add("Is not callback function");
                                 }
 
                                 // reversed invocation
@@ -911,7 +921,10 @@ public class Dynamic {
                                                 if (reverseInvocationState.methodFound) {
                                                         throw t;
                                                 }
+                                                ec.add("Reversed invocation failed");
                                         }
+                                } else {
+                                        ec.add("Is not reversible method");
                                 }
 
                                 // functional object
@@ -921,11 +934,16 @@ public class Dynamic {
                                                 return callFunctionalObject(callFunctionalState, functionalObject, invoker, args);
                                         } catch (Throwable t) {
                                                 if (callFunctionalState.methodFound) throw t;
+                                                ec.add("Cannot invoke functional object");
                                         }
+                                } else {
+                                        ec.add("No functional object");
                                 }
 
                                 invocationState.methodFound = false; // method still not found
 
+                                // call anything
+                                // call(Object,String,[]bool,[]Object)
                                 Method call = null;
                                 try {
                                         Class<?> cc = targetClass;
@@ -937,6 +955,7 @@ public class Dynamic {
                                                 invocationState.methodFound = true;
                                         }
                                 } catch (NoSuchMethodException ignore) {
+                                        ec.add("Method " + targetClass.getName() + "#call(Object,String,[]bool,[]Object) not found");
                                 }
 
                                 if (invocationState.methodFound) {
@@ -952,10 +971,21 @@ public class Dynamic {
                         // dynamically get field `o.methodName`
                         // if it's not `null` and not `Unit` then invoke the retrieved object
                         if (!invocationState.fromField && !invocationState.isCallingReverse) {
-                                Object result = LtRuntime.getField(o, method, invoker);
-                                if (result != null && !result.equals(Unit.get())) {
-                                        invocationState.methodFound = true;
-                                        return callFunctionalObject(result, invoker, args);
+                                Object result = null;
+                                boolean fieldFound = false;
+                                try {
+                                        result = LtRuntime.getField(o, method, invoker);
+                                        fieldFound = true;
+                                } catch (NoSuchFieldException e) {
+                                        ec.add("Cannot get field " + targetClass.getName() + "#" + e.getMessage());
+                                }
+                                if (fieldFound) {
+                                        if (result != null && !result.equals(Unit.get())) {
+                                                invocationState.methodFound = true;
+                                                return callFunctionalObject(result, invoker, args);
+                                        } else {
+                                                ec.add("Field " + targetClass.getName() + "#" + method + " is null or Unit");
+                                        }
                                 }
                         }
 
@@ -973,7 +1003,8 @@ public class Dynamic {
                                 sb.append(arg == null ? "null" : arg.getClass().getName());
                         }
                         sb.append(")");
-                        throw new LtRuntimeException("cannot find method to invoke: " + sb.toString());
+                        ec.throwIfNotEmpty("Cannot find method to invoke: " + sb.toString(), LtRuntimeException::new);
+                        // code won't reach here
                 }
 
                 // find best match
