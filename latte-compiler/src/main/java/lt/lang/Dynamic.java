@@ -810,10 +810,6 @@ public class Dynamic {
                  */
                 public boolean methodFound = false;
                 /**
-                 * whether it's a reversed invocation
-                 */
-                public boolean isCallingReverse = false;
-                /**
                  * the method that invokes this, is trying to get or put a field
                  */
                 public boolean fromField = false;
@@ -938,76 +934,74 @@ public class Dynamic {
                         }
                 }
 
-                if (!invocationState.isCallingReverse) {
-                        // await
-                        if (args.length > 0 && args[args.length - 1] instanceof CallbackFunc) {
-                                //noinspection unchecked
-                                boolean[] newPrimitives = new boolean[args.length];
-                                Object[] newArgs = new Object[args.length];
-                                System.arraycopy(args, 0, newArgs, 0, newArgs.length - 1);
-                                System.arraycopy(primitives, 0, newPrimitives, 0, newPrimitives.length);
+                // await
+                if (args.length > 0 && args[args.length - 1] instanceof CallbackFunc) {
+                        //noinspection unchecked
+                        boolean[] newPrimitives = new boolean[args.length];
+                        Object[] newArgs = new Object[args.length];
+                        System.arraycopy(args, 0, newArgs, 0, newArgs.length - 1);
+                        System.arraycopy(primitives, 0, newPrimitives, 0, newPrimitives.length);
 
-                                //noinspection unchecked
-                                newArgs[newArgs.length - 1] = new AsyncResultFunc((CallbackFunc) args[args.length - 1]);
+                        //noinspection unchecked
+                        newArgs[newArgs.length - 1] = new AsyncResultFunc((CallbackFunc) args[args.length - 1]);
 
-                                InvocationState state = new InvocationState();
-                                try {
-                                        return invoke(state, targetClass, o, functionalObject, invoker, method,
-                                                newPrimitives, newArgs);
-                                } catch (Throwable t) {
-                                        if (state.methodFound) {
-                                                throw t;
-                                        }
-                                        ec.add("Cannot invoke callback function");
-                                }
-                        } else {
-                                ec.add("Is not callback function");
-                        }
-
-                        // functional object
-                        if (functionalObject != null) {
-                                InvocationState callFunctionalState = new InvocationState();
-                                try {
-                                        return callFunctionalObject(callFunctionalState, functionalObject, invoker, args);
-                                } catch (Throwable t) {
-                                        if (callFunctionalState.methodFound) throw t;
-                                        ec.add("Cannot invoke functional object");
-                                }
-                        } else {
-                                ec.add("No functional object");
-                        }
-
-                        invocationState.methodFound = false; // method still not found
-
-                        // call anything
-                        // call(Object,String,[]bool,[]Object)
-                        Method call = null;
+                        InvocationState state = new InvocationState();
                         try {
-                                Class<?> cc = targetClass;
-                                if (o != null) {
-                                        cc = o.getClass();
+                                return invoke(state, targetClass, o, functionalObject, invoker, method,
+                                        newPrimitives, newArgs);
+                        } catch (Throwable t) {
+                                if (state.methodFound) {
+                                        throw t;
                                 }
-                                call = cc.getMethod("call", Object.class, String.class, boolean[].class, Object[].class);
-                                if (Modifier.isStatic(call.getModifiers()) && !call.getReturnType().equals(void.class)) {
-                                        invocationState.methodFound = true;
-                                }
-                        } catch (NoSuchMethodException ignore) {
-                                ec.add("Method " + targetClass.getName() + "#call(Object,String,[]bool,[]Object) not found");
+                                ec.add("Cannot invoke callback function");
                         }
+                } else {
+                        ec.add("Is not callback function");
+                }
 
-                        if (invocationState.methodFound) {
-                                assert call != null;
-                                try {
-                                        return call.invoke(null, o, method, primitives, args);
-                                } catch (InvocationTargetException e) {
-                                        throw e.getTargetException();
-                                }
+                // functional object
+                if (functionalObject != null) {
+                        InvocationState callFunctionalState = new InvocationState();
+                        try {
+                                return callFunctionalObject(callFunctionalState, functionalObject, invoker, args);
+                        } catch (Throwable t) {
+                                if (callFunctionalState.methodFound) throw t;
+                                ec.add("Cannot invoke functional object");
+                        }
+                } else {
+                        ec.add("No functional object");
+                }
+
+                invocationState.methodFound = false; // method still not found
+
+                // call anything
+                // call(Object,String,[]bool,[]Object)
+                Method call = null;
+                try {
+                        Class<?> cc = targetClass;
+                        if (o != null) {
+                                cc = o.getClass();
+                        }
+                        call = cc.getMethod("call", Object.class, String.class, boolean[].class, Object[].class);
+                        if (Modifier.isStatic(call.getModifiers()) && !call.getReturnType().equals(void.class)) {
+                                invocationState.methodFound = true;
+                        }
+                } catch (NoSuchMethodException ignore) {
+                        ec.add("Method " + targetClass.getName() + "#call(Object,String,[]bool,[]Object) not found");
+                }
+
+                if (invocationState.methodFound) {
+                        assert call != null;
+                        try {
+                                return call.invoke(null, o, method, primitives, args);
+                        } catch (InvocationTargetException e) {
+                                throw e.getTargetException();
                         }
                 }
 
                 // dynamically get field `o.methodName`
                 // if it's not `null` and not `Unit` then invoke the retrieved object
-                if (!invocationState.fromField && !invocationState.isCallingReverse) {
+                if (!invocationState.fromField) {
                         Object result = null;
                         boolean fieldFound = false;
                         try {

@@ -304,4 +304,13 @@ public class TestBugsInEval {
                         assertEquals(5050, res);
                 }
         }
+
+        @Test
+        public void testIntegerEqInt() throws Exception {
+                Evaluator e = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
+                assertEquals(true,
+                        e.eval("" +
+                                "val i : Integer = 1\n" +
+                                "i == 1").result);
+        }
 }

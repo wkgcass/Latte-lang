@@ -3518,4 +3518,19 @@ public class TestCodeGen {
                         , "TestImportImplicit2");
                 assertFalse(cls.isAnnotationPresent(ImplicitImports.class));
         }
+
+        @Test
+        public void testImportImplicit3() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import implicit X\n" +
+                                "class TestImportImplicit3\n" +
+                                "    static\n" +
+                                "        def method= Integer(1) as X\n" +
+                                "@Implicit\n" +
+                                "class X(x:Integer)\n" +
+                                "    def s = x + ' s'\n"
+                        , "TestImportImplicit3");
+                Method method = cls.getMethod("method");
+                assertEquals("X", method.invoke(null).getClass().getName());
+        }
 }

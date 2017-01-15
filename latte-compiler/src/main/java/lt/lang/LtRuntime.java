@@ -201,6 +201,13 @@ public class LtRuntime {
                 if (targetType.equals(boolean.class)) return castToBool(o);
                 if (targetType.equals(float.class)) return castToFloat(o);
                 if (targetType.equals(double.class)) return castToDouble(o);
+                if (targetType.isAnnotationPresent(Implicit.class)) {
+                        Constructor<?> con = targetType.getConstructors()[0];
+                        Class<?> paramType = con.getParameterTypes()[0];
+                        if (paramType.isInstance(o)) {
+                                return con.newInstance(o);
+                        }
+                }
                 if (targetType.isArray()) {
                         if (o instanceof java.util.List) {
                                 Class<?> component = targetType.getComponentType();

@@ -443,6 +443,24 @@ public class SemanticProcessor {
         }
 
         private void addImportImplicit() throws SyntaxException {
+                // validate imports
+                for (List<Import> imports : fileNameToImport.values()) {
+                        for (Import im : imports) {
+                                if (im.implicit) {
+                                        STypeDef type = getTypeWithAccess(im.access, Collections.emptyList());
+                                        if (!(type instanceof SClassDef)) {
+                                                err.SyntaxException("import implicit should be an implicit class", im.line_col());
+                                                return;
+                                        }
+                                        SClassDef cType = (SClassDef) type;
+                                        if (cType.annos().stream().filter(a -> a.type().fullName().equals("lt.lang.Implicit")).count() != 1) {
+                                                err.SyntaxException("import implicit should be an implicit class", im.line_col());
+                                                return;
+                                        }
+                                }
+                        }
+                }
+
                 SAnnoDef ImplicitImports = (SAnnoDef) getTypeWithName("lt.lang.ImplicitImports", LineCol.SYNTHETIC);
                 SArrayTypeDef classArrayTypeDef = (SArrayTypeDef) getTypeWithName("[Ljava.lang.Class;", LineCol.SYNTHETIC);
                 SClassDef classTypeDef = (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC);
@@ -468,7 +486,7 @@ public class SemanticProcessor {
                                 } catch (SyntaxException e) {
                                         throw new LtBug(e);
                                 }
-                        }).filter(c -> !c.targetType().equals(sTypeDef)).collect(Collectors.toList());
+                        }).filter(c -> !c.targetType().equals(sTypeDef)).distinct().collect(Collectors.toList());
                         if (valueList.isEmpty()) continue;
 
                         // build the annotation instance
@@ -5825,6 +5843,9 @@ public class SemanticProcessor {
                                 // left.compareTo(right)
                                 SMethodDef m = getComparable_compareTo();
                                 Ins.InvokeInterface invokeInterface = new Ins.InvokeInterface(left, m, lineCol);
+                                if (right.type() instanceof PrimitiveTypeDef) {
+                                        right = boxPrimitive(right, lineCol);
+                                }
                                 invokeInterface.arguments().add(right);
 
                                 // LtRuntime.compare(left.compareTo(right), compare_mode)

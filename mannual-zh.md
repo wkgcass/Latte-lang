@@ -17,6 +17,7 @@
 	5. [Data Class](#p3-5)
 	6. [实例化](#p3-6)
 	7. [Object Class](#p3-7)
+	8. [隐式转换](#p3-8)
 4. [函数类和Lambda](#p4)
 	1. [函数类](#p4-1)
 	2. [高阶函数和Lambda](#p4-2)
@@ -25,12 +26,11 @@
 	2. [范围](#p5-2)
 	3. [类型检查与转换](#p5-3)
 	4. [运算符绑定](#p5-4)
-	5. [反向调用](#p5-5)
-	6. [异常](#p5-6)
-	7. [注解](#p5-7)
-	8. [过程(Procedure)](#p5-8)
-    9. [参数可用性检查](#p5-9)
-    10. [Await](#p5-10)
+	5. [异常](#p5-5)
+	6. [注解](#p5-6)
+	7. [过程(Procedure)](#p5-7)
+    8. [参数可用性检查](#p5-8)
+    9. [Await](#p5-9)
 6. [Java 交互](#p6)
 	1. [在Latte中调用Java代码](#p6-1)
 	2. [在Java中调用Latte代码](#p6-2)
@@ -624,7 +624,7 @@ bool
 
 在使用字面量赋值时，只能对字面量支持的类型赋值。详见 [2.1 字面量](#p2-1)
 
-但是，在转换时，所有基本类型都可以互相转换（除了bool，它可以被任何类型转换到，但不能转换为其他类型，详见[5.9 参数可用性检查](#p5-9)）而不会出现任何错误。但是，在高精度向低精度转换时可能会丢失信息。例如：
+但是，在转换时，所有基本类型都可以互相转换（除了bool，它可以被任何类型转换到，但不能转换为其他类型，详见[5.8 参数可用性检查](#p5-8)）而不会出现任何错误。但是，在高精度向低精度转换时可能会丢失信息。例如：
 
 ```scala
 f:float = 3.14
@@ -1222,6 +1222,41 @@ object DefaultListener : MouseAdapter()
 val o = DataProviderManager
 ```
 
+<h2 id="p3-8">3.8 隐式转换</h2>
+
+隐式转换可以帮助你为对象扩展方法，从而更灵活的进行编程。
+
+使用隐式转换分为三步
+
+### 1. 定义一个隐式类：
+
+隐式类几乎等同于普通的类，但是构造函数必须为一个参数。并且在其上附带`@Implicit`注解。  
+构造函数的参数类型用作隐式转换的源类型，这个定义的类用作隐式转换的目标类型
+
+```scala
+@Implicit
+class RichInteger(i:Integer)
+    minutes() = i + " minute" + ( if i != 1 { "s" } else { "" } )
+```
+
+隐式转换时，接收`Integer`作为源类型，以`RichInteger`作为目标类型
+
+### 2. 启用隐式类
+
+```scala
+import implicit RichInteger
+```
+
+使用`import implicit`引入隐式类。这里注意，隐式类必须使用类名引入，而且，即使隐式类与使用者定义在同一个包下，也必须显式引入。这样错用几率会比较小。
+
+### 3. 使用
+
+```
+val x = 30 minutes
+```
+
+此时，`x`的值即为`"30 minutes"`
+
 <h1 id="p4">4. 函数类和Lambda</h1>
 
 <h2 id="p4-1">4.1 函数类</h2>
@@ -1626,27 +1661,7 @@ Latte的运算符优先级和Java完全一致，而Latte特有的运算符优先
 
 > 其中`?=`的`?`代表任何二元运算符
 
-<h2 id="p5-5">5.5 反向调用</h3>
-
-在绑定运算符时，只能在左侧对象上调用方法。但是有时候顺序很重要，比如 `1 - Rational(1, 2)` ，这么写会报错
-
-```
-cannot find method to invoke: java.lang.Integer#subtract(Rational)
-```
-
-这时可以使用反向调用方法解决。
-
-在任何只有一个参数的方法前加上`reverse_`，都可以使用该特性。
-
-```kotlin
-class Rational(a, b)
-    reverse_subtract(that:int)=Rational(that*b - a, b)
-    toString():String="${a}/${b}"
-
-1 - Rational(1,4)    /* result is 3/4 */
-```
-
-<h2 id="p5-6">5.6 异常</h2>
+<h2 id="p5-5">5.5 异常</h2>
 
 Latte和Java总体上是类似的，但是仍有多处不同：
 
@@ -1668,7 +1683,7 @@ finally
     a = 1
 ```
 
-<h2 id="p5-7">5.7 注解</h2>
+<h2 id="p5-6">5.6 注解</h2>
 
 Latte不支持定义注解，但是可以正常使用注解。Latte的注解使用方式和Java一致
 
@@ -1691,7 +1706,7 @@ class PrintSelf
 @Value2(key='value')
 ```
 
-<h2 id="p5-8">5.8 过程(Procedure)</h2>
+<h2 id="p5-7">5.7 过程(Procedure)</h2>
 
 Latte支持把一组语句当做一个值，这个特性称作“过程”。  
 过程由小括号开始，小括号结束。
@@ -1716,7 +1731,7 @@ class Rational(a, b)
     toString():String = a + ( if b==1 {""} else {"/" + b} )
 ```
 
-<h2 id="p5-9">5.9 参数可用性检查</h2>
+<h2 id="p5-8">5.8 参数可用性检查</h2>
 
 Latte支持**参数**上的null值或“空”值检查，分别使用`nonnull`和`nonempty`修饰符。
 
@@ -1750,7 +1765,7 @@ listNotEmpty([])  /* 抛出 IllegalArgumentException */
 6. 如果这个对象带有`def isEmpty:bool`或者`def isEmpty:Boolean`方法，那么调用之，并返回相应结果
 7. 返回true
 
-<h2 id="p5-10">5.10 Await</h2>
+<h2 id="p5-9">5.9 Await</h2>
 
 在使用CPS风格的库时常常因为需要保证逻辑的时间顺序，而嵌套多层回调。Latte提供`await`关键字，将回调的函数调用转换为顺序执行。
 
