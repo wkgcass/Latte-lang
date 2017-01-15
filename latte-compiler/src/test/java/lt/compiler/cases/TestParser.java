@@ -1603,7 +1603,7 @@ public class TestParser {
                 assertEquals(1, list.size());
 
                 Statement stmt = list.get(0);
-                Import i = new Import(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC);
+                Import i = new Import(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
@@ -1615,7 +1615,7 @@ public class TestParser {
 
                 Statement stmt = list.get(0);
                 Import i = new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), false
-                        , LineCol.SYNTHETIC);
+                        , false, LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
@@ -1627,7 +1627,7 @@ public class TestParser {
 
                 Statement stmt = list.get(0);
                 Import i = new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), true
-                        , LineCol.SYNTHETIC);
+                        , false, LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
@@ -1639,7 +1639,7 @@ public class TestParser {
 
                 Statement stmt = list.get(0);
                 Import i = new Import(null, new AST.Access(new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), false
-                        , LineCol.SYNTHETIC);
+                        , false, LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
@@ -1651,7 +1651,7 @@ public class TestParser {
 
                 Statement stmt = list.get(0);
                 Import i = new Import(null, new AST.Access(new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), true
-                        , LineCol.SYNTHETIC);
+                        , false, LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
@@ -1663,7 +1663,7 @@ public class TestParser {
 
                 Statement stmt = list.get(0);
                 Import i = new Import(null, new AST.Access(null, "Cls", LineCol.SYNTHETIC), true
-                        , LineCol.SYNTHETIC);
+                        , false, LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
@@ -1675,7 +1675,7 @@ public class TestParser {
 
                 Statement stmt = list.get(0);
                 Import i = new Import(null, new AST.Access(new AST.Access(null, "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), true
-                        , LineCol.SYNTHETIC);
+                        , false, LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
@@ -1687,7 +1687,7 @@ public class TestParser {
 
                 Statement stmt = list.get(0);
                 Import i = new Import(null, new AST.Access(new AST.Access(null, "Cls", LineCol.SYNTHETIC), "Inner", LineCol.SYNTHETIC), false
-                        , LineCol.SYNTHETIC);
+                        , false, LineCol.SYNTHETIC);
                 assertEquals(i, stmt);
         }
 
@@ -2314,6 +2314,31 @@ public class TestParser {
                         new AST.Await(new AST.Invocation(new AST.Access(null, "mi", LineCol.SYNTHETIC), Collections.singletonList(
                                 new NumberLiteral("1", LineCol.SYNTHETIC)
                         ), false, LineCol.SYNTHETIC), LineCol.SYNTHETIC)
+                ), stmts);
+        }
+
+        @Test
+        public void testImportImplicit() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "import implicit xx\n" +
+                        "import implicit yy::zz\n" +
+                        "import implicit aa.bb\n" +
+                        "import implicit cc::dd.ee"
+                );
+                assertEquals(Arrays.asList(
+                        new Import(null, new AST.Access(null, "xx", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC),
+                        new Import(null,
+                                new AST.Access(new AST.PackageRef("yy", LineCol.SYNTHETIC), "zz", LineCol.SYNTHETIC),
+                                false, true, LineCol.SYNTHETIC),
+                        new Import(null,
+                                new AST.Access(new AST.Access(null, "aa", LineCol.SYNTHETIC), "bb", LineCol.SYNTHETIC),
+                                false, true, LineCol.SYNTHETIC),
+                        new Import(null,
+                                new AST.Access(
+                                        new AST.Access(
+                                                new AST.PackageRef("cc", LineCol.SYNTHETIC), "dd", LineCol.SYNTHETIC),
+                                        "ee", LineCol.SYNTHETIC),
+                                false, true, LineCol.SYNTHETIC)
                 ), stmts);
         }
 }

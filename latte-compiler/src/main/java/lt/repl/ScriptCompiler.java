@@ -317,11 +317,11 @@ public class ScriptCompiler {
                 );
 
                 defsAndImports.add(classDef);
-                defsAndImports.add(new Import(new AST.PackageRef("lt::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                defsAndImports.add(new Import(new AST.PackageRef("java::util", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                defsAndImports.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                defsAndImports.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                defsAndImports.add(new Import(new AST.PackageRef("lt::repl", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                defsAndImports.add(new Import(new AST.PackageRef("lt::util", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
+                defsAndImports.add(new Import(new AST.PackageRef("java::util", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
+                defsAndImports.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
+                defsAndImports.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
+                defsAndImports.add(new Import(new AST.PackageRef("lt::repl", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
 
                 SemanticProcessor sp = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                         put(name, defsAndImports);

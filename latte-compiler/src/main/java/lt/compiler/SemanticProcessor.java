@@ -253,14 +253,14 @@ public class SemanticProcessor {
                                 pkg.endsWith(".")
                                         ? pkg.substring(0, pkg.length() - 1).replace(".", "::")
                                         : pkg
-                                , LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
+                                , LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                         // add java.lang into import list
                         // java::lang::_
                         // lt::lang::_
                         // lt::lang::Utils._
-                        imports.add(new Import(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(new AST.PackageRef("java::lang", LineCol.SYNTHETIC), null, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Utils", LineCol.SYNTHETIC), true, LineCol.SYNTHETIC));
+                        imports.add(new Import(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
+                        imports.add(new Import(new AST.PackageRef("java::lang", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Utils", LineCol.SYNTHETIC), true, false, LineCol.SYNTHETIC));
 
                         fileNameToPackageName.put(fileName, pkg);
                 }
@@ -434,9 +434,60 @@ public class SemanticProcessor {
                         fileNameToFunctions, fileNameToPackageName,
                         fileNameToObjectDef);
                 step3(fileNameToPackageName, fileNameToFunctions);
+                // ensures that @ImplicitImports is loaded
+                getTypeWithName("lt.lang.ImplicitImports", LineCol.SYNTHETIC);
                 step4();
+                addImportImplicit();
 
                 return typeDefSet;
+        }
+
+        private void addImportImplicit() throws SyntaxException {
+                SAnnoDef ImplicitImports = (SAnnoDef) getTypeWithName("lt.lang.ImplicitImports", LineCol.SYNTHETIC);
+                SArrayTypeDef classArrayTypeDef = (SArrayTypeDef) getTypeWithName("[Ljava.lang.Class;", LineCol.SYNTHETIC);
+                SClassDef classTypeDef = (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC);
+                SAnnoField annoField = null;
+                for (SAnnoField f : ImplicitImports.annoFields()) {
+                        if (f.name().equals("implicitImports")) {
+                                annoField = f;
+                                break;
+                        }
+                }
+                if (annoField == null) throw new LtBug("lt.lang.ImplicitImports#implicitImports should exist");
+                for (STypeDef sTypeDef : typeDefSet) {
+                        // filter
+                        if (sTypeDef.line_col().fileName == null || !fileNameToImport.containsKey(sTypeDef.line_col().fileName)) {
+                                continue;
+                        }
+                        boolean alreadyExists = sTypeDef.annos().stream().filter(anno -> anno.type().fullName().equals("lt.lang.ImplicitImports")).count() > 0;
+                        if (alreadyExists) continue;
+                        List<Import> imports = fileNameToImport.get(sTypeDef.line_col().fileName);
+                        List<Ins.GetClass> valueList = imports.stream().filter(i -> i.implicit).map(i -> {
+                                try {
+                                        return new Ins.GetClass(getTypeWithAccess(i.access, Collections.emptyList()), classTypeDef);
+                                } catch (SyntaxException e) {
+                                        throw new LtBug(e);
+                                }
+                        }).filter(c -> !c.targetType().equals(sTypeDef)).collect(Collectors.toList());
+                        if (valueList.isEmpty()) continue;
+
+                        // build the annotation instance
+                        SAnno importImplicit = new SAnno();
+                        importImplicit.setAnnoDef(ImplicitImports);
+                        importImplicit.setPresent(sTypeDef);
+                        sTypeDef.annos().add(importImplicit);
+
+                        // build the array instance
+                        SArrayValue arrayValue = new SArrayValue();
+                        arrayValue.setDimension(1);
+                        arrayValue.setType(classArrayTypeDef);
+
+                        Value[] valueArray = new Value[valueList.size()];
+                        arrayValue.setValues(valueList.toArray(valueArray));
+
+                        // add value into anno
+                        importImplicit.values().put(annoField, arrayValue);
+                }
         }
 
         public static boolean packageExistsInClassPath(String pkg, ClassLoader classLoader) {
@@ -870,7 +921,12 @@ public class SemanticProcessor {
 
         /**
          * ========step 3========
+         * validation
+         * <p>
          * check circular inheritance
+         * check method override
+         * check method signature
+         * check annotations
          *
          * @param fileNameToPackageName file name to package name
          * @param fileNameToFunctions   file name to functions
@@ -965,7 +1021,7 @@ public class SemanticProcessor {
                         }
                 }
 
-                // check annotation (@FunctionalInterface @FunctionalAbstractClass @Override)
+                // check annotation (@FunctionalInterface @FunctionalAbstractClass @Override @Implicit)
                 for (STypeDef typeDef : typeDefSet) {
                         for (SAnno anno : typeDef.annos()) {
                                 if (anno.type().fullName().equals("java.lang.FunctionalInterface")) {
@@ -983,6 +1039,20 @@ public class SemanticProcessor {
                                         final String msg = typeDef + " is not a functional abstract class";
                                         if (typeDef instanceof SClassDef) {
                                                 if (!getMethodForLambda(typeDef, new SConstructorDef[1], new SMethodDef[1])) {
+                                                        err.SyntaxException(msg, typeDef.line_col());
+                                                        return;
+                                                }
+                                        } else {
+                                                err.SyntaxException(msg, typeDef.line_col());
+                                                return;
+                                        }
+                                } else if (anno.type().fullName().equals("lt.lang.Implicit")) {
+                                        final String msg = typeDef + " is not implicit type";
+                                        if (typeDef instanceof SClassDef) {
+                                                if (((SClassDef) typeDef).constructors().size() != 1
+                                                        ||
+                                                        ((SClassDef) typeDef).constructors().get(0).getParameters().size() != 1
+                                                        ) {
                                                         err.SyntaxException(msg, typeDef.line_col());
                                                         return;
                                                 }

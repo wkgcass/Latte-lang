@@ -690,6 +690,14 @@ public class Parser {
         private Import parse_pkg_import() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
 
+                boolean isImplicit = false;
+                if (current.next() instanceof Element &&
+                        current.next().getTokenType() == TokenType.KEY &&
+                        ((Element) current.next()).getContent().equals("implicit")) {
+                        isImplicit = true;
+                        nextNode(false);
+                }
+
                 Expression stmt = next_exp(false);
 
                 if (stmt instanceof AST.Access) {
@@ -720,7 +728,10 @@ public class Parser {
                                 importAll = false;
                         }
 
-                        return new Import(pkg, access, importAll, lineCol);
+                        if (importAll && isImplicit) {
+                                err.SyntaxException("import import should be follow by a type", lineCol);
+                        }
+                        return new Import(pkg, access, importAll, isImplicit, lineCol);
                 } else {
                         err.UnexpectedTokenException("import statement", stmt.toString(), stmt.line_col());
                         // ignore the statement

@@ -81,7 +81,7 @@ public class CompileUtil {
                 "is", "not", "bool", "yes", "no", "type", "as",
                 "in", "elseif", "package", "import",
                 "break", "continue", "return", "fun", "require",
-                "new", "object", "await"
+                "new", "object", "await", "implicit"
         ));
 
         private static Set<String> javaKeys = new HashSet<>(Arrays.asList(

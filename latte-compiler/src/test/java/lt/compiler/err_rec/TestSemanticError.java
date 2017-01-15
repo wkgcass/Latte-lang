@@ -46,4 +46,16 @@ public class TestSemanticError {
                 } catch (SyntaxException ignore) {
                 }
         }
+
+        @Test
+        public void testImplicitFail() throws Exception {
+                try {
+                        get("" +
+                                "@Implicit\n" +
+                                "class X"
+                        );
+                        fail();
+                }catch (SyntaxException ignore) {
+                }
+        }
 }

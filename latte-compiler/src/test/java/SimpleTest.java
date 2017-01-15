@@ -18,22 +18,12 @@ public class SimpleTest {
                 ErrorManager err = new ErrorManager(true);
 
                 StringBuilder sb = new StringBuilder();
-                /*
-                BufferedReader br = new BufferedReader(new InputStreamReader(SimpleTest.class.getResourceAsStream("/lang-demo/list-map.lts")));
-                sb.append("import lt::util::_" +
-                        "\nclass hehe\n");
-                sb.append("    method(args:[]String)\n");
-                String base = "        ";
-                String s;
-                while ((s = br.readLine()) != null) {
-                        sb.append(base).append(s).append("\n");
-                }
-                */
                 sb.append("" +
-                        "class X(public num)\n" +
+                        "import implicit X\n" +
                         "class hehe\n" +
-                        "    i:*X = X(1)\n" +
-                        "    i.num");
+                        "@Implicit\n" +
+                        "class X(x:Integer)\n" +
+                        "    def s = x + ' s'\n");
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);

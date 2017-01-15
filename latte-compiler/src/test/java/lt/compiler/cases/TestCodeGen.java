@@ -3503,4 +3503,32 @@ public class TestCodeGen {
                 assertEquals(true, method.invoke(null, 1.2));
                 assertEquals(false, method.invoke(null, 1));
         }
+
+        @Test
+        public void testImportImplicit() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import implicit X\n" +
+                                "class TestImportImplicit\n" +
+                                "@Implicit\n" +
+                                "class X(x:Integer)\n" +
+                                "    def s = x + ' s'\n"
+                        , "TestImportImplicit");
+
+                assertTrue(cls.isAnnotationPresent(ImplicitImports.class));
+                ImplicitImports implicitImports = cls.getAnnotation(ImplicitImports.class);
+                Class<?>[] classes = implicitImports.implicitImports();
+                assertEquals(1, classes.length);
+                assertEquals("X", classes[0].getName());
+        }
+
+        @Test
+        public void testImportImplicit2() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import implicit TestImportImplicit2\n" +
+                                "@Implicit\n" +
+                                "class TestImportImplicit2(x:Integer)\n" +
+                                "    def s = x + ' s'\n"
+                        , "TestImportImplicit2");
+                assertFalse(cls.isAnnotationPresent(ImplicitImports.class));
+        }
 }

@@ -237,6 +237,45 @@ public class Dynamic {
                 return true;
         }
 
+        private static Class<?> chooseType(Class<?> targetType, Object target) {
+                if (target == null) return targetType;
+                if (targetType.isAnnotationPresent(Implicit.class)) return targetType;
+                if (targetType.isInstance(target)) return target.getClass();
+                return targetType;
+        }
+
+        public static Method findMethod(Class<?> invoker, Class<?> targetType, Object target, String method, boolean[] primitives, Object[] args) throws Throwable {
+                if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
+                List<Method> methodList = new ArrayList<>();
+
+                Queue<Class<?>> interfaces = new ArrayDeque<>();
+                Class<?> c = chooseType(targetType, target);
+                while (c != null) {
+                        Collections.addAll(interfaces, c.getInterfaces());
+                        fillMethodCandidates(c, invoker, method, args, methodList, target == null);
+                        c = c.getSuperclass();
+                }
+                c = chooseType(targetType, target);
+
+                Collections.addAll(interfaces, c.getInterfaces());
+                while (!interfaces.isEmpty()) {
+                        Class<?> i = interfaces.remove();
+                        fillMethodCandidates(i, invoker, method, args, methodList, target == null);
+                        Collections.addAll(interfaces, i.getInterfaces());
+                }
+
+                if (methodList.isEmpty()) {
+                        return null;
+                }
+
+                // find best match
+                Method methodToInvoke = findBestMatch(methodList, args, primitives);
+                // trans to required type
+                transToRequiredType(args, methodToInvoke.getParameterTypes());
+
+                return methodToInvoke;
+        }
+
         /**
          * fill in method candidates
          *
@@ -804,31 +843,42 @@ public class Dynamic {
                                     Object[] args) throws Throwable {
 
                 if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
-                List<Method> methodList = new ArrayList<>();
+                Method methodToInvoke = findMethod(invoker, targetClass, o, method, primitives, args);
+                // method found ?
+                if (null != methodToInvoke) {
+                        methodToInvoke.setAccessible(true);
 
-                Queue<Class<?>> interfaces = new ArrayDeque<>();
-                Class<?> c = o == null ? targetClass : o.getClass();
-                while (c != null) {
-                        Collections.addAll(interfaces, c.getInterfaces());
-                        fillMethodCandidates(c, invoker, method, args, methodList, o == null);
-                        c = c.getSuperclass();
-                }
-                c = o == null ? targetClass : o.getClass();
-
-                Collections.addAll(interfaces, c.getInterfaces());
-                while (!interfaces.isEmpty()) {
-                        Class<?> i = interfaces.remove();
-                        fillMethodCandidates(i, invoker, method, args, methodList, o == null);
-                        Collections.addAll(interfaces, i.getInterfaces());
+                        try {
+                                Object res = methodToInvoke.invoke(o, args);
+                                if (methodToInvoke.getReturnType() == void.class) return Unit.get();
+                                else return res;
+                        } catch (InvocationTargetException e) {
+                                throw e.getTargetException();
+                        }
                 }
 
                 ExceptionContainer ec = new ExceptionContainer();
-                if (methodList.isEmpty()) {
 
-                        if (c.isArray()) {
-                                if (method.equals("get") && args.length >= 1 && args[0] instanceof Integer) {
-                                        Object res = Array.get(o, (Integer) args[0]);
-                                        if (args.length == 1) return res;
+                Class<?> c = o == null ? targetClass : o.getClass();
+                if (c.isArray()) {
+                        if (method.equals("get") && args.length >= 1 && args[0] instanceof Integer) {
+                                Object res = Array.get(o, (Integer) args[0]);
+                                if (args.length == 1) return res;
+
+                                boolean[] bs = new boolean[primitives.length - 1];
+                                Object[] as = new Object[args.length - 1];
+                                for (int i = 1; i < args.length; ++i) {
+                                        bs[i - 1] = primitives[i];
+                                        as[i - 1] = args[i];
+                                }
+
+                                return invoke(invocationState, targetClass, res, null, invoker, "get", bs, as);
+                        } else if (method.equals("set") && args.length >= 2 && args[0] instanceof Integer) {
+                                if (args.length == 2) {
+                                        Array.set(o, (Integer) args[0], args[1]);
+                                        return args[1];
+                                } else {
+                                        Object elem = Array.get(o, (Integer) args[0]);
 
                                         boolean[] bs = new boolean[primitives.length - 1];
                                         Object[] as = new Object[args.length - 1];
@@ -837,191 +887,160 @@ public class Dynamic {
                                                 as[i - 1] = args[i];
                                         }
 
-                                        return invoke(invocationState, targetClass, res, null, invoker, "get", bs, as);
-                                } else if (method.equals("set") && args.length >= 2 && args[0] instanceof Integer) {
-                                        if (args.length == 2) {
-                                                Array.set(o, (Integer) args[0], args[1]);
-                                                return args[1];
-                                        } else {
-                                                Object elem = Array.get(o, (Integer) args[0]);
-
-                                                boolean[] bs = new boolean[primitives.length - 1];
-                                                Object[] as = new Object[args.length - 1];
-                                                for (int i = 1; i < args.length; ++i) {
-                                                        bs[i - 1] = primitives[i];
-                                                        as[i - 1] = args[i];
-                                                }
-
-                                                return invoke(invocationState, targetClass, elem, null, invoker, "set", bs, as);
-                                        }
-                                } else {
-                                        ec.add("Target is array but method is not get(int)");
-                                        ec.add("Target is array but method is not set(int, ...)");
+                                        return invoke(invocationState, targetClass, elem, null, invoker, "set", bs, as);
                                 }
                         } else {
-                                if (args.length == 1 && isBoxType(c) && isBoxType(args[0].getClass())) {
-                                        return invokePrimitive(o, method, args[0]);
-                                } else if (args.length == 0 && isBoxType(c)) {
-                                        return invokePrimitive(o, method);
-                                } else if (method.equals("add")
-                                        && args.length == 1
-                                        && (args[0] instanceof String || o instanceof String)) {
-                                        // string add
-                                        return String.valueOf(o) + String.valueOf(args[0]);
-                                } else if (method.equals("set")) {
-                                        return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args);
-                                } else if (method.equals("logicNot") && args.length == 0) {
-                                        return !LtRuntime.castToBool(o);
-                                } else {
-                                        ec.add("Is not primitive method invocation");
-                                        ec.add("Is not string concatenation");
-                                }
+                                ec.add("Target is array but method is not get(int)");
+                                ec.add("Target is array but method is not set(int, ...)");
                         }
-
-                        if (!invocationState.isCallingReverse) {
-                                // await
-                                if (args.length > 0 && args[args.length - 1] instanceof CallbackFunc) {
-                                        //noinspection unchecked
-                                        boolean[] newPrimitives = new boolean[args.length];
-                                        Object[] newArgs = new Object[args.length];
-                                        System.arraycopy(args, 0, newArgs, 0, newArgs.length - 1);
-                                        System.arraycopy(primitives, 0, newPrimitives, 0, newPrimitives.length);
-
-                                        //noinspection unchecked
-                                        newArgs[newArgs.length - 1] = new AsyncResultFunc((CallbackFunc) args[args.length - 1]);
-
-                                        InvocationState state = new InvocationState();
-                                        try {
-                                                return invoke(state, targetClass, o, functionalObject, invoker, method,
-                                                        newPrimitives, newArgs);
-                                        } catch (Throwable t) {
-                                                if (state.methodFound) {
-                                                        throw t;
-                                                }
-                                                ec.add("Cannot invoke callback function");
-                                        }
-                                } else {
-                                        ec.add("Is not callback function");
-                                }
-
-                                // reversed invocation
-                                if (o != null && args.length == 1 && args[0] != null) {
-                                        String methodName = "reverse_" + method;
-                                        Object _2 = args[0];
-
-                                        InvocationState reverseInvocationState = new InvocationState();
-                                        reverseInvocationState.isCallingReverse = true;
-                                        // reverse
-                                        try {
-                                                return invoke(reverseInvocationState,
-                                                        _2.getClass(), _2,
-                                                        null, invoker, methodName,
-                                                        new boolean[]{false}, new Object[]{o});
-                                        } catch (Throwable t) {
-                                                if (reverseInvocationState.methodFound) {
-                                                        throw t;
-                                                }
-                                                ec.add("Reversed invocation failed");
-                                        }
-                                } else {
-                                        ec.add("Is not reversible method");
-                                }
-
-                                // functional object
-                                if (functionalObject != null) {
-                                        InvocationState callFunctionalState = new InvocationState();
-                                        try {
-                                                return callFunctionalObject(callFunctionalState, functionalObject, invoker, args);
-                                        } catch (Throwable t) {
-                                                if (callFunctionalState.methodFound) throw t;
-                                                ec.add("Cannot invoke functional object");
-                                        }
-                                } else {
-                                        ec.add("No functional object");
-                                }
-
-                                invocationState.methodFound = false; // method still not found
-
-                                // call anything
-                                // call(Object,String,[]bool,[]Object)
-                                Method call = null;
-                                try {
-                                        Class<?> cc = targetClass;
-                                        if (o != null) {
-                                                cc = o.getClass();
-                                        }
-                                        call = cc.getMethod("call", Object.class, String.class, boolean[].class, Object[].class);
-                                        if (Modifier.isStatic(call.getModifiers()) && !call.getReturnType().equals(void.class)) {
-                                                invocationState.methodFound = true;
-                                        }
-                                } catch (NoSuchMethodException ignore) {
-                                        ec.add("Method " + targetClass.getName() + "#call(Object,String,[]bool,[]Object) not found");
-                                }
-
-                                if (invocationState.methodFound) {
-                                        assert call != null;
-                                        try {
-                                                return call.invoke(null, o, method, primitives, args);
-                                        } catch (InvocationTargetException e) {
-                                                throw e.getTargetException();
-                                        }
-                                }
+                } else {
+                        if (args.length == 1 && isBoxType(c) && isBoxType(args[0].getClass())) {
+                                return invokePrimitive(o, method, args[0]);
+                        } else if (args.length == 0 && isBoxType(c)) {
+                                return invokePrimitive(o, method);
+                        } else if (method.equals("add")
+                                && args.length == 1
+                                && (args[0] instanceof String || o instanceof String)) {
+                                // string add
+                                return String.valueOf(o) + String.valueOf(args[0]);
+                        } else if (method.equals("set")) {
+                                return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args);
+                        } else if (method.equals("logicNot") && args.length == 0) {
+                                return !LtRuntime.castToBool(o);
+                        } else {
+                                ec.add("Is not primitive method invocation");
+                                ec.add("Is not string concatenation");
                         }
-
-                        // dynamically get field `o.methodName`
-                        // if it's not `null` and not `Unit` then invoke the retrieved object
-                        if (!invocationState.fromField && !invocationState.isCallingReverse) {
-                                Object result = null;
-                                boolean fieldFound = false;
-                                try {
-                                        result = LtRuntime.getField(o, method, invoker);
-                                        fieldFound = true;
-                                } catch (NoSuchFieldException e) {
-                                        ec.add("Cannot get field " + targetClass.getName() + "#" + e.getMessage());
-                                }
-                                if (fieldFound) {
-                                        if (result != null && !result.equals(Unit.get())) {
-                                                invocationState.methodFound = true;
-                                                return callFunctionalObject(result, invoker, args);
-                                        } else {
-                                                ec.add("Field " + targetClass.getName() + "#" + method + " is null or Unit");
-                                        }
-                                }
-                        }
-
-                        // method not found
-                        // build exception message
-                        StringBuilder sb = new StringBuilder().append(
-                                o == null
-                                        ? targetClass.getName()
-                                        : o.getClass().getName()
-                        ).append("#").append(method).append("(");
-                        boolean isFirst = true;
-                        for (Object arg : args) {
-                                if (isFirst) isFirst = false;
-                                else sb.append(", ");
-                                sb.append(arg == null ? "null" : arg.getClass().getName());
-                        }
-                        sb.append(")");
-                        ec.throwIfNotEmpty("Cannot find method to invoke: " + sb.toString(), LtRuntimeException::new);
-                        // code won't reach here
                 }
 
-                // find best match
-                Method methodToInvoke = findBestMatch(methodList, args, primitives);
-                invocationState.methodFound = true;
-                // trans to required type
-                transToRequiredType(args, methodToInvoke.getParameterTypes());
+                if (!invocationState.isCallingReverse) {
+                        // await
+                        if (args.length > 0 && args[args.length - 1] instanceof CallbackFunc) {
+                                //noinspection unchecked
+                                boolean[] newPrimitives = new boolean[args.length];
+                                Object[] newArgs = new Object[args.length];
+                                System.arraycopy(args, 0, newArgs, 0, newArgs.length - 1);
+                                System.arraycopy(primitives, 0, newPrimitives, 0, newPrimitives.length);
 
-                methodToInvoke.setAccessible(true);
+                                //noinspection unchecked
+                                newArgs[newArgs.length - 1] = new AsyncResultFunc((CallbackFunc) args[args.length - 1]);
 
-                try {
-                        Object res = methodToInvoke.invoke(o, args);
-                        if (methodToInvoke.getReturnType() == void.class) return Unit.get();
-                        else return res;
-                } catch (InvocationTargetException e) {
-                        throw e.getTargetException();
+                                InvocationState state = new InvocationState();
+                                try {
+                                        return invoke(state, targetClass, o, functionalObject, invoker, method,
+                                                newPrimitives, newArgs);
+                                } catch (Throwable t) {
+                                        if (state.methodFound) {
+                                                throw t;
+                                        }
+                                        ec.add("Cannot invoke callback function");
+                                }
+                        } else {
+                                ec.add("Is not callback function");
+                        }
+
+                        // reversed invocation
+                        if (o != null && args.length == 1 && args[0] != null) {
+                                String methodName = "reverse_" + method;
+                                Object _2 = args[0];
+
+                                InvocationState reverseInvocationState = new InvocationState();
+                                reverseInvocationState.isCallingReverse = true;
+                                // reverse
+                                try {
+                                        return invoke(reverseInvocationState,
+                                                _2.getClass(), _2,
+                                                null, invoker, methodName,
+                                                new boolean[]{false}, new Object[]{o});
+                                } catch (Throwable t) {
+                                        if (reverseInvocationState.methodFound) {
+                                                throw t;
+                                        }
+                                        ec.add("Reversed invocation failed");
+                                }
+                        } else {
+                                ec.add("Is not reversible method");
+                        }
+
+                        // functional object
+                        if (functionalObject != null) {
+                                InvocationState callFunctionalState = new InvocationState();
+                                try {
+                                        return callFunctionalObject(callFunctionalState, functionalObject, invoker, args);
+                                } catch (Throwable t) {
+                                        if (callFunctionalState.methodFound) throw t;
+                                        ec.add("Cannot invoke functional object");
+                                }
+                        } else {
+                                ec.add("No functional object");
+                        }
+
+                        invocationState.methodFound = false; // method still not found
+
+                        // call anything
+                        // call(Object,String,[]bool,[]Object)
+                        Method call = null;
+                        try {
+                                Class<?> cc = targetClass;
+                                if (o != null) {
+                                        cc = o.getClass();
+                                }
+                                call = cc.getMethod("call", Object.class, String.class, boolean[].class, Object[].class);
+                                if (Modifier.isStatic(call.getModifiers()) && !call.getReturnType().equals(void.class)) {
+                                        invocationState.methodFound = true;
+                                }
+                        } catch (NoSuchMethodException ignore) {
+                                ec.add("Method " + targetClass.getName() + "#call(Object,String,[]bool,[]Object) not found");
+                        }
+
+                        if (invocationState.methodFound) {
+                                assert call != null;
+                                try {
+                                        return call.invoke(null, o, method, primitives, args);
+                                } catch (InvocationTargetException e) {
+                                        throw e.getTargetException();
+                                }
+                        }
                 }
+
+                // dynamically get field `o.methodName`
+                // if it's not `null` and not `Unit` then invoke the retrieved object
+                if (!invocationState.fromField && !invocationState.isCallingReverse) {
+                        Object result = null;
+                        boolean fieldFound = false;
+                        try {
+                                result = LtRuntime.getField(o, method, invoker);
+                                fieldFound = true;
+                        } catch (NoSuchFieldException e) {
+                                ec.add("Cannot get field " + targetClass.getName() + "#" + e.getMessage());
+                        }
+                        if (fieldFound) {
+                                if (result != null && !result.equals(Unit.get())) {
+                                        invocationState.methodFound = true;
+                                        return callFunctionalObject(result, invoker, args);
+                                } else {
+                                        ec.add("Field " + targetClass.getName() + "#" + method + " is null or Unit");
+                                }
+                        }
+                }
+
+                // method not found
+                // build exception message
+                StringBuilder sb = new StringBuilder().append(
+                        o == null
+                                ? targetClass.getName()
+                                : o.getClass().getName()
+                ).append("#").append(method).append("(");
+                boolean isFirst = true;
+                for (Object arg : args) {
+                        if (isFirst) isFirst = false;
+                        else sb.append(", ");
+                        sb.append(arg == null ? "null" : arg.getClass().getName());
+                }
+                sb.append(")");
+                ec.throwIfNotEmpty("Cannot find method to invoke: " + sb.toString(), LtRuntimeException::new);
+                // code won't reach here
+                throw new LtBug("code won't reach here");
         }
 
         /**

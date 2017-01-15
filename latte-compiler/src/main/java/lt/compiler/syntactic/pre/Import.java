@@ -35,18 +35,23 @@ public class Import implements Pre {
         public final AST.PackageRef pkg;
         public final AST.Access access;
         public final boolean importAll;
+        public final boolean implicit;
         private final LineCol lineCol;
 
-        public Import(AST.PackageRef pkg, AST.Access access, boolean importAll, LineCol lineCol) {
+        public Import(AST.PackageRef pkg, AST.Access access, boolean importAll, boolean implicit, LineCol lineCol) {
                 this.pkg = pkg;
                 this.access = access;
                 this.importAll = importAll;
+                this.implicit = implicit;
                 this.lineCol = lineCol;
         }
 
         @Override
         public String toString() {
                 StringBuilder sb = new StringBuilder("(import ");
+                if (implicit) {
+                        sb.append("implicit ");
+                }
                 if (pkg == null) {
                         if (importAll) {
                                 sb.append(access.toString()).append("._");
@@ -77,9 +82,11 @@ public class Import implements Pre {
                 Import anImport = (Import) o;
 
                 if (importAll != anImport.importAll) return false;
+                if (implicit != anImport.implicit) return false;
                 if (pkg != null ? !pkg.equals(anImport.pkg) : anImport.pkg != null) return false;
                 //
-                return !(access != null ? !access.equals(anImport.access) : anImport.access != null);
+                return access != null ? access.equals(anImport.access) : anImport.access == null;
+
         }
 
         @Override
@@ -87,6 +94,7 @@ public class Import implements Pre {
                 int result = pkg != null ? pkg.hashCode() : 0;
                 result = 31 * result + (access != null ? access.hashCode() : 0);
                 result = 31 * result + (importAll ? 1 : 0);
+                result = 31 * result + (implicit ? 1 : 0);
                 return result;
         }
 }
