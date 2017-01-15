@@ -2409,22 +2409,6 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testCallingReverse() throws Exception {
-                Class<?> cls = retrieveClass(
-                        "" +
-                                "class X\n" +
-                                "    reverse_add(n) = n + 10\n" +
-                                "class TestCallingReverse\n" +
-                                "    static\n" +
-                                "        def method()\n" +
-                                "            return 1 + X()"
-                        , "TestCallingReverse"
-                );
-                Method method = cls.getMethod("method");
-                assertEquals(11, method.invoke(null));
-        }
-
-        @Test
         public void testFunctionalObjectUpgradeVersion() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
@@ -3509,6 +3493,8 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "import implicit X\n" +
                                 "class TestImportImplicit\n" +
+                                "    static\n" +
+                                "        def method= + 1 s\n" +
                                 "@Implicit\n" +
                                 "class X(x:Integer)\n" +
                                 "    def s = x + ' s'\n"
@@ -3519,6 +3505,7 @@ public class TestCodeGen {
                 Class<?>[] classes = implicitImports.implicitImports();
                 assertEquals(1, classes.length);
                 assertEquals("X", classes[0].getName());
+                assertEquals("1 s", cls.getMethod("method").invoke(null));
         }
 
         @Test

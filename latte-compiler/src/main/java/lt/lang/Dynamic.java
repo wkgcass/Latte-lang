@@ -894,6 +894,31 @@ public class Dynamic {
                                 ec.add("Target is array but method is not set(int, ...)");
                         }
                 } else {
+                        // implicit cast
+                        if (o != null && invoker.isAnnotationPresent(ImplicitImports.class)) {
+                                Class<?>[] implicitClasses = invoker.getAnnotation(ImplicitImports.class).implicitImports();
+                                if (implicitClasses.length == 0) {
+                                        ec.add("No implicit casts enabled");
+                                } else {
+                                        for (Class<?> ic : implicitClasses) {
+                                                Class<?> type = ic.getConstructors()[0].getParameterTypes()[0];
+                                                if (type.isAssignableFrom(o.getClass())) {
+                                                        Method m = findMethod(invoker, ic, o, method, primitives, args);
+                                                        if (m != null) {
+                                                                Object target = ic.getConstructor(type).newInstance(o);
+                                                                return m.invoke(target, args);
+                                                        } else {
+                                                                ec.add("method not found in " + ic.getName());
+                                                        }
+                                                } else {
+                                                        ec.add("Cannot cast " + o.getClass().getName() + " to " + ic.getName());
+                                                }
+                                        }
+                                }
+                        } else {
+                                ec.add("No implicit casts enabled");
+                        }
+
                         if (args.length == 1 && isBoxType(c) && isBoxType(args[0].getClass())) {
                                 return invokePrimitive(o, method, args[0]);
                         } else if (args.length == 0 && isBoxType(c)) {
@@ -937,29 +962,6 @@ public class Dynamic {
                                 }
                         } else {
                                 ec.add("Is not callback function");
-                        }
-
-                        // reversed invocation
-                        if (o != null && args.length == 1 && args[0] != null) {
-                                String methodName = "reverse_" + method;
-                                Object _2 = args[0];
-
-                                InvocationState reverseInvocationState = new InvocationState();
-                                reverseInvocationState.isCallingReverse = true;
-                                // reverse
-                                try {
-                                        return invoke(reverseInvocationState,
-                                                _2.getClass(), _2,
-                                                null, invoker, methodName,
-                                                new boolean[]{false}, new Object[]{o});
-                                } catch (Throwable t) {
-                                        if (reverseInvocationState.methodFound) {
-                                                throw t;
-                                        }
-                                        ec.add("Reversed invocation failed");
-                                }
-                        } else {
-                                ec.add("Is not reversible method");
                         }
 
                         // functional object
