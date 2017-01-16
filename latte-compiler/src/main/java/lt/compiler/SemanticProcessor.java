@@ -261,6 +261,15 @@ public class SemanticProcessor {
                         imports.add(new Import(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                         imports.add(new Import(new AST.PackageRef("java::lang", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                         imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Utils", LineCol.SYNTHETIC), true, false, LineCol.SYNTHETIC));
+                        // import implicit 8 rich primitives
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichInt", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichBool", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichDouble", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichChar", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichLong", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichFloat", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichShort", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichByte", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
 
                         fileNameToPackageName.put(fileName, pkg);
                 }

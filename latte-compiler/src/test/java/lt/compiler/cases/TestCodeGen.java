@@ -3503,7 +3503,7 @@ public class TestCodeGen {
                 assertTrue(cls.isAnnotationPresent(ImplicitImports.class));
                 ImplicitImports implicitImports = cls.getAnnotation(ImplicitImports.class);
                 Class<?>[] classes = implicitImports.implicitImports();
-                assertEquals(1, classes.length);
+                assertEquals(9, classes.length); // X and 8 primitives
                 assertEquals("X", classes[0].getName());
                 assertEquals("1 s", cls.getMethod("method").invoke(null));
         }
@@ -3516,7 +3516,8 @@ public class TestCodeGen {
                                 "class TestImportImplicit2(x:Integer)\n" +
                                 "    def s = x + ' s'\n"
                         , "TestImportImplicit2");
-                assertFalse(cls.isAnnotationPresent(ImplicitImports.class));
+                assertTrue(cls.isAnnotationPresent(ImplicitImports.class));
+                assertEquals(8, cls.getAnnotation(ImplicitImports.class).implicitImports().length);
         }
 
         @Test

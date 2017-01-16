@@ -915,22 +915,16 @@ public class Dynamic {
                                 ec.add("No implicit casts enabled");
                         }
 
-                        if (args.length == 1 && isBoxType(c) && isBoxType(args[0].getClass())) {
-                                return invokePrimitive(o, method, args[0]);
-                        } else if (args.length == 0 && isBoxType(c)) {
-                                return invokePrimitive(o, method);
-                        } else if (method.equals("add")
+                        if (method.equals("add")
                                 && args.length == 1
                                 && (args[0] instanceof String || o instanceof String)) {
                                 // string add
                                 return String.valueOf(o) + String.valueOf(args[0]);
                         } else if (method.equals("set")) {
                                 return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args);
-                        } else if (method.equals("logicNot") && args.length == 0) {
-                                return !LtRuntime.castToBool(o);
                         } else {
-                                ec.add("Is not primitive method invocation");
                                 ec.add("Is not string concatenation");
+                                ec.add("Is not set/put transform");
                         }
                 }
 
