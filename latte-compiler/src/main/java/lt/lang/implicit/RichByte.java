@@ -60,10 +60,6 @@ public class RichByte {
                 return b + d;
         }
 
-        public String add(String s) {
-                return b + s;
-        }
-
         /*
          * ============
          *     and
@@ -376,7 +372,7 @@ public class RichByte {
                 return b << c;
         }
 
-        public long shiftLeft(Long l) {
+        public int shiftLeft(Long l) {
                 return b << l;
         }
 
@@ -402,7 +398,7 @@ public class RichByte {
                 return b >> c;
         }
 
-        public long shiftRight(Long l) {
+        public int shiftRight(Long l) {
                 return b >> l;
         }
 
@@ -462,7 +458,7 @@ public class RichByte {
                 return b >>> c;
         }
 
-        public long unsignedShiftRight(Long l) {
+        public int unsignedShiftRight(Long l) {
                 return b >>> l;
         }
 

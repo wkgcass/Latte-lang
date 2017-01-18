@@ -60,10 +60,6 @@ public class RichLong {
                 return l + d;
         }
 
-        public String add(String s) {
-                return l + s;
-        }
-
         /*
          * ============
          *     and

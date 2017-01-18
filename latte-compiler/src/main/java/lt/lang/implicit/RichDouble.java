@@ -56,10 +56,6 @@ public class RichDouble {
                 return this.d + d;
         }
 
-        public String add(String s) {
-                return d + s;
-        }
-
         /*
          * ============
          *     and

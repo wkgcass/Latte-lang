@@ -15,6 +15,8 @@ import java.util.Set;
  */
 public class SimpleTest {
         public static void main(String[] args) throws Exception {
+                System.out.println(((int)(char)-123));
+                /*
                 ErrorManager err = new ErrorManager(true);
 
                 StringBuilder sb = new StringBuilder();
@@ -39,21 +41,7 @@ public class SimpleTest {
                 fos.write(b);
                 fos.flush();
                 fos.close();
-
-                /*
-                URL url = new URL("jar:file:///Volumes/PROJECTS/openSource/LessTyping/latte-compiler/target/latte-compiler-0.0.3-ALPHA.jar!/build.lts.template");
-                URLConnection u = url.openConnection();
-                System.out.println(u);
-                InputStream is = u.getInputStream();
-                System.out.println(is);
-                BufferedReader reader=new BufferedReader(new InputStreamReader(is));
-                String s;
-                while(null!=(s=reader.readLine())){
-                        System.out.println(s);
-                }
                 */
-
-                // System.out.println("\033[0;32;40mabc");
         }
 
         public static boolean test() {

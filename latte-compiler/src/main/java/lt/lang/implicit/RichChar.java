@@ -60,10 +60,6 @@ public class RichChar {
                 return c + d;
         }
 
-        public String add(String s) {
-                return c + s;
-        }
-
         /*
          * ============
          *     and
@@ -376,7 +372,7 @@ public class RichChar {
                 return this.c << c;
         }
 
-        public long shiftLeft(Long l) {
+        public int shiftLeft(Long l) {
                 return c << l;
         }
 
@@ -402,7 +398,7 @@ public class RichChar {
                 return this.c >> c;
         }
 
-        public long shiftRight(Long l) {
+        public int shiftRight(Long l) {
                 return c >> l;
         }
 
@@ -462,7 +458,7 @@ public class RichChar {
                 return this.c >>> c;
         }
 
-        public long unsignedShiftRight(Long l) {
+        public int unsignedShiftRight(Long l) {
                 return c >>> l;
         }
 

@@ -56,10 +56,6 @@ public class RichFloat {
                 return f + d;
         }
 
-        public String add(String s) {
-                return f + s;
-        }
-
         /*
          * ============
          *     and

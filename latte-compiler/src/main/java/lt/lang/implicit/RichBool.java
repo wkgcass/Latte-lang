@@ -23,9 +23,7 @@ public class RichBool {
          * ============
          */
 
-        public String add(String s) {
-                return b + s;
-        }
+        // none
 
         /*
          * ============

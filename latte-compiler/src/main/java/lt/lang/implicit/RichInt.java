@@ -60,10 +60,6 @@ public class RichInt {
                 return i + d;
         }
 
-        public String add(String s) {
-                return i + s;
-        }
-
         /*
          * ============
          *     and
@@ -376,7 +372,7 @@ public class RichInt {
                 return i << c;
         }
 
-        public long shiftLeft(Long l) {
+        public int shiftLeft(Long l) {
                 return i << l;
         }
 
@@ -402,7 +398,7 @@ public class RichInt {
                 return i >> c;
         }
 
-        public long shiftRight(Long l) {
+        public int shiftRight(Long l) {
                 return i >> l;
         }
 
@@ -462,7 +458,7 @@ public class RichInt {
                 return i >>> c;
         }
 
-        public long unsignedShiftRight(Long l) {
+        public int unsignedShiftRight(Long l) {
                 return i >>> l;
         }
 
