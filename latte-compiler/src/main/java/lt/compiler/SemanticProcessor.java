@@ -270,6 +270,9 @@ public class SemanticProcessor {
                         imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichFloat", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
                         imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichShort", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
                         imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichByte", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        // import rich String and Object
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichString", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichObject", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
 
                         fileNameToPackageName.put(fileName, pkg);
                 }

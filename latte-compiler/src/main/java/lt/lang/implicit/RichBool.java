@@ -1,9 +1,10 @@
 package lt.lang.implicit;
 
 import lt.lang.Implicit;
+import lt.lang.LtRuntime;
 
 /**
- * rich Integer
+ * rich Bool
  */
 @Implicit
 public class RichBool {
@@ -31,8 +32,12 @@ public class RichBool {
          * ============
          */
 
-        public boolean and(Boolean b) throws Throwable {
+        public boolean and(Boolean b) {
                 return this.b & b;
+        }
+
+        public boolean and(Object o) throws Throwable {
+                return this.b & LtRuntime.castToBool(o);
         }
 
         /*
@@ -41,8 +46,12 @@ public class RichBool {
          * ============
          */
 
-        public boolean or(Boolean b) throws Throwable {
+        public boolean or(Boolean b) {
                 return this.b | b;
+        }
+
+        public boolean or(Object o) throws Throwable {
+                return this.b | LtRuntime.castToBool(o);
         }
 
         /*

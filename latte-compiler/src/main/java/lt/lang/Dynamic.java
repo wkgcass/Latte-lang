@@ -915,15 +915,9 @@ public class Dynamic {
                                 ec.add("No implicit casts enabled");
                         }
 
-                        if (method.equals("add")
-                                && args.length == 1
-                                && (args[0] instanceof String || o instanceof String)) {
-                                // string add
-                                return String.valueOf(o) + String.valueOf(args[0]);
-                        } else if (method.equals("set")) {
+                        if (method.equals("set")) {
                                 return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args);
                         } else {
-                                ec.add("Is not string concatenation");
                                 ec.add("Is not set/put transform");
                         }
                 }

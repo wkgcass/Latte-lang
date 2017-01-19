@@ -4,7 +4,7 @@ import lt.lang.Implicit;
 import lt.lang.LtRuntime;
 
 /**
- * rich Integer
+ * rich Double
  */
 @Implicit
 public class RichDouble {

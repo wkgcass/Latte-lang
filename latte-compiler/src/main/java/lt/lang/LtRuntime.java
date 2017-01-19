@@ -416,6 +416,8 @@ public class LtRuntime {
                 if (o instanceof Boolean) return (Boolean) o;
                 // check number not 0
                 if (o instanceof Number) return ((Number) o).doubleValue() != 0;
+                // check Character
+                if (o instanceof Character) return (Character) o != 0;
                 // check `isEmpty()`
                 try {
                         Method m = o.getClass().getMethod("isEmpty");

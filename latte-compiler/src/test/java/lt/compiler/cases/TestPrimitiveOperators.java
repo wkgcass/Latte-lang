@@ -235,6 +235,16 @@ public class TestPrimitiveOperators {
                 assertEquals(16, countInt);
         }
 
+        private void testBoolOps(Number a, boolean b, boolean res, Method method) throws Exception {
+                for (Function<Number, ?> f : numberFuncs) {
+                        Object aa = f.apply(a);
+                        Object rr1 = method.invoke(null, aa, b);
+                        Object rr2 = method.invoke(null, b, aa);
+                        assertEquals(res, rr1);
+                        assertEquals(res, rr2);
+                }
+        }
+
         @Test
         public void testAnd() throws Exception {
                 Class<?> and = retrieveClass("" +
@@ -245,6 +255,10 @@ public class TestPrimitiveOperators {
                 Method method = and.getMethod("method", Object.class, Object.class);
 
                 testLogic(-123, 4, -123 & 4, ((char) -123) & 4, ((char) -123) & 4L, method);
+                testBoolOps(3, true, true, method);
+                testBoolOps(3, false, false, method);
+                testBoolOps(0, true, false, method);
+                testBoolOps(0, false, false, method);
         }
 
         @Test
@@ -257,6 +271,10 @@ public class TestPrimitiveOperators {
                 Method method = or.getMethod("method", Object.class, Object.class);
 
                 testLogic(-123, 2, -123 | 2, ((char) -123) | 2, ((char) -123) | 2L, method);
+                testBoolOps(3, true, true, method);
+                testBoolOps(3, false, true, method);
+                testBoolOps(0, true, true, method);
+                testBoolOps(0, false, false, method);
         }
 
         @Test
@@ -328,5 +346,112 @@ public class TestPrimitiveOperators {
                                 assertEquals(~3, rr);
                         }
                 }
+        }
+
+        private void testBoolRes(Number a, Number b, boolean res, Method method) throws Exception {
+                for (Function<Number, ?> f1 : numberFuncs) {
+                        Object aa = f1.apply(a);
+                        for (Function<Number, ?> f2 : numberFuncs) {
+                                Object bb = f2.apply(b);
+                                Object rr = method.invoke(null, aa, bb);
+                                assertEquals(res, rr);
+                        }
+                }
+        }
+
+        @Test
+        public void testGt() throws Exception {
+                Class<?> gt = retrieveClass("" +
+                                "class TestGt\n" +
+                                "    static\n" +
+                                "        method(a, b)= a > b"
+                        , "TestGt");
+                Method method = gt.getMethod("method", Object.class, Object.class);
+
+                testBoolRes(3, 5, false, method);
+                testBoolRes(3, 2, true, method);
+                testBoolRes(3, 3, false, method);
+        }
+
+        @Test
+        public void testGe() throws Exception {
+                Class<?> ge = retrieveClass("" +
+                                "class TestGe\n" +
+                                "    static\n" +
+                                "        method(a, b)= a >= b"
+                        , "TestGe");
+                Method method = ge.getMethod("method", Object.class, Object.class);
+
+                testBoolRes(3, 5, false, method);
+                testBoolRes(3, 2, true, method);
+                testBoolRes(3, 3, true, method);
+        }
+
+        @Test
+        public void testLt() throws Exception {
+                Class<?> lt = retrieveClass("" +
+                                "class TestLt\n" +
+                                "    static\n" +
+                                "        method(a, b)= a < b"
+                        , "TestLt");
+                Method method = lt.getMethod("method", Object.class, Object.class);
+
+                testBoolRes(3, 5, true, method);
+                testBoolRes(3, 2, false, method);
+                testBoolRes(3, 3, false, method);
+        }
+
+        @Test
+        public void testLe() throws Exception {
+                Class<?> le = retrieveClass("" +
+                                "class TestLe\n" +
+                                "    static\n" +
+                                "        method(a, b)= a <= b"
+                        , "TestLe");
+                Method method = le.getMethod("method", Object.class, Object.class);
+
+                testBoolRes(3, 5, true, method);
+                testBoolRes(3, 2, false, method);
+                testBoolRes(3, 3, true, method);
+        }
+
+        private void testBoolRes(Number a, boolean res, Method method) throws Exception {
+                for (Function<Number, ?> f1 : numberFuncs) {
+                        Object aa = f1.apply(a);
+                        Object rr = method.invoke(null, aa);
+                        assertEquals(res, rr);
+                }
+        }
+
+        @Test
+        public void testLogicNot() throws Exception {
+                Class<?> logicNot = retrieveClass("" +
+                                "class TestLe\n" +
+                                "    static\n" +
+                                "        method(a)= !a"
+                        , "TestLe");
+                Method method = logicNot.getMethod("method", Object.class);
+
+                testBoolRes(2, false, method);
+                testBoolRes(0, true, method);
+                assertEquals(false, method.invoke(null, true));
+                assertEquals(true, method.invoke(null, false));
+        }
+
+        @Test
+        public void testStringObject() throws Exception {
+                Class<?> str = retrieveClass("" +
+                                "class TestStringObject\n" +
+                                "    static\n" +
+                                "        method(a, b)= a + b"
+                        , "TestStringObject");
+                Method method = str.getMethod("method", Object.class, Object.class);
+
+                assertEquals("abc", method.invoke(null, "a", "bc"));
+                assertEquals("abc", method.invoke(null, "ab", "c"));
+                assertEquals("atrue", method.invoke(null, "a", true));
+                assertEquals("truea", method.invoke(null, true, "a"));
+                String x = method.invoke(null, new Object(), "a").toString();
+                assertTrue(x.startsWith("java.lang.Object@") && x.endsWith("a"));
         }
 }
