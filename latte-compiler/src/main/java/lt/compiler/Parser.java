@@ -1809,25 +1809,6 @@ public class Parser {
                                                                 parsedExps.push(aNew);
                                                                 parse_expression();
                                                                 break;
-                                                        case "await":
-                                                                annosIsEmpty();
-                                                                modifiersIsEmpty();
-
-                                                                // await method_invocation()
-                                                                // await method_invocation // without par
-                                                                lineCol = current.getLineCol();
-                                                                next = next_exp(false);
-                                                                if (next instanceof AST.Access) {
-                                                                        next = new AST.Invocation(next, Collections.emptyList(), false, next.line_col());
-                                                                }
-                                                                if (!(next instanceof AST.Invocation)) {
-                                                                        err.UnexpectedTokenException("method inovcation", lineCol);
-                                                                        // ignore the exp
-                                                                        throw new ParseFail();
-                                                                }
-                                                                parsedExps.push(new AST.Await((AST.Invocation) next, lineCol));
-                                                                parse_expression();
-                                                                break;
 
                                                         default:
                                                                 err.UnexpectedTokenException(content, current.getLineCol());

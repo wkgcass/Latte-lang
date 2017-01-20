@@ -318,40 +318,6 @@ public class AST {
         }
 
         /**
-         * await
-         */
-        public static class Await implements Expression {
-                public final Invocation invocation;
-                private final LineCol lineCol;
-
-                public Await(Invocation invocation, LineCol lineCol) {
-                        this.invocation = invocation;
-                        this.lineCol = lineCol;
-                }
-
-                @Override
-                public LineCol line_col() {
-                        return lineCol;
-                }
-
-                @Override
-                public boolean equals(Object o) {
-                        if (this == o) return true;
-                        if (o == null || getClass() != o.getClass()) return false;
-
-                        Await await = (Await) o;
-
-                        return invocation.equals(await.invocation);
-
-                }
-
-                @Override
-                public int hashCode() {
-                        return invocation.hashCode();
-                }
-        }
-
-        /**
          * procedure
          */
         public static class Procedure implements Expression {

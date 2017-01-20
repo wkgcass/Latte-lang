@@ -30,7 +30,6 @@
 	6. [注解](#p5-6)
 	7. [过程(Procedure)](#p5-7)
     8. [参数可用性检查](#p5-8)
-    9. [Await](#p5-9)
 6. [Java 交互](#p6)
 	1. [在Latte中调用Java代码](#p6-1)
 	2. [在Java中调用Latte代码](#p6-2)
@@ -1764,59 +1763,6 @@ listNotEmpty([])  /* 抛出 IllegalArgumentException */
 5. 如果是Character类型，则：如果转换为`int`的结果是0，那么返回false，否则返回true
 6. 如果这个对象带有`def isEmpty:bool`或者`def isEmpty:Boolean`方法，那么调用之，并返回相应结果
 7. 返回true
-
-<h2 id="p5-9">5.9 Await</h2>
-
-在使用CPS风格的库时常常因为需要保证逻辑的时间顺序，而嵌套多层回调。Latte提供`await`关键字，将回调的函数调用转换为顺序执行。
-
-`await`支持三种回调类型
-
-1. ( (err)-> ... ) as lt::lang::function::Callback0
-2. ( (err, res)-> ... ) as lt::lang::function::Callback1
-3. (handler)-> ...
-
-例子如下：
-
-假设定义了如下函数
-
-```
-fun assertGreaterThan(x, y, cb)
-    ; 这个函数会异步执行
-    Thread(()->
-            Thread.sleep(1000)
-            if x > y |- cb(null)
-            else |- cb(AssertionError('x is not gt y'))
-    ).start()
-
-fun add(x, y, cb)
-    cb(null, x + y)
-
-fun multiply(x, y, cb)
-    cb(x * y)
-```
-
-如果要断言`1 + 2 * 3 > 4`，*不*使用await则需要写成：
-
-```
-multiply(2, 3, res1->
-        add(1, res1, (err, res2)->
-                assertGreaterThan(res2, 4, err->
-                        if err |- println(err)
-                )
-        )
-)
-```
-
-使用await则方便很多
-
-```
-res1 = await multiply(2,3)
-res2 = await add(1, res1)
-try
-    await assertGreaterThan(res2, 4)
-catch e
-    println(e)
-```
 
 <h1 id="p6">6. Java交互</h1>
 

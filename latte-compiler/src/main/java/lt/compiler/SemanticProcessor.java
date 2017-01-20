@@ -4256,95 +4256,10 @@ public class SemanticProcessor {
                         v = parseValueFromNew((AST.New) exp, scope);
                 } else if (exp instanceof AST.GeneratorSpec) {
                         v = parseValueFromGeneratorSpec((AST.GeneratorSpec) exp, requiredType, scope);
-                } else if (exp instanceof AST.Await) {
-                        v = parseValueFromAwait((AST.Await) exp, scope);
                 } else {
                         throw new LtBug("unknown expression " + exp);
                 }
                 return cast(requiredType, v, exp.line_col());
-        }
-
-        private SConstructorDef CallbackResultHolder_cons;
-
-        public SConstructorDef getCallbackResultHolder_cons() throws SyntaxException {
-                if (CallbackResultHolder_cons == null) {
-                        SClassDef CallbackResultHolder = (SClassDef) getTypeWithName("lt.lang.callback.CallbackResultHolder", LineCol.SYNTHETIC);
-                        for (SConstructorDef cons : CallbackResultHolder.constructors()) {
-                                if (cons.getParameters().isEmpty()) {
-                                        CallbackResultHolder_cons = cons;
-                                        break;
-                                }
-                        }
-                        if (CallbackResultHolder_cons == null)
-                                throw new LtBug("lt.lang.callback.CallbackResultHolder() should exist");
-                }
-                return CallbackResultHolder_cons;
-        }
-
-        private SMethodDef CallbackResultHolder_waitResult;
-
-        public SMethodDef getCallbackResultHolder_waitResult() throws SyntaxException {
-                SClassDef CallbackResultHolder = (SClassDef) getTypeWithName("lt.lang.callback.CallbackResultHolder", LineCol.SYNTHETIC);
-                for (SMethodDef m : CallbackResultHolder.methods()) {
-                        if (m.name().equals("waitResult")) {
-                                CallbackResultHolder_waitResult = m;
-                                break;
-                        }
-                }
-                if (CallbackResultHolder_waitResult == null)
-                        throw new LtBug("lt.lang.callback.CallbackResultHolder.waitResult() should exist");
-                return CallbackResultHolder_waitResult;
-        }
-
-        private SConstructorDef CallbackFunc_cons;
-
-        public SConstructorDef getCallbackFunc_cons() throws SyntaxException {
-                if (CallbackFunc_cons == null) {
-                        SClassDef CallbackResultHolder = (SClassDef) getTypeWithName("lt.lang.callback.CallbackFunc", LineCol.SYNTHETIC);
-                        for (SConstructorDef cons : CallbackResultHolder.constructors()) {
-                                if (cons.getParameters().size() == 1) {
-                                        CallbackFunc_cons = cons;
-                                        break;
-                                }
-                        }
-                        if (CallbackFunc_cons == null)
-                                throw new LtBug("lt.lang.callback.CallbackFunc() should exist");
-                }
-                return CallbackFunc_cons;
-        }
-
-        public ValuePack parseValueFromAwait(AST.Await await, SemanticScope scope) throws SyntaxException {
-                ValuePack valuePack = new ValuePack(true);
-
-                // create a cbResHolder
-                LeftValue cbResHolder = new LocalVariable(getTypeWithName("lt.lang.callback.CallbackResultHolder", LineCol.SYNTHETIC), false);
-                scope.putLeftValue(scope.generateTempName(), cbResHolder);
-                Ins.TStore storeCbResHolder = new Ins.TStore(
-                        cbResHolder, new Ins.New(getCallbackResultHolder_cons(), LineCol.SYNTHETIC), scope, LineCol.SYNTHETIC, err);
-                valuePack.instructions().add(storeCbResHolder);
-
-                // create a cbFunc
-                LeftValue cb = new LocalVariable(getTypeWithName("lt.lang.callback.CallbackFunc", LineCol.SYNTHETIC), false);
-                Ins.New newCb = new Ins.New(getCallbackFunc_cons(), LineCol.SYNTHETIC);
-                newCb.args().add(new Ins.TLoad(cbResHolder, scope, LineCol.SYNTHETIC));
-                String cbTmpName = scope.generateTempName();
-                scope.putLeftValue(cbTmpName, cb);
-                Ins.TStore storeCb = new Ins.TStore(
-                        cb, newCb, scope, LineCol.SYNTHETIC, err);
-                valuePack.instructions().add(storeCb);
-
-                // invoke the method
-                List<Expression> args = new ArrayList<>(await.invocation.args);
-                args.add(new AST.Access(null, cbTmpName, LineCol.SYNTHETIC));
-                AST.Invocation invo = new AST.Invocation(await.invocation.exp,
-                        args, false, await.line_col());
-                valuePack.instructions().add((Instruction) parseValueFromInvocation(invo, scope));
-
-                // waitResult
-                Ins.InvokeVirtual iv = new Ins.InvokeVirtual(new Ins.TLoad(cbResHolder, scope, LineCol.SYNTHETIC), getCallbackResultHolder_waitResult(), LineCol.SYNTHETIC);
-                valuePack.instructions().add(iv);
-
-                return valuePack;
         }
 
         public Value parseValueFromGeneratorSpec(AST.GeneratorSpec gs, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
