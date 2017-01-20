@@ -613,7 +613,6 @@ public class AST {
         }
 
         /**
->>>>>>> pattern-matching
          * procedure
          */
         public static class Procedure implements Expression {
