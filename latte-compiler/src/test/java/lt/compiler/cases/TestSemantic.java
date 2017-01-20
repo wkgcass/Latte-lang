@@ -2794,4 +2794,25 @@ public class TestSemantic {
                         "    Utils()");
                 parse(map); // pass compilation
         }
+
+        @Test
+        public void testAccessInnerClass() throws Exception {
+                Map<String, String> map = new HashMap<>();
+                map.put("test", "" +
+                        "import java::util::Map\n" +
+                        "class Test\n" +
+                        "    x = type Map.Entry");
+
+                Set<STypeDef> set = parse(map);
+                Iterator<STypeDef> it = set.iterator();
+
+                assertEquals(1, set.size());
+                SClassDef Test = (SClassDef) it.next();
+                Instruction ins = Test.constructors().get(0).statements().get(1);
+                ValuePack vp = (ValuePack) ins;
+                Ins.PutField pf = (Ins.PutField) vp.instructions().get(0);
+                Ins.GetClass getClass = (Ins.GetClass) pf.value();
+                STypeDef sTypeDef = getClass.targetType();
+                assertEquals("java.util.Map$Entry", sTypeDef.fullName());
+        }
 }

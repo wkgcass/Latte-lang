@@ -25,7 +25,7 @@ public abstract class AbstractScanner implements Scanner {
          *                            +-[a]-[+]-[b]
          * </pre>
          */
-        public final Set<String> LAYER = new HashSet<>(Arrays.asList("->", "|-"));
+        public final Set<String> LAYER = new HashSet<>(Arrays.asList("->", "|-", "=>"));
         public final Set<String> LAYER_END = new HashSet<>(Collections.singletonList("-|"));
         /**
          * the input should be split when meets these tokens
@@ -46,7 +46,8 @@ public abstract class AbstractScanner implements Scanner {
                 "...", // pass
                 ":::", // concat
                 ":=", // assign
-                "#" // generator
+                "#", // generator
+                "<-" // pattern matching destructing
         ));
         public final Set<String> SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN = new HashSet<>(Arrays.asList(
                 "+", "-", "*", "/", "%",

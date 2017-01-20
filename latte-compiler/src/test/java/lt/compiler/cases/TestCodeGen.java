@@ -3425,4 +3425,16 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals("X", method.invoke(null).getClass().getName());
         }
+
+        @Test
+        public void testAccessInnerClass() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import java::util::Map\n" +
+                                "class TestAccessInnerClass\n" +
+                                "    static\n" +
+                                "        def method=type Map.Entry"
+                        , "TestAccessInnerClass");
+                Method method = cls.getMethod("method");
+                assertEquals(Map.Entry.class, method.invoke(null));
+        }
 }

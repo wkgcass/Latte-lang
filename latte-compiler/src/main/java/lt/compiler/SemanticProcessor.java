@@ -9702,7 +9702,7 @@ public class SemanticProcessor {
         public String getClassNameFromAccess(AST.Access access) {
                 String pre;
                 if (access.exp instanceof AST.Access) {
-                        pre = getClassNameFromAccess((AST.Access) access.exp) + ".";
+                        pre = getClassNameFromAccess((AST.Access) access.exp) + "$";
                 } else if (access.exp instanceof AST.PackageRef) {
                         pre = ((AST.PackageRef) access.exp).pkg.replace("::", ".") + ".";
                 } else {
@@ -9750,7 +9750,8 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public STypeDef getTypeWithAccess(AST.Access access, List<Import> imports) throws SyntaxException {
-                assert access.exp == null || access.exp instanceof AST.PackageRef || "[]".equals(access.name) || "*".equals(access.name);
+                assert access.exp == null || access.exp instanceof AST.Access
+                        || access.exp instanceof AST.PackageRef || "[]".equals(access.name) || "*".equals(access.name);
 
                 boolean isPointer = false;
                 if ("*".equals(access.name)) {
@@ -9785,6 +9786,34 @@ public class SemanticProcessor {
                                 resultType = a;
                         }
 
+                } else if (access.exp instanceof AST.Access) {
+                        boolean withPackage = false;
+                        AST.Access tmp = access;
+                        String innerClassName = ""; // only used if it's inner class ref
+                        while (tmp.exp != null) {
+                                assert tmp.exp instanceof AST.Access || tmp.exp instanceof AST.PackageRef;
+                                if (tmp.exp instanceof AST.PackageRef) {
+                                        withPackage = true;
+                                        break;
+                                }
+                                innerClassName = "$" + tmp.name + innerClassName;
+                                tmp = (AST.Access) tmp.exp;
+                        }
+                        String className;
+                        if (withPackage) {
+                                className = getClassNameFromAccess(access);
+                                if (null == className || !typeExists(className)) {
+                                        err.SyntaxException("type " + className + " not defined", access.line_col());
+                                        return null;
+                                }
+                        } else {
+                                className = findClassNameWithImport(tmp.name, imports) + innerClassName;
+                                if (!typeExists(className)) {
+                                        err.SyntaxException("type " + innerClassName + " not defined", access.line_col());
+                                        return null;
+                                }
+                        }
+                        resultType = getTypeWithName(className, access.line_col());
                 } else {
 
                         assert access.exp == null || access.exp instanceof AST.PackageRef;

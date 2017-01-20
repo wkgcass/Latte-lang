@@ -61,6 +61,15 @@ public class TestParser {
                 return syntacticProcessor.parse();
         }
 
+        private static List<Statement> parseBrace(String stmt) throws IOException, SyntaxException {
+                BraceScanner processor = new BraceScanner("test", new StringReader(stmt), new Properties(), new ErrorManager(true));
+                ElementStartNode root = processor.scan();
+
+                Parser syntacticProcessor = new Parser(root, new ErrorManager(true));
+
+                return syntacticProcessor.parse();
+        }
+
         @Test
         public void testOperatorInSamePriority() throws Exception {
                 List<Statement> statements = parse("1+2-3+4");
@@ -2324,5 +2333,188 @@ public class TestParser {
                                         "ee", LineCol.SYNTHETIC),
                                 false, true, LineCol.SYNTHETIC)
                 ), stmts);
+        }
+
+        @Test
+        public void testDestruct() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "List(a,b) <- [1,2]\n" +
+                        "B() <- 123\n" +
+                        "C <- 456\n" +
+                        "D(d, _) <- 789"
+                );
+                assertEquals(Arrays.asList(
+                        new AST.Destruct(
+                                new AST.Pattern_Destruct(
+                                        new AST.Access(null, "List", LineCol.SYNTHETIC),
+                                        Arrays.asList(
+                                                new AST.Pattern_Define("a", null),
+                                                new AST.Pattern_Define("b", null))),
+                                new AST.ArrayExp(Arrays.asList(
+                                        new NumberLiteral("1", LineCol.SYNTHETIC),
+                                        new NumberLiteral("2", LineCol.SYNTHETIC)
+                                ), LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC),
+                        new AST.Destruct(
+                                new AST.Pattern_Destruct(
+                                        new AST.Access(null, "B", LineCol.SYNTHETIC),
+                                        Collections.emptyList()
+                                ),
+                                new NumberLiteral("123", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Destruct(
+                                new AST.Pattern_Destruct(
+                                        new AST.Access(null, "C", LineCol.SYNTHETIC),
+                                        Collections.emptyList()
+                                ),
+                                new NumberLiteral("456", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Destruct(
+                                new AST.Pattern_Destruct(
+                                        new AST.Access(null, "D", LineCol.SYNTHETIC),
+                                        Arrays.asList(
+                                                new AST.Pattern_Define("d", null),
+                                                AST.Pattern_Default.get()
+                                        )
+                                ),
+                                new NumberLiteral("789", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        )
+                ), stmts);
+        }
+
+        @Test
+        public void testSimplePatterns() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "a = 1\n" +
+                        "list match\n" +
+                        "    case _      => ...\n" +
+                        "    case x      => ...\n" +
+                        "    case a      => ...\n" +
+                        "    case true   => ...\n" +
+                        "    case 123    => ...\n" +
+                        "    case //.*// => ...\n" +
+                        "    case 'abc'  => ...\n" +
+                        "    case _:List => ...\n"
+                );
+                VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
+                LinkedHashMap<AST.Pattern, List<Statement>> linkedHashMap = new LinkedHashMap<>();
+                List<Statement> stmt = Collections.singletonList(new AST.Pass(LineCol.SYNTHETIC));
+                linkedHashMap.put(AST.Pattern_Default.get(), stmt);
+                linkedHashMap.put(new AST.Pattern_Define("x", null), stmt);
+                linkedHashMap.put(new AST.Pattern_Value(new AST.Access(null, "a", LineCol.SYNTHETIC)), stmt);
+                linkedHashMap.put(new AST.Pattern_Value(new BoolLiteral("true", LineCol.SYNTHETIC)), stmt);
+                linkedHashMap.put(new AST.Pattern_Value(new NumberLiteral("123", LineCol.SYNTHETIC)), stmt);
+                linkedHashMap.put(new AST.Pattern_Value(new RegexLiteral("//.*//", LineCol.SYNTHETIC)), stmt);
+                linkedHashMap.put(new AST.Pattern_Value(new StringLiteral("'abc'", LineCol.SYNTHETIC)), stmt);
+                linkedHashMap.put(new AST.Pattern_Type(new AST.Access(null, "List", LineCol.SYNTHETIC)), stmt);
+                assertEquals(
+                        Arrays.asList(
+                                v,
+                                new AST.PatternMatching(
+                                        new AST.Access(null, "list", LineCol.SYNTHETIC),
+                                        linkedHashMap,
+                                        LineCol.SYNTHETIC
+                                )
+                        ),
+                        stmts
+                );
+        }
+
+        @Test
+        public void testPatternDestructing() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "a = 1\n" +
+                        "list match\n" +
+                        "    case List(a,b,c) => ...\n" +
+                        "    case A(x) => ...\n" +
+                        "    case B(1) => ...\n" +
+                        "    case C(_, _:X) => ...\n" +
+                        "    case D(x:L) => ...\n" +
+                        "    case E() => ...\n"
+                );
+                VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
+                LinkedHashMap<AST.Pattern, List<Statement>> map = new LinkedHashMap<>();
+                List<Statement> stmt = Collections.singletonList(new AST.Pass(LineCol.SYNTHETIC));
+                map.put(new AST.Pattern_Destruct(
+                        new AST.Access(null, "List", LineCol.SYNTHETIC),
+                        Arrays.asList(
+                                new AST.Pattern_Value(new AST.Access(null, "a", LineCol.SYNTHETIC)),
+                                new AST.Pattern_Define("b", null),
+                                new AST.Pattern_Define("c", null)
+                        )
+                ), stmt);
+                map.put(new AST.Pattern_Destruct(
+                        new AST.Access(null, "A", LineCol.SYNTHETIC),
+                        Collections.singletonList(
+                                new AST.Pattern_Define("x", null)
+                        )
+                ), stmt);
+                map.put(new AST.Pattern_Destruct(
+                        new AST.Access(null, "B", LineCol.SYNTHETIC),
+                        Collections.singletonList(
+                                new AST.Pattern_Value(new NumberLiteral("1", LineCol.SYNTHETIC))
+                        )
+                ), stmt);
+                map.put(new AST.Pattern_Destruct(
+                        new AST.Access(null, "C", LineCol.SYNTHETIC),
+                        Arrays.asList(
+                                AST.Pattern_Default.get(),
+                                new AST.Pattern_Type(new AST.Access(null, "X", LineCol.SYNTHETIC))
+                        )
+                ), stmt);
+                map.put(new AST.Pattern_Destruct(
+                        new AST.Access(null, "D", LineCol.SYNTHETIC),
+                        Collections.singletonList(
+                                new AST.Pattern_Define("x", new AST.Access(null, "L", LineCol.SYNTHETIC))
+                        )
+                ), stmt);
+                map.put(new AST.Pattern_Destruct(
+                        new AST.Access(null, "E", LineCol.SYNTHETIC),
+                        Collections.emptyList()
+                ), stmt);
+
+                assertEquals(Arrays.asList(
+                        v,
+                        new AST.PatternMatching(
+                                new AST.Access(null, "list", LineCol.SYNTHETIC),
+                                map, LineCol.SYNTHETIC
+                        )
+                ), stmts);
+        }
+
+        @Test
+        public void testSimplePatterns_Brace() throws Exception {
+                assertEquals(
+                        parse("" +
+                                "a = 1\n" +
+                                "list match\n" +
+                                "    case _      => ...\n" +
+                                "    case x      => ...\n" +
+                                "    case a      => ...\n" +
+                                "    case true   => ...\n" +
+                                "    case 123    => ...\n" +
+                                "    case //.*// => ...\n" +
+                                "    case 'abc'  => ...\n" +
+                                "    case _:List => ..."
+                        ),
+                        parseBrace("" +
+                                "a = 1\n" +
+                                "list match {\n" +
+                                "    case _      => ...\n" +
+                                "    case x      => ...\n" +
+                                "    case a      => {...}\n" +
+                                "    case true   => ...\n" +
+                                "    case 123    => ...\n" +
+                                "    case //.*// => {...}\n" +
+                                "    case 'abc'  => ...\n" +
+                                "    case _:List => ...\n" +
+                                "}"
+                        )
+                );
         }
 }

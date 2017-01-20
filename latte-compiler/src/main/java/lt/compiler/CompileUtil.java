@@ -81,7 +81,7 @@ public class CompileUtil {
                 "is", "not", "bool", "yes", "no", "type", "as",
                 "in", "elseif", "package", "import",
                 "break", "continue", "return", "fun", "require",
-                "new", "object", "implicit"
+                "new", "object", "implicit", "match", "case"
         ));
 
         private static Set<String> javaKeys = new HashSet<>(Arrays.asList(
@@ -450,9 +450,9 @@ public class CompileUtil {
                 if (got == null) {
                         err.UnexpectedEndException(previous.getLineCol());
                 } else if (!(got instanceof Element)) {
-                        throw new UnexpectedTokenException(token, got.getClass().getSimpleName(), got.getLineCol());
+                        throw new UnexpectedTokenException("", token, got.getClass().getSimpleName(), got.getLineCol());
                 } else if (!((Element) got).getContent().endsWith(token)) {
-                        throw new UnexpectedTokenException(token, ((Element) got).getContent(), got.getLineCol());
+                        throw new UnexpectedTokenException("", token, ((Element) got).getContent(), got.getLineCol());
                 }
         }
 
@@ -463,6 +463,10 @@ public class CompileUtil {
                         if (isTwoVariableOperator(before)) return true;
                 }
                 return false;
+        }
+
+        public static boolean isDestructing(String s) {
+                return "<-".equals(s);
         }
 
         public static boolean isSync(Element elem) {
@@ -508,7 +512,8 @@ public class CompileUtil {
                         || isOneVariableOperatorPost(str)
                         || isOneVariableOperatorPreMustCheckExps(str)
                         || isOneVariableOperatorPreWithoutCheckingExps(str)
-                        || isAssign(str);
+                        || isAssign(str)
+                        || isDestructing(str);
         }
 
         public static String getRegexStr(String rawRegex) {

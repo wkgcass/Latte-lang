@@ -207,7 +207,7 @@ public class Parser {
                                         jumpToTheNearestEndingNode();
                                         continue;
                                 } catch (SyntaxException e) {
-                                        err.SyntaxException(e.msg, e.lineCol);
+                                        err.SyntaxException(e.msg, e.lineCol, e);
                                         jumpToTheNearestEndingNode();
                                         continue;
                                 }
@@ -1810,6 +1810,14 @@ public class Parser {
                                                                 parse_expression();
                                                                 break;
 
+                                                        case "match":
+                                                                annosIsEmpty();
+                                                                modifiersIsEmpty();
+
+                                                                parse_pattern_matching();
+
+                                                                break;
+
                                                         default:
                                                                 err.UnexpectedTokenException(content, current.getLineCol());
                                                                 // ignore
@@ -1919,6 +1927,12 @@ public class Parser {
                                                                         new AST.GeneratorSpec(generator,
                                                                                 Collections.singletonList(next_exp(false)), lineCol));
                                                         }
+
+                                                } else if (isDestructing(content)) {
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
+
+                                                        parse_destructing();
 
                                                 } else if (content.equals("(")) {
                                                         annosIsEmpty();
@@ -2084,6 +2098,246 @@ public class Parser {
                         }
                 }
                 // else
+        }
+
+        private void parse_destructing() throws SyntaxException {
+                LineCol lineCol = current.getLineCol();
+                String content = ((Element) current).getContent();
+
+                if (parsedExps.isEmpty()) {
+                        err.UnexpectedTokenException(content, lineCol);
+                        throw new ParseFail();
+                }
+
+                Expression deInto = parsedExps.pop();
+                if (deInto instanceof AST.Access) {
+                        deInto = new AST.Invocation(deInto, Collections.emptyList(), false, deInto.line_col());
+                }
+                if (!(deInto instanceof AST.Invocation)
+                        || !(((AST.Invocation) deInto).exp instanceof AST.Access)) {
+                        err.SyntaxException("cannot destruct into " + deInto, deInto.line_col());
+                        throw new ParseFail();
+                }
+
+                List<AST.Pattern> subPatterns = new ArrayList<>();
+                AST.Pattern_Destruct pattern = new AST.Pattern_Destruct((AST.Access) ((AST.Invocation) deInto).exp, subPatterns);
+                for (Expression exp : ((AST.Invocation) deInto).args) {
+                        if (!(exp instanceof AST.Access)
+                                || ((AST.Access) exp).exp != null) {
+                                err.SyntaxException("cannot destruct into " + deInto, deInto.line_col());
+                                continue;
+                        }
+                        String name = ((AST.Access) exp).name;
+                        if (usedVarNames.contains(name)) {
+                                err.DuplicateVariableNameException(name, exp.line_col());
+                        }
+                        if (name.equals("_")) {
+                                subPatterns.add(AST.Pattern_Default.get());
+                        } else {
+                                subPatterns.add(new AST.Pattern_Define(name, null));
+                                usedVarNames.add(name);
+                        }
+                }
+                Expression e = next_exp(false);
+                parsedExps.push(new AST.Destruct(pattern, e, lineCol));
+        }
+
+        /**
+         * parse pattern matching
+         */
+        private void parse_pattern_matching() throws SyntaxException {
+                LineCol lineCol = current.getLineCol();
+                parsedExpsNotEmpty(current);
+                Expression expToMatch = parsedExps.pop();
+                nextNode(false);
+                LinkedHashMap<AST.Pattern, List<Statement>> resultMap = new LinkedHashMap<>();
+                if (current instanceof ElementStartNode) {
+                        ElementStartNode startNode = (ElementStartNode) current;
+                        Node switchLayerStart = current;
+                        current = startNode.getLinkedNode();
+                        while (true) {
+                                if (null == current) {
+                                        break;
+                                }
+                                if (current instanceof Element && ((Element) current).getContent().equals("case")) {
+                                        nextNode(false);
+                                        AST.Pattern pattern = parse_pattern_matching_$_parse_pattern(false);
+                                        expecting("=>", current.previous(), current, err);
+                                        nextNode(false);
+                                        List<Statement> stmts;
+                                        if (current instanceof ElementStartNode) {
+                                                Set<String> newVarNames = parse_pattern_matching_$_extract_var_names(pattern);
+                                                stmts = parseElemStart((ElementStartNode) current, true, newVarNames, false);
+                                        } else if (current instanceof Element) {
+                                                // one line statement
+                                                stmts = Collections.singletonList(parse_statement());
+                                                resultMap.put(pattern, stmts);
+                                        } else {
+                                                err.UnexpectedTokenException("statements when the pattern matches", current.toString(), current.getLineCol());
+                                                throw new ParseFail();
+                                        }
+                                        resultMap.put(pattern, stmts);
+                                        nextNode(true);
+                                        if (current instanceof EndingNode) {
+                                                nextNode(true);
+                                        } else if (null == current) {
+                                                break;
+                                        } else {
+                                                err.UnexpectedTokenException(current.toString(), current.getLineCol());
+                                                jumpToTheNearestEndingNode();
+                                                nextNode(true);
+                                        }
+                                } else {
+                                        err.UnexpectedTokenException("case", current.toString(), current.getLineCol());
+                                        jumpToTheNearestEndingNode();
+                                        nextNode(true);
+                                }
+                        }
+                        current = switchLayerStart;
+                        nextNode(true);
+                }
+                parsedExps.push(new AST.PatternMatching(expToMatch, resultMap, lineCol));
+                parse_expression();
+        }
+
+        private Set<String> parse_pattern_matching_$_extract_var_names(AST.Pattern pattern) {
+                switch (pattern.patternType) {
+                        case TYPE:
+                        case VALUE:
+                        case DEFAULT:
+                                return Collections.emptySet();
+                        case DEFINE:
+                                return Collections.singleton(((AST.Pattern_Define) pattern).name);
+                        case DESTRUCT:
+                                AST.Pattern_Destruct pd = (AST.Pattern_Destruct) pattern;
+                                Set<String> result = new HashSet<>();
+                                for (AST.Pattern p : pd.subPatterns) {
+                                        result.addAll(parse_pattern_matching_$_extract_var_names(p));
+                                }
+                                return result;
+                        default:
+                                throw new LtBug("unknown pattern type " + pattern.patternType);
+                }
+        }
+
+        private AST.Pattern parse_pattern_matching_$_parse_pattern$_parse(boolean parsingSubPattern) throws SyntaxException {
+                /*
+                _:XX::YY::ZZ
+                _
+                xx::yy::zz::Bean(a, _)
+                1
+                */
+                boolean condition1;
+                if (parsingSubPattern) {
+                        condition1 = (current.next() == null || current.next() instanceof EndingNode
+                                || ((current.next() instanceof Element) && ((Element) current.next()).getContent().equals(",")));
+                } else {
+                        condition1 = ((Element) current.next()).getContent().equals("=>");
+                }
+                if (condition1) {
+                        AST.Pattern subPattern;
+                        // check _/123/"xxx"/true/a
+                        if (current.getTokenType() == TokenType.VALID_NAME) {
+                                if (((Element) current).getContent().equals("_")) {
+                                        subPattern = AST.Pattern_Default.get();
+                                } else if (usedVarNames.contains(((Element) current).getContent())) {
+                                        // use the var
+                                        subPattern = new AST.Pattern_Value(
+                                                new AST.Access(null, ((Element) current).getContent(), current.getLineCol())
+                                        );
+                                } else {
+                                        // use as defined
+                                        String name = ((Element) current).getContent();
+                                        if (parsingSubPattern) {
+                                                usedVarNames.add(name);
+                                        }
+                                        subPattern = new AST.Pattern_Define(name, null);
+                                }
+                        } else if (current.getTokenType() == TokenType.BOOL) {
+                                subPattern = new AST.Pattern_Value(new BoolLiteral(((Element) current).getContent(), current.getLineCol()));
+                        } else if (current.getTokenType() == TokenType.NUMBER) {
+                                subPattern = new AST.Pattern_Value(new NumberLiteral(((Element) current).getContent(), current.getLineCol()));
+                        } else if (current.getTokenType() == TokenType.REGEX) {
+                                subPattern = new AST.Pattern_Value(new RegexLiteral(((Element) current).getContent(), current.getLineCol()));
+                        } else if (current.getTokenType() == TokenType.STRING) {
+                                String content = ((Element) current).getContent();
+                                subPattern = new AST.Pattern_Value(new StringLiteral(content, current.getLineCol()));
+                        } else {
+                                err.UnexpectedTokenException(current.toString(), current.getLineCol());
+                                throw new ParseFail();
+                        }
+                        nextNode(true);
+                        return subPattern;
+                } else if (current.getTokenType() == TokenType.VALID_NAME && current.next() instanceof Element && ((Element) current.next()).getContent().equals(":")) {
+                        String name = ((Element) current).getContent();
+                        if (usedVarNames.contains(name)) {
+                                err.DuplicateVariableNameException(name, current.getLineCol());
+                                throw new ParseFail();
+                        } else {
+                                nextNode(false); // :
+                                nextNode(false);
+                                AST.Access type = parse_cls_for_type_spec();
+                                if (name.equals("_")) {
+                                        return new AST.Pattern_Type(type);
+                                } else {
+                                        if (parsingSubPattern) {
+                                                usedVarNames.add(name);
+                                        }
+                                        return new AST.Pattern_Define(name, type);
+                                }
+                        }
+                } else {
+                        AST.Access type = null;
+                        try {
+                                type = parse_cls_for_type_spec();
+                        } catch (SyntaxException ignore) {
+                        }
+                        if (type == null) {
+                                // not type
+                                // try exp
+                                Expression exp = next_exp(true);
+                                return new AST.Pattern_Value(exp);
+                        } else {
+                                // type specified
+                                if (current instanceof Element) {
+                                        if (((Element) current).getContent().equals("(")) {
+                                                nextNode(false);
+                                                if (current instanceof Element) {
+                                                        expecting(")", current.previous(), current, err);
+                                                        nextNode(true);
+                                                        return new AST.Pattern_Destruct(type, Collections.emptyList());
+                                                }
+                                                ElementStartNode startNode = (ElementStartNode) current;
+                                                nextNode(false); // )
+                                                expecting(")", current.previous(), current, err);
+                                                nextNode(true);
+                                                Parser subParser = new Parser(startNode, err);
+                                                subParser.addUsedVarNames(usedVarNames);
+                                                List<AST.Pattern> patterns = new ArrayList<>();
+                                                while (subParser.current instanceof Element) {
+                                                        AST.Pattern p = subParser.parse_pattern_matching_$_parse_pattern$_parse(true);
+                                                        patterns.add(p);
+                                                        subParser.nextNode(true);
+                                                }
+                                                return new AST.Pattern_Destruct(type, patterns);
+                                        } else {
+                                                err.UnexpectedTokenException("destructing expression", ((Element) current).getContent(), current.getLineCol());
+                                                throw new ParseFail();
+                                        }
+                                } else {
+                                        return new AST.Pattern_Destruct(type, Collections.emptyList());
+                                }
+                        }
+                }
+        }
+
+        private AST.Pattern parse_pattern_matching_$_parse_pattern(boolean parsingSubPattern) throws SyntaxException {
+                if (current instanceof Element && current.next() instanceof Element) {
+                        return parse_pattern_matching_$_parse_pattern$_parse(parsingSubPattern);
+                } else {
+                        err.UnexpectedTokenException(current.toString(), current.getLineCol());
+                        throw new ParseFail();
+                }
         }
 
         /**
