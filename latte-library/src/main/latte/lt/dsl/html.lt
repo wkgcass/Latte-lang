@@ -80,7 +80,7 @@ private class StringUtils
             source = source.toString
             sb = StringBuilder()
             arr:[]char = source.toCharArray()
-            for i in 0.:arr.length
+            for i in 0 until arr.length
                 c:char = arr[i]
                 res = htmlEscapeMap[c]
                 if res
@@ -92,7 +92,7 @@ private class StringUtils
             attr = attr.toString
             sb = StringBuilder()
             arr:[]char = attr.toCharArray()
-            for i in 0.:arr.length
+            for i in 0 until arr.length
                 c:char = arr[i]
                 res = attrEscapeMap[c]
                 if res
@@ -102,7 +102,7 @@ private class StringUtils
             return sb.toString()
         buildSpaces(i:int):String
             sb = StringBuilder
-            for x in 0.:i
+            for x in 0 until i
                 sb append " "
             return sb toString
 

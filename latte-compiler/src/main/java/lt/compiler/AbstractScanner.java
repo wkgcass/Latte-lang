@@ -43,7 +43,6 @@ public abstract class AbstractScanner implements Scanner {
                 "++", "--",
                 "@", // @Annotation
                 "=:=", "!:=", // equal or not$equal
-                "..", ".:", // list generator
                 "...", // pass
                 ":::", // concat
                 ":=", // assign

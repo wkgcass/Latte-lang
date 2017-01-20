@@ -57,7 +57,7 @@ class Async
     waterfall(functions, callback):Unit
         callback = CallbackWrapper2(callback)
         var next = (res)-> callback(null, res)
-        for i in (functions.length-1)..0
+        for i in (functions.length-1) to 0
             var f = functions[i]
             next = WaterfallFunNext(f, next, callback)
         next(null)
@@ -93,7 +93,7 @@ class Async
     parallel(functions, callback):Unit
         callback = CallbackWrapper2(callback)
         var resultMap = {}
-        for i in 0.:functions.length
+        for i in 0 until functions.length
             var f = functions[i]
             var next = ParallelFunNext(resultMap, i, functions.length, callback)
             f(next)
@@ -131,7 +131,7 @@ class Async
         var next = elem->
             resultList + elem
             callback(null, resultList)
-        for i in (functions.length-1)..0
+        for i in (functions.length-1) to 0
             var f = functions[i]
             next = SeriesFunNext(f, next, callback, resultList, i)
         next(null)
@@ -163,7 +163,7 @@ class Async
     each(array, iterator, callback):Unit
         callback = CallbackWrapper1(callback)
         var taskStatus = {}
-        for i in 0.:array.length
+        for i in 0 until array.length
             var item = array[i]
             var next = EachFunNext(taskStatus, i, array.length, callback)
             try
@@ -199,7 +199,7 @@ class Async
         callback = CallbackWrapper1(callback)
         var next = ()->
             callback(null)
-        for i in (array.length-1)..0
+        for i in (array.length-1) to 0
             var item = array[i]
             next = EachSeriesFunNext(item, iterator, next, callback)
         next()
@@ -247,7 +247,7 @@ class ParallelFunNext(resultMap, cursor, functionLength, callback)
             callback(e, null)
     private checkAndInvokeCallback():Unit
         var list = []
-        for i in 0.:functionLength
+        for i in 0 until functionLength
             if resultMap.containsKey(i)
                 list + resultMap[i]
             else
@@ -268,7 +268,7 @@ class EachFunNext(taskStatus, cursor, arrayLength, callback)
         taskStatus[cursor] = true
         checkAndInvokeCallback()
     private checkAndInvokeCallback():Unit
-        for i in 0.:arrayLength
+        for i in 0 until arrayLength
             if !taskStatus.containsKey(i)
                 return
         callback(null)

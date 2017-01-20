@@ -346,13 +346,13 @@ public class TestCodeGen {
                                 "class TestRange\n" +
                                 "    static\n" +
                                 "        def method1()\n" +
-                                "            return 1..10\n" +
+                                "            return 1 to 10\n" +
                                 "        def method2()\n" +
-                                "            return 1.:10\n" +
+                                "            return 1 until 10\n" +
                                 "        def method3()\n" +
-                                "            return 10..1\n" +
+                                "            return 10 to 1\n" +
                                 "        def method4()\n" +
-                                "            return 10.:1",
+                                "            return 10 until 1",
                         "TestRange");
 
                 Method method1 = cls.getMethod("method1");
@@ -421,7 +421,7 @@ public class TestCodeGen {
                                 "class TestInRange\n" +
                                 "    static\n" +
                                 "        def method()\n" +
-                                "            return 2 in 1..2\n",
+                                "            return 2 in (1 to 2)\n",
                         "TestInRange");
                 Method method = cls.getMethod("method");
                 assertEquals(true, method.invoke(null));
@@ -530,7 +530,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        def method()\n" +
                                 "            s=StringBuilder()\n" +
-                                "            for i in 1..3\n" +
+                                "            for i in 1 to 3\n" +
                                 "                s.append(i)\n" +
                                 "            return s.toString()",
                         "TestFor");
@@ -1553,7 +1553,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        def method()\n" +
                                 "            sum=0\n" +
-                                "            for i in 1..10\n" +
+                                "            for i in 1 to 10\n" +
                                 "                if i==7\n" +
                                 "                    break\n" +
                                 "                sum+=i\n" +
@@ -1571,7 +1571,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        def method()\n" +
                                 "            sum=0\n" +
-                                "            for i in 1..10\n" +
+                                "            for i in 1 to 10\n" +
                                 "                if i==7\n" +
                                 "                    continue\n" +
                                 "                sum+=i\n" +
@@ -1669,7 +1669,7 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        def method()\n" +
                                 "            n=0\n" +
-                                "            for i in 1..10\n" +
+                                "            for i in 1 to 10\n" +
                                 "                try\n" +
                                 "                    if i==3\n" +
                                 "                        break\n" +

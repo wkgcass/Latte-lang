@@ -27,6 +27,7 @@ package lt.repl;
 import lt.compiler.*;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
+import lt.lang.LtRuntimeException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -199,7 +201,7 @@ public class TestBugsInEval {
         public void testLayerControlSymbolWithoutEnd() throws Exception {
                 Object res = evaluator.eval("" +
                         "var count = 0\n" +
-                        "(1..10).forEach |- count+=it\n" +
+                        "(1 to 10).forEach |- count+=it\n" +
                         "count").result;
                 assertEquals(55, res);
 
@@ -299,7 +301,7 @@ public class TestBugsInEval {
                 } catch (Exception ex) {
                         Object res = e.eval("" +
                                 "var res = 0\n" +
-                                "(1..100).forEach { res += it }\n" +
+                                "(1 to 100).forEach { res += it }\n" +
                                 "res").result;
                         assertEquals(5050, res);
                 }
@@ -312,5 +314,18 @@ public class TestBugsInEval {
                         e.eval("" +
                                 "val i : Integer = 1\n" +
                                 "i == 1").result);
+        }
+
+        @Test
+        public void testInPrimitives() throws Exception {
+                Evaluator e = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
+                try {
+                        e.eval("" +
+                                "1 in 2"
+                        );
+                        fail();
+                } catch (InvocationTargetException ex) {
+                        assertTrue(ex.getTargetException() instanceof LtRuntimeException);
+                }
         }
 }

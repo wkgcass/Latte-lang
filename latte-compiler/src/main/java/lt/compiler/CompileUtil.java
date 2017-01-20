@@ -399,9 +399,6 @@ public class CompileUtil {
         }
 
         private static String[][] twoVar_priority = {
-                // 1..5 means [1,2,3,4,5]
-                // 1.:5 means [1,2,3,4]
-                {"..", ".:"},
                 // invokes concat(?)
                 {":::"},
                 {"^^"}, // pow

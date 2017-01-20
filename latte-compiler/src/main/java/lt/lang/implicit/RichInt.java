@@ -2,6 +2,7 @@ package lt.lang.implicit;
 
 import lt.lang.Implicit;
 import lt.lang.LtRuntime;
+import lt.lang.RangeList;
 
 /**
  * rich Integer
@@ -490,5 +491,19 @@ public class RichInt {
 
         public boolean xor(Boolean b) throws Throwable {
                 return LtRuntime.castToBool(i) ^ b;
+        }
+
+        /*
+         * =========
+         *   range
+         * =========
+         */
+
+        public RangeList to(Integer i) {
+                return new RangeList(this.i, i, true);
+        }
+
+        public RangeList until(Integer i) {
+                return new RangeList(this.i, i, false);
         }
 }

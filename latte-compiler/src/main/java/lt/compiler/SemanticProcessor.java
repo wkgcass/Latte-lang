@@ -5587,24 +5587,6 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link lt.lang.RangeList}
-         */
-        private SConstructorDef RangeListCons;
-
-        /**
-         * @return {@link lt.lang.RangeList}
-         * @throws SyntaxException exception
-         */
-        public SConstructorDef getRangeListCons() throws SyntaxException {
-                if (RangeListCons == null) {
-                        SClassDef cls = (SClassDef) getTypeWithName("lt.lang.RangeList", LineCol.SYNTHETIC);
-                        assert cls != null;
-                        RangeListCons = cls.constructors().get(0);
-                }
-                return RangeListCons;
-        }
-
-        /**
          * invoke method with given arguments<br>
          * <code>a.method(args)</code><br>
          * first find method candidates, if not found, then invoke dynamic<br>
@@ -5915,24 +5897,6 @@ public class SemanticProcessor {
          */
         public Value parseValueFromTwoVarOp(Value left, String op, Value right, SemanticScope scope, LineCol lineCol) throws SyntaxException {
                 switch (op) {
-                        case "..":
-                                Value intLeft = cast(IntTypeDef.get(), left, lineCol);
-                                Value intRight = cast(IntTypeDef.get(), right, lineCol);
-
-                                Ins.New n = new Ins.New(getRangeListCons(), lineCol);
-                                n.args().add(intLeft);
-                                n.args().add(intRight);
-                                n.args().add(new BoolValue(true)); // end_inclusive
-                                return n;
-                        case ".:":
-                                intLeft = cast(IntTypeDef.get(), left, lineCol);
-                                intRight = cast(IntTypeDef.get(), right, lineCol);
-
-                                n = new Ins.New(getRangeListCons(), lineCol);
-                                n.args().add(intLeft);
-                                n.args().add(intRight);
-                                n.args().add(new BoolValue(false)); // end_exclusive
-                                return n;
                         case ":::":
                                 List<Value> arg = new ArrayList<>();
                                 arg.add(right);
@@ -6112,6 +6076,9 @@ public class SemanticProcessor {
                         case "in":
                                 List<Value> args = new ArrayList<>();
                                 args.add(left);
+                                if (right.type() instanceof PrimitiveTypeDef) {
+                                        right = boxPrimitive(right, lineCol);
+                                }
                                 return invokeMethodWithArgs(lineCol, right.type(), right, "contains", args, scope);
                         case "&":
                                 return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iand, LtRuntime.and, right, scope, lineCol);
