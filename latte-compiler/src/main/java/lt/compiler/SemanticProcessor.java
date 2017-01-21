@@ -3790,7 +3790,7 @@ public class SemanticProcessor {
          * @return retrieved Value or null if no initValue is assigned
          * @throws SyntaxException compile error
          */
-        public Value parseInsFromVariableDef(VariableDef variableDef, SemanticScope scope) throws SyntaxException {
+        public Value parseValueFromVariableDef(VariableDef variableDef, SemanticScope scope) throws SyntaxException {
                 List<Import> imports = fileNameToImport.get(variableDef.line_col().fileName);
 
                 STypeDef type = variableDef.getType() == null
@@ -4021,6 +4021,136 @@ public class SemanticProcessor {
                 return pointingType;
         }
 
+        private SMethodDef LtRuntime_destruct;
+
+        public SMethodDef getLtRuntime_destruct() throws SyntaxException {
+                if (LtRuntime_destruct == null) {
+                        SClassDef c = (SClassDef) getTypeWithName("lt.lang.LtRuntime", LineCol.SYNTHETIC);
+                        assert c != null;
+                        for (SMethodDef m : c.methods()) {
+                                if (m.name().equals("destruct")) {
+                                        LtRuntime_destruct = m;
+                                        break;
+                                }
+                        }
+                }
+                assert LtRuntime_destruct != null;
+                return LtRuntime_destruct;
+        }
+
+        private SMethodDef List_get;
+
+        public SMethodDef getList_get() throws SyntaxException {
+                if (List_get == null) {
+                        SInterfaceDef ListDef = (SInterfaceDef) getTypeWithName("java.util.List", LineCol.SYNTHETIC);
+                        for (SMethodDef m : ListDef.methods()) {
+                                if (m.name().equals("get") && m.getParameters().size() == 1
+                                        && m.getParameters().get(0).type().equals(IntTypeDef.get())) {
+                                        List_get = m;
+                                        break;
+                                }
+                        }
+                }
+                assert List_get != null;
+                return List_get;
+        }
+
+        /**
+         * parse destruct
+         *
+         * @param destruct AST destruct
+         * @param scope    scope
+         * @return bool result
+         */
+        public Value parseValueFromDestruct(AST.Destruct destruct, SemanticScope scope) throws SyntaxException {
+                // imports
+                List<Import> imports = fileNameToImport.get(destruct.line_col().fileName);
+
+                // init value pack
+                ValuePack pack = new ValuePack(true);
+
+                // define variables
+                for (AST.Pattern p : destruct.pattern.subPatterns) {
+                        assert (p instanceof AST.Pattern_Default || p instanceof AST.Pattern_Define);
+
+                        if (p instanceof AST.Pattern_Default) continue;
+                        AST.Pattern_Define pd = (AST.Pattern_Define) p;
+
+                        STypeDef type = getTypeWithAccess(new AST.Access(pd.type, "*", destruct.line_col()), imports);
+
+                        LocalVariable localVariable = new LocalVariable(type, true); // default can change
+                        scope.putLeftValue(pd.name, localVariable);
+
+                        Ins.TStore storePtr = new Ins.TStore(localVariable,
+                                constructPointer(false, false), scope, LineCol.SYNTHETIC, err);
+                        pack.instructions().add(storePtr);
+                }
+
+                // unapply result list local variable
+                LocalVariable listLocalVar = new LocalVariable(getTypeWithName("java.util.List", LineCol.SYNTHETIC), false);
+                scope.putLeftValue(scope.generateTempName(), listLocalVar);
+
+                // get result list
+                Ins.InvokeStatic getResList = new Ins.InvokeStatic(getLtRuntime_destruct(), destruct.line_col());
+                getResList.arguments().add(new IntValue(destruct.pattern.subPatterns.size())); // count
+                getResList.arguments().add(new Ins.GetClass(getTypeWithAccess(destruct.pattern.type, imports),
+                        (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC))); // destructClass
+                getResList.arguments().add(parseValueFromExpression(destruct.exp, null, scope)); // o
+                getResList.arguments().add(new Ins.GetClass(scope.type(),
+                        (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC))); // invoker
+
+                // store result list
+                Ins.TStore storeList = new Ins.TStore(listLocalVar,
+                        getResList, scope, LineCol.SYNTHETIC, err);
+                pack.instructions().add(storeList);
+
+                // init bool result value
+                LocalVariable boolResult = new LocalVariable(BoolTypeDef.get(), true);
+                scope.putLeftValue(scope.generateTempName(), boolResult);
+                Ins.TStore storeBoolResult = new Ins.TStore(boolResult, new BoolValue(false), scope, LineCol.SYNTHETIC, err);
+                pack.instructions().add(storeBoolResult);
+
+                // check list is null ?
+                Ins.Nop flagWhenEnd = new Ins.Nop();
+                // is null jump to flagWhenListIsNull
+                Ins.IfNull ifNull = new Ins.IfNull(new Ins.TLoad(listLocalVar, scope, LineCol.SYNTHETIC),
+                        flagWhenEnd, LineCol.SYNTHETIC);
+                pack.instructions().add(ifNull);
+
+                int index = -1;
+                for (AST.Pattern p : destruct.pattern.subPatterns) {
+                        ++index;
+                        if (p instanceof AST.Pattern_Default) continue;
+                        assert p instanceof AST.Pattern_Define;
+
+                        // assign value
+                        AST.Pattern_Define define = (AST.Pattern_Define) p;
+                        LeftValue leftValue = scope.getLeftValue(define.name);
+
+                        // List#get(int)
+                        SMethodDef get = getList_get();
+                        Ins.InvokeInterface invokeInterface = new Ins.InvokeInterface(
+                                new Ins.TLoad(listLocalVar, scope, destruct.line_col()),
+                                get, destruct.line_col());
+                        invokeInterface.arguments().add(new IntValue(index));
+
+                        pack.instructions().add(invokePointerSet(
+                                new Ins.TLoad(leftValue, scope, LineCol.SYNTHETIC),
+                                invokeInterface, destruct.line_col()
+                        ));
+                }
+
+                // store result as true
+                pack.instructions().add(new Ins.TStore(boolResult, new BoolValue(true), scope, LineCol.SYNTHETIC, err));
+
+                // flag when end
+                pack.instructions().add(flagWhenEnd);
+
+                // get result
+                pack.instructions().add(new Ins.TLoad(boolResult, scope, LineCol.SYNTHETIC));
+                return pack;
+        }
+
         /**
          * parse value from expression<br>
          * <ul>
@@ -4167,7 +4297,9 @@ public class SemanticProcessor {
                 } else if (exp instanceof VariableDef) {
                         // variable def
                         // putField/putStatic/TStore
-                        v = parseInsFromVariableDef((VariableDef) exp, scope);
+                        v = parseValueFromVariableDef((VariableDef) exp, scope);
+                } else if (exp instanceof AST.Destruct) {
+                        v = parseValueFromDestruct((AST.Destruct) exp, scope);
                 } else if (exp instanceof AST.Invocation) {
                         // parse invocation
                         // the result can be invokeXXX or new

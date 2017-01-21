@@ -34,6 +34,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -746,6 +747,35 @@ public class LtRuntime {
         public static int getHashCode(Object o) {
                 if (o == null) return 0;
                 return o.hashCode();
+        }
+
+        /**
+         * destruct the object into a list of values
+         *
+         * @param count         destruct result size count
+         * @param destructClass the class that defines method `unapply(o)`
+         * @param o             the object to destruct
+         * @param invoker       the caller class
+         * @return a list of values
+         * @throws Throwable any exceptions
+         */
+        public static List<?> destruct(int count, Class<?> destructClass, Object o, Class<?> invoker) throws Throwable {
+                Method method = Dynamic.findMethod(invoker, destructClass, null, "unapply", new boolean[1], new Object[]{o});
+                if (method == null)
+                        throw new LtRuntimeException("cannot unapply " + (o == null ? "null" : o.getClass().getName()) + " with " + destructClass.getName());
+                if (!List.class.isAssignableFrom(method.getReturnType()) && !method.getReturnType().isAssignableFrom(List.class))
+                        throw new LtRuntimeException("unapply result should be java::util::List");
+                List<?> res;
+                try {
+                        Object r = method.invoke(null, o);
+                        if (r instanceof List) {
+                                res = (List<?>) r;
+                        } else throw new LtRuntimeException("unapply result is not List");
+                } catch (InvocationTargetException e) {
+                        throw e.getTargetException();
+                }
+                if (res.size() != count) return null;
+                return res;
         }
 
         private static final Map<String, Object> requiredObjects = new HashMap<>();

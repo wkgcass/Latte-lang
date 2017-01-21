@@ -471,6 +471,34 @@ public class Ins {
         }
 
         /**
+         * ifNull ( = null )
+         */
+        public static class IfNull implements Instruction {
+                private final Value object;
+                private final Instruction gotoIns;
+                private final LineCol lineCol;
+
+                public IfNull(Value object, Instruction gotoIns, LineCol lineCol) {
+                        this.object = object;
+                        this.gotoIns = gotoIns;
+                        this.lineCol = lineCol;
+                }
+
+                public Value object() {
+                        return object;
+                }
+
+                public Instruction gotoIns() {
+                        return gotoIns;
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return lineCol;
+                }
+        }
+
+        /**
          * instanceof
          */
         public static class InstanceOf implements Instruction, Value {

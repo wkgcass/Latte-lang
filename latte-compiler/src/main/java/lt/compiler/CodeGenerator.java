@@ -1472,6 +1472,17 @@ public class CodeGenerator {
                         }
                         methodVisitor.visitJumpInsn(Opcodes.IFNONNULL, l);
                         info.pop(1);
+                } else if (ins instanceof Ins.IfNull) {
+                        buildValueAccess(methodVisitor, info, ((Ins.IfNull) ins).object(), true);
+                        Label l;
+                        if (info.insToLabel.containsKey(((Ins.IfNull) ins).gotoIns())) {
+                                l = info.insToLabel.get(((Ins.IfNull) ins).gotoIns()).label;
+                        } else {
+                                l = new Label();
+                                info.insToLabel.put(((Ins.IfNull) ins).gotoIns(), new CodeInfo.Container(l));
+                        }
+                        methodVisitor.visitJumpInsn(Opcodes.IFNULL, l);
+                        info.pop(1);
                 } else if (ins instanceof Ins.IfACmpNe) {
                         buildValueAccess(methodVisitor, info, ((Ins.IfACmpNe) ins).value1(), true);
                         buildValueAccess(methodVisitor, info, ((Ins.IfACmpNe) ins).value2(), true);

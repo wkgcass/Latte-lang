@@ -3437,4 +3437,19 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals(Map.Entry.class, method.invoke(null));
         }
+
+        @Test
+        public void testDestruct() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestDestruct\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            res = X(a,b) <- [1,2]\n" +
+                                "            return [res, a,b]\n" +
+                                "class X\n" +
+                                "    static unapply(ls)=ls"
+                        , "TestDestruct");
+                Method method = cls.getMethod("method");
+                assertEquals(Arrays.asList(true, 1, 2), method.invoke(null));
+        }
 }
