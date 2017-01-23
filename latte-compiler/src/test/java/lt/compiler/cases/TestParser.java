@@ -2341,7 +2341,10 @@ public class TestParser {
                         "List(a,b) <- [1,2]\n" +
                         "B() <- 123\n" +
                         "C <- 456\n" +
-                        "D(d, _) <- 789"
+                        "D(d, _) <- 789\n" +
+                        "() <- 101\n" +
+                        "(e,f) <- 102\n" +
+                        "(g,_) <- 103"
                 );
                 assertEquals(Arrays.asList(
                         new AST.Destruct(
@@ -2380,6 +2383,36 @@ public class TestParser {
                                         )
                                 ),
                                 new NumberLiteral("789", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Destruct(
+                                new AST.Pattern_Destruct(
+                                        null,
+                                        Collections.emptyList()
+                                ),
+                                new NumberLiteral("101", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Destruct(
+                                new AST.Pattern_Destruct(
+                                        null,
+                                        Arrays.asList(
+                                                new AST.Pattern_Define("e", null),
+                                                new AST.Pattern_Define("f", null)
+                                        )
+                                ),
+                                new NumberLiteral("102", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Destruct(
+                                new AST.Pattern_Destruct(
+                                        null,
+                                        Arrays.asList(
+                                                new AST.Pattern_Define("g", null),
+                                                AST.Pattern_Default.get()
+                                        )
+                                ),
+                                new NumberLiteral("103", LineCol.SYNTHETIC),
                                 LineCol.SYNTHETIC
                         )
                 ), stmts);

@@ -3557,4 +3557,21 @@ public class TestCodeGen {
                         1, 2L, 'c', 4d
                 ), method.invoke(null));
         }
+
+        @Test
+        public void testDestructWithoutType() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestDestructWithoutType\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            val bean = Bean(1,2 as long, 'c', 4 as double)\n" +
+                                "            (a,b,c,d) <- bean\n" +
+                                "            [a,b,c,d]\n" +
+                                "data class Bean(a,b,c,d)"
+                        , "TestDestructWithoutType");
+                Method method = cls.getMethod("method");
+                assertEquals(Arrays.asList(
+                        1, 2L, 'c', 4d
+                ), method.invoke(null));
+        }
 }

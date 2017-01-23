@@ -469,6 +469,28 @@ public class CompileUtil {
                 return "<-".equals(s);
         }
 
+        public static boolean isDestructingWithoutType(Element e) {
+                // previous node is not TypeName
+                if (e.previous() != null && e.previous().getTokenType() == TokenType.VALID_NAME) return false;
+                // (......)
+                if (!e.getContent().equals("(")) return false;
+                if (e.next() instanceof Element) {
+                        e = (Element) e.next();
+                } else if (e.next() instanceof ElementStartNode) {
+                        Node n = e.next();
+                        if (n.next() instanceof EndingNode) n = n.next();
+                        if (!(n.next() instanceof Element)) return false;
+                        e = (Element) n.next();
+                } else return false;
+                if (!e.getContent().equals(")")) return false;
+
+                // <-
+                if (!(e.next() instanceof Element)) return false;
+                if (!((Element) e.next()).getContent().equals("<-")) return false;
+                //
+                return true;
+        }
+
         public static boolean isSync(Element elem) {
                 String content = elem.getContent();
                 if (content.equals("synchronized")) {

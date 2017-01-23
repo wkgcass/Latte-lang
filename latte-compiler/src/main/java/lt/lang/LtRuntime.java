@@ -761,9 +761,10 @@ public class LtRuntime {
          */
         public static List<?> destruct(int count, Class<?> destructClass, Object o, Class<?> invoker) throws Throwable {
                 if (o == null) throw new LtRuntimeException("null cannot be destructed");
+                if (destructClass == null) destructClass = o.getClass();
                 Method method = Dynamic.findMethod(invoker, destructClass, null, "unapply", new boolean[1], new Object[]{o});
                 if (method == null)
-                        throw new LtRuntimeException("cannot unapply " + (o == null ? "null" : o.getClass().getName()) + " with " + destructClass.getName());
+                        throw new LtRuntimeException("cannot unapply " + o.getClass().getName() + " with " + destructClass.getName());
                 if (!List.class.isAssignableFrom(method.getReturnType()) && !method.getReturnType().isAssignableFrom(List.class))
                         throw new LtRuntimeException("unapply result should be java::util::List");
                 List<?> res;

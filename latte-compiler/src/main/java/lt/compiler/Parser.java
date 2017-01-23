@@ -1934,6 +1934,12 @@ public class Parser {
 
                                                         parse_destructing();
 
+                                                } else if (isDestructingWithoutType((Element) current)) {
+                                                        annosIsEmpty();
+                                                        modifiersIsEmpty();
+
+                                                        parse_destructing_withoutType();
+
                                                 } else if (content.equals("(")) {
                                                         annosIsEmpty();
                                                         modifiersIsEmpty();
@@ -2100,6 +2106,72 @@ public class Parser {
                 // else
         }
 
+        /**
+         * parse destructing without type
+         */
+        private void parse_destructing_withoutType() throws SyntaxException {
+                nextNode(false);
+                if (current instanceof Element) {
+                        // )
+                        nextNode(false);
+                        // <-
+                        LineCol lineCol = current.getLineCol();
+
+                        Expression exp = next_exp(false);
+                        parsedExps.push(new AST.Destruct(
+                                new AST.Pattern_Destruct(null, Collections.emptyList()), exp, lineCol
+                        ));
+                } else {
+                        // element start node
+                        ElementStartNode esn = (ElementStartNode) current;
+                        nextNode(false);
+                        // )
+                        nextNode(false);
+                        // <-
+                        LineCol lineCol = current.getLineCol();
+
+                        Expression exp = next_exp(false);
+
+                        List<AST.Pattern> patterns = parse_destructing_withoutType$patterns(esn);
+                        parsedExps.push(new AST.Destruct(
+                                new AST.Pattern_Destruct(null, patterns), exp, lineCol
+                        ));
+                }
+        }
+
+        private List<AST.Pattern> parse_destructing_withoutType$patterns(ElementStartNode esn) throws SyntaxException {
+                List<AST.Pattern> patternList = new ArrayList<>();
+                Node n = esn.getLinkedNode();
+                while (n != null) {
+                        if (n instanceof Element) {
+                                Element e = (Element) n;
+                                if (e.getTokenType() != TokenType.VALID_NAME) {
+                                        err.UnexpectedTokenException("valid name", n.toString(), n.getLineCol());
+                                        n = n.next();
+                                        continue;
+                                }
+                                if (e.getContent().equals("_")) {
+                                        patternList.add(AST.Pattern_Default.get());
+                                        n = n.next();
+                                        continue;
+                                }
+                                if (usedVarNames.contains(e.getContent())) {
+                                        err.DuplicateVariableNameException(e.getContent(), n.getLineCol());
+                                        n = n.next();
+                                        continue;
+                                }
+                                patternList.add(new AST.Pattern_Define(e.getContent(), null));
+                        } else if (!(n instanceof EndingNode)) {
+                                err.UnexpectedTokenException("valid name", n.toString(), n.getLineCol());
+                        }
+                        n = n.next();
+                }
+                return patternList;
+        }
+
+        /**
+         * parse destructing
+         */
         private void parse_destructing() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
                 String content = ((Element) current).getContent();

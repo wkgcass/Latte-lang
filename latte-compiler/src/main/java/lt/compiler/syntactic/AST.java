@@ -504,7 +504,7 @@ public class AST {
 
                         Pattern_Destruct that = (Pattern_Destruct) o;
 
-                        if (!type.equals(that.type)) return false;
+                        if (type != null ? !type.equals(that.type) : that.type != null) return false;
                         //
                         return subPatterns.equals(that.subPatterns);
 
@@ -513,7 +513,7 @@ public class AST {
                 @Override
                 public int hashCode() {
                         int result = super.hashCode();
-                        result = 31 * result + type.hashCode();
+                        result = 31 * result + (type != null ? type.hashCode() : 0);
                         result = 31 * result + subPatterns.hashCode();
                         return result;
                 }

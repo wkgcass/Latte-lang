@@ -4171,8 +4171,13 @@ public class SemanticProcessor {
                 // get result list
                 Ins.InvokeStatic getResList = new Ins.InvokeStatic(getLtRuntime_destruct(), destruct.line_col());
                 getResList.arguments().add(new IntValue(destruct.pattern.subPatterns.size())); // count
-                getResList.arguments().add(new Ins.GetClass(getTypeWithAccess(destruct.pattern.type, imports),
-                        (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC))); // destructClass
+                // destructClass
+                if (destruct.pattern.type == null) {
+                        getResList.arguments().add(NullValue.get());
+                } else {
+                        getResList.arguments().add(new Ins.GetClass(getTypeWithAccess(destruct.pattern.type, imports),
+                                (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                }
                 getResList.arguments().add(parseValueFromExpression(destruct.exp, null, scope)); // o
                 getResList.arguments().add(new Ins.GetClass(scope.type(),
                         (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC))); // invoker
