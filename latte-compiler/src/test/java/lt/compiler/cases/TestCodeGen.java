@@ -3452,4 +3452,92 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals(Arrays.asList(true, 1, 2), method.invoke(null));
         }
+
+        @Test
+        public void testDestructIf() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestDestructIf\n" +
+                                "    static\n" +
+                                "        def method(o)\n" +
+                                "            if X(a,b) <- o\n" +
+                                "                return [a,b]\n" +
+                                "            return null\n" +
+                                "class X\n" +
+                                "    static unapply(ls)=ls"
+                        , "TestDestructIf");
+                Method method = cls.getMethod("method", Object.class);
+                List ls = (List) method.invoke(null, Arrays.asList(1, 2));
+                assertEquals(Arrays.asList(1, 2), ls);
+                ls = (List) method.invoke(null, Collections.singletonList(1));
+                assertNull(ls);
+                ls = (List) method.invoke(null, Arrays.asList(1, 2, 3));
+                assertNull(ls);
+        }
+
+        @Test
+        public void testDestructClassField() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestDestructClassField\n" +
+                                "    X(a,b)<-[1,2]\n" +
+                                "class X\n" +
+                                "    static unapply(ls)=ls\n"
+                        , "TestDestructClassField");
+                Object o = cls.newInstance();
+                Field aField = cls.getDeclaredField("a");
+                aField.setAccessible(true);
+                Field bField = cls.getDeclaredField("b");
+                bField.setAccessible(true);
+                assertEquals(1, aField.get(o));
+                assertEquals(2, bField.get(o));
+        }
+
+        @Test
+        public void testDestructClassStatic() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestDestructClassStatic\n" +
+                                "    static\n" +
+                                "        X(a,b)<-[1,2]\n" +
+                                "class X\n" +
+                                "    static unapply(ls)=ls\n"
+                        , "TestDestructClassStatic");
+                Field aField = cls.getDeclaredField("a");
+                aField.setAccessible(true);
+                Field bField = cls.getDeclaredField("b");
+                bField.setAccessible(true);
+                assertEquals(1, aField.get(null));
+                assertEquals(2, bField.get(null));
+        }
+
+        @Test
+        public void testDestructInterfaceField() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "interface TestDestructInterfaceField\n" +
+                                "    X(a,b)<-[1,2]\n" +
+                                "class X\n" +
+                                "    static unapply(ls)=ls\n"
+                        , "TestDestructInterfaceField");
+                Field aField = cls.getDeclaredField("a");
+                aField.setAccessible(true);
+                Field bField = cls.getDeclaredField("b");
+                bField.setAccessible(true);
+                assertEquals(1, aField.get(null));
+                assertEquals(2, bField.get(null));
+        }
+
+        @Test
+        public void testDestructInterfaceStatic() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "interface TestDestructInterfaceStatic\n" +
+                                "    static\n" +
+                                "        X(a,b)<-[1,2]\n" +
+                                "class X\n" +
+                                "    static unapply(ls)=ls\n"
+                        , "TestDestructInterfaceStatic");
+                Field aField = cls.getDeclaredField("a");
+                aField.setAccessible(true);
+                Field bField = cls.getDeclaredField("b");
+                bField.setAccessible(true);
+                assertEquals(1, aField.get(null));
+                assertEquals(2, bField.get(null));
+        }
 }

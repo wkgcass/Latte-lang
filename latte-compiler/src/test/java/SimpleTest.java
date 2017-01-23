@@ -15,17 +15,16 @@ import java.util.Set;
  */
 public class SimpleTest {
         public static void main(String[] args) throws Exception {
-                System.out.println(((int)(char)-123));
-                /*
                 ErrorManager err = new ErrorManager(true);
 
                 StringBuilder sb = new StringBuilder();
                 sb.append("" +
-                        "import implicit X\n" +
+                        "class X\n" +
+                        "    static unapply(ls)=ls\n" +
                         "class hehe\n" +
-                        "@Implicit\n" +
-                        "class X(x:Integer)\n" +
-                        "    def s = x + ' s'\n");
+                        "    if X(a,b) <- [1,2]\n" +
+                        "        println(a)"
+                );
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
@@ -41,7 +40,6 @@ public class SimpleTest {
                 fos.write(b);
                 fos.flush();
                 fos.close();
-                */
         }
 
         public static boolean test() {

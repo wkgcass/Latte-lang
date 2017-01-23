@@ -723,6 +723,8 @@ public class SemanticProcessor {
 
                                         } else if (stmt instanceof AST.StaticScope) {
                                                 staticScopes.add((AST.StaticScope) stmt);
+                                        } else if (stmt instanceof AST.Destruct) {
+                                                parseFieldsFromDestruct((AST.Destruct) stmt, sInterfaceDef, true);
                                         } else {
                                                 err.SyntaxException("interfaces don't have initiators", stmt.line_col());
                                                 return;
@@ -749,7 +751,8 @@ public class SemanticProcessor {
                                                                 // record the method
                                                                 methodToStatements.put(lastMethod, m.body);
                                                         }
-
+                                                } else if (stmt instanceof AST.Destruct) {
+                                                        parseFieldsFromDestruct((AST.Destruct) stmt, sInterfaceDef, true);
                                                 } else {
                                                         err.SyntaxException("interfaces don't have initiators", stmt.line_col());
                                                         return;
@@ -918,6 +921,8 @@ public class SemanticProcessor {
                                         // record the method
                                         methodToStatements.put(lastMethod, methodDef.body);
                                 }
+                        } else if (stmt instanceof AST.Destruct) {
+                                parseFieldsFromDestruct((AST.Destruct) stmt, sClassDef, false);
                         }
                 }
                 // get static field and methods
@@ -944,6 +949,8 @@ public class SemanticProcessor {
                                                 // record the method
                                                 methodToStatements.put(lastMethod, methodDef.body);
                                         }
+                                } else if (stmt instanceof AST.Destruct) {
+                                        parseFieldsFromDestruct((AST.Destruct) stmt, sClassDef, true);
                                 }
                         }
                 }
@@ -1342,14 +1349,27 @@ public class SemanticProcessor {
                                 // parse static
                                 SemanticScope staticScope = new SemanticScope(scope);
                                 for (Statement statement : astInterface.statements) {
-                                        parseStatement(
-                                                statement,
-                                                VoidType.get(),
-                                                staticScope,
-                                                sInterfaceDef.staticStatements(),
-                                                sInterfaceDef.staticExceptionTable(),
-                                                null, null,
-                                                true);
+                                        if (statement instanceof AST.StaticScope) {
+                                                for (Statement statementInStatic : ((AST.StaticScope) statement).statements) {
+                                                        parseStatement(
+                                                                statementInStatic,
+                                                                VoidType.get(),
+                                                                staticScope,
+                                                                sInterfaceDef.staticStatements(),
+                                                                sInterfaceDef.staticExceptionTable(),
+                                                                null, null,
+                                                                true);
+                                                }
+                                        } else {
+                                                parseStatement(
+                                                        statement,
+                                                        VoidType.get(),
+                                                        staticScope,
+                                                        sInterfaceDef.staticStatements(),
+                                                        sInterfaceDef.staticExceptionTable(),
+                                                        null, null,
+                                                        true);
+                                        }
                                 }
                         } else throw new LtBug("wrong STypeDefType " + sTypeDef.getClass());
                 }
@@ -3422,6 +3442,20 @@ public class SemanticProcessor {
                 }
         }
 
+        private void parseStatementPartOfIf(AST.If.IfPair ifPair, STypeDef methodReturnType,
+                                            SemanticScope ifScope, List<ExceptionTable> exceptionTable,
+                                            Ins.Nop breakIns, Ins.Nop continueIns,
+                                            List<Instruction> ins) throws SyntaxException {
+                for (Statement stmt : ifPair.body) {
+                        parseStatement(
+                                stmt,
+                                methodReturnType,
+                                ifScope,
+                                ins,
+                                exceptionTable, breakIns, continueIns, false);
+                }
+        }
+
         /**
          * parse if<br><br>
          * <pre>
@@ -3474,19 +3508,15 @@ public class SemanticProcessor {
                         SemanticScope ifScope = new SemanticScope(scope);
                         List<Instruction> instructionList = new ArrayList<>();
 
-                        List<Instruction> ins = new ArrayList<>();
-                        for (Statement stmt : ifPair.body) {
-                                parseStatement(
-                                        stmt,
-                                        methodReturnType,
-                                        ifScope,
-                                        ins,
-                                        exceptionTable, breakIns, continueIns, false);
-                        }
-
                         if (ifPair.condition == null) {
                                 // it's else
-                                instructionList.addAll(ins);
+                                parseStatementPartOfIf(ifPair,
+                                        methodReturnType,
+                                        ifScope,
+                                        exceptionTable,
+                                        breakIns, continueIns,
+                                        instructionList
+                                );
                         } else {
                                 // if/elseif
 
@@ -3496,7 +3526,13 @@ public class SemanticProcessor {
                                 Value condition = parseValueFromExpression(ifPair.condition, BoolTypeDef.get(), ifScope);
                                 Ins.IfEq ifEq = new Ins.IfEq(condition, thisNop, ifPair.condition.line_col());
                                 instructionList.add(ifEq); // a ifEq (a!=true) goto nop
-                                instructionList.addAll(ins); // A
+                                parseStatementPartOfIf(ifPair,
+                                        methodReturnType,
+                                        ifScope,
+                                        exceptionTable,
+                                        breakIns, continueIns,
+                                        instructionList
+                                ); // A
                                 instructionList.add(gotoNop); // goto nop
                                 instructionList.add(thisNop); // nop1
                         }
@@ -4069,6 +4105,7 @@ public class SemanticProcessor {
                 // init value pack
                 ValuePack pack = new ValuePack(true);
 
+                Map<String, SFieldDef> nameToField = new HashMap<>(); // not used when pattern variables are defined as local variables
                 // define variables
                 for (AST.Pattern p : destruct.pattern.subPatterns) {
                         assert (p instanceof AST.Pattern_Default || p instanceof AST.Pattern_Define);
@@ -4076,14 +4113,20 @@ public class SemanticProcessor {
                         if (p instanceof AST.Pattern_Default) continue;
                         AST.Pattern_Define pd = (AST.Pattern_Define) p;
 
-                        STypeDef type = getTypeWithAccess(new AST.Access(pd.type, "*", destruct.line_col()), imports);
+                        SFieldDef f = findFieldFromTypeDef(pd.name, scope.type(), scope.type(),
+                                scope.getThis() == null ? FIND_MODE_STATIC : FIND_MODE_NON_STATIC, true);
+                        if (f == null) {
+                                STypeDef type = getTypeWithAccess(new AST.Access(pd.type, "*", destruct.line_col()), imports);
 
-                        LocalVariable localVariable = new LocalVariable(type, true); // default can change
-                        scope.putLeftValue(pd.name, localVariable);
+                                LocalVariable localVariable = new LocalVariable(type, true); // default can change
+                                scope.putLeftValue(pd.name, localVariable);
 
-                        Ins.TStore storePtr = new Ins.TStore(localVariable,
-                                constructPointer(false, false), scope, LineCol.SYNTHETIC, err);
-                        pack.instructions().add(storePtr);
+                                Ins.TStore storePtr = new Ins.TStore(localVariable,
+                                        constructPointer(false, false), scope, LineCol.SYNTHETIC, err);
+                                pack.instructions().add(storePtr);
+                        } else {
+                                nameToField.put(pd.name, f);
+                        }
                 }
 
                 // unapply result list local variable
@@ -4134,10 +4177,32 @@ public class SemanticProcessor {
                                 get, destruct.line_col());
                         invokeInterface.arguments().add(new IntValue(index));
 
-                        pack.instructions().add(invokePointerSet(
-                                new Ins.TLoad(leftValue, scope, LineCol.SYNTHETIC),
-                                invokeInterface, destruct.line_col()
-                        ));
+                        // set value
+                        if (nameToField.containsKey(((AST.Pattern_Define) p).name)) {
+                                if (scope.getThis() == null) {
+                                        pack.instructions().add(
+                                                new Ins.PutStatic(
+                                                        nameToField.get(((AST.Pattern_Define) p).name),
+                                                        invokeInterface,
+                                                        LineCol.SYNTHETIC, err)
+                                        );
+                                } else {
+                                        SFieldDef f = nameToField.get(((AST.Pattern_Define) p).name);
+                                        pack.instructions().add(
+                                                new Ins.PutField(
+                                                        f,
+                                                        scope.getThis(),
+                                                        invokeInterface,
+                                                        LineCol.SYNTHETIC, err)
+                                        );
+                                        f.assign();
+                                }
+                        } else {
+                                pack.instructions().add(invokePointerSet(
+                                        new Ins.TLoad(leftValue, scope, LineCol.SYNTHETIC),
+                                        invokeInterface, destruct.line_col()
+                                ));
+                        }
                 }
 
                 // store result as true
@@ -9184,6 +9249,38 @@ public class SemanticProcessor {
                         );
 
                         invokable.getParameters().add(param);
+                }
+        }
+
+        /**
+         * parse fields from Destruct
+         *
+         * @param d        destruct ast object
+         * @param type     the type to add
+         * @param isStatic whether is static
+         * @throws SyntaxException exception
+         */
+        public void parseFieldsFromDestruct(AST.Destruct d, STypeDef type, boolean isStatic) throws SyntaxException {
+                for (AST.Pattern p : d.pattern.subPatterns) {
+                        if (p instanceof AST.Pattern_Default) continue;
+                        assert p instanceof AST.Pattern_Define;
+
+                        AST.Pattern_Define pd = (AST.Pattern_Define) p;
+                        SFieldDef fieldDef = new SFieldDef(LineCol.SYNTHETIC);
+                        fieldDef.setName(pd.name);
+                        fieldDef.setType(getObject_Class());
+                        fieldDef.setDeclaringType(type);
+                        if (isStatic) {
+                                fieldDef.modifiers().add(SModifier.STATIC);
+                        }
+                        if (type instanceof SInterfaceDef) {
+                                fieldDef.modifiers().add(SModifier.PUBLIC);
+                                fieldDef.modifiers().add(SModifier.FINAL);
+                                ((SInterfaceDef) type).fields().add(fieldDef);
+                        } else if (type instanceof SClassDef) {
+                                fieldDef.modifiers().add(SModifier.PRIVATE);
+                                ((SClassDef) type).fields().add(fieldDef);
+                        } else throw new LtBug(type.getClass().getSimpleName() + " not allowed here");
                 }
         }
 
