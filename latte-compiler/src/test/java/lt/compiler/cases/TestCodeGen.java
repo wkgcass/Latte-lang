@@ -3540,4 +3540,21 @@ public class TestCodeGen {
                 assertEquals(1, aField.get(null));
                 assertEquals(2, bField.get(null));
         }
+
+        @Test
+        public void testDestructDataClass() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestDestructDataClass\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            val bean = Bean(1,2 as long,'c',4 as double)\n" +
+                                "            Bean(a,b,c,d) <- bean\n" +
+                                "            [a,b,c,d]\n" +
+                                "data class Bean(a,b,c,d)"
+                        , "TestDestructDataClass");
+                Method method = cls.getMethod("method");
+                assertEquals(Arrays.asList(
+                        1, 2L, 'c', 4d
+                ), method.invoke(null));
+        }
 }

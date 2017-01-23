@@ -760,6 +760,7 @@ public class LtRuntime {
          * @throws Throwable any exceptions
          */
         public static List<?> destruct(int count, Class<?> destructClass, Object o, Class<?> invoker) throws Throwable {
+                if (o == null) throw new LtRuntimeException("null cannot be destructed");
                 Method method = Dynamic.findMethod(invoker, destructClass, null, "unapply", new boolean[1], new Object[]{o});
                 if (method == null)
                         throw new LtRuntimeException("cannot unapply " + (o == null ? "null" : o.getClass().getName()) + " with " + destructClass.getName());

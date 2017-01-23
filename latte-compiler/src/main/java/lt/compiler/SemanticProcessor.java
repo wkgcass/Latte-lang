@@ -1465,6 +1465,7 @@ public class SemanticProcessor {
         /**
          * override {@link Object#toString()} {@link Object#hashCode()} {@link Object#equals(Object)}
          * and generate g/setters for the data class
+         * and generate unapply
          *
          * @param cls the class should be data class
          * @throws SyntaxException compiling error
@@ -1484,6 +1485,7 @@ public class SemanticProcessor {
                 SMethodDef toStringOverride = null;
                 SMethodDef equalsOverride = null;
                 SMethodDef hashCodeOverride = null;
+                SMethodDef unapply = null;
                 SConstructorDef zeroParamCons = null;
 
                 // get existing setters
@@ -1508,7 +1510,7 @@ public class SemanticProcessor {
                         }
                 }
 
-                // get existing equals(o)/toString()/hashCode()
+                // get existing equals(o)/toString()/hashCode()/unapply(?)
                 for (SMethodDef m : cls.methods()) {
                         if (m.name().equals("toString") && m.getParameters().size() == 0) toStringOverride = m;
                         if (m.name().equals("equals")
@@ -1516,6 +1518,8 @@ public class SemanticProcessor {
                                 && m.getParameters().get(0).type().fullName().equals("java.lang.Object"))
                                 equalsOverride = m;
                         if (m.name().equals("hashCode") && m.getParameters().size() == 0) hashCodeOverride = m;
+                        if (m.name().equals("unapply") && m.getParameters().size() == 1
+                                && m.getParameters().get(0).type().isAssignableFrom(cls)) unapply = m;
                 }
 
                 // get existing zero param constructor
@@ -1830,6 +1834,37 @@ public class SemanticProcessor {
                                 parseStatement(stmt, setter.getReturnType(), setterScope, setter.statements(),
                                         setter.exceptionTables(), null, null, false);
                         }
+                }
+                if (unapply == null) {
+                        unapply = new SMethodDef(LineCol.SYNTHETIC);
+                        unapply.setName("unapply");
+                        unapply.setDeclaringType(cls);
+                        unapply.setReturnType(getTypeWithName("java.util.List", LineCol.SYNTHETIC));
+                        unapply.modifiers().add(SModifier.PUBLIC);
+                        unapply.modifiers().add(SModifier.STATIC);
+                        cls.methods().add(unapply);
+
+                        SParameter p = new SParameter();
+                        p.setTarget(unapply);
+                        p.setName("o");
+                        p.setType(cls);
+                        unapply.getParameters().add(p);
+
+                        SemanticScope unapplyScope = new SemanticScope(new SemanticScope(cls));
+                        unapplyScope.putLeftValue("o", p);
+
+                        AST.Return ret = new AST.Return(
+                                new AST.ArrayExp(cls.fields().stream()
+                                        .map(f ->
+                                                new AST.Access(
+                                                        // o.f
+                                                        new AST.Access(null, "o", LineCol.SYNTHETIC),
+                                                        f.name(), LineCol.SYNTHETIC))
+                                        .collect(Collectors.toList()), LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        );
+                        parseStatement(ret, unapply.getReturnType(), unapplyScope, unapply.statements(),
+                                unapply.exceptionTables(), null, null, false);
                 }
         }
 
