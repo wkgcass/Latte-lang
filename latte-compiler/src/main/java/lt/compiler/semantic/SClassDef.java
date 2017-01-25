@@ -32,16 +32,13 @@ import java.util.List;
 /**
  * class definition
  */
-public class SClassDef extends STypeDef {
+public class SClassDef extends SRefTypeDef {
         public static final int OBJECT = 2;
         public static final int FUN = 1;
         public static final int NORMAL = 0;
 
         private final int type;
-        private final List<SModifier> modifiers = new ArrayList<>();
-        private final List<SFieldDef> fields = new ArrayList<>();
         private final List<SConstructorDef> constructors = new ArrayList<>();
-        private final List<SMethodDef> methods = new ArrayList<>();
         private SClassDef parent;
         private final List<SInterfaceDef> superInterfaces = new ArrayList<>();
         private final List<Instruction> staticStatements = new ArrayList<>();
@@ -58,20 +55,8 @@ public class SClassDef extends STypeDef {
                 this.parent = parent;
         }
 
-        public List<SModifier> modifiers() {
-                return modifiers;
-        }
-
-        public List<SFieldDef> fields() {
-                return fields;
-        }
-
         public List<SConstructorDef> constructors() {
                 return constructors;
-        }
-
-        public List<SMethodDef> methods() {
-                return methods;
         }
 
         public SClassDef parent() {

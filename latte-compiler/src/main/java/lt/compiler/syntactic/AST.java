@@ -322,12 +322,14 @@ public class AST {
 
         public static class Destruct implements Expression {
                 public final Set<Modifier> modifiers;
+                public final Set<Anno> annos;
                 public final Pattern_Destruct pattern;
                 public final Expression exp;
                 private final LineCol lineCol;
 
-                public Destruct(Set<Modifier> modifiers, Pattern_Destruct pattern, Expression exp, LineCol lineCol) {
+                public Destruct(Set<Modifier> modifiers, Set<Anno> annos, Pattern_Destruct pattern, Expression exp, LineCol lineCol) {
                         this.modifiers = modifiers;
+                        this.annos = annos;
                         this.pattern = pattern;
                         this.exp = exp;
                         this.lineCol = lineCol;
@@ -346,6 +348,7 @@ public class AST {
                         Destruct destruct = (Destruct) o;
 
                         if (!modifiers.equals(destruct.modifiers)) return false;
+                        if (!annos.equals(destruct.annos)) return false;
                         if (!pattern.equals(destruct.pattern)) return false;
                         //
                         return exp.equals(destruct.exp);
@@ -355,6 +358,7 @@ public class AST {
                 @Override
                 public int hashCode() {
                         int result = modifiers.hashCode();
+                        result = 31 * result + annos.hashCode();
                         result = 31 * result + pattern.hashCode();
                         result = 31 * result + exp.hashCode();
                         return result;
@@ -362,7 +366,7 @@ public class AST {
 
                 @Override
                 public String toString() {
-                        return "(" + modifiers + " " + pattern + " <- " + exp + ')';
+                        return "(" + annos + " " + modifiers + " " + pattern + " <- " + exp + ')';
                 }
         }
 

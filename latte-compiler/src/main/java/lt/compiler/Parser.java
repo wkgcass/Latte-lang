@@ -1935,7 +1935,6 @@ public class Parser {
                                                         }
 
                                                 } else if (isDestructingWithoutType((Element) current)) {
-                                                        annosIsEmpty();
 
                                                         parse_destructing_withoutType();
 
@@ -2048,7 +2047,6 @@ public class Parser {
                                                 if (isLambda((Element) current)) {
                                                         parse_lambda();
                                                 } else if (isDestructing((Element) current)) {
-                                                        annosIsEmpty();
 
                                                         parse_destructing();
 
@@ -2116,6 +2114,7 @@ public class Parser {
         private void parse_destructing_withoutType() throws SyntaxException {
                 nextNode(false);
                 Set<Modifier> theModifiers = getAndClear(modifiers);
+                Set<AST.Anno> theAnnos = getAndClear(annos);
                 if (current instanceof Element) {
                         // )
                         nextNode(false);
@@ -2125,6 +2124,7 @@ public class Parser {
                         Expression exp = next_exp(false);
                         parsedExps.push(new AST.Destruct(
                                 theModifiers,
+                                theAnnos,
                                 new AST.Pattern_Destruct(null, Collections.emptyList()), exp, lineCol
                         ));
                 } else {
@@ -2141,6 +2141,7 @@ public class Parser {
                         List<AST.Pattern> patterns = parse_destructing_withoutType$patterns(esn);
                         parsedExps.push(new AST.Destruct(
                                 theModifiers,
+                                theAnnos,
                                 new AST.Pattern_Destruct(null, patterns), exp, lineCol
                         ));
                 }
@@ -2185,7 +2186,7 @@ public class Parser {
                 parse_destructing_withoutType();
                 AST.Destruct de = (AST.Destruct) parsedExps.pop();
                 parsedExps.push(
-                        new AST.Destruct(de.modifiers,
+                        new AST.Destruct(de.modifiers, de.annos,
                                 new AST.Pattern_Destruct(type, de.pattern.subPatterns),
                                 de.exp, de.line_col())
                 );

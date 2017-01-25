@@ -2346,10 +2346,12 @@ public class TestParser {
                         "(e,f) <- 102\n" +
                         "(g,_) <- 103\n" +
                         "var (h,_) <- 104\n" +
-                        "val (i,j) <- 105"
+                        "val (i,j) <- 105\n" +
+                        "@Anno\n(k,l) <- 106"
                 );
                 assertEquals(Arrays.asList(
                         new AST.Destruct(
+                                Collections.emptySet(),
                                 Collections.emptySet(),
                                 new AST.Pattern_Destruct(
                                         new AST.Access(null, "List", LineCol.SYNTHETIC),
@@ -2362,6 +2364,7 @@ public class TestParser {
                                 ), LineCol.SYNTHETIC),
                                 LineCol.SYNTHETIC),
                         new AST.Destruct(
+                                Collections.emptySet(),
                                 Collections.emptySet(),
                                 new AST.Pattern_Destruct(
                                         new AST.Access(null, "B", LineCol.SYNTHETIC),
@@ -2384,6 +2387,7 @@ public class TestParser {
                         */
                         new AST.Destruct(
                                 Collections.emptySet(),
+                                Collections.emptySet(),
                                 new AST.Pattern_Destruct(
                                         new AST.Access(null, "D", LineCol.SYNTHETIC),
                                         Arrays.asList(
@@ -2396,6 +2400,7 @@ public class TestParser {
                         ),
                         new AST.Destruct(
                                 Collections.emptySet(),
+                                Collections.emptySet(),
                                 new AST.Pattern_Destruct(
                                         null,
                                         Collections.emptyList()
@@ -2404,6 +2409,7 @@ public class TestParser {
                                 LineCol.SYNTHETIC
                         ),
                         new AST.Destruct(
+                                Collections.emptySet(),
                                 Collections.emptySet(),
                                 new AST.Pattern_Destruct(
                                         null,
@@ -2416,6 +2422,7 @@ public class TestParser {
                                 LineCol.SYNTHETIC
                         ),
                         new AST.Destruct(
+                                Collections.emptySet(),
                                 Collections.emptySet(),
                                 new AST.Pattern_Destruct(
                                         null,
@@ -2431,6 +2438,7 @@ public class TestParser {
                                 Collections.singleton(
                                         new Modifier(Modifier.Available.VAR, LineCol.SYNTHETIC)
                                 ),
+                                Collections.emptySet(),
                                 new AST.Pattern_Destruct(
                                         null,
                                         Arrays.asList(
@@ -2445,6 +2453,7 @@ public class TestParser {
                                 Collections.singleton(
                                         new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC)
                                 ),
+                                Collections.emptySet(),
                                 new AST.Pattern_Destruct(
                                         null,
                                         Arrays.asList(
@@ -2453,6 +2462,22 @@ public class TestParser {
                                         )
                                 ),
                                 new NumberLiteral("105", LineCol.SYNTHETIC),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Destruct(
+                                Collections.emptySet(),
+                                Collections.singleton(
+                                        new AST.Anno(new AST.Access(null, "Anno", LineCol.SYNTHETIC),
+                                                Collections.emptyList(), LineCol.SYNTHETIC)
+                                ),
+                                new AST.Pattern_Destruct(
+                                        null,
+                                        Arrays.asList(
+                                                new AST.Pattern_Define("k", null),
+                                                new AST.Pattern_Define("l", null)
+                                        )
+                                ),
+                                new NumberLiteral("106", LineCol.SYNTHETIC),
                                 LineCol.SYNTHETIC
                         )
                 ), stmts);

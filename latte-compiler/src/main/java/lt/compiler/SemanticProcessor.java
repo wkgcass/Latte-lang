@@ -4126,6 +4126,18 @@ public class SemanticProcessor {
                 return List_get;
         }
 
+        private boolean destructCanChangeInLocalVariable(AST.Destruct d) throws SyntaxException {
+                if (d.modifiers.size() > 1) {
+                        err.SyntaxException("modifier for destruct should only be `var` or `val`", d.line_col());
+                }
+                boolean isVar = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAR).count() > 0;
+                boolean isVal = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAL).count() > 0;
+                if (!isVal && !isVar && d.modifiers.size() > 0) {
+                        err.SyntaxException("modifier for destruct should only be `var` or `val`", d.line_col());
+                }
+                return isVar;
+        }
+
         /**
          * parse destruct
          *
@@ -4153,7 +4165,7 @@ public class SemanticProcessor {
                         if (f == null) {
                                 STypeDef type = getTypeWithAccess(new AST.Access(pd.type, "*", destruct.line_col()), imports);
 
-                                LocalVariable localVariable = new LocalVariable(type, destructCanChange(destruct)); // default can change
+                                LocalVariable localVariable = new LocalVariable(type, destructCanChangeInLocalVariable(destruct));
                                 scope.putLeftValue(pd.name, localVariable);
 
                                 Ins.TStore storePtr = new Ins.TStore(localVariable,
@@ -9292,18 +9304,6 @@ public class SemanticProcessor {
                 }
         }
 
-        private boolean destructCanChange(AST.Destruct d) throws SyntaxException {
-                if (d.modifiers.size() > 1) {
-                        err.SyntaxException("modifier for destruct should only be `var` or `val`", d.line_col());
-                }
-                boolean isVar = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAR).count() > 0;
-                boolean isVal = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAL).count() > 0;
-                if (!isVal && !isVar && d.modifiers.size() > 0) {
-                        err.SyntaxException("modifier for destruct should only be `var` or `val`", d.line_col());
-                }
-                return isVar;
-        }
-
         /**
          * parse fields from Destruct
          *
@@ -9312,10 +9312,7 @@ public class SemanticProcessor {
          * @param isStatic whether is static
          * @throws SyntaxException exception
          */
-        public void parseFieldsFromDestruct(AST.Destruct d, STypeDef type, boolean isStatic) throws SyntaxException {
-                boolean isVar = destructCanChange(d);
-                boolean isVal = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAL).count() > 0;
-
+        public void parseFieldsFromDestruct(AST.Destruct d, SRefTypeDef type, boolean isStatic) throws SyntaxException {
                 for (AST.Pattern p : d.pattern.subPatterns) {
                         if (p instanceof AST.Pattern_Default) continue;
                         assert p instanceof AST.Pattern_Define;
@@ -9325,24 +9322,85 @@ public class SemanticProcessor {
                         fieldDef.setName(pd.name);
                         fieldDef.setType(getObject_Class());
                         fieldDef.setDeclaringType(type);
-                        if (isStatic) {
-                                fieldDef.modifiers().add(SModifier.STATIC);
-                        }
-                        if (type instanceof SInterfaceDef) {
-                                if (isVar) {
-                                        err.SyntaxException("mutable fields cannot exist in interfaces", d.line_col());
-                                }
+                        // modifiers
+                        parseFieldModifiers(fieldDef, d.modifiers, type instanceof SInterfaceDef, isStatic, false);
+                        // annos
+                        parseAnnos(d.annos, fieldDef, fileNameToImport.get(type.line_col().fileName),
+                                ElementType.FIELD, Collections.emptyList());
 
+                        type.fields().add(fieldDef);
+                }
+        }
+
+        private void parseFieldModifiers(SFieldDef fieldDef, Set<Modifier> modifiers,
+                                         boolean isInterface, boolean isStatic, boolean isParam) throws SyntaxException {
+                // try to get access flags
+                boolean hasAccessModifier = false;
+                for (Modifier m : modifiers) {
+                        if (m.modifier.equals(Modifier.Available.PUBLIC)
+                                || m.modifier.equals(Modifier.Available.PRIVATE)
+                                || m.modifier.equals(Modifier.Available.PROTECTED)
+                                || m.modifier.equals(Modifier.Available.PKG)) {
+                                hasAccessModifier = true;
+                        }
+                }
+                if (!hasAccessModifier) {
+                        if (isInterface) {
                                 fieldDef.modifiers().add(SModifier.PUBLIC);
-                                fieldDef.modifiers().add(SModifier.FINAL);
-                                ((SInterfaceDef) type).fields().add(fieldDef);
-                        } else if (type instanceof SClassDef) {
-                                fieldDef.modifiers().add(SModifier.PRIVATE);
-                                if (isVal) {
-                                        fieldDef.modifiers().add(SModifier.FINAL);
+                                fieldDef.modifiers().add(SModifier.STATIC);
+                        } else {
+                                if (isStatic) {
+                                        fieldDef.modifiers().add(SModifier.PUBLIC); // default modifier for static field is public
+                                } else {
+                                        fieldDef.modifiers().add(SModifier.PRIVATE); // default modifier for instance field is private
                                 }
-                                ((SClassDef) type).fields().add(fieldDef);
-                        } else throw new LtBug(type.getClass().getSimpleName() + " not allowed here");
+                        }
+                }
+                // modifiers
+                for (Modifier m : modifiers) {
+                        switch (m.modifier) {
+                                case PUBLIC:
+                                        fieldDef.modifiers().add(SModifier.PUBLIC);
+                                        break;
+                                case PRIVATE:
+                                        if (isInterface) {
+                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString().toLowerCase(), m.line_col());
+                                                return;
+                                        }
+                                        fieldDef.modifiers().add(SModifier.PRIVATE);
+                                        break;
+                                case PROTECTED:
+                                        if (isInterface) {
+                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString().toLowerCase(), m.line_col());
+                                                return;
+                                        }
+                                        fieldDef.modifiers().add(SModifier.PROTECTED);
+                                        break;
+                                case PKG: // no need to assign modifier
+                                        if (isInterface) {
+                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString().toLowerCase(), m.line_col());
+                                                return;
+                                        }
+                                        break;
+                                case VAL:
+                                        fieldDef.modifiers().add(SModifier.FINAL);
+                                        break;
+                                case VAR:
+                                        if (!isInterface) break;
+                                case NONNULL:
+                                        if (isParam) break;
+                                case NONEMPTY:
+                                        if (isParam) break;
+                                default:
+                                        err.UnexpectedTokenException("valid modifier for fields (class:(public|private|protected|internal|val)|interface:(pub|val))", m.toString().toLowerCase(), m.line_col());
+                                        return;
+                        }
+                }
+                if (isInterface && !fieldDef.modifiers().contains(SModifier.FINAL)) {
+                        fieldDef.modifiers().add(SModifier.FINAL);
+                }
+                if (isStatic && !isInterface) {
+                        fieldDef.modifiers().add(SModifier.STATIC);
                 }
         }
 
@@ -9371,72 +9429,8 @@ public class SemanticProcessor {
                 );
                 fieldDef.setDeclaringType(type); // declaringClass
 
-                // try to get access flags
-                boolean hasAccessModifier = false;
-                for (Modifier m : v.getModifiers()) {
-                        if (m.modifier.equals(Modifier.Available.PUBLIC)
-                                || m.modifier.equals(Modifier.Available.PRIVATE)
-                                || m.modifier.equals(Modifier.Available.PROTECTED)
-                                || m.modifier.equals(Modifier.Available.PKG)) {
-                                hasAccessModifier = true;
-                        }
-                }
-                if (!hasAccessModifier) {
-                        if (mode == PARSING_CLASS) {
-                                if (isStatic) {
-                                        fieldDef.modifiers().add(SModifier.PUBLIC); // default modifier for static field is public
-                                } else {
-                                        fieldDef.modifiers().add(SModifier.PRIVATE); // default modifier for instance field is private
-                                }
-                        } else if (mode == PARSING_INTERFACE) {
-                                fieldDef.modifiers().add(SModifier.PUBLIC);
-                                fieldDef.modifiers().add(SModifier.STATIC);
-                        } // no else
-                }
                 // modifiers
-                for (Modifier m : v.getModifiers()) {
-                        switch (m.modifier) {
-                                case PUBLIC:
-                                        fieldDef.modifiers().add(SModifier.PUBLIC);
-                                        break;
-                                case PRIVATE:
-                                        if (mode == PARSING_INTERFACE) {
-                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString().toLowerCase(), m.line_col());
-                                                return;
-                                        }
-                                        fieldDef.modifiers().add(SModifier.PRIVATE);
-                                        break;
-                                case PROTECTED:
-                                        if (mode == PARSING_INTERFACE) {
-                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString().toLowerCase(), m.line_col());
-                                                return;
-                                        }
-                                        fieldDef.modifiers().add(SModifier.PROTECTED);
-                                        break;
-                                case PKG: // no need to assign modifier
-                                        if (mode == PARSING_INTERFACE) {
-                                                err.UnexpectedTokenException("valid modifier for interface fields (public|val)", m.toString().toLowerCase(), m.line_col());
-                                                return;
-                                        }
-                                        break;
-                                case VAL:
-                                        fieldDef.modifiers().add(SModifier.FINAL);
-                                        break;
-                                case NONNULL:
-                                        if (isParam) break;
-                                case NONEMPTY:
-                                        if (isParam) break;
-                                default:
-                                        err.UnexpectedTokenException("valid modifier for fields (class:(public|private|protected|internal|val)|interface:(pub|val))", m.toString().toLowerCase(), m.line_col());
-                                        return;
-                        }
-                }
-                if (mode == PARSING_INTERFACE && !fieldDef.modifiers().contains(SModifier.FINAL)) {
-                        fieldDef.modifiers().add(SModifier.FINAL);
-                }
-                if (isStatic && mode == PARSING_CLASS) {
-                        fieldDef.modifiers().add(SModifier.STATIC);
-                }
+                parseFieldModifiers(fieldDef, v.getModifiers(), mode == PARSING_INTERFACE, isStatic, isParam);
                 // annos
                 parseAnnos(v.getAnnos(), fieldDef, imports, ElementType.FIELD, Collections.singletonList(ElementType.PARAMETER));
 

@@ -32,10 +32,7 @@ import java.util.stream.Collectors;
 /**
  * interface definition
  */
-public class SInterfaceDef extends STypeDef {
-        private final List<SFieldDef> fields = new ArrayList<>();
-        private final List<SMethodDef> methods = new ArrayList<>();
-        private final List<SModifier> modifiers = new ArrayList<>();
+public class SInterfaceDef extends SRefTypeDef {
         private final List<SInterfaceDef> superInterfaces = new ArrayList<>();
 
         private final List<Instruction> staticStatements = new ArrayList<>();
@@ -43,18 +40,6 @@ public class SInterfaceDef extends STypeDef {
 
         public SInterfaceDef(LineCol lineCol) {
                 super(lineCol);
-        }
-
-        public List<SFieldDef> fields() {
-                return fields;
-        }
-
-        public List<SMethodDef> methods() {
-                return methods;
-        }
-
-        public List<SModifier> modifiers() {
-                return modifiers;
         }
 
         public List<SInterfaceDef> superInterfaces() {
@@ -98,9 +83,7 @@ public class SInterfaceDef extends STypeDef {
                 if (cls instanceof SClassDef) {
                         SClassDef tmp = (SClassDef) cls;
                         while (tmp != null) {
-                                for (SInterfaceDef i : tmp.superInterfaces()) {
-                                        if (used.add(i)) q.add(i);
-                                }
+                                q.addAll(tmp.superInterfaces().stream().filter(used::add).collect(Collectors.toList()));
                                 tmp = tmp.parent();
                         }
                 } else if (cls instanceof SInterfaceDef) {

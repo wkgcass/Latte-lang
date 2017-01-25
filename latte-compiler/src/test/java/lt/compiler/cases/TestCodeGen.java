@@ -25,7 +25,6 @@
 package lt.compiler.cases;
 
 import lt.compiler.*;
-import lt.compiler.IndentScanner;
 import lt.compiler.Properties;
 import lt.compiler.Scanner;
 import lt.compiler.semantic.SModifier;
@@ -47,8 +46,6 @@ import java.io.StringReader;
 import java.lang.reflect.*;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -3629,5 +3626,19 @@ public class TestCodeGen {
                                 "            f1 = 2\n" +
                                 "data class Bean(x)"
                         , "TestDestructModifiers2");
+        }
+
+        @Test
+        public void testDestructAnnos() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import lt::compiler::_\n" +
+                                "class TestDestructAnnos\n" +
+                                "    @MyAnno\n" +
+                                "    (f1) <- Bean(1)\n" +
+                                "data class Bean(x)"
+                        , "TestDestructAnnos");
+                Field f1 = cls.getDeclaredField("f1");
+                MyAnno anno = f1.getAnnotation(MyAnno.class);
+                assertNotNull(anno);
         }
 }
