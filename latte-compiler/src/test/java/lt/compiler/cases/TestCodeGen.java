@@ -3574,4 +3574,60 @@ public class TestCodeGen {
                         1, 2L, 'c', 4d
                 ), method.invoke(null));
         }
+
+        @Test
+        public void testDestructModifiers() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestDestructModifiers\n" +
+                                "    static\n" +
+                                "        val (f1) <- Bean(1)\n" +
+                                "        var (f2) <- Bean(2)\n" +
+                                "    val (f3) <- Bean(3)\n" +
+                                "    var (f4) <- Bean(4)\n" +
+                                "data class Bean(x)"
+                        , "TestDestructModifiers");
+                Field f1 = cls.getDeclaredField("f1");
+                Field f2 = cls.getDeclaredField("f2");
+                assertTrue(Modifier.isFinal(f1.getModifiers()));
+                assertFalse(Modifier.isFinal(f2.getModifiers()));
+                f1.setAccessible(true);
+                f2.setAccessible(true);
+                assertEquals(1, f1.get(null));
+                assertEquals(2, f2.get(null));
+
+                Field f3 = cls.getDeclaredField("f3");
+                Field f4 = cls.getDeclaredField("f4");
+                assertTrue(Modifier.isFinal(f3.getModifiers()));
+                assertFalse(Modifier.isFinal(f4.getModifiers()));
+                f3.setAccessible(true);
+                f4.setAccessible(true);
+                Object o = cls.newInstance();
+                assertEquals(3, f3.get(o));
+                assertEquals(4, f4.get(o));
+        }
+
+        @Test
+        public void testDestructModifiers2() throws Exception {
+                try {
+                        retrieveClass("" +
+                                        "class TestDestructModifiers2\n" +
+                                        "    static\n" +
+                                        "        def method\n" +
+                                        "            val (f1) <- Bean(1)\n" +
+                                        "            f1 = 2\n" +
+                                        "data class Bean(x)"
+                                , "TestDestructModifiers2");
+                        fail();
+                } catch (SyntaxException ignore) {
+                }
+
+                retrieveClass("" +
+                                "class TestDestructModifiers2\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            var (f1) <- Bean(1)\n" +
+                                "            f1 = 2\n" +
+                                "data class Bean(x)"
+                        , "TestDestructModifiers2");
+        }
 }

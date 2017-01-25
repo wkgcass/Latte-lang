@@ -137,6 +137,12 @@ public class Parser {
                 }
         }
 
+        private <E> Set<E> getAndClear(Set<E> set) {
+                Set<E> s = new HashSet<>(set);
+                set.clear();
+                return s;
+        }
+
         /**
          * parse the nodes into a list of statements
          *
@@ -1928,15 +1934,8 @@ public class Parser {
                                                                                 Collections.singletonList(next_exp(false)), lineCol));
                                                         }
 
-                                                } else if (isDestructing(content)) {
-                                                        annosIsEmpty();
-                                                        modifiersIsEmpty();
-
-                                                        parse_destructing();
-
                                                 } else if (isDestructingWithoutType((Element) current)) {
                                                         annosIsEmpty();
-                                                        modifiersIsEmpty();
 
                                                         parse_destructing_withoutType();
 
@@ -2048,6 +2047,11 @@ public class Parser {
                                         } else if (current.getTokenType() == TokenType.VALID_NAME) {
                                                 if (isLambda((Element) current)) {
                                                         parse_lambda();
+                                                } else if (isDestructing((Element) current)) {
+                                                        annosIsEmpty();
+
+                                                        parse_destructing();
+
                                                 } else if (isPackage((Element) current)) {
                                                         annosIsEmpty();
                                                         modifiersIsEmpty();
@@ -2111,6 +2115,7 @@ public class Parser {
          */
         private void parse_destructing_withoutType() throws SyntaxException {
                 nextNode(false);
+                Set<Modifier> theModifiers = getAndClear(modifiers);
                 if (current instanceof Element) {
                         // )
                         nextNode(false);
@@ -2119,6 +2124,7 @@ public class Parser {
 
                         Expression exp = next_exp(false);
                         parsedExps.push(new AST.Destruct(
+                                theModifiers,
                                 new AST.Pattern_Destruct(null, Collections.emptyList()), exp, lineCol
                         ));
                 } else {
@@ -2134,6 +2140,7 @@ public class Parser {
 
                         List<AST.Pattern> patterns = parse_destructing_withoutType$patterns(esn);
                         parsedExps.push(new AST.Destruct(
+                                theModifiers,
                                 new AST.Pattern_Destruct(null, patterns), exp, lineCol
                         ));
                 }
@@ -2161,6 +2168,7 @@ public class Parser {
                                         continue;
                                 }
                                 patternList.add(new AST.Pattern_Define(e.getContent(), null));
+                                usedVarNames.add(e.getContent());
                         } else if (!(n instanceof EndingNode)) {
                                 err.UnexpectedTokenException("valid name", n.toString(), n.getLineCol());
                         }
@@ -2173,45 +2181,14 @@ public class Parser {
          * parse destructing
          */
         private void parse_destructing() throws SyntaxException {
-                LineCol lineCol = current.getLineCol();
-                String content = ((Element) current).getContent();
-
-                if (parsedExps.isEmpty()) {
-                        err.UnexpectedTokenException(content, lineCol);
-                        throw new ParseFail();
-                }
-
-                Expression deInto = parsedExps.pop();
-                if (deInto instanceof AST.Access) {
-                        deInto = new AST.Invocation(deInto, Collections.emptyList(), false, deInto.line_col());
-                }
-                if (!(deInto instanceof AST.Invocation)
-                        || !(((AST.Invocation) deInto).exp instanceof AST.Access)) {
-                        err.SyntaxException("cannot destruct into " + deInto, deInto.line_col());
-                        throw new ParseFail();
-                }
-
-                List<AST.Pattern> subPatterns = new ArrayList<>();
-                AST.Pattern_Destruct pattern = new AST.Pattern_Destruct((AST.Access) ((AST.Invocation) deInto).exp, subPatterns);
-                for (Expression exp : ((AST.Invocation) deInto).args) {
-                        if (!(exp instanceof AST.Access)
-                                || ((AST.Access) exp).exp != null) {
-                                err.SyntaxException("cannot destruct into " + deInto, deInto.line_col());
-                                continue;
-                        }
-                        String name = ((AST.Access) exp).name;
-                        if (usedVarNames.contains(name)) {
-                                err.DuplicateVariableNameException(name, exp.line_col());
-                        }
-                        if (name.equals("_")) {
-                                subPatterns.add(AST.Pattern_Default.get());
-                        } else {
-                                subPatterns.add(new AST.Pattern_Define(name, null));
-                                usedVarNames.add(name);
-                        }
-                }
-                Expression e = next_exp(false);
-                parsedExps.push(new AST.Destruct(pattern, e, lineCol));
+                AST.Access type = parse_cls_for_type_spec();
+                parse_destructing_withoutType();
+                AST.Destruct de = (AST.Destruct) parsedExps.pop();
+                parsedExps.push(
+                        new AST.Destruct(de.modifiers,
+                                new AST.Pattern_Destruct(type, de.pattern.subPatterns),
+                                de.exp, de.line_col())
+                );
         }
 
         /**

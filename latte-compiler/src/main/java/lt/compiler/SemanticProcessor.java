@@ -4153,7 +4153,7 @@ public class SemanticProcessor {
                         if (f == null) {
                                 STypeDef type = getTypeWithAccess(new AST.Access(pd.type, "*", destruct.line_col()), imports);
 
-                                LocalVariable localVariable = new LocalVariable(type, true); // default can change
+                                LocalVariable localVariable = new LocalVariable(type, destructCanChange(destruct)); // default can change
                                 scope.putLeftValue(pd.name, localVariable);
 
                                 Ins.TStore storePtr = new Ins.TStore(localVariable,
@@ -4208,7 +4208,6 @@ public class SemanticProcessor {
 
                         // assign value
                         AST.Pattern_Define define = (AST.Pattern_Define) p;
-                        LeftValue leftValue = scope.getLeftValue(define.name);
 
                         // List#get(int)
                         SMethodDef get = getList_get();
@@ -4219,15 +4218,15 @@ public class SemanticProcessor {
 
                         // set value
                         if (nameToField.containsKey(((AST.Pattern_Define) p).name)) {
+                                SFieldDef f = nameToField.get(((AST.Pattern_Define) p).name);
                                 if (scope.getThis() == null) {
                                         pack.instructions().add(
                                                 new Ins.PutStatic(
-                                                        nameToField.get(((AST.Pattern_Define) p).name),
+                                                        f,
                                                         invokeInterface,
                                                         LineCol.SYNTHETIC, err)
                                         );
                                 } else {
-                                        SFieldDef f = nameToField.get(((AST.Pattern_Define) p).name);
                                         pack.instructions().add(
                                                 new Ins.PutField(
                                                         f,
@@ -4235,9 +4234,10 @@ public class SemanticProcessor {
                                                         invokeInterface,
                                                         LineCol.SYNTHETIC, err)
                                         );
-                                        f.assign();
                                 }
                         } else {
+                                LeftValue leftValue = scope.getLeftValue(define.name);
+                                leftValue.assign();
                                 pack.instructions().add(invokePointerSet(
                                         new Ins.TLoad(leftValue, scope, LineCol.SYNTHETIC),
                                         invokeInterface, destruct.line_col()
@@ -9292,6 +9292,18 @@ public class SemanticProcessor {
                 }
         }
 
+        private boolean destructCanChange(AST.Destruct d) throws SyntaxException {
+                if (d.modifiers.size() > 1) {
+                        err.SyntaxException("modifier for destruct should only be `var` or `val`", d.line_col());
+                }
+                boolean isVar = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAR).count() > 0;
+                boolean isVal = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAL).count() > 0;
+                if (!isVal && !isVar && d.modifiers.size() > 0) {
+                        err.SyntaxException("modifier for destruct should only be `var` or `val`", d.line_col());
+                }
+                return isVar;
+        }
+
         /**
          * parse fields from Destruct
          *
@@ -9301,6 +9313,9 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public void parseFieldsFromDestruct(AST.Destruct d, STypeDef type, boolean isStatic) throws SyntaxException {
+                boolean isVar = destructCanChange(d);
+                boolean isVal = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAL).count() > 0;
+
                 for (AST.Pattern p : d.pattern.subPatterns) {
                         if (p instanceof AST.Pattern_Default) continue;
                         assert p instanceof AST.Pattern_Define;
@@ -9314,11 +9329,18 @@ public class SemanticProcessor {
                                 fieldDef.modifiers().add(SModifier.STATIC);
                         }
                         if (type instanceof SInterfaceDef) {
+                                if (isVar) {
+                                        err.SyntaxException("mutable fields cannot exist in interfaces", d.line_col());
+                                }
+
                                 fieldDef.modifiers().add(SModifier.PUBLIC);
                                 fieldDef.modifiers().add(SModifier.FINAL);
                                 ((SInterfaceDef) type).fields().add(fieldDef);
                         } else if (type instanceof SClassDef) {
                                 fieldDef.modifiers().add(SModifier.PRIVATE);
+                                if (isVal) {
+                                        fieldDef.modifiers().add(SModifier.FINAL);
+                                }
                                 ((SClassDef) type).fields().add(fieldDef);
                         } else throw new LtBug(type.getClass().getSimpleName() + " not allowed here");
                 }

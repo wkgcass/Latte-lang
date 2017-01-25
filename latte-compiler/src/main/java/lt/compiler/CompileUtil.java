@@ -465,8 +465,43 @@ public class CompileUtil {
                 return false;
         }
 
-        public static boolean isDestructing(String s) {
-                return "<-".equals(s);
+        public static boolean isDestructing(String str) {
+                return str.equals("<-");
+        }
+
+        public static boolean isDestructing(Element e) {
+                if (e.getTokenType() != TokenType.VALID_NAME) return false;
+                while (true) {
+                        if (!(e.next() instanceof Element)) return false;
+                        e = (Element) e.next();
+                        if (e.getContent().equals("(")) break;
+                        if (e.getTokenType() != TokenType.VALID_NAME
+                                && !e.getContent().equals("::")
+                                && !e.getContent().equals(".")) {
+                                return false;
+                        }
+                }
+
+                Node rightPar;
+                // (
+                if (e.next() instanceof ElementStartNode) {
+                        if (e.next().next() instanceof EndingNode
+                                && e.next().next().next() instanceof Element
+                                && ((Element) e.next().next().next()).getContent().equals(")")) {
+                                rightPar = e.next().next().next();
+                        } else {
+                                return false;
+                        }
+                } else if (e.next() instanceof Element) {
+                        if (((Element) e.next()).getContent().equals(")")) {
+                                // )
+                                rightPar = e.next();
+                        } else {
+                                return false;
+                        }
+                } else return false;
+
+                return rightPar.next() instanceof Element && ((Element) rightPar.next()).getContent().equals("<-");
         }
 
         public static boolean isDestructingWithoutType(Element e) {

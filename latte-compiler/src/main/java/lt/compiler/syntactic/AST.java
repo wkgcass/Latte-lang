@@ -26,10 +26,12 @@ package lt.compiler.syntactic;
 
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.def.VariableDef;
+import lt.compiler.syntactic.pre.Modifier;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 /**
  * a file containing all node definitions of the ast tree<br>
@@ -319,11 +321,13 @@ public class AST {
         }
 
         public static class Destruct implements Expression {
+                public final Set<Modifier> modifiers;
                 public final Pattern_Destruct pattern;
                 public final Expression exp;
                 private final LineCol lineCol;
 
-                public Destruct(Pattern_Destruct pattern, Expression exp, LineCol lineCol) {
+                public Destruct(Set<Modifier> modifiers, Pattern_Destruct pattern, Expression exp, LineCol lineCol) {
+                        this.modifiers = modifiers;
                         this.pattern = pattern;
                         this.exp = exp;
                         this.lineCol = lineCol;
@@ -341,6 +345,7 @@ public class AST {
 
                         Destruct destruct = (Destruct) o;
 
+                        if (!modifiers.equals(destruct.modifiers)) return false;
                         if (!pattern.equals(destruct.pattern)) return false;
                         //
                         return exp.equals(destruct.exp);
@@ -349,14 +354,15 @@ public class AST {
 
                 @Override
                 public int hashCode() {
-                        int result = pattern.hashCode();
+                        int result = modifiers.hashCode();
+                        result = 31 * result + pattern.hashCode();
                         result = 31 * result + exp.hashCode();
                         return result;
                 }
 
                 @Override
                 public String toString() {
-                        return "(" + pattern + " <- " + exp + ')';
+                        return "(" + modifiers + " " + pattern + " <- " + exp + ')';
                 }
         }
 
