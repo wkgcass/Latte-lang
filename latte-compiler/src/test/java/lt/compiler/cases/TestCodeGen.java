@@ -3641,4 +3641,22 @@ public class TestCodeGen {
                 MyAnno anno = f1.getAnnotation(MyAnno.class);
                 assertNotNull(anno);
         }
+
+        @Test
+        public void testSimplePatternMatching() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestSimplePatternMatching\n" +
+                                "    static\n" +
+                                "        def method(o) = o match\n" +
+                                "            case _:java::util::List => 'type ' + o\n" +
+                                "            case 2 => 'value'\n" +
+                                "            case x:String => 'define ' + x\n" +
+                                "            case _ => 'default'"
+                        , "TestSimplePatternMatching");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals("type [1, 2, 3]", method.invoke(null, Arrays.asList(1, 2, 3)));
+                assertEquals("value", method.invoke(null, 2));
+                assertEquals("define test", method.invoke(null, "test"));
+                assertEquals("default", method.invoke(null, 1));
+        }
 }

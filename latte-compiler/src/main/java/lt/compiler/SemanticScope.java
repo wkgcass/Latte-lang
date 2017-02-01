@@ -122,6 +122,16 @@ public class SemanticScope {
                 } else return parent.getInnerMethod(name);
         }
 
+        public Map<String, MethodRecorder> getInnerMethods() {
+                Map<String, MethodRecorder> recorders = new HashMap<>();
+                SemanticScope scope = this;
+                while (scope != null) {
+                        recorders.putAll(scope.innerMethodMap);
+                        scope = scope.parent;
+                }
+                return recorders;
+        }
+
         public boolean containsInnerMethod(String name) {
                 return innerMethodMap.containsKey(name);
         }
