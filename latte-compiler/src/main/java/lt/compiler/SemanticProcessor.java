@@ -38,6 +38,7 @@ import lt.compiler.syntactic.operation.UnaryOneVariableOperation;
 import lt.compiler.syntactic.pre.Import;
 import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
+import lt.compiler.util.BindList;
 import lt.generator.SourceGenerator;
 import lt.lang.*;
 import lt.dependencies.asm.MethodVisitor;
@@ -4592,6 +4593,224 @@ public class SemanticProcessor {
                 return parseValueFromProcedure(procedure, requiredType, scope);
         }
 
+        private interface PatternMatchingParser {
+                List<Statement> parse(
+                        AST.Pattern pattern,
+                        List<Statement> statements,
+                        AST.If.IfPair anElse,
+                        String varName,
+                        String fileName
+                );
+        }
+
+        private class PatternMatchingDefaultParser implements PatternMatchingParser {
+                @Override
+                public List<Statement> parse(AST.Pattern pattern, List<Statement> statements, AST.If.IfPair anElse, String varName, String fileName) {
+                        return statements;
+                }
+        }
+
+        private class PatternMatchingTypeParser implements PatternMatchingParser {
+                @Override
+                public List<Statement> parse(AST.Pattern pattern, List<Statement> statements, AST.If.IfPair anElse, String varName, String fileName) {
+                        AST.If.IfPair testClass = new AST.If.IfPair(
+                                new TwoVariableOperation(
+                                        "is",
+                                        new AST.Access(null, varName, LineCol.SYNTHETIC_WITH_FILE(fileName)),
+                                        new AST.TypeOf(
+                                                ((AST.Pattern_Type) pattern).type,
+                                                LineCol.SYNTHETIC_WITH_FILE(fileName)),
+                                        LineCol.SYNTHETIC_WITH_FILE(fileName)
+                                ), statements, LineCol.SYNTHETIC_WITH_FILE(fileName)
+                        );
+                        AST.If anIf = new AST.If(Arrays.asList(testClass, anElse), LineCol.SYNTHETIC_WITH_FILE(fileName));
+                        return Collections.singletonList(anIf);
+                }
+        }
+
+        private class PatternMatchingValueParser implements PatternMatchingParser {
+                @Override
+                public List<Statement> parse(AST.Pattern pattern, List<Statement> statements, AST.If.IfPair anElse, String varName, String fileName) {
+                        AST.If.IfPair testValue = new AST.If.IfPair(
+                                new TwoVariableOperation(
+                                        "is",
+                                        new AST.Access(null, varName, LineCol.SYNTHETIC_WITH_FILE(fileName)),
+                                        ((AST.Pattern_Value) pattern).exp,
+                                        LineCol.SYNTHETIC_WITH_FILE(fileName)
+                                ), statements, LineCol.SYNTHETIC_WITH_FILE(fileName)
+                        );
+                        AST.If anIf = new AST.If(Arrays.asList(testValue, anElse), LineCol.SYNTHETIC_WITH_FILE(fileName));
+                        return Collections.singletonList(anIf);
+                }
+        }
+
+        private class PatternMatchingDefineParser implements PatternMatchingParser {
+                @Override
+                public List<Statement> parse(AST.Pattern pattern, List<Statement> statements, AST.If.IfPair anElse, String varName, String fileName) {
+                        // define value and assign it with **
+                        List<Statement> theList;
+                        if (!((AST.Pattern_Define) pattern).name.equals(varName)) {
+                                // val v = **
+                                VariableDef v = new VariableDef(((AST.Pattern_Define) pattern).name,
+                                        Collections.singleton(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC_WITH_FILE(fileName))),
+                                        Collections.emptySet(), LineCol.SYNTHETIC_WITH_FILE(fileName));
+                                v.setType(((AST.Pattern_Define) pattern).type);
+                                v.setInit(new AST.Access(null, varName, LineCol.SYNTHETIC_WITH_FILE(fileName)));
+                                theList = new ArrayList<>();
+                                theList.add(v);
+                                theList = new BindList<>(theList, statements);
+                        } else {
+                                theList = statements;
+                        }
+
+                        if (((AST.Pattern_Define) pattern).type != null) {
+                                AST.If.IfPair testClass = new AST.If.IfPair(
+                                        new TwoVariableOperation(
+                                                "is",
+                                                new AST.Access(null, varName, LineCol.SYNTHETIC_WITH_FILE(fileName)),
+                                                new AST.TypeOf(
+                                                        ((AST.Pattern_Define) pattern).type,
+                                                        LineCol.SYNTHETIC_WITH_FILE(fileName)),
+                                                LineCol.SYNTHETIC_WITH_FILE(fileName)
+                                        ), theList, LineCol.SYNTHETIC_WITH_FILE(fileName)
+                                );
+                                AST.If anIf = new AST.If(Arrays.asList(testClass, anElse), LineCol.SYNTHETIC_WITH_FILE(fileName));
+                                return Collections.singletonList(anIf);
+                        } else {
+                                return statements;
+                        }
+                }
+        }
+
+        private class PatternMatchingDestructParser implements PatternMatchingParser {
+                @Override
+                public List<Statement> parse(AST.Pattern pattern, List<Statement> statements, AST.If.IfPair anElse, String varName, String fileName) {
+                        // check if null
+                        List<Statement> stmtsInCheckNull = new ArrayList<>();
+                        AST.If checkNull = new AST.If(Arrays.asList(
+                                new AST.If.IfPair(
+                                        new TwoVariableOperation(
+                                                "not",
+                                                new AST.Access(null, varName, LineCol.SYNTHETIC),
+                                                new AST.Null(LineCol.SYNTHETIC),
+                                                LineCol.SYNTHETIC
+                                        ),
+                                        stmtsInCheckNull,
+                                        LineCol.SYNTHETIC
+                                ),
+                                anElse
+                        ), LineCol.SYNTHETIC);
+
+                        // use destruct <-
+                        AST.Pattern_Destruct patternDestruct = (AST.Pattern_Destruct) pattern;
+                        // construct a destruct without type def
+                        // arg index
+                        Pointer<Integer> count = new Pointer<>(true, false);
+                        // tmpName count
+                        Pointer<Integer> tmpNameCountPtr = new Pointer<>(true, false);
+                        try {
+                                count.set(-1);
+                                tmpNameCountPtr.set(0);
+                        } catch (Throwable throwable) {
+                                throw new LtBug(throwable);
+                        }
+                        AST.Pattern_Destruct patternDestructWithoutTypeDef = new AST.Pattern_Destruct(
+                                patternDestruct.type,
+                                patternDestruct.subPatterns.stream().map(p -> {
+                                        int c;
+                                        try {
+                                                count.set(count.get() + 1);
+                                                c = count.get();
+                                                tmpNameCountPtr.set(tmpNameCountPtr.get() + 1);
+                                        } catch (Throwable throwable) {
+                                                throw new LtBug(throwable);
+                                        }
+
+                                        if (p.patternType == AST.PatternType.TYPE) return new AST.Pattern_Define(
+                                                "**" + c, null
+                                        );
+                                        if (p.patternType == AST.PatternType.DEFINE && ((AST.Pattern_Define) p).type != null)
+                                                return new AST.Pattern_Define(((AST.Pattern_Define) p).name, null);
+                                        if (p.patternType == AST.PatternType.VALUE) return new AST.Pattern_Define(
+                                                "**" + c, null
+                                        );
+                                        if (p.patternType == AST.PatternType.DESTRUCT) return new AST.Pattern_Define(
+                                                "**" + c, null
+                                        );
+
+                                        try {
+                                                tmpNameCountPtr.set(tmpNameCountPtr.get() - 1);
+                                        } catch (Throwable throwable) {
+                                                throw new LtBug(throwable);
+                                        }
+                                        return p;
+                                }).collect(Collectors.toList())
+                        );
+
+                        // tmpNameCount
+                        int tmpNameCount = tmpNameCountPtr.get();
+
+                        AST.Destruct doDestruct = new AST.Destruct(Collections.emptySet(), Collections.emptySet(),
+                                patternDestructWithoutTypeDef, new AST.Access(null, varName, LineCol.SYNTHETIC), LineCol.SYNTHETIC);
+                        List<Statement> stmtsInDestruct;
+                        if (tmpNameCount > 0) {
+                                stmtsInDestruct = new ArrayList<>();
+                        } else {
+                                stmtsInDestruct = statements;
+                        }
+                        AST.If destructIf = new AST.If(
+                                Arrays.asList(
+                                        new AST.If.IfPair(doDestruct, stmtsInDestruct, LineCol.SYNTHETIC),
+                                        anElse
+                                ), LineCol.SYNTHETIC
+                        );
+                        stmtsInCheckNull.add(destructIf);
+
+                        if (tmpNameCount > 0) {
+                                // apply patterns on these variables
+                                List<Statement> currentStmts = stmtsInDestruct;
+                                for (int i = 0; i < patternDestruct.subPatterns.size(); ++i) {
+                                        AST.Pattern sub = patternDestruct.subPatterns.get(i);
+                                        AST.Pattern x = patternDestructWithoutTypeDef.subPatterns.get(i);
+                                        String tmpName = null;
+                                        if (x instanceof AST.Pattern_Define) {
+                                                tmpName = ((AST.Pattern_Define) x).name;
+                                        }
+                                        PatternMatchingParser parser;
+                                        if (sub.patternType == AST.PatternType.TYPE) {
+                                                parser = new PatternMatchingTypeParser();
+                                        } else if (sub.patternType == AST.PatternType.DEFINE) {
+                                                AST.Access type = ((AST.Pattern_Define) sub).type;
+                                                if (type == null) continue;
+                                                parser = new PatternMatchingDefineParser();
+                                        } else if (sub.patternType == AST.PatternType.VALUE) {
+                                                parser = new PatternMatchingValueParser();
+                                        } else if (sub.patternType == AST.PatternType.DESTRUCT) {
+                                                parser = new PatternMatchingDestructParser();
+                                        } else continue;
+
+                                        // handle
+                                        assert tmpName != null;
+                                        --tmpNameCount;
+
+                                        List<Statement> list;
+                                        if (tmpNameCount == 0) {
+                                                list = statements;
+                                        } else {
+                                                list = new ArrayList<>();
+                                        }
+                                        currentStmts.addAll(parser.parse(
+                                                sub, list, anElse, tmpName, fileName
+                                        ));
+
+                                        currentStmts = list;
+                                }
+                        }
+
+                        return Collections.singletonList(checkNull);
+                }
+        }
+
         private void parsePatternMatchingMethod(Map.Entry<AST.Pattern, List<Statement>> patternListEntry,
                                                 MethodDef currentMethod,
                                                 MethodDef nextMethod,
@@ -4638,155 +4857,30 @@ public class SemanticProcessor {
                                 LineCol.SYNTHETIC_WITH_FILE(fileName));
                 }
 
+                PatternMatchingParser patternMatchingParser;
                 switch (p.patternType) {
                         case DEFAULT:
-                                currentMethod.body.addAll(statements);
+                                patternMatchingParser = new PatternMatchingDefaultParser();
                                 break;
                         case TYPE:
-                                AST.If.IfPair testClass = new AST.If.IfPair(
-                                        new TwoVariableOperation(
-                                                "is",
-                                                new AST.Access(null, "**", LineCol.SYNTHETIC_WITH_FILE(fileName)),
-                                                new AST.TypeOf(
-                                                        ((AST.Pattern_Type) p).type,
-                                                        LineCol.SYNTHETIC_WITH_FILE(fileName)),
-                                                LineCol.SYNTHETIC_WITH_FILE(fileName)
-                                        ), statements, LineCol.SYNTHETIC_WITH_FILE(fileName)
-                                );
-                                AST.If anIf = new AST.If(Arrays.asList(testClass, anElse), LineCol.SYNTHETIC_WITH_FILE(fileName));
-                                currentMethod.body.add(anIf);
+                                patternMatchingParser = new PatternMatchingTypeParser();
                                 break;
                         case VALUE:
-                                AST.If.IfPair testValue = new AST.If.IfPair(
-                                        new TwoVariableOperation(
-                                                "is",
-                                                new AST.Access(null, "**", LineCol.SYNTHETIC_WITH_FILE(fileName)),
-                                                ((AST.Pattern_Value) p).exp,
-                                                LineCol.SYNTHETIC_WITH_FILE(fileName)
-                                        ), statements, LineCol.SYNTHETIC_WITH_FILE(fileName)
-                                );
-                                anIf = new AST.If(Arrays.asList(testValue, anElse), LineCol.SYNTHETIC_WITH_FILE(fileName));
-                                currentMethod.body.add(anIf);
+                                patternMatchingParser = new PatternMatchingValueParser();
                                 break;
                         case DEFINE:
-                                // define value and assign it with **
-                                // val v = **
-                                VariableDef v = new VariableDef(((AST.Pattern_Define) p).name,
-                                        Collections.singleton(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC_WITH_FILE(fileName))),
-                                        Collections.emptySet(), LineCol.SYNTHETIC_WITH_FILE(fileName));
-                                v.setType(((AST.Pattern_Define) p).type);
-                                v.setInit(new AST.Access(null, "**", LineCol.SYNTHETIC_WITH_FILE(fileName)));
-                                List<Statement> theStmts = new ArrayList<>();
-                                theStmts.add(v);
-                                theStmts.addAll(statements);
-
-                                if (((AST.Pattern_Define) p).type != null) {
-                                        testClass = new AST.If.IfPair(
-                                                new TwoVariableOperation(
-                                                        "is",
-                                                        new AST.Access(null, "**", LineCol.SYNTHETIC_WITH_FILE(fileName)),
-                                                        new AST.TypeOf(
-                                                                ((AST.Pattern_Define) p).type,
-                                                                LineCol.SYNTHETIC_WITH_FILE(fileName)),
-                                                        LineCol.SYNTHETIC_WITH_FILE(fileName)
-                                                ), theStmts, LineCol.SYNTHETIC_WITH_FILE(fileName)
-                                        );
-                                        anIf = new AST.If(Arrays.asList(testClass, anElse), LineCol.SYNTHETIC_WITH_FILE(fileName));
-                                        currentMethod.body.add(anIf);
-                                } else {
-                                        currentMethod.body.addAll(theStmts);
-                                }
+                                patternMatchingParser = new PatternMatchingDefineParser();
                                 break;
                         case DESTRUCT:
+                                patternMatchingParser = new PatternMatchingDestructParser();
+                                break;
                         default:
                                 throw new LtBug("unknown pattern matching type " + p.patternType);
                 }
+                currentMethod.body.addAll(patternMatchingParser.parse(
+                        p, statements, anElse, "**", fileName
+                ));
         }
-
-        /*
-        public Value parseValueFromPatternMatching(AST.PatternMatching pm, SemanticScope scope) throws SyntaxException {
-                ValuePack vp = new ValuePack(true);
-
-                // store the value
-                Value valueToMatch = parseValueFromExpression(pm.expToMatch, null, scope);
-                LocalVariable localValueToMatch = new LocalVariable(valueToMatch.type(), false);
-                scope.putLeftValue(scope.generateTempName(), localValueToMatch);
-                Ins.TStore storeValue = new Ins.TStore(localValueToMatch, valueToMatch, scope, LineCol.SYNTHETIC, err);
-                vp.instructions().add(storeValue);
-
-                // if no patterns
-                if (pm.patternsToStatements.size() == 0) {
-                        vp.instructions().add(invoke_Unit_get(LineCol.SYNTHETIC));
-                        return vp;
-                }
-
-                List<SMethodDef> patternMethods = new ArrayList<>(pm.patternsToStatements.size());
-
-                // foreach pattern define a method
-                SRefTypeDef theType = (SRefTypeDef) scope.type();
-                for (AST.Pattern pattern : pm.patternsToStatements.keySet()) {
-                        String newMethodName = "patternMatching$" + pm.hashCode() + "$" + pattern.hashCode() + "$";
-                        int count = 0;
-
-                        while (true) {
-                                boolean pass = true;
-                                for (SMethodDef m : theType.methods()) {
-                                        if (m.name().equals(newMethodName + count)) {
-                                                pass = false;
-                                                break;
-                                        }
-                                }
-                                if (pass) {
-                                        break;
-                                } else {
-                                        ++count;
-                                }
-                        }
-                        newMethodName += count;
-
-                        SMethodDef newMethod = new SMethodDef(LineCol.SYNTHETIC);
-                        newMethod.setName(newMethodName);
-                        newMethod.modifiers().add(SModifier.PRIVATE);
-                        if (scope.getThis() == null) {
-                                newMethod.modifiers().add(SModifier.STATIC);
-                        }
-                        newMethod.setReturnType(getObject_Class());
-                        newMethod.setDeclaringType(theType);
-                        theType.methods().add(newMethod);
-                        SParameter p = new SParameter();
-                        p.setName("**");
-                        p.setTarget(newMethod);
-                        p.setType(vp.type());
-                        p.setCanChange(false);
-                        newMethod.getParameters().add(p);
-
-                        patternMethods.add(newMethod);
-                }
-
-                // parse all methods
-                int index = -1;
-                for (Map.Entry<AST.Pattern, List<Statement>> patternListEntry : pm.patternsToStatements.entrySet()) {
-                        ++index;
-                        SMethodDef currentMethod = patternMethods.get(index);
-                        SMethodDef nextMethod = null;
-                        if (patternMethods.size() > index + 1) {
-                                nextMethod = patternMethods.get(index + 1);
-                        }
-                        parsePatternMatchingMethod(patternListEntry, currentMethod, nextMethod);
-                }
-
-                // invoke the first method
-                if (scope.getThis() == null) {
-
-                }
-        }
-
-        private void parsePatternMatchingMethod(Map.Entry<AST.Pattern, List<Statement>> patternListEntry,
-                                                SMethodDef methodToParse,
-                                                SMethodDef nextMethod) throws SyntaxException {
-                // TODO
-        }
-        */
 
         public Value parseValueFromGeneratorSpec(AST.GeneratorSpec gs, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
                 STypeDef type = getTypeWithAccess(gs.type, fileNameToImport.get(gs.line_col().fileName));

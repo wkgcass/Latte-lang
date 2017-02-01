@@ -3659,4 +3659,27 @@ public class TestCodeGen {
                 assertEquals("define test", method.invoke(null, "test"));
                 assertEquals("default", method.invoke(null, 1));
         }
+
+        @Test
+        public void testDestructPatternMatching() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestDestructPatternMatching\n" +
+                                "    static\n" +
+                                "        def method(o) = o match\n" +
+                                "            case A(a,b,c) => [a,b,c]\n" +
+                                "            case B(a,b:Integer) => [a,b]\n" +
+                                "        def getClassA = type A\n" +
+                                "        def getClassB = type B\n" +
+                                "data class A(a,b,c)\n" +
+                                "data class B(a,b)"
+                        , "TestDestructPatternMatching");
+                Method method = cls.getMethod("method", Object.class);
+                Method getClassA = cls.getMethod("getClassA");
+                Class<?> clsA = (Class<?>) getClassA.invoke(null);
+                assertEquals(Arrays.asList(1, 2, 3), method.invoke(null, clsA.getConstructor(Object.class, Object.class, Object.class).newInstance(1, 2, 3)));
+
+                Method getClassB = cls.getMethod("getClassB");
+                Class<?> clsB = (Class<?>) getClassB.invoke(null);
+                assertEquals(Arrays.asList(1, 2), method.invoke(null, clsB.getConstructor(Object.class, Object.class).newInstance(1, 2)));
+        }
 }
