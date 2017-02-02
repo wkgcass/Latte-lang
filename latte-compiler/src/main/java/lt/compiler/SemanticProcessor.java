@@ -4683,6 +4683,12 @@ public class SemanticProcessor {
         }
 
         private class PatternMatchingDestructParser implements PatternMatchingParser {
+                private final int initialCount;
+
+                private PatternMatchingDestructParser(int initialCount) {
+                        this.initialCount = initialCount;
+                }
+
                 @Override
                 public List<Statement> parse(AST.Pattern pattern, List<Statement> statements, AST.If.IfPair anElse, String varName, String fileName) {
                         // check if null
@@ -4709,7 +4715,7 @@ public class SemanticProcessor {
                         // tmpName count
                         Pointer<Integer> tmpNameCountPtr = new Pointer<>(true, false);
                         try {
-                                count.set(-1);
+                                count.set(initialCount);
                                 tmpNameCountPtr.set(0);
                         } catch (Throwable throwable) {
                                 throw new LtBug(throwable);
@@ -4786,7 +4792,7 @@ public class SemanticProcessor {
                                         } else if (sub.patternType == AST.PatternType.VALUE) {
                                                 parser = new PatternMatchingValueParser();
                                         } else if (sub.patternType == AST.PatternType.DESTRUCT) {
-                                                parser = new PatternMatchingDestructParser();
+                                                parser = new PatternMatchingDestructParser(count.get());
                                         } else continue;
 
                                         // handle
@@ -4872,7 +4878,7 @@ public class SemanticProcessor {
                                 patternMatchingParser = new PatternMatchingDefineParser();
                                 break;
                         case DESTRUCT:
-                                patternMatchingParser = new PatternMatchingDestructParser();
+                                patternMatchingParser = new PatternMatchingDestructParser(-1);
                                 break;
                         default:
                                 throw new LtBug("unknown pattern matching type " + p.patternType);

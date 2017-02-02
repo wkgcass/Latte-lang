@@ -3682,4 +3682,21 @@ public class TestCodeGen {
                 Class<?> clsB = (Class<?>) getClassB.invoke(null);
                 assertEquals(Arrays.asList(1, 2), method.invoke(null, clsB.getConstructor(Object.class, Object.class).newInstance(1, 2)));
         }
+
+        @Test
+        public void testComplexPatternMatching() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestComplexPatternMatching\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            val beanA = A(1,\"a\", B([], {\"x\" : \"y\"}, A(9,8,7)))\n" +
+                                "            beanA match\n" +
+                                "                case A(1,b:String,B(_:java::util::List, c, A(_,_:Integer,d))) =>\n" +
+                                "                    [b,c,d]\n" +
+                                "data class A(a,b,c)\n" +
+                                "data class B(a,b,c)"
+                        , "TestComplexPatternMatching");
+                Method method = cls.getMethod("method");
+                assertEquals(Arrays.asList("a", Collections.singletonMap("x", "y"), 7), method.invoke(null));
+        }
 }
