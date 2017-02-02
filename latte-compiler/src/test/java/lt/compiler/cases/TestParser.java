@@ -2484,6 +2484,21 @@ public class TestParser {
         }
 
         @Test
+        public void testDestructingEq() throws Exception {
+                List<Statement> stmts1 = parse("" +
+                        "var (h,_) <- 104\n" +
+                        "val (i,j) <- 105\n" +
+                        "@Anno\n(k,l) <- 106");
+
+                List<Statement> stmts2 = parse("" +
+                        "var (h,_) = 104\n" +
+                        "val (i,j) = 105\n" +
+                        "@Anno\n(k,l) = 106");
+
+                assertEquals(stmts1, stmts2);
+        }
+
+        @Test
         public void testSimplePatterns() throws Exception {
                 List<Statement> stmts = parse("" +
                         "a = 1\n" +

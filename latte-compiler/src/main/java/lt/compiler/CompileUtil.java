@@ -519,9 +519,11 @@ public class CompileUtil {
                 } else return false;
                 if (!e.getContent().equals(")")) return false;
 
-                // <-
+                // <- | =
                 if (!(e.next() instanceof Element)) return false;
-                if (!((Element) e.next()).getContent().equals("<-")) return false;
+                if (!((Element) e.next()).getContent().equals("<-")
+                        &&
+                        !((Element) e.next()).getContent().equals("=")) return false;
                 //
                 return true;
         }
