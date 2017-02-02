@@ -30,6 +30,8 @@
 	6. [注解](#p5-6)
 	7. [过程(Procedure)](#p5-7)
     8. [参数可用性检查](#p5-8)
+    9. [解构](#p5-9)
+    10. [模式匹配](#p5-10)
 6. [Java 交互](#p6)
 	1. [在Latte中调用Java代码](#p6-1)
 	2. [在Java中调用Latte代码](#p6-2)
@@ -290,6 +292,22 @@ function method(a) {
     return a + 1;
 }
 ```
+
+<h3 id="p1-1-16">1.1.16 模式匹配</h3>
+
+```scala
+val (x,y) = Bean(1,2)
+```
+
+详见[5.9 解构](#p5-9)
+
+```scala
+o match
+    case Bean(a,b) => ...
+    case _ => ...
+```
+
+详见[5.10 解构](#p5-10)
 
 <h2 id="p1-2">1.2 文件结构</h2>
 
@@ -1159,7 +1177,7 @@ user = new User(1, "latte")
 
 ```python
 class open(file, mode)
-    public encoding 
+    public encoding
 
 f = open('/User/a', "r", encoding='utf-8')
 ```
@@ -1763,6 +1781,84 @@ listNotEmpty([])  /* 抛出 IllegalArgumentException */
 5. 如果是Character类型，则：如果转换为`int`的结果是0，那么返回false，否则返回true
 6. 如果这个对象带有`def isEmpty:bool`或者`def isEmpty:Boolean`方法，那么调用之，并返回相应结果
 7. 返回true
+
+<h2 id="p5-9">5.9 解构</h2>
+
+<h3 id="p5-9-1">5.9.1 解构用法</h3>
+
+解构指的是将一个对象分解为其组成部分的多个对象。
+
+例如有如下定义和实例化：
+
+```kotlin
+data class Bean(a,b)
+
+val bean = Bean(1,2)
+```
+
+可以知道，bean是由`1`和`2`组成的，它应当被分解为(1,2)。  
+Latte提供这样简化的分解：
+
+```scala
+val (x,y) = bean
+```
+
+定义了x和y，并分别赋值为1、2。
+
+<h3 id="p5-9-2">5.9.2 解构实现方式</h3>
+
+使用解构，首先需要定义一个static方法`unapply`：
+
+```java
+class X
+    static
+        unapply(o)=...
+```
+
+这个方法需要接受一个参数，表示被解构的对象，并返回`null`或一个`java::util::List`实例。
+
+如果返回`null`则说明解构失败，如果返回`List`实例，则表示会被分解为存在于列表中的对象。
+
+如果解构失败，则解构表达式返回`false`，否则返回`true`。
+
+可以指定使用“带有unapply方法的类”来执行解构：
+
+```scala
+Bean(x,y) <- bean
+```
+
+如果没有指定，则尝试使用右侧对象的类中的unapply方法进行解构。
+
+```scala
+(x,y) <- bean /* 相当于 Bean(x,y) <- bean */
+```
+
+如果没有指定类型，则可以将`<-`替换为`=`。
+
+解构可以放在`if`中使用：
+
+```scala
+if List(a,b,c) <- o
+    println("result is ${a},${b},${c}")
+else
+    println("destruct failed!")
+```
+
+<h2 id="p5-10">5.10 模式匹配</h2>
+
+和`scala`一样，`Latte`不提供`java`的`switch`语句，但是提供更强大的模式匹配。
+
+```scala
+def doMatch(o) = o match
+    case 1 => ... /* 根据值匹配 */
+    case b:Apple => ... /* 检查类型并定义一个新的变量 */
+    case _:Banana => ... /* 根据类型匹配 */
+    case Bean(x,y) => ... /* 根据解构匹配 */
+    case Bean(1, Bean(x, _:Integer)) => ... /* 多重模式 */
+    case _ => ... /* 匹配所有（默认行为） */
+```
+
+模式匹配会从上到下依次尝试匹配。如果匹配成功则进入该分支执行语句，最终返回一个值（也可能返回`Unit`）。如果匹配失败，则会抛出`lt::lang::MatchError`。
 
 <h1 id="p6">6. Java交互</h1>
 
