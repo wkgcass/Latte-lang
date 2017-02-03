@@ -74,10 +74,10 @@ list3[1]="d"
  */
 
 ; Json Literal
-m = {
+m = [
     "a" : 1
     "b" : 2
-}             ; the map is {a:1, b:2}
+]             ; the map is {a:1, b:2}
 ; empty map
 map = Map()
 

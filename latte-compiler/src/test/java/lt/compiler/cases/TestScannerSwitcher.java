@@ -35,18 +35,18 @@ public class TestScannerSwitcher {
                 ScannerSwitcher s1 = new ScannerSwitcher("test", new StringReader(
                         "" +
                                 ";; :scanner-brace\n" +
-                                "{{\"a\":1\n" +
+                                "[\"a\":1\n" +
                                 "\"b\":2,\"c\":3\n" +
-                                "\"d\":4}}"
+                                "\"d\":4]"
                 ), new Properties(), new ErrorManager(true));
                 ScannerSwitcher s2 = new ScannerSwitcher("test", new StringReader(
                         "" +
-                                "{\n" +
+                                "[\n" +
                                 "    \"a\":1\n" +
                                 "    \"b\":2,\n" +
                                 "    \"c\":3\n" +
                                 "    \"d\":4\n" +
-                                "}"
+                                "]"
                 ), new Properties(), new ErrorManager(true));
 
                 assertEquals(s1.scan(), s2.scan());

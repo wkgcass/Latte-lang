@@ -1886,12 +1886,12 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    a={\n" +
+                        "    a=[\n" +
                         "        \"a\":1\n" +
                         "        \"b\":2\n" +
                         "        \"c\":3\n" +
                         "        \"d\":4\n" +
-                        "    }");
+                        "    ]");
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 

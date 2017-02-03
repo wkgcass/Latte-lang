@@ -30,5 +30,5 @@ package lt.compiler.lexical;
 public enum TokenType {
         EndingNode, EndingNodeStrong, ElementStartNode,
         STRING, NUMBER, BOOL, VALID_NAME, MODIFIER, KEY, SYMBOL,
-        REGEX, LAYER_END
+        REGEX
 }

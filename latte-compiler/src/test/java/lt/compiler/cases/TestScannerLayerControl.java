@@ -60,7 +60,7 @@ public class TestScannerLayerControl {
                 //val trim(input)
                 //    <input.trim()
                 IndentScanner processor = new IndentScanner("test", new StringReader("" +
-                        "val trim(input) |-return input.trim()-|"), new Properties(), new ErrorManager(true));
+                        "val trim(input) {return input.trim()}"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -100,7 +100,7 @@ public class TestScannerLayerControl {
                 //else
                 //    <"world"
                 IndentScanner processor = new IndentScanner("test", new StringReader(
-                        "if true |-return \"hello world\"-| elseif false |-return \"hello\"-| else |-return \"world\"-|"),
+                        "if true {return \"hello world\"} elseif false {return \"hello\"} else {return \"world\"}"),
                         new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
@@ -143,7 +143,7 @@ public class TestScannerLayerControl {
                 //for i @ iterable
                 //    i
                 IndentScanner processor = new IndentScanner("test", new StringReader(
-                        "for i in iterable |-i-|"), new Properties(), new ErrorManager(true));
+                        "for i in iterable {i}"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -166,7 +166,7 @@ public class TestScannerLayerControl {
                 //while true
                 //    i+=1
                 IndentScanner processor = new IndentScanner("test", new StringReader(
-                        "while true |-i+=1-|"), new Properties(), new ErrorManager(true));
+                        "while true {i+=1}"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -191,7 +191,7 @@ public class TestScannerLayerControl {
                 //     i+=1
                 // while true
                 IndentScanner processor = new IndentScanner("test", new StringReader(
-                        "do |-i+=1-| while true"), new Properties(), new ErrorManager(true));
+                        "do {i+=1} while true"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -215,6 +215,8 @@ public class TestScannerLayerControl {
 
         @Test
         public void testTry() throws Exception {
+                // the syntax is not used
+                // but the test remains
                 //try
                 //    throw e
                 //catch e
@@ -222,17 +224,17 @@ public class TestScannerLayerControl {
                 //        throw RuntimeException(e)
                 //    OtherException
                 //finally
-                //    <ret
+                //    return ret
                 IndentScanner processor = new IndentScanner("test", new StringReader(
                         "" +
                                 "try " +
-                                /**/"|-throw e-| " +
+                                /**/"{throw e} " +
                                 "catch e " +
-                                /**/"|-SomeException,AnotherException " +
-                                /* ** */"|-throw RuntimeException(e)-| " +
-                                /**/"OtherException -| " +
+                                /**/"{SomeException,AnotherException " +
+                                /* ** */"{throw RuntimeException(e)} " +
+                                /**/"OtherException } " +
                                 "finally " +
-                                /**/"|-return ret-|"), new Properties(), new ErrorManager(true));
+                                /**/"{return ret}"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();

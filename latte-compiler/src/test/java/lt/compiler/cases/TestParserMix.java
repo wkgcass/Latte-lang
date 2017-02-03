@@ -286,7 +286,7 @@ public class TestParserMix {
 
         @Test
         public void testMapList() throws Exception {
-                List<Statement> statements = parse("{a:[1,2]}");
+                List<Statement> statements = parse("[a:[1,2]]");
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
@@ -302,7 +302,7 @@ public class TestParserMix {
 
         @Test
         public void testListMap() throws Exception {
-                List<Statement> statements = parse("[{'a':b},{'c':d}]");
+                List<Statement> statements = parse("[['a':b],['c':d]]");
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
@@ -319,7 +319,7 @@ public class TestParserMix {
 
         @Test
         public void testMapWithListAndOther() throws Exception {
-                List<Statement> statements = parse("{a:[1,2],b:c}");
+                List<Statement> statements = parse("[a:[1,2],b:c]");
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
@@ -337,7 +337,7 @@ public class TestParserMix {
 
         @Test
         public void testListWithMapAndOther() throws Exception {
-                List<Statement> statements = parse("[a,{'c':d}]");
+                List<Statement> statements = parse("[a,['c':d]]");
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
@@ -430,12 +430,12 @@ public class TestParserMix {
         @Test
         public void testMap_OperatorLikeInvocation() throws Exception {
                 List<Statement> list = parse("" +
-                        "{\n" +
+                        "[\n" +
                         "    'a':a op b\n" +
                         "    a op b:'b'\n" +
                         "    'a':a op\n" +
                         "    a op:'b'\n" +
-                        "}");
+                        "]");
 
                 assertEquals(1, list.size());
                 AST.MapExp mapExp = new AST.MapExp(new LinkedHashMap<Expression, Expression>() {
@@ -503,9 +503,9 @@ public class TestParserMix {
         public void testMapIndexAccess() throws Exception {
                 List<Statement> list = parse(
                         "" +
-                                "{\n" +
+                                "[\n" +
                                 "    'USER' : session['USER']\n" +
-                                "}"
+                                "]"
                 );
                 assertEquals(
                         Collections.singletonList(

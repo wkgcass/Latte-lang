@@ -201,7 +201,7 @@ public class TestBugsInEval {
         public void testLayerControlSymbolWithoutEnd() throws Exception {
                 Object res = evaluator.eval("" +
                         "var count = 0\n" +
-                        "(1 to 10).forEach |- count+=it\n" +
+                        "(1 to 10).forEach { count+=it }\n" +
                         "count").result;
                 assertEquals(55, res);
 
@@ -287,7 +287,7 @@ public class TestBugsInEval {
                         "    x(o:B)=o\n" +
                         "data class B(i:int)\n" +
                         "a = A");
-                Object o = e.eval("a({\"i\": 10})").result;
+                Object o = e.eval("a([\"i\": 10])").result;
                 assertEquals(10, o.getClass().getMethod("getI").invoke(o));
         }
 

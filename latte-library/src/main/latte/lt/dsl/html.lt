@@ -66,16 +66,16 @@ import lt::util::_
 
 private class StringUtils
     static
-        val htmlEscapeMap = {
+        val htmlEscapeMap = [
             '<' : "&lt;"
             '>' : "&gt;"
             '&' : "&amp;"
             '"' : "&quot;"
             ' ' : "&nbsp;"
-        }.immutable
-        val attrEscapeMap = {
+        ].immutable
+        val attrEscapeMap = [
             '"' : "&quot;"
-        }.immutable
+        ].immutable
         escapeHtml(source):String
             source = source.toString
             sb = StringBuilder()
@@ -261,13 +261,13 @@ data class meta : HTMLElement
 
 ; <script src='' type=''>...</script>
 data class script(typ) : HTMLElementWithClosing
-    toString():String = toString({'type':typ})
-    pretty(indentation:int=0):String = pretty({'type':typ}, indentation)
+    toString():String = toString(['type':typ])
+    pretty(indentation:int=0):String = pretty(['type':typ], indentation)
 
 ; <link rel='' type='' href=''>
 data class link(typ) : HTMLElement
-    toString():String = toString({'type':typ})
-    pretty(indentation:int=0):String = pretty({'type':typ}, indentation)
+    toString():String = toString(['type':typ])
+    pretty(indentation:int=0):String = pretty(['type':typ], indentation)
 
 ; <body>...</body>
 data class body : HTMLElementWithClosing
@@ -286,8 +286,8 @@ data class br : HTMLElement
 
 ; <button type=''>...</button>
 data class button(typ) : HTMLElementWithClosing
-    toString():String = toString({'type':typ})
-    pretty(indentation:int=0):String = pretty({'type':typ}, indentation)
+    toString():String = toString(['type':typ])
+    pretty(indentation:int=0):String = pretty(['type':typ], indentation)
 
 ; <code>...</code>
 data class code : HTMLElementWithClosing
@@ -360,8 +360,8 @@ data class i : HTMLElementWithClosing
 
 ; <input type='' value=''>
 data class input(typ) : HTMLElement
-    toString():String = toString({"type" : typ})
-    pretty(indentation:int=0):String = pretty({'type':typ}, indentation)
+    toString():String = toString(["type" : typ])
+    pretty(indentation:int=0):String = pretty(['type':typ], indentation)
 
 ; <textarea>...</textarea>
 data class textarea : HTMLElementWithClosing

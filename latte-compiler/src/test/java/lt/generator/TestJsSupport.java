@@ -159,7 +159,7 @@ public class TestJsSupport {
                         "{\n" +
                         "    'a' : 1,\n" +
                         "    'b' : 2\n" +
-                        "};", compile("{'a':1,'b':2}"));
+                        "};", compile("['a':1,'b':2]"));
         }
 
         @Test

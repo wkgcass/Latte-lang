@@ -69,12 +69,12 @@ public class TestScript {
         public void testInternalLambdaBug() throws Throwable {
                 String code = "" +
                         "[1, 2, 3, 4].stream.\n" +
-                        "filter |-it > 2-|.\n" +
-                        "map |-it + 1-|\n" +
+                        "filter {it > 2}.\n" +
+                        "map {it + 1}\n" +
                         "\n" +
                         "a = 1\n" +
                         "b = 2\n" +
-                        "val result = (if a>b |-1-| else |-2-|)\n" +
+                        "val result = (if a>b {1} else {2})\n" +
                         "return result";
                 assertEquals(2, scriptCompiler.compile("testInternalLambdaBug", code).run().getResult());
         }

@@ -98,7 +98,7 @@ public class TestScannerErrorRecovery {
                 manager.out = ErrorManager.Out.allNull();
 
                 ElementStartNode root = scan("" +
-                        "{'id':1]"
+                        "['id':1}"
                 /*              ^unknown token ? */
                         , manager);
 
@@ -119,8 +119,8 @@ public class TestScannerErrorRecovery {
                 Element one = (Element) colon.next();
                 assertNull(one.next());
 
-                assertEquals("{", _b1_.getContent());
-                assertEquals("}", _b2_.getContent());
+                assertEquals("[", _b1_.getContent());
+                assertEquals("]", _b2_.getContent());
                 assertEquals("'id'", id.getContent());
                 assertEquals(":", colon.getContent());
                 assertEquals("1", one.getContent());
@@ -132,10 +132,10 @@ public class TestScannerErrorRecovery {
                 manager.out = ErrorManager.Out.allNull();
 
                 ElementStartNode root = scan("" +
-                        "({\n" +
+                        "([\n" +
                         "    'id':1\n" +
                 /*           ^indentation should be 8 */
-                        "})"
+                        "])"
                 /*       ^indentation should >= 4 */
                         , manager);
                 assertEquals(2, manager.errorList.size());
@@ -168,8 +168,8 @@ public class TestScannerErrorRecovery {
                 assertEquals("(", par1.getContent());
                 assertEquals(")", par2.getContent());
 
-                assertEquals("{", brace1.getContent());
-                assertEquals("}", brace2.getContent());
+                assertEquals("[", brace1.getContent());
+                assertEquals("]", brace2.getContent());
 
                 assertEquals("'id'", id.getContent());
                 assertEquals(":", colon.getContent());

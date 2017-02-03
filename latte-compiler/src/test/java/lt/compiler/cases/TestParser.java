@@ -1466,7 +1466,7 @@ public class TestParser {
 
         @Test
         public void testMap() throws Exception {
-                List<Statement> list = parse("{a:b}");
+                List<Statement> list = parse("[a:b]");
 
                 assertEquals(1, list.size());
 
@@ -1480,7 +1480,7 @@ public class TestParser {
 
         @Test
         public void testMap_two_key() throws Exception {
-                List<Statement> list = parse("{a:b,c:d}");
+                List<Statement> list = parse("[a:b,c:d]");
 
                 assertEquals(1, list.size());
 
@@ -1496,7 +1496,7 @@ public class TestParser {
         @Test
         public void testMap_in_map() throws Exception {
                 List<Statement> list = parse(
-                        "{a:{b:c}}"
+                        "[a:[b:c]]"
                 );
 
                 assertEquals(1, list.size());
@@ -1516,7 +1516,7 @@ public class TestParser {
 
         @Test
         public void testMap_assign() throws Exception {
-                List<Statement> list = parse("map={a:b}");
+                List<Statement> list = parse("map=[a:b]");
 
                 assertEquals(1, list.size());
 
@@ -1534,7 +1534,7 @@ public class TestParser {
         @Test
         public void testMap_in_map_assign() throws Exception {
                 List<Statement> list = parse(
-                        "map={a:{b:c}}"
+                        "map=[a:[b:c]]"
                 );
 
                 assertEquals(1, list.size());
@@ -1559,11 +1559,11 @@ public class TestParser {
         public void testMap_in_map_pretty() throws Exception {
                 List<Statement> list = parse(
                         "" +
-                                "{\n" +
-                                "    a:{\n" +
+                                "[\n" +
+                                "    a:[\n" +
                                 "        b:c\n" +
-                                "    }\n" +
-                                "}"
+                                "    ]\n" +
+                                "]"
                 );
 
                 assertEquals(1, list.size());

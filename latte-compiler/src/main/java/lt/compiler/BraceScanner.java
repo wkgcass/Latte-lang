@@ -53,9 +53,6 @@ public class BraceScanner extends AbstractScanner {
         }
 
         private void init() {
-                PAIR.put("{{", "}}");
-                LAYER.remove("|-");
-                LAYER_END.remove("-|");
                 LAYER.remove("->");
                 SPLIT_X.add("->");
 
@@ -79,7 +76,6 @@ public class BraceScanner extends AbstractScanner {
         public ElementStartNode scan() throws IOException, SyntaxException {
                 ElementStartNode root = super.scan();
                 finalCheck(root);
-                changeBraces(root);
                 return root;
         }
 
@@ -606,27 +602,6 @@ public class BraceScanner extends AbstractScanner {
                 }
                 if (n.hasNext()) {
                         n.next().setPrevious(n.previous());
-                }
-        }
-
-        private void changeBraces(ElementStartNode root) {
-                if (root.hasLinkedNode()) {
-                        Node n = root.getLinkedNode();
-                        while (n != null) {
-                                if (n instanceof Element) {
-                                        switch (((Element) n).getContent()) {
-                                                case "{{":
-                                                        ((Element) n).setContent("{");
-                                                        break;
-                                                case "}}":
-                                                        ((Element) n).setContent("}");
-                                                        break;
-                                        }
-                                } else if (n instanceof ElementStartNode) {
-                                        changeBraces((ElementStartNode) n);
-                                }
-                                n = n.next();
-                        }
                 }
         }
 }

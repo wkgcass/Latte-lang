@@ -1062,10 +1062,10 @@ public class TestCodeGen {
                         "" +
                                 "class TestNewMap\n" +
                                 "    static\n" +
-                                "        method()={\n" +
+                                "        method()=[\n" +
                                 "            \"a\":1\n" +
                                 "            \"b\":2" +
-                                "        }",
+                                "        ]",
                         "TestNewMap");
                 Method method = cls.getMethod("method");
                 LinkedHashMap<String, Integer> expected = new LinkedHashMap<>();
@@ -2706,7 +2706,7 @@ public class TestCodeGen {
                                 "class TestIndentInternalSyntaxLambda\n" +
                                 "    static\n" +
                                 "        method()=\n" +
-                                "        [1, 2, 3, 4].stream.filter|-it > 2-|.map|-it + 1-|.collect(toList())"
+                                "        [1, 2, 3, 4].stream.filter{it > 2}.map{it + 1}.collect(toList())"
                         , "TestIndentInternalSyntaxLambda");
                 Method method = cls.getMethod("method");
                 assertEquals(Arrays.asList(4, 5), method.invoke(null));
@@ -3216,11 +3216,11 @@ public class TestCodeGen {
                                 "    static\n" +
                                 "        def method1 = {}\n" +
                                 "        def method2 {1}\n" +
-                                "        def method3 = {\"a\":1, \"b\":2}\n" +
+                                "        def method3 = [\"a\":1, \"b\":2]\n" +
                                 "        def method4(a,b) = (if a > b {1} else {2})\n" +
                                 "        def method5 {" +
-                                "            {   \"a\": 1\n" +
-                                "                \"b\": 2}\n" +
+                                "            [   \"a\": 1\n" +
+                                "                \"b\": 2]\n" +
                                 "        }"
                         , "TestIndentBrace");
                 Method method1 = cls.getMethod("method1");
@@ -3247,7 +3247,7 @@ public class TestCodeGen {
                                 "class TestMapCast\n" +
                                 "    static\n" +
                                 "        def method\n" +
-                                "            {'hello': 'world', 'foo': 'bar'} as Bean\n" +
+                                "            ['hello': 'world', 'foo': 'bar'] as Bean\n" +
                                 "data class Bean(hello, foo)"
                         , "TestMapCast");
                 Method method = cls.getMethod("method");
@@ -3259,7 +3259,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestMapCastInvokeMethod\n" +
                                 "    static\n" +
-                                "        def method=invoke(1, {'foo':'bar'})\n" +
+                                "        def method=invoke(1, ['foo':'bar'])\n" +
                                 "        private invoke(i, x:Bean)=[i,x]\n" +
                                 "data class Bean(foo)"
                         , "TestMapCastInvokeMethod");
@@ -3276,7 +3276,7 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "class TestMapCastInvokeConstructor\n" +
                                 "    static\n" +
-                                "        def method = Container(1, {'foo':'bar'})\n" +
+                                "        def method = Container(1, ['foo':'bar'])\n" +
                                 "data class Bean(foo)\n" +
                                 "data class Container(i, x:Bean)"
                         , "TestMapCastInvokeConstructor");
@@ -3689,7 +3689,7 @@ public class TestCodeGen {
                                 "class TestComplexPatternMatching\n" +
                                 "    static\n" +
                                 "        def method\n" +
-                                "            val beanA = A(1,\"a\", B([], {\"x\" : \"y\"}, A(9,8,7)))\n" +
+                                "            val beanA = A(1,\"a\", B([], [\"x\" : \"y\"], A(9,8,7)))\n" +
                                 "            beanA match\n" +
                                 "                case A(1,b:String,B(_:java::util::List, c, A(_,_:Integer,d))) ->\n" +
                                 "                    [b,c,d]\n" +

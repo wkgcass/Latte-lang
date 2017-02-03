@@ -66,10 +66,10 @@ public class TestEvaluator {
                                 put("name", "cass");
                         }},
                         evaluator.eval("" +
-                                "{\n" +
+                                "[\n" +
                                 "    'id':1\n" +
                                 "    'name':'cass'\n" +
-                                "}"
+                                "]"
                         ).result);
         }
 
@@ -87,10 +87,10 @@ public class TestEvaluator {
                                 put("name", "cass");
                         }},
                         evaluator.eval("" +
-                                "{\n" +
+                                "[\n" +
                                 "    'id':1\n" +
                                 "    'name':'cass'\n" +
-                                "}"
+                                "]"
                         ).result);
                 assertEquals(2, evaluator.eval("1+1").result);
         }
@@ -110,10 +110,10 @@ public class TestEvaluator {
                                 put("name", "cass");
                         }},
                         evaluator.eval("" +
-                                "{\n" +
+                                "[\n" +
                                 "    'id':1\n" +
                                 "    'name':'cass'\n" +
-                                "}"
+                                "]"
                         ).result);
                 assertEquals(2, evaluator.eval("1+1").result);
                 assertEquals(100, evaluator.eval("10*10").result);

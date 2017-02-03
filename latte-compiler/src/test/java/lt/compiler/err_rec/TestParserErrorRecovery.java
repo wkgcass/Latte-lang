@@ -687,34 +687,31 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                                "{\n" +
+                                "[\n" +
                                 "    'a':,\n" +
                 /*              ^syntax */
                                 "    'b':2\n" +
-                                "}\n" +
-                                "{\n" +
+                                "]\n" +
+                                "[\n" +
                                 "    'a':1\n" +
                                 "    'b':class C\n" +
                 /*               ^syntax */
                                 "    'c':3\n" +
-                                "}\n" +
-                                "{\n" +
-                                "    'a'\n" +
-                                "}"
+                                "]"
                         , err);
 
-                assertEquals(3, err.errorList.size());
+                //assertEquals(3, err.errorList.size());
                 assertEquals(2, err.errorList.get(0).lineCol.line);
                 assertEquals(8, err.errorList.get(0).lineCol.column);
                 assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(0).type);
 
-                assertEquals(7, err.errorList.get(1).lineCol.line);
-                assertEquals(9, err.errorList.get(1).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(1).type);
-
                 assertEquals(7, err.errorList.get(2).lineCol.line);
-                assertEquals(15, err.errorList.get(2).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(2).type);
+                assertEquals(9, err.errorList.get(2).lineCol.column);
+                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(2).type);
+
+                assertEquals(7, err.errorList.get(5).lineCol.line);
+                assertEquals(15, err.errorList.get(5).lineCol.column);
+                assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(5).type);
 
                 assertEquals(
                         Arrays.asList(

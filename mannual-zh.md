@@ -44,7 +44,7 @@
 
 Latte-lang（后文简称Latte）借鉴了主流语言的语法特征。如果您熟悉`Java 8`，或者了解过`Kotlin`,`Scala`,`Python`,`JavaScript`,`Swift`中的一到两种，那么阅读`Latte-lang`代码是很轻松的。
 
-> 对Latte影响最大的语言应该是Kotlin和Python
+> 对Latte影响最大的语言应该是Kotlin和Scala
 
 <h3 id="p1-1-1">1.1.1 注释</h3>
 
@@ -261,10 +261,10 @@ f(2) /* 结果为 3 */
 
 ```js
 list = [1, 2, 3]
-map = {
+map = [
     "a": 1
     "b": 2
-}
+]
 ```
 
 详见[5.1 Json 集合](#p5-1)
@@ -331,23 +331,7 @@ Latte源文件以`.lt`或者`.lts`为扩展名。不过实际上后缀名并不�
 
 表示使用缩进定义层次结构。
 
-**默认为缩进**。提供这个选项是为了满足不同人的编码喜好。这两者的选择在词法上几乎一样，不同之处仅仅是：在使用“大括号定义层次结构”时，由于大括号已经被使用，所以json语法中的大括号将调整为“双大括号”`{{`和`}}`。它和“使用缩进定义层次结构”时使用的单大括号是完全相同的。
-
-e.g.
-
-```js
-;; :scanner-brace
-map = {{'hello' : 'world'}}
-
-;; :scanner-indent
-map = {'hello' : 'world'}
-```
-
->觉得这么写太麻烦？没关系，Latte也支持Swift的语法：
-
-```swift
-map = ['hello':'world']
-```
+**默认为缩进**。提供这个选项是为了满足不同人的编码喜好。这两者的选择在词法上完全一样。
 
 <h3 id="p1-2-2">1.2.2 层次结构</h3>
 
@@ -357,7 +341,6 @@ map = ['hello':'world']
 (
 [
 {
-{{
 ```
 
 当其对应的符号出现时，这个开启的层将关闭：
@@ -366,7 +349,6 @@ map = ['hello':'world']
 )
 ]
 }
-}}
 ```
 
 使用*缩进*定义层次结构时，还有一个符号会开启一个新层: `->`
@@ -379,8 +361,6 @@ f()
 ```
 
 >注：使用大括号定义层次结构时，`->`不会开启新层，若要书写多行语句请使用{...}。此时规则和java完全一致。
-
-此外，使用缩进定义层次结构时，不存在`{{`和`}}`符号，如果使用将会遇到一个语法错误。
 
 这里有一个示例，帮助理解“层”的概念：
 
@@ -416,20 +396,7 @@ f()
 
 <h3 id="p1-2-4">1.2.4 层次控制字符</h3>
 
-在使用缩进定义层次结构时，为了方便书写，提供了两个层次控制字符：
-
-`|-`可以开启一个新层。`-|`可以结束一个新层。
-
-例如 [1.1.12 Lambda](#p1-1-12) 中的例子，如果用“缩进”来改写，可以写为：
-
-```ruby
-list.stream.
-filter |-it.startsWith("A")-|.
-map |-it.toUpperCase()-|.
-forEach |-print(it)-|
-```
-
-在缩进模式下，Latte还支持直接使用`{`和`}`定义层次结构。但是有一定限制：在比`{`和`}`低一层的token中不能出现`:`否则会当作map来解析。
+Latte支持直接使用`{`和`}`定义层次结构。不过要注意，如果写为`{}`则表示空Map(映射)
 
 例如：
 
@@ -443,16 +410,16 @@ else
 ```
 
 ```js
-{"a": 1} /* 这是一个map */
+var map = {} /* 这是一个map */
 ```
 
 ```js
 /* 可以正常编译，定义了一个方法，其中定义一个局部变量，赋值一个map */
 def method {
-    map = {
+    map = [
         "a": 1
         "b": 2
-    }
+    ]
 }
 ```
 
@@ -584,26 +551,26 @@ Latte中有6种字面量：
 
 <h3 id="p2-1-5">2.1.5 map</h3>
 
-映射(字典)可以像js一样，以`{`开头，并以`}`结尾，或者像swift一样，以`[`开头，以`]`结尾。不过注意，在 [1.2.1 定义层次结构](#p1-2-1) 中描述过，在使用大括号定义层次结构时，`{`应该写为`{{`，`}`写为`}}`。所以为了书写简便，在使用缩进定义层次时建议使用`{...}`，在使用大括号定义层次时建议使用`[...]`。
+映射(字典)像swift一样，以`[`开头，以`]`结尾。
 
 键值对通过类型符号`:`分隔，不同的entry通过`,`或者换行进行分隔。
 
 例如：
 
-```js
-{'a':1, 'b':2, 'c':3}
+```swift
+['a':1, 'b':2, 'c':3]
 
-{
+[
     'a':1
     'b':2
     'c':3
-}
+]
 
-{
+[
     'a':1,
     'b':2,
     'c':3
-}
+]
 ```
 
 <h3 id="p2-1-6">2.1.6 regex</h3>
@@ -694,7 +661,7 @@ if a > b
 else
     return 2
 
-val result = (if a>b |-1-| else |-2-|)
+val result = (if a>b {1} else {2})
 ```
 
 <h3 id="p2-3-2">2.3.2 For 语句</h3>
@@ -710,10 +677,10 @@ for item in iter
 
 当`iter`为前4种时，for语句将把其包含的对象依次赋值给`item`并执行循环体。当`iter`为Map对象时，`item`是一个Entry对象，它来自`Map#entrySet()`。
 
-你也可以使用range表达式，并在循环体内使用下标来访问元素:
+你也可以使用`to`或者`until`，并在循环体内使用下标来访问元素:
 
 ```kotlin
-for i in 0.:arr.length
+for i in 0 until arr.length
     val elem = arr[i]
     ...
 ```
@@ -1009,7 +976,7 @@ fizz():int=1
 
 --
 
-如果明确方法不返回值，那么可以附加`Unit`类型或者`void`类型。它们两个是等价的，但是Latte中只能写作`Unit`。  
+如果明确方法不返回值，那么可以附加`Unit`类型。Latte中只能写作`Unit`，代表了Java中的`void`。  
 但是，在Latte中所有方法都会返回一个值，对于Unit类型的方法，虽然会被编译为void类型，但是依然会返回`Unit`，它是`lt.lang.Unit`类型。
 
 和构造函数参数一样，方法参数也可以设定默认值：
@@ -1034,7 +1001,7 @@ foo(x)
 foo(x)(it->...)
 ```
 
-所以使用类似于这种方式(`VALID_NAME ( [PARAM [, PARAM, ...]] ) |- ...`)定义的方法，如果没有注解，也没有其他修饰符，会造成歧义，所以不可省略`def`。
+所以使用类似于这种方式(`VALID_NAME ( [PARAM [, PARAM, ...]] ) { ... }`)定义的方法，如果没有注解，也没有其他修饰符，会造成歧义，所以不可省略`def`。
 
 方法返回类型为`Unit`时，你依然可以书写`return value`，这个value会被求值，但是不会被返回。  
 方法非`Unit`时，你也可以直接书写`return`，这时默认返回一个`Unit`。当然，如果返回类型不匹配，编译期依然会报错。
@@ -1099,7 +1066,7 @@ Latte有4种访问修饰符：
 
 * public 公有，所有实例均可访问
 * protected 受保护，包名相同的类型，或者子类可访问
-* pkg 包内可访问，包名相同的类型可以访问
+* internal 包内可访问，包名相同的类型可以访问
 * private 私有，只有本类型可访问
 
 访问修饰符可以用来修饰:
@@ -1112,13 +1079,13 @@ Latte有4种访问修饰符：
 
 其中，类访问修饰符并不是规定给类用的。Latte中，类的访问修饰符永远为`public`，这个修饰符是作为构造函数而存在的。
 
-| 位置   | public | protected | pkg | private |
-|-------|--------|-----------|------|--------|
-| 类    |  √     |     √     |   √  |   √    |
-| 接口  |  √     |           |      |        |
-| 字段  |  √     |     √     |   √  |   √    |
-| 方法  |  √     |     √     |   √  |   √    |
-| 构造函数参数 |  √ |   √     |   √  |   √    |
+| 位置   | public | protected | internal | private |
+|-------|--------|-----------|----------|--------|
+| 类    |  √     |     √     |     √    |   √    |
+| 接口  |  √     |           |          |        |
+| 字段  |  √     |     √     |     √    |   √    |
+| 方法  |  √     |     √     |     √    |   √    |
+| 构造函数参数 |  √ |   √     |     √    |   √    |
 
 <h3 id="p3-4-2">3.4.2 其他修饰符</h3>
 
@@ -1185,8 +1152,8 @@ f = open('/User/a', "r", encoding='utf-8')
 这是一个语法糖，相当于如下Latte代码：
 
 ```kotlin
-john = new open('/User/a', "r")
-john.encoding = 'utf-8'
+f = open('/User/a', "r")
+f.encoding = 'utf-8'
 ```
 
 即：首先使用不带`=`的参数进行类型的实例化，然后把剩余“参数”看作对accessor的赋值操作。
@@ -1388,20 +1355,6 @@ strList.stream.
 	collect(Collectors.toList())
 ```
 
-用大括号看起来更自然，不过用缩进也完全没问题
-
-```ruby
-;; :scanner-indent
-
-strList = ...
-strList.stream.
-map |-Integer.parseInt(it)-|.
-filter |-it > 10-|.
-collect(Collectors.toList())
-```
-
-> Latte也允许在某些限制条件下，把`|-`,`-|`换成`{`,`}`，除了需要遵循缩进外和"大括号模式"一样。见[1.2.4 层次控制字符](#p1-2-4)
-
 <h3 id="p4-2-2">4.2.2 Lambda</h3>
 
 Latte支持和Java完全一样的Lambda语法：
@@ -1443,17 +1396,17 @@ latteIsWrittenInJava
 
 >做一丁点处理后，这是可以正常编译的代码！（不需要hack编译器）
 
-配合层次控制符可以写成
+可以写成一行
 
 ```coffee
-latteIsWrittenInJava |- if it is great |- star the repo
+latteIsWrittenInJava { if it is great { star the repo }}
 ```
 
 此外Lambda的变量捕捉机制和Java不同。Latte可以在Lambda中的任何地方修改被捕获的变量。
 
 ```coffee
 var count = 0
-(1..10).forEach |- count+=it
+(1..10).forEach { count+=it }
 println(count)
 ```
 
@@ -1500,43 +1453,24 @@ res = [1,2,3] as JsonArray
 
 Json对象：
 
-```js
-var map = {
+```swift
+var map = [
     'one': 1,
     'two': 2,
     'three', 3
-}
+]
 ```
 
 其中`,`是不必须的。“换行”和`,`都可以用来来分割list的元素，以及map的entry
-
-注意，在使用“大括号层次”时，`{`和`}`需要更换为`{{`和`}}`，例如：
-
-```js
-;; :scanner-brace
-var map = {{
-    'one': 1,
-    'two': 2
-}}
-```
-
-由于书写两个大括号，有时候的确不方便。所以Latte提供了类似于`Swift`字典的书写方式：
-
-```js
-var map = [
-    'one': 1,
-    'two': 2
-]
-```
 
 在Latte中，你还可以把一个"所有键都是string"的map转换为指定类型的对象。
 
 ```kotlin
 data class Bean(hello, foo)
-res = {
+res = [
     "hello" : "world"
     "foo"   : "bar
-} as Bean
+] as Bean
 
 /* res will be Bean(hello=world, foo=bar) */
 ```
@@ -1546,21 +1480,23 @@ res = {
 
 <h2 id="p5-2">5.2 范围</h2>
 
-在Latte中可以使用`..`或者`.:`运算符来定义一个“范围”（range）。这两个运算符只接受整数作为参数。它的结果是一个`java.util.List`实例。
+在Latte中可以使用`to`或者`until`运算符来定义一个“范围”（range）。这两个运算符只接受整数作为参数。它的结果是一个`java.util.List`实例。
 
-使用`..`可以定义一个包含头和尾的范围，使用`.:`可以定义一个只包含头，不包含尾的范围：
+使用`to`可以定义一个包含头和尾的范围，使用`until`可以定义一个只包含头，不包含尾的范围：
 
-```swift
-oneToTen = 1..10   /* [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] */
-oneToNine = 1.:10  /* [1, 2, 3, 4, 5, 6, 7, 8, 9] */
+```scala
+oneToTen = 1 to 10   /* [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] */
+oneToNine = 1 until 10  /* [1, 2, 3, 4, 5, 6, 7, 8, 9] */
 ```
 
 range也支持尾比头更小：
 
-```swift
-tenToOne = 10..1   /* [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] */
-tenToTwo = 10.:1   /* [10, 9, 8, 7, 6, 5, 4, 3, 2] */
+```scala
+tenToOne = 10 to 1   /* [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] */
+tenToTwo = 10 to 1   /* [10, 9, 8, 7, 6, 5, 4, 3, 2] */
 ```
+
+>范围的实现基于“隐式类型转换”，Latte默认定义的RichInt提供了`to`和`until`方法。
 
 <h2 id="p5-3">5.3 类型检查与转换</h2>
 
@@ -1588,7 +1524,7 @@ var y:Sub = x
 ```kotlin
 class Data
     i:int
-    def setI(i:int) |- this.i=i
+    def setI(i:int) { this.i=i }
 
 fun call(x)
     var data:Data = Data
@@ -1689,7 +1625,7 @@ Latte和Java总体上是类似的，但是仍有多处不同：
 
 ```kotlin
 fun isGreaterThanZero(x)
-    if x <= 0 |- throw '${x} is littler than 0'
+    if x <= 0 { throw '${x} is littler than 0' }
 
 var a = -1
 try
@@ -1956,7 +1892,7 @@ Class<?> cls = cl.loadClass('...');
 Latte支持`eval`，在latte代码中`eval('...')`即可。在Java中，你也可以直接调用
 
 ```java
-lt.lang.Utils.eval("{\"id\":1,\"lang\":\"java\"}");
+lt.lang.Utils.eval("[\"id\":1,\"lang\":\"java\"]");
 ```
 
 或者使用`Evaluator`获取完整的eval支持:

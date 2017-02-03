@@ -37,17 +37,17 @@ class TestHtml
             ).pretty
         def testCss()
             return (
-                css('body') + {
+                css('body') + [
                     'background-color':'#123456'
-                }
+                ]
             ).pretty
         def testHtmlAndCss()
             return (
                 html + [
                     style + [
-                        css('body') + {
+                        css('body') + [
                             'background-color':'red'
-                        }
+                        ]
                     ]
                 ]
             ).pretty

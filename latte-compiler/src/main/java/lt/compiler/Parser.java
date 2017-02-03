@@ -1882,7 +1882,12 @@ public class Parser {
                                                         annosIsEmpty();
                                                         modifiersIsEmpty();
 
-                                                        parse_map();
+                                                        if (current.next() instanceof Element && ((Element) current.next()).getContent().equals("}")) {
+                                                                parse_map();
+                                                        } else {
+                                                                err.UnexpectedEndException(current.getLineCol());
+                                                                throw new ParseFail();
+                                                        }
 
                                                 } else if (content.equals("@")) {
                                                         annosIsEmpty();
@@ -2091,6 +2096,10 @@ public class Parser {
 
                                 the behavior of the expression may change because the AST changed
                                  */
+                                if (parsedExps.isEmpty()) {
+                                        err.UnexpectedEndException(current.getLineCol());
+                                        throw new ParseFail();
+                                }
                                 Expression exp = parsedExps.pop();
                                 List<Statement> lambdaStmts = parseElemStart((ElementStartNode) current, true, Collections.emptySet(), false);
                                 AST.Lambda lambda = new AST.Lambda(Collections.singletonList(

@@ -10,9 +10,9 @@ i_am_a_number = 1
 or_float_number = 1.2
 
 ; map
-json = {
+json = [
     'a':'b'
-}
+]
 ; comma at the end can be omitted
 ; map literal would be parsed into lt::util::Map
 

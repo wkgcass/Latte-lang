@@ -4147,6 +4147,7 @@ public class SemanticProcessor {
          * @param destruct AST destruct
          * @param scope    scope
          * @return bool result
+         * @throws SyntaxException compiling error
          */
         public Value parseValueFromDestruct(AST.Destruct destruct, SemanticScope scope) throws SyntaxException {
                 // imports
