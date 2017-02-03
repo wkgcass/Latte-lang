@@ -34,7 +34,7 @@ public class Modifier implements Pre {
         public enum Available {
                 PRIVATE, PUBLIC, PROTECTED, PKG, SYNCHRONIZED, VAL,
                 NATIVE, ABSTRACT, TRANSIENT, VOLATILE, STRICTFP, DATA,
-                VAR, DEF, NONNULL, NONEMPTY
+                VAR, DEF, NONNULL, NONEMPTY, IMPLICIT
         }
 
         public final Available modifier;

@@ -2293,20 +2293,20 @@ public class TestParser {
                         "object Test4:ArrayList([]),List"
                 );
                 assertEquals(Arrays.asList(
-                        new ObjectDef("Test1", null, Collections.emptyList(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
-                        new ObjectDef("Test2", null, Collections.singletonList(new AST.Access(null, "Object", LineCol.SYNTHETIC)), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
+                        new ObjectDef("Test1", null, Collections.emptyList(), Collections.emptySet(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
+                        new ObjectDef("Test2", null, Collections.singletonList(new AST.Access(null, "Object", LineCol.SYNTHETIC)), Collections.emptySet(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
                         new ObjectDef("Test3", new AST.Invocation(
                                 new AST.Access(null, "ArrayList", LineCol.SYNTHETIC),
                                 Collections.singletonList(new AST.ArrayExp(Collections.emptyList(), LineCol.SYNTHETIC)),
                                 false, LineCol.SYNTHETIC
-                        ), Collections.emptyList(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
+                        ), Collections.emptyList(), Collections.emptySet(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC),
                         new ObjectDef("Test4", new AST.Invocation(
                                 new AST.Access(null, "ArrayList", LineCol.SYNTHETIC),
                                 Collections.singletonList(new AST.ArrayExp(Collections.emptyList(), LineCol.SYNTHETIC)),
                                 false, LineCol.SYNTHETIC
                         ), Collections.singletonList(
                                 new AST.Access(null, "List", LineCol.SYNTHETIC)
-                        ), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC)
+                        ), Collections.emptySet(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC)
                 ), stmts);
         }
 

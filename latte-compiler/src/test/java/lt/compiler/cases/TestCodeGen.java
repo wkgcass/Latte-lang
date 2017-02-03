@@ -3366,10 +3366,8 @@ public class TestCodeGen {
                                 "        def method= + 1 s\n" +
                                 "class X(x:Integer)\n" +
                                 "    def s = x + ' s'\n" +
-                                "@Implicit\n" +
-                                "object XX\n" +
-                                "    @Implicit\n" +
-                                "    def cast(x:Integer):X=X(x)"
+                                "implicit object XX\n" +
+                                "    implicit def cast(x:Integer):X=X(x)"
                         , "TestImportImplicit");
 
                 assertTrue(cls.isAnnotationPresent(ImplicitImports.class));
@@ -3384,8 +3382,7 @@ public class TestCodeGen {
         public void testImportImplicit2() throws Exception {
                 Class<?> cls = retrieveClass("" +
                                 "import implicit TestImportImplicit2\n" +
-                                "@Implicit\n" +
-                                "object TestImportImplicit2"
+                                "implicit object TestImportImplicit2"
                         , "TestImportImplicit2");
                 assertTrue(cls.isAnnotationPresent(ImplicitImports.class));
                 assertEquals(3, cls.getAnnotation(ImplicitImports.class).implicitImports().length);
@@ -3400,10 +3397,8 @@ public class TestCodeGen {
                                 "        def method= Integer(1) as X\n" +
                                 "class X(x:Integer)\n" +
                                 "    def s = x + ' s'\n" +
-                                "@Implicit\n" +
-                                "object XX\n" +
-                                "    @Implicit\n" +
-                                "    def cast(x:Integer):X=X(x)"
+                                "implicit object XX\n" +
+                                "    implicit def cast(x:Integer):X=X(x)"
                         , "TestImportImplicit3");
                 Method method = cls.getMethod("method");
                 assertEquals("X", method.invoke(null).getClass().getName());

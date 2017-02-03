@@ -1163,36 +1163,47 @@ val o = DataProviderManager
 
 隐式转换可以帮助你为对象扩展方法，从而更灵活的进行编程。
 
-使用隐式转换分为三步
+使用隐式转换分为四步
 
-### 1. 定义一个隐式类：
+### 1. 定义一个类用来表示隐式转换后的类型
 
-隐式类几乎等同于普通的类，但是构造函数必须为一个参数。并且在其上附带`@Implicit`注解。  
-构造函数的参数类型用作隐式转换的源类型，这个定义的类用作隐式转换的目标类型
+这一步是可选的，您可以直接隐式转换到已有的类型。这里为了说明方便，单独定义一个：
 
 ```scala
-@Implicit
 class RichInteger(i:Integer)
     minutes() = i + " minute" + ( if i != 1 { "s" } else { "" } )
 ```
 
-隐式转换时，接收`Integer`作为源类型，以`RichInteger`作为目标类型
+### 2. 定义一个隐式对象：
 
-### 2. 启用隐式类
+隐式对象是一个普通的`object class`，不过需要用`implicit`修饰它。  
+在其中定义一些"隐式方法"，用来进行隐式类型转换。
+
+“隐式方法”就是普通的方法，不过需要用`implicit`修饰它。  
+隐式方法有一些要求：参数只能有一个，其类型为隐式转换的源类型（或源类型的父类型）；返回类型为目标类型。
+
+例如：我们想要将`Integer`转换为`RichInteger`
 
 ```scala
-import implicit RichInteger
+implicit object TestImplicitCast
+    implicit def cast(i:Integer):RichInteger = RichInteger(i)
+```
+
+### 3. 启用隐式类
+
+```scala
+import implicit TestImplicitCast
 ```
 
 使用`import implicit`引入隐式类。这里注意，隐式类必须使用类名引入，而且，即使隐式类与使用者定义在同一个包下，也必须显式引入。这样错用几率会比较小。
 
-### 3. 使用
+### 4. 使用
 
 ```
 val x = 30 minutes
 ```
 
-此时，`x`的值即为`"30 minutes"`
+此时，`x`的值即为`"30 minutes"`。运行时会寻找可用的隐式转换，并判断转换后是否能够调用指定方法：发现`Integer => RichInteger`可用，且RichInteger可以调用`minutes()`方法；那么最终执行时的代码相当于`val x = TestImplicitCast.cast(30).minutes()`
 
 <h1 id="p4">4. 函数类和Lambda</h1>
 

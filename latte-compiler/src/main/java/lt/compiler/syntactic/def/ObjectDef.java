@@ -4,6 +4,7 @@ import lt.compiler.LineCol;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Definition;
 import lt.compiler.syntactic.Statement;
+import lt.compiler.syntactic.pre.Modifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ public class ObjectDef implements Definition {
         public final String name;
         public final AST.Invocation superWithInvocation;
         public final List<AST.Access> superWithoutInvocation;
+        public final Set<Modifier> modifiers;
         public final Set<AST.Anno> annos;
         public final List<Statement> statements;
 
@@ -24,12 +26,14 @@ public class ObjectDef implements Definition {
         public ObjectDef(String name,
                          AST.Invocation superWithInvocation,
                          List<AST.Access> superWithoutInvocation,
+                         Set<Modifier> modifiers,
                          Set<AST.Anno> annos,
                          List<Statement> statements,
                          LineCol lineCol) {
                 this.name = name;
                 this.superWithInvocation = superWithInvocation;
                 this.superWithoutInvocation = superWithoutInvocation;
+                this.modifiers = modifiers;
                 this.annos = annos;
                 this.statements = new ArrayList<>(statements);
                 this.lineCol = lineCol;
@@ -70,6 +74,7 @@ public class ObjectDef implements Definition {
                 if (superWithInvocation != null ? !superWithInvocation.equals(objectDef.superWithInvocation) : objectDef.superWithInvocation != null)
                         return false;
                 if (!superWithoutInvocation.equals(objectDef.superWithoutInvocation)) return false;
+                if (!modifiers.equals(objectDef.modifiers)) return false;
                 if (!annos.equals(objectDef.annos)) return false;
                 //
                 return statements.equals(objectDef.statements);
@@ -81,6 +86,7 @@ public class ObjectDef implements Definition {
                 int result = name.hashCode();
                 result = 31 * result + (superWithInvocation != null ? superWithInvocation.hashCode() : 0);
                 result = 31 * result + superWithoutInvocation.hashCode();
+                result = 31 * result + modifiers.hashCode();
                 result = 31 * result + annos.hashCode();
                 result = 31 * result + statements.hashCode();
                 return result;

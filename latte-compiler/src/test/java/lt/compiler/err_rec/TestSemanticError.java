@@ -55,7 +55,7 @@ public class TestSemanticError {
                                 "class X"
                         );
                         fail();
-                }catch (SyntaxException ignore) {
+                } catch (SyntaxException ignore) {
                 }
 
                 try {
@@ -66,7 +66,7 @@ public class TestSemanticError {
                                 "    def m"
                         );
                         fail();
-                }catch (SyntaxException ignore) {
+                } catch (SyntaxException ignore) {
                 }
 
                 try {
@@ -77,7 +77,27 @@ public class TestSemanticError {
                                 "    def m(o):Unit"
                         );
                         fail();
-                }catch (SyntaxException ignore) {
+                } catch (SyntaxException ignore) {
+                }
+
+                // implicit
+
+                try {
+                        get("" +
+                                "implicit object X\n" +
+                                "    implicit def m"
+                        );
+                        fail();
+                } catch (SyntaxException ignore) {
+                }
+
+                try {
+                        get("" +
+                                "implicit object X\n" +
+                                "    implicit def m(o):Unit"
+                        );
+                        fail();
+                } catch (SyntaxException ignore) {
                 }
         }
 }

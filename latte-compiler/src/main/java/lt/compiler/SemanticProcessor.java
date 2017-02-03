@@ -771,9 +771,26 @@ public class SemanticProcessor {
                                 parseClassDefInfo(sClassDef, objectDef.superWithInvocation,
                                         objectDef.superWithoutInvocation, imports, objectDef.line_col());
 
+                                // modifiers
+                                boolean isImplicit = false;
+                                for (Modifier m : objectDef.modifiers) {
+                                        switch (m.modifier) {
+                                                case IMPLICIT:
+                                                        isImplicit = true;
+                                                        break;
+                                                default:
+                                                        err.UnexpectedTokenException("valid modifier (implicit)", m.toString(), m.line_col());
+                                                        return;
+                                        }
+                                }
+
                                 // annos
                                 parseAnnos(objectDef.annos, sClassDef, imports, ElementType.TYPE,
                                         Collections.singletonList(ElementType.CONSTRUCTOR));
+
+                                if (isImplicit) {
+                                        checkAndAddImplicitAnno(sClassDef);
+                                }
 
                                 // build constructor
                                 SConstructorDef constructor = new SConstructorDef(LineCol.SYNTHETIC);
@@ -803,6 +820,23 @@ public class SemanticProcessor {
                                 // fields methods
                                 parseFieldsAndMethodsForClass(sClassDef, objectDef.statements, imports);
                         }
+                }
+        }
+
+        private void checkAndAddImplicitAnno(SAnnotationPresentable annoPresentable) throws SyntaxException {
+                // check implicit annotation
+                boolean hasImplicitAnno = false;
+                for (SAnno sAnno : annoPresentable.annos()) {
+                        if (sAnno.type().fullName().equals("lt.lang.Implicit")) {
+                                hasImplicitAnno = true;
+                                break;
+                        }
+                }
+                if (!hasImplicitAnno) {
+                        SAnno ImplicitAnno = new SAnno();
+                        ImplicitAnno.setAnnoDef((SAnnoDef) getTypeWithName("lt.lang.Implicit", LineCol.SYNTHETIC));
+                        ImplicitAnno.setPresent(annoPresentable);
+                        annoPresentable.annos().add(ImplicitAnno);
                 }
         }
 
@@ -9883,6 +9917,8 @@ public class SemanticProcessor {
                 // modifier
                 // try to get access flags
                 boolean hasAccessModifier = false;
+                // implicit modifier
+                boolean isImplicit = false;
                 for (Modifier mod : m.modifiers) {
                         if (mod.modifier.equals(Modifier.Available.PUBLIC)
                                 || mod.modifier.equals(Modifier.Available.PRIVATE)
@@ -9936,6 +9972,9 @@ public class SemanticProcessor {
                                 case DEF:
                                         // a flag for defining a method
                                         break;
+                                case IMPLICIT:
+                                        isImplicit = true;
+                                        break;
                                 default:
                                         err.UnexpectedTokenException("valid modifier for methods (class:(public|private|protected|internal|val)|interface:(pub|val))", m.toString(), m.line_col());
                                         return;
@@ -9950,6 +9989,10 @@ public class SemanticProcessor {
 
                 // annos
                 parseAnnos(m.annos, methodDef, imports, ElementType.METHOD, Collections.emptyList());
+
+                if (isImplicit) {
+                        checkAndAddImplicitAnno(methodDef);
+                }
 
                 // check can be added into class
                 List<SMethodDef> methods;

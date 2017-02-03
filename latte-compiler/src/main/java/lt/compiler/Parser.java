@@ -528,14 +528,12 @@ public class Parser {
          */
         private ObjectDef parse_object() throws SyntaxException {
                 ClassDef classDef = parse_class();
-                if (!classDef.modifiers.isEmpty()) {
-                        err.SyntaxException("object do not have modifiers", classDef.line_col());
-                }
                 if (!classDef.params.isEmpty()) {
                         err.SyntaxException("object do not have params", classDef.params.get(0).line_col());
                 }
                 return new ObjectDef(classDef.name,
                         classDef.superWithInvocation, classDef.superWithoutInvocation,
+                        classDef.modifiers,
                         classDef.annos, classDef.statements, classDef.line_col());
         }
 
@@ -698,7 +696,7 @@ public class Parser {
 
                 boolean isImplicit = false;
                 if (current.next() instanceof Element &&
-                        current.next().getTokenType() == TokenType.KEY &&
+                        current.next().getTokenType() == TokenType.MODIFIER &&
                         ((Element) current.next()).getContent().equals("implicit")) {
                         isImplicit = true;
                         nextNode(false);
