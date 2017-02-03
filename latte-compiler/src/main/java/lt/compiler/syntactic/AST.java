@@ -972,7 +972,7 @@ public class AST {
                                 }
                                 sb.append(v);
                         }
-                        sb.append(")=>").append(statements).append(")");
+                        sb.append(")->").append(statements).append(")");
                         return sb.toString();
                 }
 

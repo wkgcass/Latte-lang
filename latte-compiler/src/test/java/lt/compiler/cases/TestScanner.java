@@ -437,7 +437,7 @@ public class TestScanner {
         @Test
         public void testLambda() throws Exception {
                 //list.stream().filter(
-                //    (e)=>
+                //    (e)->
                 //        e>10
                 //)
                 IndentScanner processor = new IndentScanner("test", new StringReader("list.stream().filter(\n    (e)->e>10)"), new Properties(), new ErrorManager(true));

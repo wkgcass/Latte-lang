@@ -2212,7 +2212,7 @@ public class Parser {
                                 if (current instanceof Element && ((Element) current).getContent().equals("case")) {
                                         nextNode(false);
                                         AST.Pattern pattern = parse_pattern_matching_$_parse_pattern(false);
-                                        expecting("=>", current.previous(), current, err);
+                                        expecting("->", current.previous(), current, err);
                                         nextNode(false);
                                         List<Statement> stmts;
                                         if (current instanceof ElementStartNode) {
@@ -2282,7 +2282,7 @@ public class Parser {
                         condition1 = (current.next() == null || current.next() instanceof EndingNode
                                 || ((current.next() instanceof Element) && ((Element) current.next()).getContent().equals(",")));
                 } else {
-                        condition1 = ((Element) current.next()).getContent().equals("=>");
+                        condition1 = ((Element) current.next()).getContent().equals("->");
                 }
                 if (condition1) {
                         AST.Pattern subPattern;
@@ -2685,8 +2685,8 @@ public class Parser {
         /**
          * parse lambda<br>
          * <code>
-         * ()=><br>
-         * (args,...)=>
+         * ()=&gt;<br>
+         * (args,...)-&gt;
          * </code>
          *
          * @throws SyntaxException compiling errors

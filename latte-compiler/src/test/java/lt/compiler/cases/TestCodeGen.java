@@ -3648,10 +3648,10 @@ public class TestCodeGen {
                                 "class TestSimplePatternMatching\n" +
                                 "    static\n" +
                                 "        def method(o) = o match\n" +
-                                "            case _:java::util::List => 'type ' + o\n" +
-                                "            case 2 => 'value'\n" +
-                                "            case x:String => 'define ' + x\n" +
-                                "            case _ => 'default'"
+                                "            case _:java::util::List -> 'type ' + o\n" +
+                                "            case 2 -> 'value'\n" +
+                                "            case x:String -> 'define ' + x\n" +
+                                "            case _ -> 'default'"
                         , "TestSimplePatternMatching");
                 Method method = cls.getMethod("method", Object.class);
                 assertEquals("type [1, 2, 3]", method.invoke(null, Arrays.asList(1, 2, 3)));
@@ -3666,8 +3666,8 @@ public class TestCodeGen {
                                 "class TestDestructPatternMatching\n" +
                                 "    static\n" +
                                 "        def method(o) = o match\n" +
-                                "            case A(a,b,c) => [a,b,c]\n" +
-                                "            case B(a,b:Integer) => [a,b]\n" +
+                                "            case A(a,b,c) -> [a,b,c]\n" +
+                                "            case B(a,b:Integer) -> [a,b]\n" +
                                 "        def getClassA = type A\n" +
                                 "        def getClassB = type B\n" +
                                 "data class A(a,b,c)\n" +
@@ -3691,7 +3691,7 @@ public class TestCodeGen {
                                 "        def method\n" +
                                 "            val beanA = A(1,\"a\", B([], {\"x\" : \"y\"}, A(9,8,7)))\n" +
                                 "            beanA match\n" +
-                                "                case A(1,b:String,B(_:java::util::List, c, A(_,_:Integer,d))) =>\n" +
+                                "                case A(1,b:String,B(_:java::util::List, c, A(_,_:Integer,d))) ->\n" +
                                 "                    [b,c,d]\n" +
                                 "data class A(a,b,c)\n" +
                                 "data class B(a,b,c)"

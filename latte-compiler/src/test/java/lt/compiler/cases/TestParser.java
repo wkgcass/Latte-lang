@@ -2503,14 +2503,14 @@ public class TestParser {
                 List<Statement> stmts = parse("" +
                         "a = 1\n" +
                         "list match\n" +
-                        "    case _      => ...\n" +
-                        "    case x      => ...\n" +
-                        "    case a      => ...\n" +
-                        "    case true   => ...\n" +
-                        "    case 123    => ...\n" +
-                        "    case //.*// => ...\n" +
-                        "    case 'abc'  => ...\n" +
-                        "    case _:List => ...\n"
+                        "    case _      -> ...\n" +
+                        "    case x      -> ...\n" +
+                        "    case a      -> ...\n" +
+                        "    case true   -> ...\n" +
+                        "    case 123    -> ...\n" +
+                        "    case //.*// -> ...\n" +
+                        "    case 'abc'  -> ...\n" +
+                        "    case _:List -> ...\n"
                 );
                 VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
                 v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
@@ -2542,12 +2542,12 @@ public class TestParser {
                 List<Statement> stmts = parse("" +
                         "a = 1\n" +
                         "list match\n" +
-                        "    case List(a,b,c) => ...\n" +
-                        "    case A(x) => ...\n" +
-                        "    case B(1) => ...\n" +
-                        "    case C(_, _:X) => ...\n" +
-                        "    case D(x:L) => ...\n" +
-                        "    case E() => ...\n"
+                        "    case List(a,b,c) -> ...\n" +
+                        "    case A(x) -> ...\n" +
+                        "    case B(1) -> ...\n" +
+                        "    case C(_, _:X) -> ...\n" +
+                        "    case D(x:L) -> ...\n" +
+                        "    case E() -> ...\n"
                 );
                 VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
                 v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
@@ -2606,26 +2606,26 @@ public class TestParser {
                         parse("" +
                                 "a = 1\n" +
                                 "list match\n" +
-                                "    case _      => ...\n" +
-                                "    case x      => ...\n" +
-                                "    case a      => ...\n" +
-                                "    case true   => ...\n" +
-                                "    case 123    => ...\n" +
-                                "    case //.*// => ...\n" +
-                                "    case 'abc'  => ...\n" +
-                                "    case _:List => ..."
+                                "    case _      -> ...\n" +
+                                "    case x      -> ...\n" +
+                                "    case a      -> ...\n" +
+                                "    case true   -> ...\n" +
+                                "    case 123    -> ...\n" +
+                                "    case //.*// -> ...\n" +
+                                "    case 'abc'  -> ...\n" +
+                                "    case _:List -> ..."
                         ),
                         parseBrace("" +
                                 "a = 1\n" +
                                 "list match {\n" +
-                                "    case _      => ...\n" +
-                                "    case x      => ...\n" +
-                                "    case a      => {...}\n" +
-                                "    case true   => ...\n" +
-                                "    case 123    => ...\n" +
-                                "    case //.*// => {...}\n" +
-                                "    case 'abc'  => ...\n" +
-                                "    case _:List => ...\n" +
+                                "    case _      -> ...\n" +
+                                "    case x      -> ...\n" +
+                                "    case a      -> {...}\n" +
+                                "    case true   -> ...\n" +
+                                "    case 123    -> ...\n" +
+                                "    case //.*// -> {...}\n" +
+                                "    case 'abc'  -> ...\n" +
+                                "    case _:List -> ...\n" +
                                 "}"
                         )
                 );

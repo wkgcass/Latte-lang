@@ -443,7 +443,7 @@ public class TestBraceScanner {
         @Test
         public void testLambda() throws Exception {
                 //list.stream().filter(
-                //    (e)=> {
+                //    (e)-> {
                 //        e>10
                 //    }
                 //)
