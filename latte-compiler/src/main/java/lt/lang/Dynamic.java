@@ -662,7 +662,7 @@ public class Dynamic {
 
                         if (o == null || c.isInstance(o)) continue;
 
-                        args[i] = LtRuntime.cast(o, c);
+                        args[i] = LtRuntime.cast(o, c, null);
                 }
         }
 
@@ -895,17 +895,27 @@ public class Dynamic {
                                         ec.add("No implicit casts enabled");
                                 } else {
                                         for (Class<?> ic : implicitClasses) {
-                                                Class<?> type = ic.getConstructors()[0].getParameterTypes()[0];
-                                                if (type.isAssignableFrom(o.getClass())) {
-                                                        Method m = findMethod(invoker, ic, o, method, primitives, args);
-                                                        if (m != null) {
-                                                                Object target = ic.getConstructor(type).newInstance(o);
-                                                                return m.invoke(target, args);
-                                                        } else {
-                                                                ec.add("method not found in " + ic.getName());
+                                                if (!ic.isAnnotationPresent(LatteObject.class)) continue;
+                                                Method[] methods = ic.getDeclaredMethods();
+                                                for (Method m : methods) {
+                                                        if (m.isAnnotationPresent(Implicit.class) && m.getParameterCount() == 1 && m.getReturnType() != void.class) {
+                                                                Class<?> inputType = m.getParameterTypes()[0];
+                                                                if (inputType.isInstance(o)) {
+                                                                        Class<?> outputType = m.getReturnType();
+                                                                        Method foundMethod = findMethod(invoker, outputType, o, method, primitives, args);
+                                                                        if (foundMethod == null) {
+                                                                                ec.add("Cannot cast " + o.getClass().getName() + " to " + m.getReturnType());
+                                                                                continue;
+                                                                        }
+                                                                        // get object instance
+                                                                        Object implicitInstance = ic.getField("singletonInstance").get(null);
+                                                                        // invoke method
+                                                                        m.setAccessible(true);
+                                                                        Object castInstance = m.invoke(implicitInstance, o);
+                                                                        foundMethod.setAccessible(true);
+                                                                        return foundMethod.invoke(castInstance, args);
+                                                                }
                                                         }
-                                                } else {
-                                                        ec.add("Cannot cast " + o.getClass().getName() + " to " + ic.getName());
                                                 }
                                         }
                                 }

@@ -1,11 +1,8 @@
 package lt.lang.implicit;
 
-import lt.lang.Implicit;
-
 /**
  * rich Object
  */
-@Implicit
 public class RichObject {
         private Object o;
 

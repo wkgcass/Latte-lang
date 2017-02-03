@@ -57,5 +57,27 @@ public class TestSemanticError {
                         fail();
                 }catch (SyntaxException ignore) {
                 }
+
+                try {
+                        get("" +
+                                "@Implicit\n" +
+                                "object X\n" +
+                                "    @Implicit\n" +
+                                "    def m"
+                        );
+                        fail();
+                }catch (SyntaxException ignore) {
+                }
+
+                try {
+                        get("" +
+                                "@Implicit\n" +
+                                "object X\n" +
+                                "    @Implicit\n" +
+                                "    def m(o):Unit"
+                        );
+                        fail();
+                }catch (SyntaxException ignore) {
+                }
         }
 }

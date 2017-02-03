@@ -33,6 +33,6 @@ import java.lang.annotation.Target;
  * mark the class as implicit cast
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 public @interface Implicit {
 }

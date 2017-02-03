@@ -1,13 +1,11 @@
 package lt.lang.implicit;
 
-import lt.lang.Implicit;
 import lt.lang.LtRuntime;
 import lt.lang.RangeList;
 
 /**
  * rich Integer
  */
-@Implicit
 public class RichInt {
         private Integer i;
 

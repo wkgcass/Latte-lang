@@ -164,7 +164,7 @@ public class LtRuntime {
          * @throws Exception maybe {@link ClassCastException} if the cast fails,
          *                   or some errors when casting.
          */
-        public static Object cast(Object o, Class<?> targetType) throws Throwable {
+        public static Object cast(Object o, Class<?> targetType, Class<?> callerClass) throws Throwable {
                 if (targetType.isInstance(o)) return o;
 
                 if (o == null) {
@@ -172,6 +172,27 @@ public class LtRuntime {
                                 throw generateClassCastException(null, targetType);
                         } else {
                                 return null;
+                        }
+                }
+
+                // implicit cast
+                if (callerClass != null && callerClass.isAnnotationPresent(ImplicitImports.class)) {
+                        Class<?>[] implicitTypes = callerClass.getAnnotation(ImplicitImports.class).implicitImports();
+                        for (Class<?> ic : implicitTypes) {
+                                if (!ic.isAnnotationPresent(LatteObject.class)) continue;
+                                Method[] methods = ic.getDeclaredMethods();
+                                for (Method m : methods) {
+                                        if (m.isAnnotationPresent(Implicit.class)
+                                                && m.getParameterCount() == 1
+                                                && m.getParameterTypes()[0].equals(o.getClass())
+                                                && m.getReturnType().equals(targetType)) {
+
+                                                m.setAccessible(true);
+                                                // get singleton instance
+                                                Object singletonInstance = ic.getField("singletonInstance").get(null);
+                                                return m.invoke(singletonInstance, o);
+                                        }
+                                }
                         }
                 }
 
@@ -202,6 +223,7 @@ public class LtRuntime {
                 if (targetType.equals(boolean.class)) return castToBool(o);
                 if (targetType.equals(float.class)) return castToFloat(o);
                 if (targetType.equals(double.class)) return castToDouble(o);
+
                 if (targetType.isAnnotationPresent(Implicit.class)) {
                         Constructor<?> con = targetType.getConstructors()[0];
                         Class<?> paramType = con.getParameterTypes()[0];
@@ -217,7 +239,7 @@ public class LtRuntime {
 
                                 for (int cursor = 0; cursor < list.size(); ++cursor) {
                                         Object elem = list.get(cursor);
-                                        Array.set(arr, cursor, cast(elem, component));
+                                        Array.set(arr, cursor, cast(elem, component, callerClass));
                                 }
 
                                 return arr;
@@ -608,7 +630,7 @@ public class LtRuntime {
                         Field f = o.getClass().getDeclaredField(fieldName);
                         if (haveAccess(f.getModifiers(), o.getClass(), callerClass)) {
                                 f.setAccessible(true);
-                                f.set(o, cast(value, f.getType()));
+                                f.set(o, cast(value, f.getType(), callerClass));
                                 return;
                         } else {
                                 ec.add("Cannot access " + o.getClass().getName() + "#" + fieldName + " from " + callerClass);
@@ -759,6 +781,7 @@ public class LtRuntime {
          * @return a list of values
          * @throws Throwable any exceptions
          */
+        @SuppressWarnings("unused")
         public static List<?> destruct(int count, Class<?> destructClass, Object o, Class<?> invoker) throws Throwable {
                 if (o == null) throw new LtRuntimeException("null cannot be destructed");
                 if (destructClass == null) destructClass = o.getClass();

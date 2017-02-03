@@ -1,12 +1,10 @@
 package lt.lang.implicit;
 
-import lt.lang.Implicit;
 import lt.lang.LtRuntime;
 
 /**
  * rich Character
  */
-@Implicit
 public class RichChar {
         private Character c;
 

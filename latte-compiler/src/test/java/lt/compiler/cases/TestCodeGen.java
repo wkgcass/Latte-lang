@@ -3360,20 +3360,23 @@ public class TestCodeGen {
         @Test
         public void testImportImplicit() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                "import implicit X\n" +
+                                "import implicit XX\n" +
                                 "class TestImportImplicit\n" +
                                 "    static\n" +
                                 "        def method= + 1 s\n" +
-                                "@Implicit\n" +
                                 "class X(x:Integer)\n" +
-                                "    def s = x + ' s'\n"
+                                "    def s = x + ' s'\n" +
+                                "@Implicit\n" +
+                                "object XX\n" +
+                                "    @Implicit\n" +
+                                "    def cast(x:Integer):X=X(x)"
                         , "TestImportImplicit");
 
                 assertTrue(cls.isAnnotationPresent(ImplicitImports.class));
                 ImplicitImports implicitImports = cls.getAnnotation(ImplicitImports.class);
                 Class<?>[] classes = implicitImports.implicitImports();
-                assertEquals(11, classes.length); // X and 8 primitives
-                assertEquals("X", classes[0].getName());
+                assertEquals(4, classes.length); // X and 8 primitives
+                assertEquals("XX", classes[0].getName());
                 assertEquals("1 s", cls.getMethod("method").invoke(null));
         }
 
@@ -3382,23 +3385,25 @@ public class TestCodeGen {
                 Class<?> cls = retrieveClass("" +
                                 "import implicit TestImportImplicit2\n" +
                                 "@Implicit\n" +
-                                "class TestImportImplicit2(x:Integer)\n" +
-                                "    def s = x + ' s'\n"
+                                "object TestImportImplicit2"
                         , "TestImportImplicit2");
                 assertTrue(cls.isAnnotationPresent(ImplicitImports.class));
-                assertEquals(10, cls.getAnnotation(ImplicitImports.class).implicitImports().length);
+                assertEquals(3, cls.getAnnotation(ImplicitImports.class).implicitImports().length);
         }
 
         @Test
         public void testImportImplicit3() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                "import implicit X\n" +
+                                "import implicit XX\n" +
                                 "class TestImportImplicit3\n" +
                                 "    static\n" +
                                 "        def method= Integer(1) as X\n" +
-                                "@Implicit\n" +
                                 "class X(x:Integer)\n" +
-                                "    def s = x + ' s'\n"
+                                "    def s = x + ' s'\n" +
+                                "@Implicit\n" +
+                                "object XX\n" +
+                                "    @Implicit\n" +
+                                "    def cast(x:Integer):X=X(x)"
                         , "TestImportImplicit3");
                 Method method = cls.getMethod("method");
                 assertEquals("X", method.invoke(null).getClass().getName());

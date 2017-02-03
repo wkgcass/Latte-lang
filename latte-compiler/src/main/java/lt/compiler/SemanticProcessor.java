@@ -262,18 +262,10 @@ public class SemanticProcessor {
                         imports.add(new Import(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                         imports.add(new Import(new AST.PackageRef("java::lang", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                         imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang", LineCol.SYNTHETIC), "Utils", LineCol.SYNTHETIC), true, false, LineCol.SYNTHETIC));
-                        // import implicit 8 rich primitives
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichInt", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichBool", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichDouble", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichChar", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichLong", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichFloat", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichShort", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichByte", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
-                        // import rich String and Object
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichString", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
-                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "RichObject", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        // import implicit built in casts
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "PrimitivesImplicit", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "StringImplicit", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
+                        imports.add(new Import(null, new AST.Access(new AST.PackageRef("lt::lang::implicit", LineCol.SYNTHETIC), "ObjectImplicit", LineCol.SYNTHETIC), false, true, LineCol.SYNTHETIC));
 
                         fileNameToPackageName.put(fileName, pkg);
                 }
@@ -1085,18 +1077,33 @@ public class SemanticProcessor {
                                                 return;
                                         }
                                 } else if (anno.type().fullName().equals("lt.lang.Implicit")) {
-                                        final String msg = typeDef + " is not implicit type";
                                         if (typeDef instanceof SClassDef) {
-                                                if (((SClassDef) typeDef).constructors().size() != 1
-                                                        ||
-                                                        ((SClassDef) typeDef).constructors().get(0).getParameters().size() != 1
-                                                        ) {
-                                                        err.SyntaxException(msg, typeDef.line_col());
-                                                        return;
+                                                boolean isObject = false;
+                                                for (SAnno a : typeDef.annos()) {
+                                                        if (a.type().fullName().equals("lt.lang.LatteObject")) {
+                                                                isObject = true;
+                                                                break;
+                                                        }
+                                                }
+                                                if (isObject) {
+                                                        // check methods
+                                                        for (SMethodDef m : ((SClassDef) typeDef).methods()) {
+                                                                for (SAnno a : m.annos()) {
+                                                                        if (a.type().fullName().equals("lt.lang.Implicit")) {
+                                                                                if (m.getParameters().size() != 1) {
+                                                                                        err.SyntaxException("implicit methods should contain only one param", m.line_col());
+                                                                                }
+                                                                                if (m.getReturnType().equals(VoidType.get())) {
+                                                                                        err.SyntaxException("implicit method's return type should not be Unit", m.line_col());
+                                                                                }
+                                                                        }
+                                                                }
+                                                        }
+                                                } else {
+                                                        err.SyntaxException("implicit should only exist on object classes", typeDef.line_col());
                                                 }
                                         } else {
-                                                err.SyntaxException(msg, typeDef.line_col());
-                                                return;
+                                                err.SyntaxException("implicit should only exist on object classes", typeDef.line_col());
                                         }
                                 }
                         }
@@ -1994,7 +2001,7 @@ public class SemanticProcessor {
                         if (param.isNotEmpty()) {
                                 Ins.Nop nop = new Ins.Nop();
                                 Ins.IfNe ifNe = new Ins.IfNe(
-                                        cast(BoolTypeDef.get(), new Ins.TLoad(param, scope, lineCol), lineCol),
+                                        cast(BoolTypeDef.get(), new Ins.TLoad(param, scope, lineCol), scope.type(), lineCol),
                                         nop, lineCol);
                                 instructions.add(ifNe);
                                 instructions.add(new Ins.AThrow(
@@ -3678,13 +3685,13 @@ public class SemanticProcessor {
                         instructions.add(new Ins.PutField(
                                 ((Ins.GetField) assignTo).field(),
                                 ((Ins.GetField) assignTo).object(),
-                                cast(((Ins.GetField) assignTo).field().type(), assignFrom, ((Ins.GetField) assignTo).line_col()),
+                                cast(((Ins.GetField) assignTo).field().type(), assignFrom, scope.type(), ((Ins.GetField) assignTo).line_col()),
                                 lineCol, err));
                 } else if (assignTo instanceof Ins.GetStatic) {
                         // static
                         instructions.add(new Ins.PutStatic(
                                 ((Ins.GetStatic) assignTo).field(),
-                                cast(((Ins.GetStatic) assignTo).field().type(), assignFrom, ((Ins.GetStatic) assignTo).line_col()),
+                                cast(((Ins.GetStatic) assignTo).field().type(), assignFrom, scope.type(), ((Ins.GetStatic) assignTo).line_col()),
                                 lineCol, err));
                 } else if (assignTo instanceof Ins.TALoad) {
                         // arr[?]
@@ -3697,7 +3704,7 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.AASTORE,
                                         TALoad.index(),
-                                        cast(arrayType.type(), assignFrom, lineCol),
+                                        cast(arrayType.type(), assignFrom, scope.type(), lineCol),
                                         lineCol));
                         } else if (arrayType.type().equals(IntTypeDef.get())) {
                                 // int[] IASTORE
@@ -3705,7 +3712,7 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.IASTORE,
                                         TALoad.index(),
-                                        cast(IntTypeDef.get(), assignFrom, lineCol),
+                                        cast(IntTypeDef.get(), assignFrom, scope.type(), lineCol),
                                         lineCol));
                         } else if (arrayType.type().equals(LongTypeDef.get())) {
                                 // long[] LASTORE
@@ -3713,7 +3720,7 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.LASTORE,
                                         TALoad.index(),
-                                        cast(LongTypeDef.get(), assignFrom, lineCol),
+                                        cast(LongTypeDef.get(), assignFrom, scope.type(), lineCol),
                                         lineCol));
                         } else if (arrayType.type().equals(ShortTypeDef.get())) {
                                 // short[] SASTORE
@@ -3721,7 +3728,7 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.SASTORE,
                                         TALoad.index(),
-                                        cast(ShortTypeDef.get(), assignFrom, lineCol),
+                                        cast(ShortTypeDef.get(), assignFrom, scope.type(), lineCol),
                                         lineCol));
                         } else if (arrayType.type().equals(ByteTypeDef.get()) || arrayType.type().equals(BoolTypeDef.get())) {
                                 // byte[]/boolean[] BASTORE
@@ -3729,7 +3736,7 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.BASTORE,
                                         TALoad.index(),
-                                        cast(ByteTypeDef.get(), assignFrom, lineCol),
+                                        cast(ByteTypeDef.get(), assignFrom, scope.type(), lineCol),
                                         lineCol));
                         } else if (arrayType.type().equals(FloatTypeDef.get())) {
                                 // float[] FASTORE
@@ -3737,7 +3744,7 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.FASTORE,
                                         TALoad.index(),
-                                        cast(FloatTypeDef.get(), assignFrom, lineCol),
+                                        cast(FloatTypeDef.get(), assignFrom, scope.type(), lineCol),
                                         lineCol));
                         } else if (arrayType.type().equals(DoubleTypeDef.get())) {
                                 // double[] DASTORE
@@ -3745,7 +3752,7 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.DASTORE,
                                         TALoad.index(),
-                                        cast(DoubleTypeDef.get(), assignFrom, lineCol),
+                                        cast(DoubleTypeDef.get(), assignFrom, scope.type(), lineCol),
                                         lineCol));
                         } else if (arrayType.type().equals(CharTypeDef.get())) {
                                 // char[] CASTORE
@@ -3753,7 +3760,7 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.CASTORE,
                                         TALoad.index(),
-                                        cast(CharTypeDef.get(), assignFrom, lineCol),
+                                        cast(CharTypeDef.get(), assignFrom, scope.type(), lineCol),
                                         lineCol));
                         } else {
                                 // object[] AASTORE
@@ -3761,7 +3768,7 @@ public class SemanticProcessor {
                                         TALoad.arr(),
                                         Ins.TAStore.AASTORE,
                                         TALoad.index(),
-                                        cast(arrayType.type(), assignFrom, lineCol),
+                                        cast(arrayType.type(), assignFrom, scope.type(), lineCol),
                                         lineCol));
                         }
                 } else if (assignTo instanceof Ins.TLoad) {
@@ -3771,6 +3778,7 @@ public class SemanticProcessor {
                                 cast(
                                         assignTo.type(),
                                         assignFrom,
+                                        scope.type(),
                                         lineCol),
                                 scope, lineCol, err));
                 } else if (assignTo instanceof Ins.InvokeStatic) {
@@ -4079,7 +4087,7 @@ public class SemanticProcessor {
                         target, getPointer_get(), lineCol);
 
                 if (pointingType instanceof PrimitiveTypeDef) {
-                        return cast(pointingType, get, lineCol);
+                        return cast(pointingType, get, null, lineCol);
                 } else {
                         return new Ins.CheckCast(get, pointingType, lineCol);
                 }
@@ -4514,7 +4522,7 @@ public class SemanticProcessor {
                 } else {
                         throw new LtBug("unknown expression " + exp);
                 }
-                return cast(requiredType, v, exp.line_col());
+                return cast(requiredType, v, scope == null ? null : scope.type(), exp.line_col());
         }
 
         public Value parseValueFromPatternMatching(AST.PatternMatching pm,
@@ -5798,6 +5806,7 @@ public class SemanticProcessor {
                                 new Ins.TReturn(
                                         cast(theMethod.getReturnType(),
                                                 invokeMethodHandle,
+                                                scope.type(),
                                                 LineCol.SYNTHETIC),
                                         LineCol.SYNTHETIC
                                 )
@@ -6242,18 +6251,18 @@ public class SemanticProcessor {
                         if (right.type() instanceof PrimitiveTypeDef) {
                                 if (left.type().equals(DoubleTypeDef.get()) || right.type().equals(DoubleTypeDef.get())) {
                                         // cast to double
-                                        Value a = cast(DoubleTypeDef.get(), left, lineCol);
-                                        Value b = cast(DoubleTypeDef.get(), right, lineCol);
+                                        Value a = cast(DoubleTypeDef.get(), left, scope.type(), lineCol);
+                                        Value b = cast(DoubleTypeDef.get(), right, scope.type(), lineCol);
                                         return new Ins.TwoVarOp(a, b, baseOp + 3, DoubleTypeDef.get(), lineCol);
                                 } else if (left.type().equals(FloatTypeDef.get()) || right.type().equals(FloatTypeDef.get())) {
                                         // cast to float
-                                        Value a = cast(FloatTypeDef.get(), left, lineCol);
-                                        Value b = cast(FloatTypeDef.get(), right, lineCol);
+                                        Value a = cast(FloatTypeDef.get(), left, scope.type(), lineCol);
+                                        Value b = cast(FloatTypeDef.get(), right, scope.type(), lineCol);
                                         return new Ins.TwoVarOp(a, b, baseOp + 2, FloatTypeDef.get(), lineCol);
                                 } else if (left.type().equals(LongTypeDef.get()) || right.type().equals(LongTypeDef.get())) {
                                         // cast to long
-                                        Value a = cast(LongTypeDef.get(), left, lineCol);
-                                        Value b = cast(LongTypeDef.get(), right, lineCol);
+                                        Value a = cast(LongTypeDef.get(), left, scope.type(), lineCol);
+                                        Value b = cast(LongTypeDef.get(), right, scope.type(), lineCol);
                                         return new Ins.TwoVarOp(a, b, baseOp + 1, LongTypeDef.get(), lineCol);
                                 } else {
                                         if ((baseOp == Ins.TwoVarOp.Iand || baseOp == Ins.TwoVarOp.Ior || baseOp == Ins.TwoVarOp.Ixor)
@@ -6261,8 +6270,8 @@ public class SemanticProcessor {
                                                 return new Ins.TwoVarOp(left, right, baseOp, BoolTypeDef.get(), lineCol);
                                         } else {
                                                 // cast to int
-                                                Value a = cast(IntTypeDef.get(), left, lineCol);
-                                                Value b = cast(IntTypeDef.get(), right, lineCol);
+                                                Value a = cast(IntTypeDef.get(), left, scope.type(), lineCol);
+                                                Value b = cast(IntTypeDef.get(), right, scope.type(), lineCol);
                                                 return new Ins.TwoVarOp(a, b, baseOp, IntTypeDef.get(), lineCol);
                                         }
                                 }
@@ -6348,18 +6357,18 @@ public class SemanticProcessor {
                                 Ins.TwoVarOp twoVarOp;
                                 if (left.type().equals(DoubleTypeDef.get()) || right.type().equals(DoubleTypeDef.get())) {
                                         // cast to double
-                                        Value a = cast(DoubleTypeDef.get(), left, lineCol);
-                                        Value b = cast(DoubleTypeDef.get(), right, lineCol);
+                                        Value a = cast(DoubleTypeDef.get(), left, scope.type(), lineCol);
+                                        Value b = cast(DoubleTypeDef.get(), right, scope.type(), lineCol);
                                         twoVarOp = new Ins.TwoVarOp(a, b, Ins.TwoVarOp.Dcmpg, IntTypeDef.get(), lineCol);
                                 } else if (left.type().equals(FloatTypeDef.get()) || right.type().equals(FloatTypeDef.get())) {
                                         // cast to float
-                                        Value a = cast(FloatTypeDef.get(), left, lineCol);
-                                        Value b = cast(FloatTypeDef.get(), right, lineCol);
+                                        Value a = cast(FloatTypeDef.get(), left, scope.type(), lineCol);
+                                        Value b = cast(FloatTypeDef.get(), right, scope.type(), lineCol);
                                         twoVarOp = new Ins.TwoVarOp(a, b, Ins.TwoVarOp.Fcmpg, IntTypeDef.get(), lineCol);
                                 } else {
                                         // cast to long
-                                        Value a = cast(LongTypeDef.get(), left, lineCol);
-                                        Value b = cast(LongTypeDef.get(), right, lineCol);
+                                        Value a = cast(LongTypeDef.get(), left, scope.type(), lineCol);
+                                        Value b = cast(LongTypeDef.get(), right, scope.type(), lineCol);
                                         twoVarOp = new Ins.TwoVarOp(a, b, Ins.TwoVarOp.Lcmp, IntTypeDef.get(), lineCol);
                                 }
                                 SMethodDef compare = getLang_compare();
@@ -6449,8 +6458,8 @@ public class SemanticProcessor {
                                 if (left.type() instanceof PrimitiveTypeDef ||
                                         Number_Class.isAssignableFrom(left.type())) {
                                         // primitive or Number
-                                        Value doubleLeft = cast(DoubleTypeDef.get(), left, lineCol);
-                                        Value doubleRight = cast(DoubleTypeDef.get(), right, lineCol);
+                                        Value doubleLeft = cast(DoubleTypeDef.get(), left, scope.type(), lineCol);
+                                        Value doubleRight = cast(DoubleTypeDef.get(), right, scope.type(), lineCol);
 
                                         SMethodDef math_pow = getMath_pow();
                                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(math_pow, lineCol);
@@ -6632,8 +6641,8 @@ public class SemanticProcessor {
                         case "and":
                                 // logic and with short cut
                                 return new Ins.LogicAnd(
-                                        cast(BoolTypeDef.get(), left, lineCol),
-                                        cast(BoolTypeDef.get(), right, lineCol),
+                                        cast(BoolTypeDef.get(), left, scope.type(), lineCol),
+                                        cast(BoolTypeDef.get(), right, scope.type(), lineCol),
                                         lineCol);
                         case "||":
                         case "or":
@@ -6839,7 +6848,7 @@ public class SemanticProcessor {
                         Value v = parseValueFromExpression(exp.expressions().get(0), null, scope);
                         assert v != null;
                         if (v.type().equals(BoolTypeDef.get()) || v.type().fullName().equals("java.lang.Boolean")) {
-                                v = cast(BoolTypeDef.get(), v, exp.line_col());
+                                v = cast(BoolTypeDef.get(), v, scope.type(), exp.line_col());
                                 // v is bool
                                 // (v & 1) ^ 1
                                 return new Ins.TwoVarOp(
@@ -6871,7 +6880,7 @@ public class SemanticProcessor {
                                 ||
                                 v.type() instanceof ShortTypeDef || v.type().fullName().equals("java.lang.Short")
                                 ) {
-                                v = cast(IntTypeDef.get(), v, exp.line_col());
+                                v = cast(IntTypeDef.get(), v, scope.type(), exp.line_col());
                                 return new Ins.TwoVarOp(
                                         v,
                                         new IntValue(-1),
@@ -6879,7 +6888,7 @@ public class SemanticProcessor {
                                         IntTypeDef.get(),
                                         exp.line_col());
                         } else if (v.type() instanceof LongTypeDef || v.type().fullName().equals("java.lang.Long")) {
-                                v = cast(LongTypeDef.get(), v, exp.line_col());
+                                v = cast(LongTypeDef.get(), v, scope.type(), exp.line_col());
                                 return new Ins.TwoVarOp(
                                         v,
                                         new LongValue(-1),
@@ -6907,28 +6916,28 @@ public class SemanticProcessor {
                                 ||
                                 v.type() instanceof ShortTypeDef || v.type().fullName().equals("java.lang.Short")
                                 ) {
-                                v = cast(IntTypeDef.get(), v, exp.line_col());
+                                v = cast(IntTypeDef.get(), v, scope.type(), exp.line_col());
                                 return new Ins.OneVarOp(
                                         v,
                                         Ins.OneVarOp.Ineg,
                                         IntTypeDef.get(),
                                         exp.line_col());
                         } else if (v.type() instanceof LongTypeDef || v.type().fullName().equals("java.lang.Long")) {
-                                v = cast(LongTypeDef.get(), v, exp.line_col());
+                                v = cast(LongTypeDef.get(), v, scope.type(), exp.line_col());
                                 return new Ins.OneVarOp(
                                         v,
                                         Ins.OneVarOp.Lneg,
                                         LongTypeDef.get(),
                                         exp.line_col());
                         } else if (v.type() instanceof FloatTypeDef || v.type().fullName().equals("java.lang.Float")) {
-                                v = cast(FloatTypeDef.get(), v, exp.line_col());
+                                v = cast(FloatTypeDef.get(), v, scope.type(), exp.line_col());
                                 return new Ins.OneVarOp(
                                         v,
                                         Ins.OneVarOp.Fneg,
                                         FloatTypeDef.get(),
                                         exp.line_col());
                         } else if (v.type() instanceof DoubleTypeDef || v.type().fullName().equals("java.lang.Double")) {
-                                v = cast(DoubleTypeDef.get(), v, exp.line_col());
+                                v = cast(DoubleTypeDef.get(), v, scope.type(), exp.line_col());
                                 return new Ins.OneVarOp(
                                         v,
                                         Ins.OneVarOp.Dneg,
@@ -6989,7 +6998,7 @@ public class SemanticProcessor {
                         try {
                                 Value result = v;
                                 for (int ii = 0; ii < list.size(); ++ii) {
-                                        Value i = cast(IntTypeDef.get(), list.get(ii), index.args.get(ii).line_col());
+                                        Value i = cast(IntTypeDef.get(), list.get(ii), scope.type(), index.args.get(ii).line_col());
                                         result = new Ins.TALoad(result, i, index.line_col(), getTypes());
                                 }
                                 return result;
@@ -7490,7 +7499,7 @@ public class SemanticProcessor {
          * @return casted value
          * @throws SyntaxException exception
          */
-        public Value cast(STypeDef requiredType, Value v, LineCol lineCol) throws SyntaxException {
+        public Value cast(STypeDef requiredType, Value v, STypeDef callerClass, LineCol lineCol) throws SyntaxException {
                 if (requiredType != null && isPointerType(requiredType)) {
                         requiredType = getPointingType(requiredType);
                 }
@@ -7653,17 +7662,17 @@ public class SemanticProcessor {
                                 // box then check cast
                                 if (requiredType.isAssignableFrom(v.type())) return v;
                                 // invoke cast(Object)
-                                resultVal = castObjToObj(requiredType, v, lineCol);
+                                resultVal = castObjToObj(requiredType, v, callerClass, lineCol);
                         } else {
                                 // cast object to object
-                                resultVal = castObjToObj(requiredType, v, lineCol);
+                                resultVal = castObjToObj(requiredType, v, callerClass, lineCol);
                         }
                 }
                 return new Ins.CheckCast(resultVal, requiredType, lineCol);
         }
 
         /**
-         * invoke {@link LtRuntime#cast(Object, Class)}<br>
+         * invoke {@link LtRuntime#cast(Object, Class, Class)}<br>
          * note that the result object is always `java.lang.Object` when compiling,<br>
          * use {@link lt.compiler.semantic.Ins.CheckCast} to cast to required type to avoid some error when runtime validates the class file
          *
@@ -7673,7 +7682,7 @@ public class SemanticProcessor {
          * @return casted value
          * @throws SyntaxException exception
          */
-        public Value castObjToObj(STypeDef type, Value v, LineCol lineCol) throws SyntaxException {
+        public Value castObjToObj(STypeDef type, Value v, STypeDef callerClass, LineCol lineCol) throws SyntaxException {
                 SClassDef Lang = (SClassDef) getTypeWithName("lt.lang.LtRuntime", lineCol);
                 assert Lang != null;
 
@@ -7684,13 +7693,18 @@ public class SemanticProcessor {
                                 break;
                         }
                 }
-                if (method == null) throw new LtBug("lt.lang.LtRuntime.castToInt(Object,Class) should exist");
+                if (method == null) throw new LtBug("lt.lang.LtRuntime.castToInt(Object,Class,Class) should exist");
                 Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, lineCol);
                 invokeStatic.arguments().add(v);
                 invokeStatic.arguments().add(
                         new Ins.GetClass(
                                 type,
                                 (SClassDef) getTypeWithName("java.lang.Class", lineCol))
+                );
+                invokeStatic.arguments().add(
+                        callerClass == null
+                                ? NullValue.get()
+                                : new Ins.GetClass(callerClass, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC))
                 );
                 return invokeStatic;
         }
@@ -8570,6 +8584,7 @@ public class SemanticProcessor {
                                         values.add(cast(
                                                 requiredType,
                                                 argList.get(i),
+                                                scope.type(),
                                                 invocation.line_col()
                                         ));
                                 }
@@ -8766,7 +8781,7 @@ public class SemanticProcessor {
                         Value v = args.get(i);
                         SParameter param = parameters.get(i);
 
-                        result.add(cast(param.type(), v, lineCol));
+                        result.add(cast(param.type(), v, null, lineCol));
                 }
 
                 return result;

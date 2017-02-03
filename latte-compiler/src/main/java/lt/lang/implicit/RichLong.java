@@ -1,12 +1,10 @@
 package lt.lang.implicit;
 
-import lt.lang.Implicit;
 import lt.lang.LtRuntime;
 
 /**
  * rich Long
  */
-@Implicit
 public class RichLong {
         private Long l;
 

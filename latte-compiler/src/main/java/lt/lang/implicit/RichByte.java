@@ -1,12 +1,10 @@
 package lt.lang.implicit;
 
-import lt.lang.Implicit;
 import lt.lang.LtRuntime;
 
 /**
  * rich Byte
  */
-@Implicit
 public class RichByte {
         private Byte b;
 

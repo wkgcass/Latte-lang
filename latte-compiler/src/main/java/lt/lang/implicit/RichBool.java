@@ -1,12 +1,10 @@
 package lt.lang.implicit;
 
-import lt.lang.Implicit;
 import lt.lang.LtRuntime;
 
 /**
  * rich Bool
  */
-@Implicit
 public class RichBool {
         private Boolean b;
 
