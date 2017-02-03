@@ -24,16 +24,16 @@
 
 package lt.compiler.cases;
 
-import lt.compiler.ErrorManager;
 import lt.compiler.BraceScanner;
+import lt.compiler.ErrorManager;
 import lt.compiler.Properties;
-import lt.compiler.SyntaxException;
 import lt.compiler.lexical.*;
 import org.junit.Test;
 
 import java.io.StringReader;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * test
@@ -641,53 +641,6 @@ public class TestBraceScanner {
                                 "else\n" +
                                 "  return \"world\""), properties, new ErrorManager(true));
                 processor.scan();
-        }
-
-        @Test
-        public void testDefine() throws Exception {
-                BraceScanner processor = new BraceScanner("test", new StringReader(
-                        "" +
-                                "define 'CREATE TABLE' as 'class'\n" +
-                                "CREATE TABLE User"), new Properties(), new ErrorManager(true));
-                ElementStartNode root = processor.scan();
-                Node n = root.getLinkedNode();
-                assertTrue(n instanceof Element);
-                assertEquals("class", ((Element) n).getContent());
-                n = n.next();
-                assertTrue(n instanceof Element);
-                assertEquals("User", ((Element) n).getContent());
-                n = n.next();
-                assertNull(n);
-        }
-
-        @Test
-        public void testErrWhenPreProcessing1() throws Exception {
-                BraceScanner processor = new BraceScanner("test", new StringReader(
-                        "" +
-                                "define 'CREATE TABLE' 'class'"), // there should be an `as`
-                        new Properties(), new ErrorManager(true));
-                try {
-                        processor.scan();
-                        fail();
-                } catch (SyntaxException e) {
-                        assertEquals(22, e.lineCol.column);
-                }
-        }
-
-        @Test
-        public void testErrWhenPreProcessing2() throws Exception {
-                BraceScanner processor = new BraceScanner("test", new StringReader(
-                        "" +
-                                "define 'CREATE TABLE' as 'class'\n" +
-                                "undef 'A'"), // A is not defined
-                        new Properties(), new ErrorManager(true));
-                try {
-                        processor.scan();
-                        fail();
-                } catch (SyntaxException e) {
-                        assertEquals(2, e.lineCol.line);
-                        assertEquals(1, e.lineCol.column);
-                }
         }
 
         @Test

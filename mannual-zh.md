@@ -423,53 +423,6 @@ def method {
 }
 ```
 
-<h3 id="p1-2-4">1.2.4 预处理</h3>
-
-Latte源文件分为两个部分：1. 预处理(pre-processing)；2. 代码(code)。
-
-预处理命令可以存在于文件的任何位置，但其之前不能留有空格。预处理有两个指令：`define` 和 `undef`。
-
-*define*
-
-用法：
-
-```c
-define "TARGET" as "REPLACEMENT"
-```
-
-将文本中所有"TARGET"全部替换为"REPLACEMENT"。
-
-*undef*
-
-用法：
-
-```c
-undef "TARGET"
-```
-
-取消对文本"TARGET"的替换。
-
-例如
-
-```cpp
-define "CREATE TABLE" as "data class"
-define "NUMBER" as ": int"
-define "VARCHAR" as ": String"
-
-CREATE TABLE User(
-    id    NUMBER  ,
-    name  VARCHAR
-)
-
-undef "CREATE TABLE"
-undef "NUMBER"
-undef "VARCHAR"
-```
-
-注意：请谨慎使用`define`，因为编译器不能在错误时给出“使用了define”的行的准确的列号。而且debug可能变得更加困难。
-
-此外，在这个`define`将不会起作用时请及时`undef`之。
-
 <h1 id="p2">2. 基础</h1>
 
 <h2 id="p2-1">2.1 字面量</h2>

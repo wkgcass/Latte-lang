@@ -1,23 +1,4 @@
-; the file is divided into two parts
-; 1. pre processing
-; 2. code
-; the two parts can be mixed up
-
-; the pre processing part contains "define" and "undef" command
-; e.g.
-define "CREATE TABLE" as "class"
-; then, all "create table" would be replaced with "class"
-; 'define' or 'undef' must be the first word of the line
-; note that "define" is not a keyword of Latte, you can use this word freely in code part
-define "VARCHAR" as ": String"
-define "NUMBER" as ": int"
-; there can be 0 or 1 or more defines in this part
-
-; Note that define is a preprocessing command, it simply replaces [target] with [replacement]
-; use as few defines as you can, and remember to use undef when the define is useless
-
-; then there's code part
-; code part starts with namespace declare
+; the code starts with namespace declare
 package lt::demo
 ; declares that the whole file is in namespace "lt::demo"
 ; namespaces are java packages
@@ -56,18 +37,3 @@ class I_Am_A_Class
         return list
 
 interface I_Am_An_Interface
-
-; use define to simulate SQL
-CREATE TABLE User (
-    id NUMBER,
-    name VARCHAR
-)
-; it's the same as
-; class User(
-;     id : int
-;     name : String
-; )
-
-undef "CREATE TABLE"
-undef "NUMBER"
-undef "VARCHAR"

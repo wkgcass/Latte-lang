@@ -311,24 +311,6 @@ public class TestDemo {
                 // lt.demo.I_Am_An_Interface
                 Class<?> I_Am_An_Interface = classLoader.loadClass("lt.demo.I_Am_An_Interface");
                 assertTrue(I_Am_An_Interface.isInterface());
-
-                // lt.demo.User
-                Class<?> User = classLoader.loadClass("lt.demo.User");
-                assertEquals(1, User.getDeclaredConstructors().length);
-                Constructor<?> con = User.getDeclaredConstructor(int.class, String.class); // User(id,name)
-
-                assertEquals(2, User.getDeclaredFields().length);
-                Field id = User.getDeclaredField("id");
-                assertEquals(int.class, id.getType());
-                Field name = User.getDeclaredField("name");
-                assertEquals(String.class, name.getType());
-
-                Object User_o = con.newInstance(1, "cass");
-                id.setAccessible(true);
-                assertEquals(1, id.getInt(User_o));
-
-                name.setAccessible(true);
-                assertEquals("cass", name.get(User_o));
         }
 
         @Test

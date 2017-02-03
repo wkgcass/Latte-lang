@@ -632,53 +632,6 @@ public class TestScanner {
         }
 
         @Test
-        public void testDefine() throws Exception {
-                IndentScanner processor = new IndentScanner("test", new StringReader(
-                        "" +
-                                "define 'CREATE TABLE' as 'class'\n" +
-                                "CREATE TABLE User"), new Properties(), new ErrorManager(true));
-                ElementStartNode root = processor.scan();
-                Node n = root.getLinkedNode();
-                assertTrue(n instanceof Element);
-                assertEquals("class", ((Element) n).getContent());
-                n = n.next();
-                assertTrue(n instanceof Element);
-                assertEquals("User", ((Element) n).getContent());
-                n = n.next();
-                assertNull(n);
-        }
-
-        @Test
-        public void testErrWhenPreProcessing1() throws Exception {
-                IndentScanner processor = new IndentScanner("test", new StringReader(
-                        "" +
-                                "define 'CREATE TABLE' 'class'"), // there should be an `as`
-                        new Properties(), new ErrorManager(true));
-                try {
-                        processor.scan();
-                        fail();
-                } catch (SyntaxException e) {
-                        assertEquals(22, e.lineCol.column);
-                }
-        }
-
-        @Test
-        public void testErrWhenPreProcessing2() throws Exception {
-                IndentScanner processor = new IndentScanner("test", new StringReader(
-                        "" +
-                                "define 'CREATE TABLE' as 'class'\n" +
-                                "undef 'A'"), // A is not defined
-                        new Properties(), new ErrorManager(true));
-                try {
-                        processor.scan();
-                        fail();
-                } catch (SyntaxException e) {
-                        assertEquals(2, e.lineCol.line);
-                        assertEquals(1, e.lineCol.column);
-                }
-        }
-
-        @Test
         public void testMultipleLineComment() throws Exception {
                 IndentScanner processor = new IndentScanner("test", new StringReader(
                         "" +

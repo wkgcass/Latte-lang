@@ -1096,25 +1096,6 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testDefineSQL_DSL() throws Exception {
-                Class<?> cls = retrieveClass(
-                        "" +
-                                "define 'CREATE TABLE' as 'class'\n" +
-                                "define 'VARCHAR' as ':String'\n" +
-                                "define 'NUMBER' as ':int'\n" +
-                                "CREATE TABLE User(\n" +
-                                "    id NUMBER\n" +
-                                "    name VARCHAR\n" +
-                                ")",
-                        "User");
-                assertEquals("User", cls.getName());
-                Constructor<?> con = cls.getDeclaredConstructors()[0];
-                assertEquals(2, con.getParameterCount());
-                assertEquals(int.class, con.getParameterTypes()[0]);
-                assertEquals(String.class, con.getParameterTypes()[1]);
-        }
-
-        @Test
         public void testTryCatchCanLoad() throws Exception {
                 retrieveClass(
                         "" +
