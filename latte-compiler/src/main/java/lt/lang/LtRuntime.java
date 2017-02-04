@@ -158,8 +158,9 @@ public class LtRuntime {
         /**
          * Cast the object to given type.
          *
-         * @param o          the object to cast.
-         * @param targetType the type that the object cast to.
+         * @param o           the object to cast.
+         * @param targetType  the type that the object cast to.
+         * @param callerClass the caller class
          * @return the casting result.
          * @throws Exception maybe {@link ClassCastException} if the cast fails,
          *                   or some errors when casting.

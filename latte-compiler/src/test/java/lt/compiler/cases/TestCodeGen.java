@@ -2202,7 +2202,7 @@ public class TestCodeGen {
                 assertEquals(16, arr[1][0][1]);
 
                 Object[][] arr2 = {
-                        { Arrays.asList(1, 2, 3) }
+                        {Arrays.asList(1, 2, 3)}
                 };
 
                 assertEquals(2, get.invoke(null, arr2, 0, 0, 1));
@@ -3667,5 +3667,140 @@ public class TestCodeGen {
                 assertEquals("abc", ((Pattern) method1.invoke(null)).pattern());
                 Method method2 = cls.getMethod("method2");
                 assertEquals("a", ((Pattern) method2.invoke(null)).pattern());
+        }
+
+        @Test
+        public void testNumberLiteralCastToBool() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestNumberLiteralCastToBool\n" +
+                                "    static\n" +
+                                "        def numberToBool1 = 1 as bool\n" +
+                                "        def numberToBool2 = 1.1 as bool\n" +
+                                "        def numberToBool3 = 1 as Boolean\n" +
+                                "        def numberToBool4 = 1.1 as Boolean\n" +
+                                "        def numberToBool5 = 0 as bool\n" +
+                                "        def numberToBool6 = 0.0 as bool\n" +
+                                "        def numberToBool7 = 0 as Boolean\n" +
+                                "        def numberToBool8 = 0.0 as Boolean\n"
+                        , "TestNumberLiteralCastToBool");
+                Method method = cls.getMethod("numberToBool1");
+                assertEquals(true, method.invoke(null));
+
+                method = cls.getMethod("numberToBool2");
+                assertEquals(true, method.invoke(null));
+
+                method = cls.getMethod("numberToBool3");
+                assertEquals(true, method.invoke(null));
+
+                method = cls.getMethod("numberToBool4");
+                assertEquals(true, method.invoke(null));
+
+                method = cls.getMethod("numberToBool5");
+                assertEquals(false, method.invoke(null));
+
+                method = cls.getMethod("numberToBool6");
+                assertEquals(false, method.invoke(null));
+
+                method = cls.getMethod("numberToBool7");
+                assertEquals(false, method.invoke(null));
+
+                method = cls.getMethod("numberToBool8");
+                assertEquals(false, method.invoke(null));
+        }
+
+        @Test
+        public void testStringLiteralCastToBool() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestStringLiteralCastToBool\n" +
+                                "    static\n" +
+                                "        def stringToBool1 = 'a' as bool\n" +
+                                "        def stringToBool2 = \"a\" as bool\n" +
+                                "        def stringToBool3 = \"\" as bool\n" +
+                                "        def stringToBool4 = 'a' as Boolean\n" +
+                                "        def stringToBool5 = \"a\" as Boolean\n" +
+                                "        def stringToBool6 = \"\" as Boolean"
+                        , "TestStringLiteralCastToBool");
+
+                Method method = cls.getMethod("stringToBool1");
+                assertEquals(true, method.invoke(null));
+
+                method = cls.getMethod("stringToBool2");
+                assertEquals(true, method.invoke(null));
+
+                method = cls.getMethod("stringToBool3");
+                assertEquals(false, method.invoke(null));
+
+                method = cls.getMethod("stringToBool4");
+                assertEquals(true, method.invoke(null));
+
+                method = cls.getMethod("stringToBool5");
+                assertEquals(true, method.invoke(null));
+
+                method = cls.getMethod("stringToBool6");
+                assertEquals(false, method.invoke(null));
+        }
+
+        @Test
+        public void testCharCastToNumber() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestCharCastToNumber\n" +
+                                "    static\n" +
+                                "        def method1 = 'a' as int\n" +
+                                "        def method2 = 'a' as Integer\n" +
+                                "        def method3 = 'a' as long\n" +
+                                "        def method4 = 'a' as Long\n" +
+                                "        def method5 = 'a' as float\n" +
+                                "        def method6 = 'a' as Float\n" +
+                                "        def method7 = 'a' as double\n" +
+                                "        def method8 = 'a' as Double\n" +
+                                "        def method9 = 'a' as byte\n" +
+                                "        def method10 = 'a' as Byte\n" +
+                                "        def method11 = 'a' as short\n" +
+                                "        def method12 = 'a' as Short\n" +
+                                "        def method13 = 97 as char\n" +
+                                "        def method14 = 97 as Character"
+                        , "TestCharCastToNumber");
+
+                Method method = cls.getMethod("method1");
+                assertEquals(97, method.invoke(null));
+
+                method = cls.getMethod("method2");
+                assertEquals(97, method.invoke(null));
+
+                method = cls.getMethod("method3");
+                assertEquals(97L, method.invoke(null));
+
+                method = cls.getMethod("method4");
+                assertEquals(97L, method.invoke(null));
+
+                method = cls.getMethod("method5");
+                assertEquals(97f, method.invoke(null));
+
+                method = cls.getMethod("method6");
+                assertEquals(97f, method.invoke(null));
+
+                method = cls.getMethod("method7");
+                assertEquals(97d, method.invoke(null));
+
+                method = cls.getMethod("method8");
+                assertEquals(97d, method.invoke(null));
+
+                method = cls.getMethod("method9");
+                assertEquals((byte) 97, method.invoke(null));
+
+                method = cls.getMethod("method10");
+                assertEquals((byte) 97, method.invoke(null));
+
+                method = cls.getMethod("method11");
+                assertEquals((short) 97, method.invoke(null));
+
+                method = cls.getMethod("method12");
+                assertEquals((short) 97, method.invoke(null));
+
+                method = cls.getMethod("method13");
+                assertEquals('a', method.invoke(null));
+
+                method = cls.getMethod("method14");
+                assertEquals('a', method.invoke(null));
         }
 }

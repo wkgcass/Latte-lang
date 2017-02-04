@@ -4312,6 +4312,18 @@ public class SemanticProcessor {
                 return pack;
         }
 
+        private boolean isAssignable(STypeDef sTypeDef, String typeName) throws SyntaxException {
+                return sTypeDef.isAssignableFrom(getTypeWithName(typeName, LineCol.SYNTHETIC));
+        }
+
+        private Value primitiveOrBoxed(STypeDef required, Value primitive) throws SyntaxException {
+                if (required instanceof PrimitiveTypeDef) {
+                        return primitive;
+                } else {
+                        return boxPrimitive(primitive, LineCol.SYNTHETIC);
+                }
+        }
+
         /**
          * parse value from expression<br>
          * <ul>
@@ -4395,6 +4407,18 @@ public class SemanticProcessor {
                                         } else {
                                                 return boxPrimitive(floatValue, exp.line_col());
                                         }
+                                } else if (requiredType != null && (
+                                        requiredType.equals(BoolTypeDef.get()) ||
+                                                isAssignable(requiredType, "java.lang.Boolean")
+                                )) {
+                                        double dbl = Double.parseDouble(((NumberLiteral) exp).literal());
+                                        return primitiveOrBoxed(requiredType, new BoolValue(dbl != 0d));
+                                } else if (requiredType != null && (
+                                        requiredType.equals(CharTypeDef.get()) ||
+                                                isAssignable(requiredType, "java.lang.Character")
+                                )) {
+                                        int anInt = Integer.parseInt(((NumberLiteral) exp).literal());
+                                        return primitiveOrBoxed(requiredType, new CharValue((char) anInt));
                                 } else {
                                         assert requiredType != null;
                                         err.SyntaxException(exp + " cannot be converted into " + requiredType.fullName(), exp.line_col());
@@ -4451,7 +4475,26 @@ public class SemanticProcessor {
                                 }
                         } else if (requiredType == null || requiredType.isAssignableFrom(getTypeWithName("java.lang.String", exp.line_col()))) {
                                 return generateStringConcat(str, scope, exp.line_col());
+                        } else if (requiredType.equals(BoolTypeDef.get()) || isAssignable(requiredType, "java.lang.Boolean")) {
+                                return primitiveOrBoxed(requiredType, new BoolValue(!str.isEmpty()));
                         } else {
+                                if (((StringLiteral) exp).literal().startsWith("'") && str.length() == 1) {
+                                        // is char literal
+                                        int num = (int) str.charAt(0);
+                                        if (requiredType.equals(IntTypeDef.get()) || isAssignable(requiredType, "java.lang.Integer")) {
+                                                return primitiveOrBoxed(requiredType, new IntValue(num));
+                                        } else if (requiredType.equals(LongTypeDef.get()) || isAssignable(requiredType, "java.lang.Long")) {
+                                                return primitiveOrBoxed(requiredType, new LongValue(num));
+                                        } else if (requiredType.equals(FloatTypeDef.get()) || isAssignable(requiredType, "java.lang.Float")) {
+                                                return primitiveOrBoxed(requiredType, new FloatValue(num));
+                                        } else if (requiredType.equals(DoubleTypeDef.get()) || isAssignable(requiredType, "java.lang.Double")) {
+                                                return primitiveOrBoxed(requiredType, new DoubleValue(num));
+                                        } else if (requiredType.equals(ByteTypeDef.get()) || isAssignable(requiredType, "java.lang.Byte")) {
+                                                return primitiveOrBoxed(requiredType, new ByteValue((byte) num));
+                                        } else if (requiredType.equals(ShortTypeDef.get()) || isAssignable(requiredType, "java.lang.Short")) {
+                                                return primitiveOrBoxed(requiredType, new ShortValue((short) num));
+                                        }
+                                }
                                 err.SyntaxException(exp + " cannot be converted into " + requiredType, exp.line_col());
                                 return null;
                         }
@@ -7476,6 +7519,7 @@ public class SemanticProcessor {
          *
          * @param requiredType required type. null means no type limit
          * @param v            value
+         * @param callerClass  callerClass
          * @param lineCol      file_line_col
          * @return casted value
          * @throws SyntaxException exception
@@ -7657,9 +7701,10 @@ public class SemanticProcessor {
          * note that the result object is always `java.lang.Object` when compiling,<br>
          * use {@link lt.compiler.semantic.Ins.CheckCast} to cast to required type to avoid some error when runtime validates the class file
          *
-         * @param type    2nd arg
-         * @param v       1st arg
-         * @param lineCol line column info
+         * @param type        2nd arg
+         * @param v           1st arg
+         * @param callerClass 3rd arg
+         * @param lineCol     line column info
          * @return casted value
          * @throws SyntaxException exception
          */
