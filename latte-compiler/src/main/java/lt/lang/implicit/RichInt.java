@@ -1,7 +1,7 @@
 package lt.lang.implicit;
 
 import lt.lang.LtRuntime;
-import lt.lang.RangeList;
+import lt.util.RangeList;
 
 /**
  * rich Integer

@@ -25,7 +25,7 @@
 package lt.compiler.cases;
 
 import lt.lang.LtRuntime;
-import lt.lang.RangeList;
+import lt.util.RangeList;
 import org.junit.Test;
 
 import java.util.Arrays;

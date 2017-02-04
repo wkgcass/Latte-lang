@@ -62,7 +62,7 @@ you can also write css:
 */
 package lt::dsl::html
 
-import lt::util::_
+import java::util::_
 
 private class StringUtils
     static

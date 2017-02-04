@@ -227,7 +227,6 @@ public class Evaluator {
 
                 // fill the eval class into the def list
                 defList.add(evalClass);
-                defList.add(new Import(new AST.PackageRef("lt::util", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                 defList.add(new Import(new AST.PackageRef("java::util", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                 defList.add(new Import(new AST.PackageRef("java::math", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                 defList.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));

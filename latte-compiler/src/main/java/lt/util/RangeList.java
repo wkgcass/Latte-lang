@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package lt.lang;
+package lt.util;
 
 import java.util.*;
 
@@ -31,7 +31,6 @@ import java.util.*;
  * and the list is immutable
  */
 public class RangeList extends AbstractList {
-        private static final Object lock = new Object();
         private final int start;
         private final int end;
         // [start,end]

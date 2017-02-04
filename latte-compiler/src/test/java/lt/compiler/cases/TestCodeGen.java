@@ -39,6 +39,7 @@ import lt.lang.function.Function0;
 import lt.lang.function.Function1;
 import lt.lang.function.Function3;
 import lt.repl.ScriptCompiler;
+import lt.util.RangeList;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -1035,7 +1036,7 @@ public class TestCodeGen {
                 @SuppressWarnings("unchecked")
                 List<Integer> list = (List<Integer>) method.invoke(null);
 
-                assertEquals(lt.util.List.class, list.getClass());
+                assertEquals(java.util.LinkedList.class, list.getClass());
 
                 assertEquals(10, list.get(0).intValue());
                 assertEquals(20, list.get(1).intValue());
@@ -1074,7 +1075,7 @@ public class TestCodeGen {
                 Object o = expected;
                 Object res = method.invoke(null);
                 assertEquals(o, res);
-                assertEquals(lt.util.Map.class, res.getClass());
+                assertEquals(java.util.LinkedHashMap.class, res.getClass());
         }
 
         @Test
@@ -1710,7 +1711,7 @@ public class TestCodeGen {
                 assertEquals("ab", method.invoke(null, "a", "b"));
                 assertEquals(
                         Arrays.asList(1, 2, 3),
-                        method.invoke(null, new lt.util.List(Arrays.asList(1, 2)), Collections.singletonList(3))
+                        method.invoke(null, Arrays.asList(1, 2), Collections.singletonList(3))
                 );
                 assertEquals(Arrays.asList("a", "b", "c"), cls.getMethod("method2").invoke(null));
         }
@@ -2052,12 +2053,12 @@ public class TestCodeGen {
         public void testDynamicConstruct() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
-                                "import lt::util::List\n" +
+                                "import java::util::LinkedList\n" +
                                 "class TestDynamicConstruct\n" +
                                 "    static\n" +
                                 "        def method()\n" +
                                 "            a=[1]\n" +
-                                "            return List(a)"
+                                "            return LinkedList(a)"
                         , "TestDynamicConstruct"
                 );
                 Method method = cls.getMethod("method");
@@ -2201,13 +2202,7 @@ public class TestCodeGen {
                 assertEquals(16, arr[1][0][1]);
 
                 Object[][] arr2 = {
-                        {new lt.util.List($this -> {
-                                List ls = (List) $this;
-                                ls.add(1);
-                                ls.add(2);
-                                ls.add(3);
-                                return null;
-                        })}
+                        { Arrays.asList(1, 2, 3) }
                 };
 
                 assertEquals(2, get.invoke(null, arr2, 0, 0, 1));
@@ -3352,7 +3347,7 @@ public class TestCodeGen {
                 assertTrue(cls.isAnnotationPresent(ImplicitImports.class));
                 ImplicitImports implicitImports = cls.getAnnotation(ImplicitImports.class);
                 Class<?>[] classes = implicitImports.implicitImports();
-                assertEquals(4, classes.length); // X and 8 primitives
+                assertEquals(5, classes.length); // X and 8 primitives
                 assertEquals("XX", classes[0].getName());
                 assertEquals("1 s", cls.getMethod("method").invoke(null));
         }
@@ -3364,7 +3359,7 @@ public class TestCodeGen {
                                 "implicit object TestImportImplicit2"
                         , "TestImportImplicit2");
                 assertTrue(cls.isAnnotationPresent(ImplicitImports.class));
-                assertEquals(3, cls.getAnnotation(ImplicitImports.class).implicitImports().length);
+                assertEquals(4, cls.getAnnotation(ImplicitImports.class).implicitImports().length);
         }
 
         @Test
@@ -3658,5 +3653,19 @@ public class TestCodeGen {
                         , "TestComplexPatternMatching");
                 Method method = cls.getMethod("method");
                 assertEquals(Arrays.asList("a", Collections.singletonMap("x", "y"), 7), method.invoke(null));
+        }
+
+        @Test
+        public void testStringRegex() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestStringRegex\n" +
+                                "    static\n" +
+                                "        def method1 = 'abc'.r\n" +
+                                "        def method2 = 'a'.r"
+                        , "TestStringRegex");
+                Method method1 = cls.getMethod("method1");
+                assertEquals("abc", ((Pattern) method1.invoke(null)).pattern());
+                Method method2 = cls.getMethod("method2");
+                assertEquals("a", ((Pattern) method2.invoke(null)).pattern());
         }
 }

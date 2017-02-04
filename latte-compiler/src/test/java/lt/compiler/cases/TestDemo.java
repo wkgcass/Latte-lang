@@ -899,7 +899,7 @@ public class TestDemo {
         public void testList_Map() throws Exception {
                 InputStream is = TestDemo.class.getResourceAsStream("/lang-demo/list-map.lts");
                 StringBuilder sb = new StringBuilder();
-                sb.append("import lt::util::_\nclass list_map\n");
+                sb.append("import java::util::_\nclass list_map\n");
                 BufferedReader br = new BufferedReader(new InputStreamReader(is));
                 String line;
                 while ((line = br.readLine()) != null) {
@@ -959,14 +959,6 @@ public class TestDemo {
                 Field lengthResult = cls.getDeclaredField("lengthResult");
                 lengthResult.setAccessible(true);
                 assertEquals(7, lengthResult.get(o));
-                // list3
-                Field list3 = cls.getDeclaredField("list3");
-                list3.setAccessible(true);
-                assertEquals(Arrays.asList("a", "d", "c"), list3.get(o));
-                // indexRes
-                Field indexRes = cls.getDeclaredField("indexRes");
-                indexRes.setAccessible(true);
-                assertEquals("b", indexRes.get(o));
                 // m
                 Field m = cls.getDeclaredField("m");
                 m.setAccessible(true);
@@ -1002,14 +994,6 @@ public class TestDemo {
                 Field c_res = cls.getDeclaredField("c_res");
                 c_res.setAccessible(true);
                 assertEquals(3, c_res.get(o));
-                // map3
-                Field map3 = cls.getDeclaredField("map3");
-                map3.setAccessible(true);
-                jm.clear();
-                jm.put("z", 26);
-                jm.put("y", 25);
-                jm.put("x", 24);
-                assertEquals(jm, map3.get(o));
         }
 
         @Test

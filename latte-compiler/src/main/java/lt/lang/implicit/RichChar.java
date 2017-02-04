@@ -2,6 +2,8 @@ package lt.lang.implicit;
 
 import lt.lang.LtRuntime;
 
+import java.util.regex.Pattern;
+
 /**
  * rich Character
  */
@@ -10,6 +12,14 @@ public class RichChar {
 
         public RichChar(Character c) {
                 this.c = c;
+        }
+
+        public Pattern r() {
+                return Pattern.compile(c.toString());
+        }
+
+        public Pattern r(int flags) {
+                return Pattern.compile(c.toString(), flags);
         }
 
         public int not() {
