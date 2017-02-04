@@ -6135,33 +6135,6 @@ public class SemanticProcessor {
         }
 
         /**
-         * {@link Math#pow(double, double)}
-         */
-        private SMethodDef Math_pow;
-
-        /**
-         * @return {@link Math#pow(double, double)}
-         * @throws SyntaxException exception
-         */
-        public SMethodDef getMath_pow() throws SyntaxException {
-                if (Math_pow == null) {
-                        SClassDef cls = (SClassDef) getTypeWithName("java.lang.Math", LineCol.SYNTHETIC);
-                        assert cls != null;
-                        for (SMethodDef m : cls.methods()) {
-                                if (m.name().equals("pow") && m.getParameters().size() == 2
-                                        && m.getParameters().get(0).type().equals(DoubleTypeDef.get())
-                                        && m.getParameters().get(1).type().equals(DoubleTypeDef.get())
-                                        && m.modifiers().contains(SModifier.STATIC)) {
-                                        // static Math.pow(double,double)
-                                        Math_pow = m;
-                                        break;
-                                }
-                        }
-                }
-                return Math_pow;
-        }
-
-        /**
          * invoke method with given arguments<br>
          * <code>a.method(args)</code><br>
          * first find method candidates, if not found, then invoke dynamic<br>
@@ -6477,24 +6450,12 @@ public class SemanticProcessor {
                                 arg.add(right);
                                 return invokeMethodWithArgs(lineCol, left.type(), left, "concat", arg, scope);
                         case "^^":
-                                STypeDef Number_Class = getTypeWithName("java.lang.Number", LineCol.SYNTHETIC);
-                                assert Number_Class != null;
-                                if (left.type() instanceof PrimitiveTypeDef ||
-                                        Number_Class.isAssignableFrom(left.type())) {
-                                        // primitive or Number
-                                        Value doubleLeft = cast(DoubleTypeDef.get(), left, scope.type(), lineCol);
-                                        Value doubleRight = cast(DoubleTypeDef.get(), right, scope.type(), lineCol);
-
-                                        SMethodDef math_pow = getMath_pow();
-                                        Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(math_pow, lineCol);
-                                        invokeStatic.arguments().add(doubleLeft);
-                                        invokeStatic.arguments().add(doubleRight);
-                                        return invokeStatic;
-                                } else {
-                                        List<Value> args = new ArrayList<>();
-                                        args.add(right);
-                                        return invokeMethodWithArgs(lineCol, left.type(), left, "pow", args, scope);
+                                arg = new ArrayList<>();
+                                arg.add(right);
+                                if (left.type() instanceof PrimitiveTypeDef) {
+                                        left = boxPrimitive(left, LineCol.SYNTHETIC);
                                 }
+                                return invokeMethodWithArgs(lineCol, left.type(), left, "pow", arg, scope);
                         case "*":
                                 return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Imul, LtRuntime.multiply, right, scope, lineCol);
                         case "/":

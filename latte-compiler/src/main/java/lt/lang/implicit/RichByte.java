@@ -489,4 +489,38 @@ public class RichByte {
         public boolean xor(Boolean b) throws Throwable {
                 return LtRuntime.castToBool(this.b) ^ b;
         }
+
+        /*
+         * ============
+         *     pow
+         * ============
+         */
+
+        public double pow(Integer i) {
+                return Math.pow(b, i);
+        }
+
+        public double pow(Long l) {
+                return Math.pow(b, l);
+        }
+
+        public double pow(Float f) {
+                return Math.pow(b, f);
+        }
+
+        public double pow(Double d) {
+                return Math.pow(b, d);
+        }
+
+        public double pow(Byte b) {
+                return Math.pow(this.b, b);
+        }
+
+        public double pow(Short s) {
+                return Math.pow(b, s);
+        }
+
+        public double pow(Character c) {
+                return Math.pow(b, c);
+        }
 }

@@ -504,4 +504,38 @@ public class RichInt {
         public RangeList until(Integer i) {
                 return new RangeList(this.i, i, false);
         }
+
+        /*
+         * ============
+         *     pow
+         * ============
+         */
+
+        public double pow(Integer i) {
+                return Math.pow(this.i, i);
+        }
+
+        public double pow(Long l) {
+                return Math.pow(i, l);
+        }
+
+        public double pow(Float f) {
+                return Math.pow(i, f);
+        }
+
+        public double pow(Double d) {
+                return Math.pow(i, d);
+        }
+
+        public double pow(Byte b) {
+                return Math.pow(i, b);
+        }
+
+        public double pow(Short s) {
+                return Math.pow(i, s);
+        }
+
+        public double pow(Character c) {
+                return Math.pow(i, c);
+        }
 }

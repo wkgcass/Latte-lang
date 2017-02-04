@@ -6,11 +6,10 @@ import java.util.Set;
 /**
  * rich set
  */
-public class RichSet<E> extends RichCollection<E> {
+public class RichSet<E> {
         private final Set<E> set;
 
         public RichSet(Set<E> set) {
-                super(set);
                 this.set = set;
         }
 

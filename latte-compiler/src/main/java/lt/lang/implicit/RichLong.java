@@ -489,4 +489,38 @@ public class RichLong {
         public boolean xor(Boolean b) throws Throwable {
                 return LtRuntime.castToBool(l) ^ b;
         }
+
+        /*
+         * ============
+         *     pow
+         * ============
+         */
+
+        public double pow(Integer i) {
+                return Math.pow(l, i);
+        }
+
+        public double pow(Long l) {
+                return Math.pow(this.l, l);
+        }
+
+        public double pow(Float f) {
+                return Math.pow(l, f);
+        }
+
+        public double pow(Double d) {
+                return Math.pow(l, d);
+        }
+
+        public double pow(Byte b) {
+                return Math.pow(l, b);
+        }
+
+        public double pow(Short s) {
+                return Math.pow(l, s);
+        }
+
+        public double pow(Character c) {
+                return Math.pow(l, c);
+        }
 }

@@ -32,8 +32,8 @@ public class CollectionImplicit {
         }
 
         @Implicit
-        public <E> RichCollection<E> cast(Collection<E> collection) {
-                return new RichCollection<>(collection);
+        public <E> Stream<E> castCollectionToStream(Collection<E> collection) {
+                return collection.stream();
         }
 
         @Implicit

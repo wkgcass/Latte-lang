@@ -8,11 +8,10 @@ import java.util.List;
 /**
  * rich list
  */
-public class RichList<E> extends RichCollection<E> {
+public class RichList<E> {
         private final List<E> list;
 
         public RichList(List<E> list) {
-                super(list);
                 this.list = list;
         }
 

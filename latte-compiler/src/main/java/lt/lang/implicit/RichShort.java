@@ -489,4 +489,38 @@ public class RichShort {
         public boolean xor(Boolean b) throws Throwable {
                 return LtRuntime.castToBool(this.s) ^ b;
         }
+
+        /*
+         * ============
+         *     pow
+         * ============
+         */
+
+        public double pow(Integer i) {
+                return Math.pow(s, i);
+        }
+
+        public double pow(Long l) {
+                return Math.pow(s, l);
+        }
+
+        public double pow(Float f) {
+                return Math.pow(s, f);
+        }
+
+        public double pow(Double d) {
+                return Math.pow(s, d);
+        }
+
+        public double pow(Byte b) {
+                return Math.pow(s, b);
+        }
+
+        public double pow(Short s) {
+                return Math.pow(this.s, s);
+        }
+
+        public double pow(Character c) {
+                return Math.pow(s, c);
+        }
 }

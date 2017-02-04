@@ -353,4 +353,38 @@ public class RichDouble {
         public boolean xor(Boolean b) throws Throwable {
                 return LtRuntime.castToBool(d) ^ b;
         }
+
+        /*
+         * ============
+         *     pow
+         * ============
+         */
+
+        public double pow(Integer i) {
+                return Math.pow(d, i);
+        }
+
+        public double pow(Long l) {
+                return Math.pow(d, l);
+        }
+
+        public double pow(Float f) {
+                return Math.pow(d, f);
+        }
+
+        public double pow(Double d) {
+                return Math.pow(this.d, d);
+        }
+
+        public double pow(Byte b) {
+                return Math.pow(d, b);
+        }
+
+        public double pow(Short s) {
+                return Math.pow(d, s);
+        }
+
+        public double pow(Character c) {
+                return Math.pow(d, c);
+        }
 }

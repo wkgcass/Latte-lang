@@ -353,4 +353,38 @@ public class RichFloat {
         public boolean xor(Boolean b) throws Throwable {
                 return LtRuntime.castToBool(f) ^ b;
         }
+
+        /*
+         * ============
+         *     pow
+         * ============
+         */
+
+        public double pow(Integer i) {
+                return Math.pow(f, i);
+        }
+
+        public double pow(Long l) {
+                return Math.pow(f, l);
+        }
+
+        public double pow(Float f) {
+                return Math.pow(this.f, f);
+        }
+
+        public double pow(Double d) {
+                return Math.pow(f, d);
+        }
+
+        public double pow(Byte b) {
+                return Math.pow(f, b);
+        }
+
+        public double pow(Short s) {
+                return Math.pow(f, s);
+        }
+
+        public double pow(Character c) {
+                return Math.pow(f, c);
+        }
 }

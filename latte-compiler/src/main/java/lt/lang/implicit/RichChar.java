@@ -499,4 +499,38 @@ public class RichChar {
         public boolean xor(Boolean b) throws Throwable {
                 return LtRuntime.castToBool(c) ^ b;
         }
+
+        /*
+         * ============
+         *     pow
+         * ============
+         */
+
+        public double pow(Integer i) {
+                return Math.pow(c, i);
+        }
+
+        public double pow(Long l) {
+                return Math.pow(c, l);
+        }
+
+        public double pow(Float f) {
+                return Math.pow(c, f);
+        }
+
+        public double pow(Double d) {
+                return Math.pow(c, d);
+        }
+
+        public double pow(Byte b) {
+                return Math.pow(c, b);
+        }
+
+        public double pow(Short s) {
+                return Math.pow(c, s);
+        }
+
+        public double pow(Character c) {
+                return Math.pow(this.c, c);
+        }
 }

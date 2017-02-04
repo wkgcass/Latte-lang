@@ -454,4 +454,22 @@ public class TestPrimitiveOperators {
                 String x = method.invoke(null, new Object(), "a").toString();
                 assertTrue(x.startsWith("java.lang.Object@") && x.endsWith("a"));
         }
+
+        @Test
+        public void testPow() throws Exception {
+                Class<?> pow = retrieveClass("" +
+                                "class TestPow\n" +
+                                "    static\n" +
+                                "        method(a,b) = a ^^ b"
+                        , "TestPow");
+                double result = Math.pow(3, 4);
+                Method method = pow.getMethod("method", Object.class, Object.class);
+                for (Function<Number, ?> f1 : numberFuncs) {
+                        Object a = f1.apply(3);
+                        for (Function<Number, ?> f2 : numberFuncs) {
+                                Object b = f2.apply(4);
+                                assertEquals(result, method.invoke(null, a, b));
+                        }
+                }
+        }
 }
