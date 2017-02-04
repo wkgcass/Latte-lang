@@ -185,7 +185,7 @@ public class LtRuntime {
                                         if (m.isAnnotationPresent(Implicit.class)
                                                 && m.getParameterCount() == 1
                                                 && m.getParameterTypes()[0].equals(o.getClass())
-                                                && m.getReturnType().equals(targetType)) {
+                                                && targetType.isAssignableFrom(m.getReturnType())) {
 
                                                 m.setAccessible(true);
                                                 // get singleton instance

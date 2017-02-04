@@ -32,7 +32,6 @@ import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
-import lt.compiler.syntactic.literal.RegexLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
 import lt.compiler.syntactic.operation.OneVariableOperation;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
@@ -292,9 +291,6 @@ public class js implements SourceGenerator {
                                 }
                         } else if (exp instanceof NumberLiteral) {
                                 sb.append(literal);
-                        } else if (exp instanceof RegexLiteral) {
-                                String regex = CompileUtil.getRegexStr(literal);
-                                sb.append("/").append(regex.replace("/", "\\/")).append("/");
                         } else if (exp instanceof StringLiteral) {
                                 sb.append(literal);
                         } else throw new LtBug("unknown literal type " + exp.getClass());

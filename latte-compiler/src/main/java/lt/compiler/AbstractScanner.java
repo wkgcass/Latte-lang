@@ -57,7 +57,7 @@ public abstract class AbstractScanner implements Scanner {
          * symbols that let the scanner know the following input should be scanned as a string<br>
          * a string starts with one of these symbols and ends with the same symbol.
          */
-        public final Set<String> STRING = new HashSet<>(Arrays.asList("\"", "'", "`", "//"));
+        public final Set<String> STRING = new HashSet<>(Arrays.asList("\"", "'", "`"));
         /**
          * the escape character.
          */
@@ -73,11 +73,11 @@ public abstract class AbstractScanner implements Scanner {
         /**
          * the str is considered as ending text. Append an EndingNode to the token tree
          */
-        public static String ENDING = ",";
+        public static Set<String> ENDING = new HashSet<>(Arrays.asList(",", ";"));
         /**
          * comment, strings after the token are ignored
          */
-        public static String COMMENT = ";";
+        public static String COMMENT = "//";
         /**
          * multiple line comment start symbol
          */
@@ -116,7 +116,7 @@ public abstract class AbstractScanner implements Scanner {
                 Set<String> set = new HashSet<>();
                 set.addAll(LAYER);
                 set.addAll(SPLIT_X);
-                set.add(ENDING);
+                set.addAll(ENDING);
                 set.add(COMMENT);
                 set.add(MultipleLineCommentStart);
                 set.add(MultipleLineCommentEnd);
@@ -126,12 +126,6 @@ public abstract class AbstractScanner implements Scanner {
                 // the longest string is considered first
                 SPLIT = set.stream().sorted((a, b) -> b.length() - a.length()).collect(Collectors.toList());
                 SPLIT.addAll(0, STRING);
-        }
-
-        protected static class LineAndString {
-                String str;
-                String line;
-                LineCol lineCol;
         }
 
         protected final String fileName;
@@ -272,7 +266,6 @@ public abstract class AbstractScanner implements Scanner {
                 if (CompileUtil.isBoolean(str)) return TokenType.BOOL;
                 if (CompileUtil.isModifier(str)) return TokenType.MODIFIER;
                 if (CompileUtil.isNumber(str)) return TokenType.NUMBER;
-                if (CompileUtil.isRegex(str)) return TokenType.REGEX;
                 if (CompileUtil.isString(str)) return TokenType.STRING;
                 if (CompileUtil.isKey(str))
                         return TokenType.KEY; // however in/is/not are two variable operators, they are marked as keys

@@ -59,7 +59,7 @@ public class BraceScanner extends AbstractScanner {
                 Set<String> set = new HashSet<>();
                 set.addAll(LAYER);
                 set.addAll(SPLIT_X);
-                set.add(ENDING);
+                set.addAll(ENDING);
                 set.add(COMMENT);
                 set.add(MultipleLineCommentStart);
                 set.add(MultipleLineCommentEnd);
@@ -311,7 +311,7 @@ public class BraceScanner extends AbstractScanner {
                                                 lastIndex = index;
                                         }
                                 }
-                        } else if (ENDING.equals(token)) {
+                        } else if (ENDING.contains(token)) {
                                 // ending
                                 if (args.previous instanceof Element) {
                                         args.previous = new EndingNode(args, EndingNode.STRONG);

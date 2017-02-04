@@ -67,9 +67,7 @@ public class TestJsSupport {
                                 "true;\n" +
                                 "true;\n" +
                                 "false;\n" +
-                                "false;\n" +
-                                "/\\b+/;\n" +
-                                "/\\//;"
+                                "false;"
                         ,
                         compile("" +
                                 "1\n" +
@@ -77,9 +75,7 @@ public class TestJsSupport {
                                 "true\n" +
                                 "yes\n" +
                                 "false\n" +
-                                "no\n" +
-                                "//\\b+//\n" +
-                                "/////"));
+                                "no"));
         }
 
         @Test

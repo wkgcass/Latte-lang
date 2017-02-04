@@ -204,7 +204,7 @@ class Async
             next = EachSeriesFunNext(item, iterator, next, callback)
         next()
 
-; this class makes sure that the callback method would be invoked only once
+// this class makes sure that the callback method would be invoked only once
 abstract class CallbackWrapper(callback)
     alreadyCalled = false
     apply(arg1, arg2):Unit

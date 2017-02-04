@@ -28,7 +28,6 @@ import lt.compiler.lexical.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
-import lt.compiler.syntactic.literal.RegexLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
 import lt.compiler.syntactic.pre.Import;
@@ -1707,16 +1706,6 @@ public class Parser {
                                                 nextNode(true);
                                                 parse_expression();
 
-                                        } else if (current.getTokenType() == TokenType.REGEX) {
-                                                annosIsEmpty();
-                                                modifiersIsEmpty();
-
-                                                RegexLiteral regexLiteral = new RegexLiteral(content, current.getLineCol());
-
-                                                parsedExps.push(regexLiteral);
-                                                nextNode(true);
-                                                parse_expression();
-
                                         } else if (isTwoVariableOperator(content) &&
                                                 (
                                                         current.getTokenType() == TokenType.KEY || (current.getTokenType() == TokenType.SYMBOL)
@@ -2314,8 +2303,6 @@ public class Parser {
                                 subPattern = new AST.Pattern_Value(new BoolLiteral(((Element) current).getContent(), current.getLineCol()));
                         } else if (current.getTokenType() == TokenType.NUMBER) {
                                 subPattern = new AST.Pattern_Value(new NumberLiteral(((Element) current).getContent(), current.getLineCol()));
-                        } else if (current.getTokenType() == TokenType.REGEX) {
-                                subPattern = new AST.Pattern_Value(new RegexLiteral(((Element) current).getContent(), current.getLineCol()));
                         } else if (current.getTokenType() == TokenType.STRING) {
                                 String content = ((Element) current).getContent();
                                 subPattern = new AST.Pattern_Value(new StringLiteral(content, current.getLineCol()));

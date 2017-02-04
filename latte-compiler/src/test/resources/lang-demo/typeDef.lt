@@ -1,95 +1,95 @@
-; Latte allows class and interface definition
+// Latte allows class and interface definition
 class I_Am_A_Class
 
-; a class can have constructor parameters
+// a class can have constructor parameters
 class I_Have_Params(
-    ; the param is a variable definition
-    param1:int    ; an int param
-    ; or simply a name
-    param2        ; it's java.lang.Object
+    // the param is a variable definition
+    param1:int    // an int param
+    // or simply a name
+    param2        // it's java.lang.Object
 )
 
-; you can write params in the same line
+// you can write params in the same line
 class I_Have_Params_too(param1:int, param2)
 
-; a class can have one and only one parent class
+// a class can have one and only one parent class
 class I_Have_Parent : I_Am_A_Class
-; if parent not presented, it's considered as inheriting java.lang.Object
+// if parent not presented, it's considered as inheriting java.lang.Object
 
-; the parent class can be initialized with constructor arguments
+// the parent class can be initialized with constructor arguments
 class I_Have_Parent_And_Parent_Have_Args : I_Have_Params(1, "2")
 
-; a class can have 0 or 1 or more super interfaces
+// a class can have 0 or 1 or more super interfaces
 abstract class I_Have_Interfaces : java::util::List, java::io::Serializable
 
-; a class can have both parent class and super interfaces
+// a class can have both parent class and super interfaces
 abstract class I_Have_Both_Class_And_Interface : I_Am_A_Class, java::util::List
 
-; you can notice that, I_Have_Interfaces and I_Have_Both_Class_And_Interface
-; are modified with "abs" modifier
-; so a class can have modifiers
+// you can notice that, I_Have_Interfaces and I_Have_Both_Class_And_Interface
+// are modified with "abs" modifier
+// so a class can have modifiers
 
-; the avaliable modifiers are the same as java language
-; hoever, all types defined in Latte are "public"
-; the access level modifiers on class is considered as constructor modifier
+// the avaliable modifiers are the same as java language
+// hoever, all types defined in Latte are "public"
+// the access level modifiers on class is considered as constructor modifier
 private class My_Constructor_Is_Private_But_Type_Is_Still_Public
 
-; a class can have fields
+// a class can have fields
 class I_Have_Fields
     i_am_field:int
     i_am_a_field_with_init_value="init value"
 
-; a class can have method definitions
+// a class can have method definitions
 class I_Have_Methods
-    ; a method definition can be:
+    // a method definition can be:
 
-    ; method with java.lang.Object return type
+    // method with java.lang.Object return type
     def i_am_a_simple_method()
-        ...   ; statements in the method
+        ...   // statements in the method
 
-    ; you can specify the return type
-    ; return type can be any type or void/Unit (both void and Unit are valid in Latte)
+    // you can specify the return type
+    // return type can be any type or void/Unit (both void and Unit are valid in Latte)
     i_am_a_method_with_return_type_spec():Unit
 
-    ; you can write a method that's only one statement in this form
+    // you can write a method that's only one statement in this form
     i_am_a_method_with_only_one_statement()="this object will be returned"
-    ; or with type
+    // or with type
     i_am_a_method_with_only_one_statement_with_return_type():String="this string will be returned"
-    ; a method with no statements :
+    // a method with no statements :
     i_am_a_method_with_no_statements()=...
-    ; however it looks like "i_am_a_simple_method", but "i_am_a_simple_method" have one statement "pass"
-    ; this method have 0 statements
+    // however it looks like "i_am_a_simple_method", but "i_am_a_simple_method" have one statement "pass"
+    // this method have 0 statements
 
-    ; method can have parameters
-    ; but note that, the basic form must be a method definition
+    // method can have parameters
+    // but note that, the basic form must be a method definition
     i_have_parameters(param)=...
 
-; a class can have statements in constructing block
+// a class can have statements in constructing block
 class I_Have_Statements
     list=java::util::ArrayList()
     list.add(1)
-; when instantiate a class, the statements in this block would be invoked
+// when instantiate a class, the statements in this block would be invoked
 
-; a class can have static fields, methods and statements
+// a class can have static fields, methods and statements
 class I_Have_Static
     static
         field:int
         method():Unit
         list=java::util::ArrayList()
         list + 1
-    ; the static can start a new layer
-    ; also, it can be followed by any statement
+    // the static can start a new layer
+    // also, it can be followed by any statement
     static field2:int
     static method2():Unit
     static list + 2
 
-; data class
+// data class
 data class DataClass
-; the data class generates Getters/Setters/toString/equals/hashCode/0-param-constructor automatically
-; it's used to create Java Beans
+// the data class generates Getters/Setters/toString/equals/hashCode/0-param-constructor automatically
+// it's used to create Java Beans
 
 data class DataClassWithFields(id, name)
-; it's the same as the following Java Code:
+// it's the same as the following Java Code:
 /*
     public class DataClassWithFields {
         private Object id;
@@ -119,43 +119,43 @@ data class DataClassWithFields(id, name)
     }
 */
 
-; a data class can have methods
+// a data class can have methods
 data class DataClassWithMethods
     i_am_a_method_in_data_class()="1"
 
-; interface definition
+// interface definition
 interface I_Am_An_Interface
 
-; interfaces can have fields
-; the fields are public static final
+// interfaces can have fields
+// the fields are public static final
 interface Interface_Have_Fields
     field : int = 1
 
-; interfaces can have methods
+// interfaces can have methods
 interface Interface_Have_Methods
-    ; method with 0 statements are considered as abstract methods
+    // method with 0 statements are considered as abstract methods
     i_am_an_abstract_method()=...
-    ; method with return value are "default methods" (java 8)
+    // method with return value are "default methods" (java 8)
     def i_am_a_default_method()
         return "default method"
 
 class TesterForInterface_Have_Methods : Interface_Have_Methods
     i_am_an_abstract_method()="abs method impl"
 
-; interfaces do NOT have initialize statements
+// interfaces do NOT have initialize statements
 
-; function definition
-; functions can implement functional interfaces or extend functional abstract classes
-; a function that implements lt::lang::function::Function0 and returns 1
-; if the type is lt::lang::function::FunctionX, the runtime is able to transform
-; its type into required type.
+// function definition
+// functions can implement functional interfaces or extend functional abstract classes
+// a function that implements lt::lang::function::Function0 and returns 1
+// if the type is lt::lang::function::FunctionX, the runtime is able to transform
+// its type into required type.
 fun I_Am_A_Function
     return 1
 
-; a function with parameters
+// a function with parameters
 fun I_Am_A_Function_With_One_Param(e)
     return e - 1
 
-; a function specifies its super type
+// a function specifies its super type
 fun I_Am_A_Function_With_Super_Type(o) : java::util::function::Function
     return o+1

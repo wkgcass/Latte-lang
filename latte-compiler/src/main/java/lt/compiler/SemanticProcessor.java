@@ -30,7 +30,6 @@ import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
-import lt.compiler.syntactic.literal.RegexLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
 import lt.compiler.syntactic.operation.OneVariableOperation;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
@@ -53,8 +52,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 /**
@@ -4544,9 +4541,6 @@ public class SemanticProcessor {
                                 getTypeWithName("java.lang.String", ((AST.Require) exp).required.line_col()),
                                 scope));
                         v = invokeStatic;
-                } else if (exp instanceof RegexLiteral) {
-                        // regex
-                        v = parseValueFromRegex((RegexLiteral) exp);
                 } else if (exp instanceof AST.New) {
                         v = parseValueFromNew((AST.New) exp, scope);
                 } else if (exp instanceof AST.GeneratorSpec) {
@@ -5104,54 +5098,6 @@ public class SemanticProcessor {
                         argList.add(parseValueFromExpression(e, null, scope));
                 }
                 return constructingNewInst(type, argList, aNew.line_col());
-        }
-
-        private SMethodDef Pattern_compile;
-
-        public SMethodDef getPattern_compile() throws SyntaxException {
-                if (Pattern_compile == null) {
-                        SClassDef Pattern = (SClassDef) getTypeWithName("java.util.regex.Pattern", LineCol.SYNTHETIC);
-                        assert Pattern != null;
-                        for (SMethodDef m : Pattern.methods()) {
-                                if (m.name().equals("compile")
-                                        && m.getParameters().size() == 1
-                                        && m.getParameters().get(0).type().fullName().equals("java.lang.String")) {
-                                        Pattern_compile = m;
-                                        break;
-                                }
-                        }
-                }
-                if (Pattern_compile == null) throw new LtBug("java.util.regex.Pattern.compile(String) should exist");
-                return Pattern_compile;
-        }
-
-        /**
-         * parse value from regex
-         *
-         * @param exp regex literal
-         * @return invokes Pattern.compile('str')
-         * @throws SyntaxException compiling error
-         */
-        public Value parseValueFromRegex(RegexLiteral exp) throws SyntaxException {
-                SMethodDef compile = getPattern_compile();
-                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(
-                        compile, exp.line_col()
-                );
-
-                String regexStr = CompileUtil.getRegexStr(exp.literal());
-                Pattern p;
-                try {
-                        p = Pattern.compile(regexStr);
-                } catch (PatternSyntaxException e) {
-                        err.SyntaxException("Invalid regular expression " + regexStr + " : " + e.getMessage(), exp.line_col());
-                        return null;
-                }
-
-                StringConstantValue theRegex = new StringConstantValue(p.pattern());
-                theRegex.setType((SClassDef) getTypeWithName("java.lang.String", LineCol.SYNTHETIC));
-                invokeStatic.arguments().add(theRegex);
-
-                return invokeStatic;
         }
 
         /**

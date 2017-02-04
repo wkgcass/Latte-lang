@@ -244,209 +244,212 @@ data class Plain(text:String) : HTMLElement
     toString():String=text
     pretty(indentation:int=0):String=StringUtils.buildSpaces(indentation)+text
 
-; <html>...</html>
+// <html>...</html>
 data class html : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <head>...</head>
+// <head>...</head>
 data class head : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <meta http-equiv='' scheme=''>
+// <meta http-equiv='' scheme=''>
 data class meta : HTMLElement
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <script src='' type=''>...</script>
+// <script src='' type=''>...</script>
 data class script(typ) : HTMLElementWithClosing
     toString():String = toString(['type':typ])
     pretty(indentation:int=0):String = pretty(['type':typ], indentation)
 
-; <link rel='' type='' href=''>
+// <link rel='' type='' href=''>
 data class link(typ) : HTMLElement
     toString():String = toString(['type':typ])
     pretty(indentation:int=0):String = pretty(['type':typ], indentation)
 
-; <body>...</body>
+// <body>...</body>
 data class body : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <a href=''>...</a>
+// <a href=''>...</a>
 data class a : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <br>
+// <br>
 data class br : HTMLElement
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <button type=''>...</button>
+// <button type=''>...</button>
 data class button(typ) : HTMLElementWithClosing
     toString():String = toString(['type':typ])
     pretty(indentation:int=0):String = pretty(['type':typ], indentation)
 
-; <code>...</code>
+// <code>...</code>
 data class code : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <div>...</div>
+// <div>...</div>
 data class div : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <h1>...</h1>
+// <h1>...</h1>
 data class h1 : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <h2>...</h2>
+// <h2>...</h2>
 data class h2 : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <h3>...</h3>
+// <h3>...</h3>
 data class h3 : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <h4>...</h4>
+// <h4>...</h4>
 data class h4 : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <h5>...</h5>
+// <h5>...</h5>
 data class h5 : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <h6>...</h6>
+// <h6>...</h6>
 data class h6 : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <hr>
+// <hr>
 data class hr : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <iframe src=''>...</iframe>
+// <iframe src=''>...</iframe>
 data class iframe : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <img src=''>...</img>
+// <img src=''>...</img>
 data class img : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <label>...</label>
+// <label>...</label>
 data class label : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <form action='' method=''></form>
+// <form action='' method=''></form>
 data class form : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
+// <i></i>
 data class i : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <input type='' value=''>
+// <input type='' value=''>
 data class input(typ) : HTMLElement
     toString():String = toString(["type" : typ])
     pretty(indentation:int=0):String = pretty(['type':typ], indentation)
 
-; <textarea>...</textarea>
+// <textarea>...</textarea>
 data class textarea : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <select>...</select>
+// <select>...</select>
 data class select : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
+// <span>...</span>
 data class span : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <option value=''>...</option>
+// <option value=''>...</option>
 data class option : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <nav>...</nav>
+// <nav>...</nav>
 data class nav : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <ol>...</ol>
+// <ol>...</ol>
 data class ol : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <ul>...</ul>
+// <ul>...</ul>
 data class ul : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <li>...</li>
+// <li>...</li>
 data class li : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <p>...</p>
+// <p>...</p>
 data class p : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <pre>...</pre>
+// <pre>...</pre>
 data class pre : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <style>...</style>
+// <style>...</style>
 data class style : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <table>...</table>
+// <table>...</table>
 data class table : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <thead>...</thead>
+// <thead>...</thead>
 data class thead : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <tbody>...</tbody>
+// <tbody>...</tbody>
 data class tbody : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <tfoot>...</tfoot>
+// <tfoot>...</tfoot>
 data class tfoot : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
+// <title>...</title>
 data class title : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <tr>...</tr>
+// <tr>...</tr>
 data class tr : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)
 
-; <td>...</td>
+// <td>...</td>
 data class td : HTMLElementWithClosing
     toString():String = toString({})
     pretty(indentation:int=0):String = pretty({}, indentation)

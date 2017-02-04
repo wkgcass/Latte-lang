@@ -61,10 +61,6 @@ public class CompileUtil {
                 return str.equals("true") || str.equals("false") || str.equals("yes") || str.equals("no");
         }
 
-        public static boolean isRegex(String str) {
-                return str.startsWith("//") && str.endsWith("//") && str.length() > 3;
-        }
-
         /**
          * check the given string is a string literal
          *
@@ -575,29 +571,5 @@ public class CompileUtil {
                         || isOneVariableOperatorPreWithoutCheckingExps(str)
                         || isAssign(str)
                         || isDestructing(str);
-        }
-
-        public static String getRegexStr(String rawRegex) {
-                rawRegex = rawRegex.substring(2);
-                rawRegex = rawRegex.substring(0, rawRegex.length() - 2);
-                char[] raw = rawRegex.toCharArray();
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < raw.length; ++i) {
-                        char c = raw[i];
-                        if (c == '\\' && i < raw.length - 2) {
-                                char one = raw[i + 1];
-                                if (one == '/') {
-                                        char two = raw[i + 2];
-                                        if (two == '/') {
-                                                sb.append("//");
-                                                i += 2;
-                                                continue;
-                                        }
-                                }
-                        }
-                        sb.append(c);
-                }
-
-                return sb.toString();
         }
 }

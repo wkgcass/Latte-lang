@@ -2216,27 +2216,6 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testRegex() throws Exception {
-                Class<?> cls = retrieveClass(
-                        "" +
-                                "class TestRegex\n" +
-                                "    static\n" +
-                                "        def method1()\n" +
-                                "            return //a\\bc//\n" +
-                                "        def method2()\n" +
-                                "            return //a\\//b//"
-                        , "TestRegex"
-                );
-                Method method1 = cls.getMethod("method1");
-                Pattern pattern1 = (Pattern) method1.invoke(null);
-                assertEquals("a\\bc", pattern1.pattern());
-
-                Method method2 = cls.getMethod("method2");
-                Pattern pattern2 = (Pattern) method2.invoke(null);
-                assertEquals("a//b", pattern2.pattern());
-        }
-
-        @Test
         public void testCall() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +
@@ -2515,7 +2494,7 @@ public class TestCodeGen {
         @Test
         public void testStringExpression() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                ";; :scanner-brace\n" +
+                                "/// :scanner-brace\n" +
                                 "class TestStringExpression {\n" +
                                 "  static {\n" +
                                 "    test1()=\"abc\"\n" + // normal string
@@ -2587,7 +2566,7 @@ public class TestCodeGen {
         @Test
         public void testArrayMap2() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                ";; :scanner-brace\n" +
+                                "/// :scanner-brace\n" +
                                 "class TestArrayMap2 {\n" +
                                 "    static {\n" +
                                 "        method()=[\"a\":1, \"b\":2]\n" +
@@ -2633,7 +2612,7 @@ public class TestCodeGen {
         @Test
         public void testAutoReturnIf() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                ";; :scanner-brace\n" +
+                                "/// :scanner-brace\n" +
                                 "class TestAutoReturnIf {\n" +
                                 "    static {\n" +
                                 "        def method(a) {\n" +
@@ -2650,7 +2629,7 @@ public class TestCodeGen {
         @Test
         public void testBraceLambda() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                ";; :scanner-brace\n" +
+                                "/// :scanner-brace\n" +
                                 "class TestBraceLambda {\n" +
                                 "    static {\n" +
                                 "        def method() {\n" +
@@ -2668,7 +2647,7 @@ public class TestCodeGen {
         @Test
         public void testBraceInternalSyntaxLambda() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                ";; :scanner-brace\n" +
+                                "/// :scanner-brace\n" +
                                 "import java::util::stream::Collectors._\n" +
                                 "class TestBraceInternalSyntaxLambda {\n" +
                                 "    static {\n" +
@@ -3192,7 +3171,7 @@ public class TestCodeGen {
         @Test
         public void testIndentBrace() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                ";; :scanner-indent\n" +
+                                "/// :scanner-indent\n" +
                                 "class TestIndentBrace\n" +
                                 "    static\n" +
                                 "        def method1 = {}\n" +

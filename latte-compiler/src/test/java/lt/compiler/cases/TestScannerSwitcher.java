@@ -17,7 +17,7 @@ public class TestScannerSwitcher {
         public void test1() throws Exception {
                 ScannerSwitcher s1 = new ScannerSwitcher("test", new StringReader(
                         "" +
-                                ";; :scanner-brace\n" +
+                                "/// :scanner-brace\n" +
                                 "class A(a, public b):B(a) {\n" +
                                 "protected x=1\n" +
                                 "}"
@@ -34,7 +34,7 @@ public class TestScannerSwitcher {
         public void testMap() throws Exception {
                 ScannerSwitcher s1 = new ScannerSwitcher("test", new StringReader(
                         "" +
-                                ";; :scanner-brace\n" +
+                                "/// :scanner-brace\n" +
                                 "[\"a\":1\n" +
                                 "\"b\":2,\"c\":3\n" +
                                 "\"d\":4]"

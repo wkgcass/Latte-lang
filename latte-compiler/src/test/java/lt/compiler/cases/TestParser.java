@@ -32,7 +32,6 @@ import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
-import lt.compiler.syntactic.literal.RegexLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
 import lt.compiler.syntactic.operation.OneVariableOperation;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
@@ -2135,27 +2134,6 @@ public class TestParser {
         }
 
         @Test
-        public void testRegex() throws Exception {
-                List<Statement> list = parse("//abc//");
-                assertEquals(
-                        Collections.singletonList(
-                                new RegexLiteral("//abc//", LineCol.SYNTHETIC)
-                        ), list
-                );
-        }
-
-        @Test
-        public void testRegex2() throws Exception {
-                List<Statement> list = parse("//abc///\n////////");
-                assertEquals(
-                        Arrays.asList(
-                                new RegexLiteral("//abc///", LineCol.SYNTHETIC),
-                                new RegexLiteral("////////", LineCol.SYNTHETIC)
-                        ), list
-                );
-        }
-
-        @Test
         public void testNew() throws Exception {
                 List<Statement> list = parse("" +
                         "new X()\n" +
@@ -2508,7 +2486,6 @@ public class TestParser {
                         "    case a      -> ...\n" +
                         "    case true   -> ...\n" +
                         "    case 123    -> ...\n" +
-                        "    case //.*// -> ...\n" +
                         "    case 'abc'  -> ...\n" +
                         "    case _:List -> ...\n"
                 );
@@ -2521,7 +2498,6 @@ public class TestParser {
                 linkedHashMap.put(new AST.Pattern_Value(new AST.Access(null, "a", LineCol.SYNTHETIC)), stmt);
                 linkedHashMap.put(new AST.Pattern_Value(new BoolLiteral("true", LineCol.SYNTHETIC)), stmt);
                 linkedHashMap.put(new AST.Pattern_Value(new NumberLiteral("123", LineCol.SYNTHETIC)), stmt);
-                linkedHashMap.put(new AST.Pattern_Value(new RegexLiteral("//.*//", LineCol.SYNTHETIC)), stmt);
                 linkedHashMap.put(new AST.Pattern_Value(new StringLiteral("'abc'", LineCol.SYNTHETIC)), stmt);
                 linkedHashMap.put(new AST.Pattern_Type(new AST.Access(null, "List", LineCol.SYNTHETIC)), stmt);
                 assertEquals(
@@ -2611,7 +2587,6 @@ public class TestParser {
                                 "    case a      -> ...\n" +
                                 "    case true   -> ...\n" +
                                 "    case 123    -> ...\n" +
-                                "    case //.*// -> ...\n" +
                                 "    case 'abc'  -> ...\n" +
                                 "    case _:List -> ..."
                         ),
@@ -2623,7 +2598,6 @@ public class TestParser {
                                 "    case a      -> {...}\n" +
                                 "    case true   -> ...\n" +
                                 "    case 123    -> ...\n" +
-                                "    case //.*// -> {...}\n" +
                                 "    case 'abc'  -> ...\n" +
                                 "    case _:List -> ...\n" +
                                 "}"

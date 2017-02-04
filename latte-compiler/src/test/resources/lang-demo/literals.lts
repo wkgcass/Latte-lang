@@ -1,75 +1,62 @@
-; there are 6 kinds of literals in Latte
-; string number map array bool regex
+// there are 5 kinds of literals in Latte
+// string number map array bool regex
 
-; string
+// string
 i_am_string = 'a string'
 or_in_this_form = "also a string"
 
-; number
+// number
 i_am_a_number = 1
 or_float_number = 1.2
 
-; map
+// map
 json = [
     'a':'b'
 ]
-; comma at the end can be omitted
-; map literal would be parsed into lt::util::Map
+// comma at the end can be omitted
+// map literal would be parsed into lt::util::Map
 
-; array
+// array
 list = [1,2,3]
-; actually, map and array are json format
-; array literal can be array or list (lt::util::List)
+// array literal can be array or list (lt::util::List)
 
-; bool values could be the following
+// bool values could be the following
 i_am_bool : bool = true
 i_am_bool_too : bool = yes
 i_am_bool_false : bool = false
 i_am_also_bool_false : bool = no
 
-; string literal can be java.lang.String or char
+// string literal can be java.lang.String or char
 i_am_char : char = 'c'
 i_am_String : String = 'i am a java.lang.String'
 
-; number literal can be int double float long short byte or char
+// number literal can be int double float long short byte or char
 i_am_int : int = 1
 i_am_double : double = 1.2
 i_am_float : float = 1
 i_am_long : long = 1
 i_am_short : short = 1
 i_am_byte : byte = 1
-; note that float number cannot be parsed into integers, which could result in a compiling error
+// note that float number cannot be parsed into integers, which could result in a compiling error
 
-; eight java primitives still exist in Latte
-; implicit cast would be performed during both compiling and runtime
-; so there's rarely any difference between primitive and boxing types
+// eight java primitives still exist in Latte
+// implicit cast would be performed during both compiling and runtime
+// so there's rarely any difference between primitive and boxing types
 
-; note that the type of literal depends on "required type"
-; e.g.
-this_var_is_int : int = 1 ; 1 is int
-this_var_is_short : short = 1 ; 1 is short
-this_var_is_Integer = 1 ; actually it invokes Integer.valueOf(1), but the literal means int 1
+// note that the type of literal depends on "required type"
+// e.g.
+this_var_is_int : int = 1 // 1 is int
+this_var_is_short : short = 1 // 1 is short
+this_var_is_Integer = 1 // actually it invokes Integer.valueOf(1), but the literal means int 1
 
-; sometimes there's no required type, then the literals will be parsed into their "default type"
-; e.g.
-default_value_of_number = 1 ; int (and invokes Integer.valueOf(1))
-default_value_of_float_number = 1.2 ; double (and invokes Double.valueOf(1.2))
-default_value_of_char_string = 'c' ; char (and invokes Character.valueOf('c'))
-default_value_of_string_1 = "s" ; java.lang.String
-default_value_of_string_2 = 'length is greater than 1' ; java.lang.String
-default_value_of_string_3 = '' ; java.lang.String (length is 0)
-; this is easily understood, if 'c', the length is 1, it would likely to be char
-; but with 0 length or length greater than 1, it can never be char, then it would be considered as String
-; if want to construct a string with length==1, use "s"
-
-; regular expression
-; regular expressions are compiled into java.util.regex.Pattern
-
-regexp = //.*\.lt//
-; matches any string that ends with `.lt`
-
-regexp_test = //\////
-; the pattern is `//`
-
-regexp_test2 = /////
-; the pattern is `/`
+// sometimes there's no required type, then the literals will be parsed into their "default type"
+// e.g.
+default_value_of_number = 1 // int (and invokes Integer.valueOf(1))
+default_value_of_float_number = 1.2 // double (and invokes Double.valueOf(1.2))
+default_value_of_char_string = 'c' // char (and invokes Character.valueOf('c'))
+default_value_of_string_1 = "s" // java.lang.String
+default_value_of_string_2 = 'length is greater than 1' // java.lang.String
+default_value_of_string_3 = '' // java.lang.String (length is 0)
+// this is easily understood, if 'c', the length is 1, it would likely to be char
+// but with 0 length or length greater than 1, it can never be char, then it would be considered as String
+// if want to construct a string with length==1, use "s"

@@ -1,39 +1,45 @@
-; the code starts with namespace declare
+// the code starts with namespace declare
 package lt::demo
-; declares that the whole file is in namespace "lt::demo"
-; namespaces are java packages
-; namespaces can only appear once, and must at the first effective line of the file
-; (lines containing only comments or defines or undefs are not effective lines)
-; NOTE THAT scripts cannot have package declaration
+/*
+declares that the whole file is in namespace "lt::demo"
+namespaces are java packages
+namespaces can only appear once, and must at the first effective line of the file
+(lines containing only comments or defines or undefs are not effective lines)
+NOTE THAT scripts cannot have package declaration
+*/
 
-; if there's no declaration of the namespace, the namespace would be ""
+// if there's no declaration of the namespace, the namespace would be ""
 
-; then, there can be import commands
-import java::awt::_               ; import all types from java::awt
-import java::util::List           ; import java::util::List
-import java::util::Collections._  ; import all static fields and methods from java::util::Collections
-; there can be 0 or 1 or more imports
-; and "import" can appear in any position in the root of the code part
+// then, there can be import commands
+import java::awt::_               // import all types from java::awt
+import java::util::List           // import java::util::List
+import java::util::Collections._  // import all static fields and methods from java::util::Collections
+// there can be 0 or 1 or more imports
+// and "import" can appear in any position in the root of the code part
 
-; Latte allows class and interface definition
-; if the file is *.lts, the rest part can be type definitions, statements or expressions
-; you can see "statements.lts" for more details
-; if the file is *.lt, the rest part in root of code can only hold type definitions
-; you can see "typeDef.lt" for more details
+/*
+Latte allows class and interface definition
+if the file is *.lts, the rest part can be type definitions, statements or expressions
+you can see "statements.lts" for more details
+if the file is *.lt, the rest part in root of code can only hold type definitions
+you can see "typeDef.lt" for more details
+*/
 class I_Am_A_Class
+    /*
     ; Class Constructing Block
     ; you can define variables and methods
-    i_am_field : int          ; defines a variable
-    ; varialbes in class constructing blocks are considered as Fields in java
-    list : List               ; another field
-    ; the import checks full name first
-    ; so, List matches java::util::List instead of java::awt::List
+    */
+    i_am_field : int          // defines a variable
+    // varialbes in class constructing blocks are considered as Fields in java
+    list : List               // another field
+    // the import checks full name first
+    // so, List matches java::util::List instead of java::awt::List
 
-    i_am_a_method():List      ; defines a method
-        ; method block
-        ; variables in method block are local variables
-        list=emptyList()      ; invoke java::util::Collections.emptyList()
-        ; and assign to field `list`
+    i_am_a_method():List      // defines a method
+        // method block
+        // variables in method block are local variables
+        list=emptyList()      // invoke java::util::Collections.emptyList()
+        // and assign to field `list`
         return list
 
 interface I_Am_An_Interface

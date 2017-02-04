@@ -37,7 +37,6 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
@@ -246,25 +245,6 @@ public class TestDemo {
                 Field default_value_of_string_3 = cls.getDeclaredField("default_value_of_string_3");
                 default_value_of_string_3.setAccessible(true);
                 assertEquals("", default_value_of_string_3.get(o));
-                ++count;
-
-                // regexp
-                Field regexp = cls.getDeclaredField("regexp");
-                regexp.setAccessible(true);
-                Pattern $regexp = (Pattern) regexp.get(o);
-                assertEquals(".*\\.lt", $regexp.pattern());
-                ++count;
-
-                // regexp_test
-                Field regexp_test = cls.getDeclaredField("regexp_test");
-                regexp_test.setAccessible(true);
-                assertEquals("//", ((Pattern) regexp_test.get(o)).pattern());
-                ++count;
-
-                // regexp_test2
-                Field regexp_test2 = cls.getDeclaredField("regexp_test2");
-                regexp_test2.setAccessible(true);
-                assertEquals("/", ((Pattern) regexp_test2.get(o)).pattern());
                 ++count;
 
                 assertEquals(count, cls.getDeclaredFields().length);

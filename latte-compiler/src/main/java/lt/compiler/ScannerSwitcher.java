@@ -46,8 +46,8 @@ public class ScannerSwitcher implements Scanner {
                 String firstLine = plbr.readLine();
                 plbr.push(firstLine);
                 String text = firstLine.trim();
-                if (text.startsWith(";;")) {
-                        text = text.substring(2).trim();
+                if (text.startsWith("///")) {
+                        text = text.substring(3).trim();
                 } else {
                         text = "";
                 }

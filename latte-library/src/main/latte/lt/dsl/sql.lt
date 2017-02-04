@@ -37,8 +37,8 @@ interface SQLBuilder
 
 interface Selectable
 
-; represents a Column.
-; tbl_o is filled with Entity object and name is filled with the column's name
+// represents a Column.
+// tbl_o is filled with Entity object and name is filled with the column's name
 data class Column(tbl_o, name:String):Selectable
     tbl = tbl_o.getClass.simpleName
 
@@ -64,11 +64,11 @@ data class Column(tbl_o, name:String):Selectable
 data class As(col, alias:String):Selectable
     toString(context):String = col.toString(context) + " as " + alias
 
-; assign to the column
+// assign to the column
 data class Assign(col:Column, o)
     toString(context:SQL):String = col.toString(context) + " = " + context.putValue(o)
 
-; represents a Condition
+// represents a Condition
 data class Condition(op:String, col:Column, ls:List)
     toString(context:SQL):String
         sb = StringBuilder()
@@ -132,7 +132,7 @@ data class Fun(funcName:String, args:List):Selectable
         return sb.toString
 
 data class SQL(surround = ""/* surrounds table and columns */)
-    params:List = []        ; the list of arguments
+    params:List = []        // the list of arguments
 
     putValue(o):String
         if o is type EndStatement

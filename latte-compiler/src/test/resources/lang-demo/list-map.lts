@@ -1,4 +1,4 @@
-; a demo about how collection works
+// a demo about how collection works
 
 /*
  * =================
@@ -6,66 +6,66 @@
  * =================
  */
 
-; JSON Literal
-ls = ["z","y","x"] ; the list is [z,y,x]
-; empty list
+// JSON Literal
+ls = ["z","y","x"] // the list is [z,y,x]
+// empty list
 list = List()
 
-; add
+// add
 list.add("a")
-list + "b"         ; operator binding (add)
+list + "b"         // operator binding (add)
 
-; concat
-; concat will NOT modify the current list
+// concat
+// concat will NOT modify the current list
 concatRes = list.concat("c")
-concatRes = concatRes:::"d"   ; operator binding (concat)
+concatRes = concatRes:::"d"   // operator binding (concat)
 concatRes = list.concat(ls)
-; concatRes is [a,b,z,y,x]
+// concatRes is [a,b,z,y,x]
 
-; addAll
+// addAll
 list.addAll(["w","v","u"])
 
-; build a string
+// build a string
 str = list.join(",")
-; str is "a,b,w,v,u"
+// str is "a,b,w,v,u"
 
-; reverse() DO modifies and returns the list itself
+// reverse() DO modifies and returns the list itself
 str2 = list.reverse().join(",")
-; str2 is "u,v,w,b,a"
+// str2 is "u,v,w,b,a"
 
 list2 = List(list)
 shiftResult = list2.shift()
-; the result is u
-; and list2 will be [v,w,b,a]
+// the result is u
+// and list2 will be [v,w,b,a]
 
 sliceResult1 = list2.slice(1,3)
-; the result is [w,b]
+// the result is [w,b]
 
 sliceResult2 = list2.slice(1)
-; the result is [w,b,a]
+// the result is [w,b,a]
 
 list2.unshift("t")
-; list2 is [t,v,w,b,a]
+// list2 is [t,v,w,b,a]
 list2.unshift(["r","s"])
-; list2 is [r,s,t,v,w,b,a]
+// list2 is [r,s,t,v,w,b,a]
 
 lengthResult = list2.length
-; (length is not a field, it's a method with 0 parameters.)
-; length is 7
+// (length is not a field, it's a method with 0 parameters.)
+// length is 7
 
-; init the list with a function
+// init the list with a function
 list3 = List(($this)->
         $this.add("a")
         $this.add("b")
         $this.add("c")
 )
-; list3 is [a,b,c]
+// list3 is [a,b,c]
 
 indexRes = list3[1]
-; the result is "b"
+// the result is "b"
 
 list3[1]="d"
-; list3 is [a,d,c]
+// list3 is [a,d,c]
 
 /*
  * =================
@@ -73,30 +73,30 @@ list3[1]="d"
  * =================
  */
 
-; Json Literal
+// Json Literal
 m = [
     "a" : 1
     "b" : 2
-]             ; the map is {a:1, b:2}
-; empty map
+]             // the map is {a:1, b:2}
+// empty map
 map = Map()
 
-; put
+// put
 map.put("c",3)
 map["d"] = 4
-; the map is {c:3, d:4}
+// the map is {c:3, d:4}
 
-; construct a map filled with existing map entries
+// construct a map filled with existing map entries
 map2 = Map(m)
 map2.putAll(map)
-; map2 is {a:1, b:2, c:3, d:4}
+// map2 is {a:1, b:2, c:3, d:4}
 
-; get
-a_res = map2.get("a")    ; a_res is 1
-b_res = map2["b"]        ; b_res is 2
-c_res = map2.c           ; c_res is 3
+// get
+a_res = map2.get("a")    // a_res is 1
+b_res = map2["b"]        // b_res is 2
+c_res = map2.c           // c_res is 3
 
-; initialize the map with a function
+// initialize the map with a function
 map3 = Map(
     ($this)->
         $this["z"]=26

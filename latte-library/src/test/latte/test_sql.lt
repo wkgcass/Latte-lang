@@ -62,16 +62,16 @@ class TestSQL
             s6 = SQL()
 
             return [
-                ; select_distinct
+                // select_distinct
                 (s1 select_distinct user.name from user) buildSQL
-                ; count
+                // count
                 (s2 select s2.count(user.name) from user) buildSQL
-                ; mid
+                // mid
                 (s3 select s3.mid(user.name, 1) from user) buildSQL
-                ; as
+                // as
                 (s4 select (s4 mid user.name, 1 `as` "a") from user) buildSQL
-                ; union
+                // union
                 (s5 select user.name from user) union (s5 select user.name from user) union (s5 select user.name from user) buildSQL
-                ; select into
+                // select into
                 (s6 select user.id into tbl from user where user.name =:= 'a') buildSQL
             ]

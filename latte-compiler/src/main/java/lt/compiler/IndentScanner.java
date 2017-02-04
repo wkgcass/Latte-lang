@@ -354,7 +354,7 @@ public class IndentScanner extends AbstractScanner {
                                                 lastIndex = index;
                                         }
                                 }
-                        } else if (ENDING.equals(token)) {
+                        } else if (ENDING.contains(token)) {
                                 // ending
                                 if (args.previous instanceof Element) {
                                         args.previous = new EndingNode(args, EndingNode.STRONG);

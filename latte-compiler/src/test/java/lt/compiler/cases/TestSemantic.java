@@ -529,7 +529,7 @@ public class TestSemantic {
                         "package test\n" +
                         "class A\n" +
                         "    method()=pass\n" +
-                        "    method() ; invoke"); // invoke
+                        "    method() // invoke"); // invoke
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -555,7 +555,7 @@ public class TestSemantic {
                         "package test\n" +
                         "class A\n" +
                         "    method()=pass\n" +
-                        "    this.method() ; invoke this"); // invoke this
+                        "    this.method() // invoke this"); // invoke this
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -580,7 +580,7 @@ public class TestSemantic {
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
-                        "    Object.this.hashCode() ; invoke special"); // invoke special
+                        "    Object.this.hashCode() // invoke special"); // invoke special
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -600,7 +600,7 @@ public class TestSemantic {
                         "class A\n" +
                         "    static\n" +
                         "        method()=...\n" +
-                        "    method() ; invoke static"); // invoke static
+                        "    method() // invoke static"); // invoke static
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -628,7 +628,7 @@ public class TestSemantic {
                         "class A\n" +
                         "    static\n" +
                         "        method()=...\n" +
-                        "    A.method() ; invoke static"); // invoke static
+                        "    A.method() // invoke static"); // invoke static
                 Set<STypeDef> set = parse(map);
                 assertEquals(1, set.size());
 
@@ -2637,31 +2637,6 @@ public class TestSemantic {
                 assertTrue(i5.arguments().get(1) instanceof Ins.GetField);
                 assertTrue(i6.arguments().get(1) instanceof Ins.GetStatic);
                 assertTrue(i7.arguments().get(0) instanceof Ins.New);
-        }
-
-        @Test
-        public void testRegex() throws Exception {
-                Map<String, String> map = new HashMap<>();
-                map.put("test", "" +
-                        "package test\n" +
-                        "class A\n" +
-                        "    a=//xyz\\//op\\bq//\n" +
-                        "    b=//abc//\n" +
-                        "    c=///////");
-                Set<STypeDef> set = parse(map);
-
-                assertEquals(1, set.size());
-
-                SClassDef classDef = (SClassDef) set.iterator().next();
-                SConstructorDef cons = classDef.constructors().get(0);
-
-                Ins.InvokeStatic i1 = (Ins.InvokeStatic) ((Ins.PutField) ((ValuePack) cons.statements().get(1)).instructions().get(0)).value();
-                Ins.InvokeStatic i2 = (Ins.InvokeStatic) ((Ins.PutField) ((ValuePack) cons.statements().get(2)).instructions().get(0)).value();
-                Ins.InvokeStatic i3 = (Ins.InvokeStatic) ((Ins.PutField) ((ValuePack) cons.statements().get(3)).instructions().get(0)).value();
-
-                assertEquals("xyz//op\\bq", ((StringConstantValue) i1.arguments().get(0)).getStr());
-                assertEquals("abc", ((StringConstantValue) i2.arguments().get(0)).getStr());
-                assertEquals("///", ((StringConstantValue) i3.arguments().get(0)).getStr());
         }
 
         @Test
