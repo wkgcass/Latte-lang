@@ -28,7 +28,7 @@ public class SimpleTest {
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();

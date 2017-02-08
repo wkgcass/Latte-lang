@@ -55,7 +55,7 @@ public class Compiler {
                 /**
                  * class-path
                  */
-                public List<URL> classpath = new ArrayList<>();
+                public List<URL> classpath = new ArrayList<URL>();
 
                 /**
                  * configuration about each step use how many threads
@@ -87,7 +87,7 @@ public class Compiler {
                         /**
                          * these imports will be added when doing semantic analysis
                          */
-                        public List<String> autoImport = new ArrayList<>();
+                        public List<String> autoImport = new ArrayList<String>();
                         /**
                          * indentation of the source code
                          */
@@ -207,7 +207,7 @@ public class Compiler {
         public Compiler configure(Map config) throws Exception {
                 if (config != null) {
 
-                        List<URL> classpathToSet = new ArrayList<>();
+                        List<URL> classpathToSet = new ArrayList<URL>();
                         Config.Threads threads = new Config.Threads();
                         Config.Code code = new Config.Code();
                         ErrorManager.Out out = new ErrorManager.Out();
@@ -236,22 +236,22 @@ public class Compiler {
                                         Map t = (Map) o;
                                         if (t.containsKey("scanner")) {
                                                 Object scanner = t.get("scanner");
-                                                if (scanner instanceof Integer && ((int) scanner) >= 1) {
-                                                        threads.scanner = (int) scanner;
+                                                if (scanner instanceof Integer && ((Integer) scanner) >= 1) {
+                                                        threads.scanner = (Integer) scanner;
                                                 } else
                                                         throw new IllegalArgumentException("config.threads.scanner should be Integer and >=1");
                                         }
                                         if (t.containsKey("parser")) {
                                                 Object parser = t.get("parser");
-                                                if (parser instanceof Integer && ((int) parser) >= 1) {
-                                                        threads.parser = (int) parser;
+                                                if (parser instanceof Integer && ((Integer) parser) >= 1) {
+                                                        threads.parser = (Integer) parser;
                                                 } else
                                                         throw new IllegalArgumentException("config.threads.parser should be Integer and >= 1");
                                         }
                                         if (t.containsKey("codeGen")) {
                                                 Object codeGen = t.get("codeGen");
-                                                if (codeGen instanceof Integer && ((int) codeGen) >= 1) {
-                                                        threads.codeGen = (int) codeGen;
+                                                if (codeGen instanceof Integer && ((Integer) codeGen) >= 1) {
+                                                        threads.codeGen = (Integer) codeGen;
                                                 } else
                                                         throw new IllegalArgumentException("config.threads.codeGen should be Integer and >=1");
                                         }
@@ -277,22 +277,22 @@ public class Compiler {
                                         }
                                         if (c.containsKey("indentation")) {
                                                 Object i = c.get("indentation");
-                                                if (i instanceof Integer && ((int) i) >= 1) {
-                                                        code.indentation = (int) i;
+                                                if (i instanceof Integer && ((Integer) i) >= 1) {
+                                                        code.indentation = (Integer) i;
                                                 } else
                                                         throw new IllegalArgumentException("config.code.indentation should be Integer and >=1");
                                         }
                                         if (c.containsKey("lineBase")) {
                                                 Object l = c.get("lineBase");
                                                 if (l instanceof Integer) {
-                                                        code.lineBase = (int) l;
+                                                        code.lineBase = (Integer) l;
                                                 } else
                                                         throw new IllegalArgumentException("config.code.lineBase should be Integer");
                                         }
                                         if (c.containsKey("columnBase")) {
                                                 Object co = c.get("columnBase");
                                                 if (co instanceof Integer) {
-                                                        code.columnBase = (int) co;
+                                                        code.columnBase = (Integer) co;
                                                 } else
                                                         throw new IllegalArgumentException("config.code.columnBase should be Integer");
                                         }
@@ -337,7 +337,7 @@ public class Compiler {
                         if (config.containsKey("fastFail")) {
                                 Object f = config.get("fastFail");
                                 if (f instanceof Boolean) {
-                                        fastFail = (boolean) f;
+                                        fastFail = (Boolean) f;
                                 } else throw new IllegalArgumentException("config.fastFail should be Boolean");
                         }
                         if (config.containsKey("result")) {
@@ -383,7 +383,7 @@ public class Compiler {
                                         if (re.containsKey("with-lib")) {
                                                 Object o = re.get("with-lib");
                                                 if (o instanceof Boolean) {
-                                                        result.with_lib = (boolean) o;
+                                                        result.with_lib = (Boolean) o;
                                                 } else
                                                         throw new IllegalArgumentException("config.result.with-lib should be bool");
                                         }
@@ -452,7 +452,7 @@ public class Compiler {
          */
         public ClassLoader compile(Map<String, ?> fileNameToCode) throws Exception {
                 // validate and transform compile input
-                Map<String, Reader> input = new HashMap<>();
+                Map<String, Reader> input = new HashMap<String, Reader>();
 
                 for (Map.Entry<String, ?> entry : fileNameToCode.entrySet()) {
                         String name = entry.getKey();
@@ -490,12 +490,12 @@ public class Compiler {
 
                 // construct thread pool for scanners and parsers
                 ExecutorService scannerPool = Executors.newFixedThreadPool(config.threads.scanner);
-                ExecutorService parserPool = Executors.newFixedThreadPool(config.threads.parser);
+                final ExecutorService parserPool = Executors.newFixedThreadPool(config.threads.parser);
 
-                ErrorManager errorManager = new ErrorManager(config.fastFail);
+                final ErrorManager errorManager = new ErrorManager(config.fastFail);
                 errorManager.out = config.out;
 
-                List<Scan> scans = new ArrayList<>();
+                List<Scan> scans = new ArrayList<Scan>();
                 Properties properties = new Properties();
                 properties._COLUMN_BASE_ = config.code.columnBase;
                 properties._INDENTATION_ = config.code.indentation;
@@ -506,24 +506,27 @@ public class Compiler {
                 }
 
                 List<Future<FileRoot>> scanRes = scannerPool.invokeAll(scans);
-                Map<String, List<Statement>> parseRes = new ConcurrentHashMap<>();
-                List<Future<Map<String, List<Statement>>>> parseState = new Vector<>();
+                Map<String, List<Statement>> parseRes = new ConcurrentHashMap<String, List<Statement>>();
+                final List<Future<Map<String, List<Statement>>>> parseState = new Vector<Future<Map<String, List<Statement>>>>();
 
-                Exception[] caughtException = new Exception[]{null};
+                final Exception[] caughtException = new Exception[]{null};
 
-                for (Future<FileRoot> f : scanRes) {
-                        new Thread(() -> {
-                                try {
-                                        FileRoot root;
+                for (final Future<FileRoot> f : scanRes) {
+                        new Thread(new Runnable() {
+                                @Override
+                                public void run() {
                                         try {
-                                                root = f.get();
-                                        } catch (ExecutionException e) {
-                                                caughtException[0] = (Exception) e.getCause();
-                                                return;
+                                                FileRoot root;
+                                                try {
+                                                        root = f.get();
+                                                } catch (ExecutionException e) {
+                                                        caughtException[0] = (Exception) e.getCause();
+                                                        return;
+                                                }
+                                                Future<Map<String, List<Statement>>> future = parserPool.submit(new Parse(root.fileName, root.root, errorManager));
+                                                parseState.add(future);
+                                        } catch (InterruptedException ignore) {
                                         }
-                                        Future<Map<String, List<Statement>>> future = parserPool.submit(new Parse(root.fileName, root.root, errorManager));
-                                        parseState.add(future);
-                                } catch (InterruptedException ignore) {
                                 }
                         }).start();
                 }
@@ -562,28 +565,31 @@ public class Compiler {
                         throw new Wrapper(errorManager.errorList);
                 }
 
-                SemanticProcessor processor = new SemanticProcessor(parseRes, classPathLoader, errorManager);
+                final SemanticProcessor processor = new SemanticProcessor(parseRes, classPathLoader, errorManager);
                 Set<STypeDef> types = processor.parse();
 
                 // code gen
                 int size = types.size() / config.threads.codeGen + types.size() % config.threads.codeGen;
-                List<Set<STypeDef>> toGenerate = new ArrayList<>();
-                for (int i = 0; i < size; ++i) toGenerate.add(new HashSet<>());
+                List<Set<STypeDef>> toGenerate = new ArrayList<Set<STypeDef>>();
+                for (int i = 0; i < size; ++i) toGenerate.add(new HashSet<STypeDef>());
                 int currentCount = 0;
                 for (STypeDef type : types) {
                         toGenerate.get(currentCount % size).add(type);
                 }
 
-                Map<String, byte[]> byteCodes = new ConcurrentHashMap<>();
+                final Map<String, byte[]> byteCodes = new ConcurrentHashMap<String, byte[]>();
 
-                List<Thread> threads = new ArrayList<>();
+                List<Thread> threads = new ArrayList<Thread>();
 
                 // the following process should not throw any exception
 
-                for (Set<STypeDef> toGen : toGenerate) {
-                        Thread t = new Thread(() -> {
-                                CodeGenerator codeGenerator = new CodeGenerator(toGen, processor.getTypes());
-                                byteCodes.putAll(codeGenerator.generate());
+                for (final Set<STypeDef> toGen : toGenerate) {
+                        Thread t = new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                        CodeGenerator codeGenerator = new CodeGenerator(toGen, processor.getTypes());
+                                        byteCodes.putAll(codeGenerator.generate());
+                                }
                         });
                         threads.add(t);
                         t.start();
@@ -672,7 +678,7 @@ public class Compiler {
                                                 BufferedReader br = new BufferedReader(
                                                         new InputStreamReader(classesInputStream));
 
-                                                List<String> CLASSES = new ArrayList<>();
+                                                List<String> CLASSES = new ArrayList<String>();
 
                                                 String CLASS;
                                                 while ((CLASS = br.readLine()) != null) {
@@ -680,7 +686,7 @@ public class Compiler {
                                                         CLASSES.add(CLASS);
                                                 }
 
-                                                CLASSES.sort(null);
+                                                Collections.sort(CLASSES);
 
                                                 for (String C : CLASSES) {
                                                         InputStream is = Compiler.class.getClassLoader().getResourceAsStream(C);
@@ -695,7 +701,7 @@ public class Compiler {
                                         }
                                 }
 
-                                List<String> requireFiles = new ArrayList<>(Arrays.asList("classes.txt", "build.lts.template", "run.lts.template"));
+                                List<String> requireFiles = new ArrayList<String>(Arrays.asList("classes.txt", "build.lts.template", "run.lts.template"));
                                 if (Compiler.class.getClassLoader().getResourceAsStream("lib-classes.txt") != null) {
                                         requireFiles.add("lib-classes.txt");
                                 }
@@ -778,7 +784,7 @@ public class Compiler {
                 @Override
                 public Map<String, List<Statement>> call() throws Exception {
                         Parser parser = new Parser(root, err);
-                        Map<String, List<Statement>> resultMap = new HashMap<>();
+                        Map<String, List<Statement>> resultMap = new HashMap<String, List<Statement>>();
                         resultMap.put(
                                 fileName,
                                 parser.parse()

@@ -51,13 +51,13 @@ public class TestAnnotations {
                 ErrorManager err = new ErrorManager(true);
                 IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader(code), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
-                Map<String, byte[]> list = codeGenerator.generate();
+                final Map<String, byte[]> list = codeGenerator.generate();
 
                 ClassLoader classLoader = new ClassLoader() {
                         @Override

@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class SParameter implements LeftValue, SAnnotationPresentable {
         private String name;
-        private final List<SAnno> annos = new ArrayList<>();
+        private final List<SAnno> annos = new ArrayList<SAnno>();
         private STypeDef type;
         private SInvokable target;
         private boolean canChange = true;

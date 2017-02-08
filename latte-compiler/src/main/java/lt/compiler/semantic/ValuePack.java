@@ -33,7 +33,7 @@ import java.util.List;
  * a list of instructions that finally return a value
  */
 public class ValuePack implements Value, Instruction {
-        private final List<Instruction> instructions = new ArrayList<>();
+        private final List<Instruction> instructions = new ArrayList<Instruction>();
         private STypeDef type;
         private final boolean autoPop;
 

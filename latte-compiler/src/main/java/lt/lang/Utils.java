@@ -173,7 +173,7 @@ public class Utils {
          */
         public static Map<String, File> filesInDirectory(File dir, Pattern regex, boolean recursively) {
                 if (dir == null) throw new NullPointerException("dir is null");
-                Map<String, File> map = new LinkedHashMap<>();
+                Map<String, File> map = new LinkedHashMap<String, File>();
                 if (dir.isDirectory()) {
                         File[] listFiles = dir.listFiles();
                         if (listFiles != null) {

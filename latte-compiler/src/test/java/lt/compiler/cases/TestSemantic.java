@@ -51,7 +51,7 @@ public class TestSemantic {
         private Set<STypeDef> parse(Map<String, String> fileMap) throws IOException, SyntaxException {
                 ErrorManager err = new ErrorManager(true);
 
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 for (String fileName : fileMap.keySet()) {
                         IndentScanner lexicalProcessor = new IndentScanner("test", new StringReader(fileMap.get(fileName)), new Properties(), err);
                         Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
@@ -63,7 +63,7 @@ public class TestSemantic {
 
         @Test
         public void testClass() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A");
@@ -76,7 +76,7 @@ public class TestSemantic {
 
         @Test
         public void testFun() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "fun A(o):lt::lang::function::Function1\n" +
@@ -102,7 +102,7 @@ public class TestSemantic {
 
         @Test
         public void testClassExtends() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import java::util::_\n" +
@@ -118,7 +118,7 @@ public class TestSemantic {
 
         @Test
         public void testClassImplements() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import java::util::_\n" +
@@ -135,7 +135,7 @@ public class TestSemantic {
 
         @Test
         public void testArrayType() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -154,7 +154,7 @@ public class TestSemantic {
 
         @Test
         public void testArrayType2Dimension() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -173,7 +173,7 @@ public class TestSemantic {
 
         @Test
         public void testClassNotFound() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A:B");
@@ -186,7 +186,7 @@ public class TestSemantic {
 
         @Test
         public void testCircularInheritance_2_Classes() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A:B\n" +
@@ -200,7 +200,7 @@ public class TestSemantic {
 
         @Test
         public void testCircularInheritance_3_Classes() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A:B\n" +
@@ -215,7 +215,7 @@ public class TestSemantic {
 
         @Test
         public void testCircularInheritance_2_Interfaces() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "interface A:B\n" +
@@ -229,7 +229,7 @@ public class TestSemantic {
 
         @Test
         public void testCircularInheritance_3_Interfaces() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "interface A:B\n" +
@@ -244,7 +244,7 @@ public class TestSemantic {
 
         @Test
         public void testNotOverridden() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A:java::util::List\n");
@@ -257,7 +257,7 @@ public class TestSemantic {
 
         @Test
         public void testNotOverridden2() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "interface A\n" +
@@ -272,7 +272,7 @@ public class TestSemantic {
 
         @Test
         public void testNotOverriddenFromClass() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "abs class A\n" +
@@ -287,7 +287,7 @@ public class TestSemantic {
 
         @Test
         public void testImport() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import java::awt::_\n" +
@@ -320,7 +320,7 @@ public class TestSemantic {
 
         @Test
         public void testAnno() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import lt::compiler::_\n" +
@@ -336,12 +336,16 @@ public class TestSemantic {
 
                 SAnno anno = classDef.annos().get(0);
                 assertEquals(2, anno.type().annoFields().size());
-                anno.type().annoFields().stream().filter(f -> f.name().equals("i")).forEach(f -> assertEquals(new IntValue(100), f.defaultValue()));
+                for (SAnnoField f : anno.type().annoFields()) {
+                        if (f.name().equals("i")) {
+                                assertEquals(new IntValue(100), f.defaultValue());
+                        }
+                }
         }
 
         @Test
         public void testAnnoAll() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import lt::compiler::_\n" +
@@ -446,7 +450,7 @@ public class TestSemantic {
 
         @Test
         public void testConstructorParamInitValue() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a,b:int=1,c:int=2)");
@@ -481,7 +485,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodParamInitValue() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -524,7 +528,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodInvoke_$null_methodName$() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -550,7 +554,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodInvoke_$this_methodName$() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -576,7 +580,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodInvoke_$superClass_$this_methodName$$() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -594,7 +598,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodInvoke_$null_methodName$but_method_is_static() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -622,7 +626,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodInvoke_$Type_methodName$() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -650,7 +654,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodInvoke_$value_methodName$() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -683,7 +687,7 @@ public class TestSemantic {
 
         @Test
         public void testVariableWithNoLimit() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(), new ErrorManager(true));
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>(), Thread.currentThread().getContextClassLoader(), new ErrorManager(true));
                 processor.parse();
 
                 assertEquals(new IntValue(1), parseValueFromExpression(processor, new NumberLiteral("1", LineCol.SYNTHETIC), null, null));
@@ -697,7 +701,7 @@ public class TestSemantic {
 
         @Test
         public void testPrimitiveVariableWithLimit() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(), new ErrorManager(true));
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>(), Thread.currentThread().getContextClassLoader(), new ErrorManager(true));
                 processor.parse();
 
                 assertEquals(new CharValue('c'), parseValueFromExpression(processor, new StringLiteral("\"c\"", LineCol.SYNTHETIC), CharTypeDef.get(), null));
@@ -714,7 +718,7 @@ public class TestSemantic {
 
         @Test
         public void testCharAndString() throws Exception {
-                SemanticProcessor processor = new SemanticProcessor(new HashMap<>(), Thread.currentThread().getContextClassLoader(), new ErrorManager(true));
+                SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>(), Thread.currentThread().getContextClassLoader(), new ErrorManager(true));
                 processor.parse();
 
                 STypeDef charSequenceType = getTypeWithName(processor, "java.lang.CharSequence", LineCol.SYNTHETIC);
@@ -732,7 +736,7 @@ public class TestSemantic {
 
         @Test
         public void testInvokeConstructor() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -750,7 +754,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodBestMatch1() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -772,7 +776,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodBestMatch2() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -795,7 +799,7 @@ public class TestSemantic {
 
         @Test
         public void testMethodBestMatch3() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -811,7 +815,7 @@ public class TestSemantic {
 
         @Test
         public void testArgAutoCast() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -835,7 +839,7 @@ public class TestSemantic {
 
         @Test
         public void testAsType_parsed_into_short_and_the_value_would_be_ignored() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -849,7 +853,7 @@ public class TestSemantic {
 
         @Test
         public void testAsType() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -867,7 +871,7 @@ public class TestSemantic {
 
         @Test
         public void testLocalField() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(i)\n" +
@@ -885,7 +889,7 @@ public class TestSemantic {
 
         @Test
         public void testGetField() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -904,7 +908,7 @@ public class TestSemantic {
 
         @Test
         public void testGetStatic() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -924,7 +928,7 @@ public class TestSemantic {
 
         @Test
         public void testGetStaticWithType() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -944,7 +948,7 @@ public class TestSemantic {
 
         @Test
         public void testSuperThisField1() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -972,7 +976,7 @@ public class TestSemantic {
 
         @Test
         public void testSuperThisField2() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1000,7 +1004,7 @@ public class TestSemantic {
 
         @Test
         public void testArrayLength() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1022,7 +1026,7 @@ public class TestSemantic {
 
         @Test
         public void testIndex() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1045,7 +1049,7 @@ public class TestSemantic {
 
         @Test
         public void testIndexGet() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import java::util::_\n" +
@@ -1068,7 +1072,7 @@ public class TestSemantic {
 
         @Test
         public void testIndexGetDynamic() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1091,7 +1095,7 @@ public class TestSemantic {
 
         @Test
         public void testIndexAllPrimitiveTest() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1144,7 +1148,7 @@ public class TestSemantic {
 
         @Test
         public void testMethod() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1170,7 +1174,7 @@ public class TestSemantic {
 
         @Test
         public void testStaticMethod() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1197,7 +1201,7 @@ public class TestSemantic {
 
         @Test
         public void testStatic() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1218,7 +1222,7 @@ public class TestSemantic {
 
         @Test
         public void testVariableDef() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1246,7 +1250,7 @@ public class TestSemantic {
 
         @Test
         public void testVariableDefPutField() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1274,7 +1278,7 @@ public class TestSemantic {
 
         @Test
         public void testVariableDefPutStatic() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1298,7 +1302,7 @@ public class TestSemantic {
         }
 
         private void testTwoVarOp(String code, Value a, int op, Value b) throws IOException, SyntaxException {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1368,7 +1372,7 @@ public class TestSemantic {
 
         @Test
         public void testIf() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1440,7 +1444,7 @@ public class TestSemantic {
 
         @Test
         public void testWhile() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1475,7 +1479,7 @@ public class TestSemantic {
 
         @Test
         public void testDoWhile() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1510,7 +1514,7 @@ public class TestSemantic {
 
         @Test
         public void testFor() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(ls)\n" +
@@ -1549,7 +1553,7 @@ public class TestSemantic {
 
         @Test
         public void testThrow() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1569,7 +1573,7 @@ public class TestSemantic {
 
         @Test
         public void testTryCatch() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1664,7 +1668,7 @@ public class TestSemantic {
 
         @Test
         public void testUnaryInc() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a:int)\n" +
@@ -1686,7 +1690,7 @@ public class TestSemantic {
 
         @Test
         public void testSelfInc() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a:int)\n" +
@@ -1714,7 +1718,7 @@ public class TestSemantic {
 
         @Test
         public void testArrayAssign() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a:[]int)\n" +
@@ -1743,7 +1747,7 @@ public class TestSemantic {
 
         @Test
         public void testIndexAccessAssignInvoke() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import java::util::_\n" +
@@ -1776,7 +1780,7 @@ public class TestSemantic {
 
         @Test
         public void testIndexAccessAssignInvoke2() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a)\n" +
@@ -1811,7 +1815,7 @@ public class TestSemantic {
 
         @Test
         public void testNewArray() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1835,7 +1839,7 @@ public class TestSemantic {
 
         @Test
         public void testANewArray() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1859,7 +1863,7 @@ public class TestSemantic {
 
         @Test
         public void testNewList() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1882,7 +1886,7 @@ public class TestSemantic {
 
         @Test
         public void testNewMap() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -1923,7 +1927,7 @@ public class TestSemantic {
 
         @Test
         public void testSync() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a,b)\n" +
@@ -1973,7 +1977,7 @@ public class TestSemantic {
 
         @Test
         public void testSyncReturn() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a,b)\n" +
@@ -2030,7 +2034,7 @@ public class TestSemantic {
 
         @Test
         public void testTryCatchFinally() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2102,7 +2106,7 @@ public class TestSemantic {
 
         @Test
         public void testReturnFinally() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2176,7 +2180,7 @@ public class TestSemantic {
 
         @Test
         public void testConstructorField() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(a,b)");
@@ -2201,7 +2205,7 @@ public class TestSemantic {
 
         @Test
         public void testInnerMethod1() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2224,7 +2228,7 @@ public class TestSemantic {
 
         @Test
         public void testInnerMethod2() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2252,7 +2256,7 @@ public class TestSemantic {
 
         @Test
         public void testProcedure1() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2279,7 +2283,7 @@ public class TestSemantic {
 
         @Test
         public void testProcedure2() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2304,7 +2308,7 @@ public class TestSemantic {
 
         @Test
         public void testLambda1() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import java::util::function::_\n" +
@@ -2330,7 +2334,7 @@ public class TestSemantic {
 
         @Test
         public void testLambda2() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import java::util::function::_\n" +
@@ -2356,7 +2360,7 @@ public class TestSemantic {
 
         @Test
         public void testLambda3() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import lt::compiler::_\n" +
@@ -2423,7 +2427,7 @@ public class TestSemantic {
 
         @Test
         public void testType() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2442,7 +2446,7 @@ public class TestSemantic {
 
         @Test
         public void testAssignValFieldFail() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2459,7 +2463,7 @@ public class TestSemantic {
 
         @Test
         public void testAssignValSParamFail() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(val i)\n" +
@@ -2475,7 +2479,7 @@ public class TestSemantic {
 
         @Test
         public void testAssignValLocalFail() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2493,7 +2497,7 @@ public class TestSemantic {
 
         @Test
         public void testTestFunctionalCheck() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "@FunctionalAbstractClass\n" +
@@ -2538,7 +2542,7 @@ public class TestSemantic {
 
         @Test
         public void testOverrideCheck() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2546,7 +2550,7 @@ public class TestSemantic {
                         "    toString():String='abc'");
                 parse(map);
 
-                map = new HashMap<>();
+                map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2563,7 +2567,7 @@ public class TestSemantic {
 
         @Test
         public void testAssignOp() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2581,7 +2585,7 @@ public class TestSemantic {
 
         @Test
         public void testAnnotationAnnotation() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "import lt::compiler::_\n" +
@@ -2605,7 +2609,7 @@ public class TestSemantic {
 
         @Test
         public void testAccessType() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2641,7 +2645,7 @@ public class TestSemantic {
 
         @Test
         public void testNew() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A(x:int=1)\n" +
@@ -2674,7 +2678,7 @@ public class TestSemantic {
 
         @Test
         public void testGeneratorSpec() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2696,7 +2700,7 @@ public class TestSemantic {
 
         @Test
         public void testFunctionalObject() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2719,7 +2723,7 @@ public class TestSemantic {
 
         @Test
         public void testInvokingAnything() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2743,7 +2747,7 @@ public class TestSemantic {
 
         @Test
         public void testOverrideMethods() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class A\n" +
@@ -2759,7 +2763,7 @@ public class TestSemantic {
 
         @Test
         public void testImportStaticName() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
                         "class Utils");
@@ -2772,7 +2776,7 @@ public class TestSemantic {
 
         @Test
         public void testAccessInnerClass() throws Exception {
-                Map<String, String> map = new HashMap<>();
+                Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "import java::util::Map\n" +
                         "class Test\n" +

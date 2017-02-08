@@ -49,11 +49,11 @@ public class MethodDef implements Definition {
         public MethodDef(String name, Set<Modifier> modifiers, AST.Access returnType, List<VariableDef> params, Set<AST.Anno> annos, List<Statement> body, LineCol lineCol) {
                 this.name = name;
                 this.lineCol = lineCol;
-                this.modifiers = new HashSet<>(modifiers);
+                this.modifiers = new HashSet<Modifier>(modifiers);
                 this.returnType = returnType;
                 this.params = params;
-                this.annos = new HashSet<>(annos);
-                this.body = new ArrayList<>(body);
+                this.annos = new HashSet<AST.Anno>(annos);
+                this.body = new ArrayList<Statement>(body);
         }
 
         @Override

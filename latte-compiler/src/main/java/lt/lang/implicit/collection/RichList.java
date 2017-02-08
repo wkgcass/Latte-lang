@@ -8,6 +8,7 @@ import java.util.List;
 /**
  * rich list
  */
+@SuppressWarnings("unused")
 public class RichList<E> {
         private final List<E> list;
 
@@ -26,7 +27,7 @@ public class RichList<E> {
                 if (elem instanceof Collection) {
                         return concat((Collection) elem);
                 }
-                List<E> newList = new LinkedList<>(list);
+                List<E> newList = new LinkedList<E>(list);
                 newList.add(elem);
                 return newList;
         }
@@ -40,7 +41,7 @@ public class RichList<E> {
          */
         @SuppressWarnings("unchecked")
         public List<E> concat(Collection collection) {
-                List<E> newList = new LinkedList<>(list);
+                List<E> newList = new LinkedList<E>(list);
                 newList.addAll(collection);
                 return newList;
         }

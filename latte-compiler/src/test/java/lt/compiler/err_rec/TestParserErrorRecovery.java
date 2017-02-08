@@ -36,6 +36,7 @@ import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
+import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
 import org.junit.Test;
 
@@ -120,7 +121,7 @@ public class TestParserErrorRecovery {
                         new AST.If(Collections.singletonList(
                                 new AST.If.IfPair(
                                         new AST.TypeOf(new AST.Access(null, "Object", LineCol.SYNTHETIC), LineCol.SYNTHETIC),
-                                        Collections.singletonList(new AST.Pass(LineCol.SYNTHETIC)),
+                                        Collections.<Statement>singletonList(new AST.Pass(LineCol.SYNTHETIC)),
                                         LineCol.SYNTHETIC)
                         ), LineCol.SYNTHETIC),
                         statements.get(0)
@@ -164,8 +165,8 @@ public class TestParserErrorRecovery {
                 assertEquals(1, statements.size());
                 assertEquals(
                         new AST.Synchronized(
-                                Collections.singletonList(new AST.Access(null, "a", LineCol.SYNTHETIC)),
-                                Collections.singletonList(new AST.Pass(LineCol.SYNTHETIC)),
+                                Collections.<Expression>singletonList(new AST.Access(null, "a", LineCol.SYNTHETIC)),
+                                Collections.<Statement>singletonList(new AST.Pass(LineCol.SYNTHETIC)),
                                 LineCol.SYNTHETIC
                         ),
                         statements.get(0)
@@ -191,7 +192,7 @@ public class TestParserErrorRecovery {
                 assertEquals(
                         new AST.While(
                                 new BoolLiteral("true", LineCol.SYNTHETIC),
-                                Collections.emptyList(),
+                                Collections.<Statement>emptyList(),
                                 false,
                                 LineCol.SYNTHETIC
                         ),
@@ -348,17 +349,17 @@ public class TestParserErrorRecovery {
                 assertEquals(
                         Arrays.asList(
                                 new AST.Try(
-                                        Collections.singletonList(new AST.Pass(LineCol.SYNTHETIC)),
+                                        Collections.<Statement>singletonList(new AST.Pass(LineCol.SYNTHETIC)),
                                         "e",
-                                        Collections.emptyList(),
-                                        Collections.emptyList(),
+                                        Collections.<Statement>emptyList(),
+                                        Collections.<Statement>emptyList(),
                                         LineCol.SYNTHETIC
                                 ),
                                 new AST.Try(
-                                        Collections.singletonList(new AST.Pass(LineCol.SYNTHETIC)),
+                                        Collections.<Statement>singletonList(new AST.Pass(LineCol.SYNTHETIC)),
                                         null,
-                                        Collections.emptyList(),
-                                        Collections.emptyList(),
+                                        Collections.<Statement>emptyList(),
+                                        Collections.<Statement>emptyList(),
                                         LineCol.SYNTHETIC
                                 )
                         ),
@@ -398,8 +399,8 @@ public class TestParserErrorRecovery {
                 assertEquals(
                         Collections.singletonList(
                                 new InterfaceDef(
-                                        "I", Collections.emptySet(), Collections.emptyList(),
-                                        Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC)
+                                        "I", Collections.<Modifier>emptySet(), Collections.<AST.Access>emptyList(),
+                                        Collections.<AST.Anno>emptySet(), Collections.<Statement>emptyList(), LineCol.SYNTHETIC)
                         ),
                         statements
                 );
@@ -452,63 +453,63 @@ public class TestParserErrorRecovery {
                 assertEquals(5, err.errorList.get(5).lineCol.column);
                 assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(5).type);
 
-                VariableDef var_1_a = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef var_1_a = new VariableDef("a", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 var_1_a.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
                 assertEquals(Arrays.asList(
                         new ClassDef(
-                                "C", Collections.emptySet(),
+                                "C", Collections.<Modifier>emptySet(),
                                 Arrays.asList(
                                         var_1_a,
-                                        new VariableDef("b", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
+                                        new VariableDef("b", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC)
                                 ),
                                 null,
-                                Collections.emptyList(),
-                                Collections.emptySet(),
-                                Collections.emptyList(),
+                                Collections.<AST.Access>emptyList(),
+                                Collections.<AST.Anno>emptySet(),
+                                Collections.<Statement>emptyList(),
                                 LineCol.SYNTHETIC
                         ),
                         new ClassDef(
-                                "C", Collections.emptySet(),
+                                "C", Collections.<Modifier>emptySet(),
                                 Collections.singletonList(
-                                        new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
+                                        new VariableDef("a", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC)
                                 ),
                                 null,
-                                Collections.emptyList(),
-                                Collections.emptySet(),
-                                Collections.emptyList(),
+                                Collections.<AST.Access>emptyList(),
+                                Collections.<AST.Anno>emptySet(),
+                                Collections.<Statement>emptyList(),
                                 LineCol.SYNTHETIC
                         ),
                         new ClassDef(
-                                "C", Collections.emptySet(),
-                                Collections.emptyList(),
+                                "C", Collections.<Modifier>emptySet(),
+                                Collections.<VariableDef>emptyList(),
                                 null,
-                                Collections.emptyList(),
-                                Collections.emptySet(),
-                                Collections.emptyList(),
+                                Collections.<AST.Access>emptyList(),
+                                Collections.<AST.Anno>emptySet(),
+                                Collections.<Statement>emptyList(),
                                 LineCol.SYNTHETIC
                         ),
                         new ClassDef(
-                                "C", Collections.emptySet(),
-                                Collections.emptyList(),
+                                "C", Collections.<Modifier>emptySet(),
+                                Collections.<VariableDef>emptyList(),
                                 new AST.Invocation(
                                         new AST.Access(null, "P1", LineCol.SYNTHETIC),
-                                        Collections.emptyList(),
+                                        Collections.<Expression>emptyList(),
                                         false, LineCol.SYNTHETIC
                                 ),
                                 Collections.singletonList(
                                         new AST.Access(null, "P2", LineCol.SYNTHETIC)
                                 ),
-                                Collections.emptySet(),
-                                Collections.emptyList(),
+                                Collections.<AST.Anno>emptySet(),
+                                Collections.<Statement>emptyList(),
                                 LineCol.SYNTHETIC
                         ),
                         new ClassDef(
-                                "C", Collections.emptySet(),
-                                Collections.emptyList(),
+                                "C", Collections.<Modifier>emptySet(),
+                                Collections.<VariableDef>emptyList(),
                                 null,
-                                Collections.emptyList(),
-                                Collections.emptySet(),
-                                Collections.emptyList(),
+                                Collections.<AST.Access>emptyList(),
+                                Collections.<AST.Anno>emptySet(),
+                                Collections.<Statement>emptyList(),
                                 LineCol.SYNTHETIC
                         )
                 ), statements);
@@ -555,8 +556,8 @@ public class TestParserErrorRecovery {
                 assertEquals(1, statements.size());
                 assertEquals(
                         new AST.If(Arrays.asList(
-                                new AST.If.IfPair(new BoolLiteral("true", LineCol.SYNTHETIC), Collections.emptyList(), LineCol.SYNTHETIC),
-                                new AST.If.IfPair(null, Collections.emptyList(), LineCol.SYNTHETIC)
+                                new AST.If.IfPair(new BoolLiteral("true", LineCol.SYNTHETIC), Collections.<Statement>emptyList(), LineCol.SYNTHETIC),
+                                new AST.If.IfPair(null, Collections.<Statement>emptyList(), LineCol.SYNTHETIC)
                         ), LineCol.SYNTHETIC),
                         statements.get(0)
                 );
@@ -584,28 +585,28 @@ public class TestParserErrorRecovery {
                 assertEquals(12, err.errorList.get(1).lineCol.column);
                 assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(1).type);
 
-                VariableDef v = new VariableDef("a", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef v = new VariableDef("a", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
 
                 assertEquals(
                         Arrays.asList(
                                 new MethodDef(
-                                        "method", Collections.emptySet(),
+                                        "method", Collections.<Modifier>emptySet(),
                                         new AST.Access(null, "Unit", LineCol.SYNTHETIC),
                                         Arrays.asList(
                                                 v,
-                                                new VariableDef("b", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)
+                                                new VariableDef("b", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC)
                                         ),
-                                        Collections.emptySet(),
-                                        Collections.emptyList(),
+                                        Collections.<AST.Anno>emptySet(),
+                                        Collections.<Statement>emptyList(),
                                         LineCol.SYNTHETIC
                                 ),
                                 new MethodDef(
-                                        "method", Collections.emptySet(),
+                                        "method", Collections.<Modifier>emptySet(),
                                         new AST.Access(null, "Unit", LineCol.SYNTHETIC),
                                         Collections.singletonList(v),
-                                        Collections.emptySet(),
-                                        Collections.emptyList(),
+                                        Collections.<AST.Anno>emptySet(),
+                                        Collections.<Statement>emptyList(),
                                         LineCol.SYNTHETIC
                                 )
                         ),
@@ -660,20 +661,20 @@ public class TestParserErrorRecovery {
                                 new AST.Invocation(
                                         new AST.Invocation(
                                                 new AST.Access(null, "method", LineCol.SYNTHETIC),
-                                                Collections.emptyList(),
+                                                Collections.<Expression>emptyList(),
                                                 false, LineCol.SYNTHETIC
                                         ),
-                                        Collections.emptyList(),
+                                        Collections.<Expression>emptyList(),
                                         false, LineCol.SYNTHETIC
                                 ),
                                 new AST.Invocation(
                                         new AST.Access(null, "method", LineCol.SYNTHETIC),
-                                        Collections.emptyList(),
+                                        Collections.<Expression>emptyList(),
                                         false, LineCol.SYNTHETIC
                                 ),
                                 new AST.Invocation(
                                         new AST.Access(null, "method", LineCol.SYNTHETIC),
-                                        Collections.singletonList(new AST.Access(null, "a", LineCol.SYNTHETIC)),
+                                        Collections.<Expression>singletonList(new AST.Access(null, "a", LineCol.SYNTHETIC)),
                                         false, LineCol.SYNTHETIC
                                 )
                         ),
@@ -758,14 +759,14 @@ public class TestParserErrorRecovery {
                         Arrays.asList(
                                 new AST.Index(
                                         new AST.Access(null, "arr", LineCol.SYNTHETIC),
-                                        Arrays.asList(
+                                        Arrays.<Expression>asList(
                                                 new NumberLiteral("1", LineCol.SYNTHETIC),
                                                 new NumberLiteral("3", LineCol.SYNTHETIC)
                                         ),
                                         LineCol.SYNTHETIC
                                 ),
                                 new AST.ArrayExp(
-                                        Arrays.asList(
+                                        Arrays.<Expression>asList(
                                                 new NumberLiteral("1", LineCol.SYNTHETIC),
                                                 new NumberLiteral("3", LineCol.SYNTHETIC)
                                         ),
@@ -798,8 +799,8 @@ public class TestParserErrorRecovery {
                 assertEquals(1, statements.size());
                 assertEquals(
                         new AST.Lambda(
-                                Collections.singletonList(new VariableDef("c", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)),
-                                Collections.singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)),
+                                Collections.singletonList(new VariableDef("c", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC)),
+                                Collections.<Statement>singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)),
                                 LineCol.SYNTHETIC
                         ),
                         statements.get(0)

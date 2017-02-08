@@ -26,8 +26,8 @@ package lt.lang;
 
 import lt.compiler.LtBug;
 import lt.lang.function.Function;
+import lt.lang.function.Function1;
 
-import java.lang.invoke.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.List;
@@ -37,116 +37,10 @@ import java.util.Map;
  * invoke dynamic
  */
 public class Dynamic {
-        @SuppressWarnings("unused")
-        public static final int GET_FIELD = 1;
-        @SuppressWarnings("unused")
-        public static final int GET_STATIC = 2;
-        @SuppressWarnings("unused")
-        public static final int PUT_FIELD = 3;
-        @SuppressWarnings("unused")
-        public static final int PUT_STATIC = 4;
-        @SuppressWarnings("unused")
-        public static final int INVOKE_VIRTUAL = 5;
-        public static final int INVOKE_STATIC = 6;
-        public static final int INVOKE_SPECIAL = 7;
-        @SuppressWarnings("unused")
-        public static final int NEW_INVOKE_SPECIAL = 8;
-        @SuppressWarnings("unused")
-        public static final int INVOKE_INTERFACE = 9;
-
         private static final int PRIMITIVE_BOX_CAST_BASE = 233;
         private static final int COLLECTION_OBJECT_CAST_BASE = 2333;
 
         private Dynamic() {
-        }
-
-        private static MethodHandle methodHandle;
-
-        private static MethodHandle constructorHandle;
-
-        private static MethodHandle callFunctionalObject;
-
-        static {
-                try {
-                        methodHandle = MethodHandles.lookup().findStatic(Dynamic.class, "invoke", MethodType.methodType(
-                                Object.class, Class.class, Object.class, Object.class, Class.class, String.class, boolean[].class, Object[].class));
-                        constructorHandle = MethodHandles.lookup().findStatic(Dynamic.class, "construct", MethodType.methodType(
-                                Object.class, Class.class, Class.class, boolean[].class, Object[].class));
-                        callFunctionalObject = MethodHandles.lookup().findStatic(Dynamic.class, "callFunctionalObject", MethodType.methodType(
-                                Object.class, Object.class, Class.class, Object[].class));
-                } catch (NoSuchMethodException | IllegalAccessException e) {
-                        throw new LtRuntimeException(e);
-                }
-        }
-
-        /**
-         * the bootstrap method for Latte Dynamic
-         *
-         * @param lookup     lookup
-         * @param methodName method name
-         * @param methodType methodType (class, object, arguments)
-         * @return generated call site
-         */
-        @SuppressWarnings("unused")
-        public static CallSite bootstrap(MethodHandles.Lookup lookup, String methodName, MethodType methodType) {
-                final int actualParamCount = 3;
-
-                boolean[] primitives = new boolean[methodType.parameterCount() - actualParamCount];
-                for (int i = 0; i < primitives.length; ++i) {
-                        primitives[i] = methodType.parameterType(i + actualParamCount).isPrimitive();
-                }
-                MethodHandle mh = MethodHandles.insertArguments(methodHandle, actualParamCount, lookup.lookupClass(), methodName, primitives);
-                mh = mh.asCollector(Object[].class, methodType.parameterCount() - actualParamCount).asType(methodType);
-
-                MutableCallSite mCallSite = new MutableCallSite(mh);
-                mCallSite.setTarget(mh);
-                return mCallSite;
-        }
-
-        /**
-         * the bootstrap method for constructing classes
-         *
-         * @param lookup     lookup
-         * @param methodName method name (this argument will be ignored)
-         * @param methodType methodType (class, arguments)
-         * @return generated call site
-         */
-        @SuppressWarnings("unused")
-        public static CallSite bootstrapConstructor(MethodHandles.Lookup lookup, String methodName, MethodType methodType) {
-                // method name will not be used. it can be any value.
-                // but usually it will be "_init_"
-
-                boolean[] primitives = new boolean[methodType.parameterCount()];
-                for (int i = 0; i < primitives.length; ++i) {
-                        primitives[i] = methodType.parameterType(i).isPrimitive();
-                }
-                MethodHandle mh = MethodHandles.insertArguments(constructorHandle, 0, methodType.returnType(), lookup.lookupClass(), primitives);
-                mh = mh.asCollector(Object[].class, methodType.parameterCount()).asType(methodType);
-
-                MutableCallSite mCallSite = new MutableCallSite(mh);
-                mCallSite.setTarget(mh);
-                return mCallSite;
-        }
-
-        /**
-         * the bootstrap method for calling a functional object.
-         *
-         * @param lookup     lookup
-         * @param methodName method name (this argument will be ignored)
-         * @param methodType methodType (class, arguments)
-         * @return generated call site
-         */
-        @SuppressWarnings("unused")
-        public static CallSite bootstrapCallFunctionalObject(MethodHandles.Lookup lookup, String methodName, MethodType methodType) {
-                // method name will not be used. it can be any value.
-                // but usually it will be "_call_functional_object_"
-
-                MethodHandle mh = MethodHandles.insertArguments(callFunctionalObject, 1, lookup.lookupClass());
-                mh = mh.asCollector(Object[].class, methodType.parameterCount() - 1).asType(methodType);
-
-                MutableCallSite mCallSite = new MutableCallSite(mh);
-                mCallSite.setTarget(mh);
-                return mCallSite;
         }
 
         /**
@@ -244,9 +138,9 @@ public class Dynamic {
 
         public static Method findMethod(Class<?> invoker, Class<?> targetType, Object target, String method, boolean[] primitives, Object[] args) throws Throwable {
                 if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
-                List<Method> methodList = new ArrayList<>();
+                List<Method> methodList = new ArrayList<Method>();
 
-                Queue<Class<?>> interfaces = new ArrayDeque<>();
+                Queue<Class<?>> interfaces = new ArrayDeque<Class<?>>();
                 Class<?> c = chooseType(targetType, target);
                 while (c != null) {
                         Collections.addAll(interfaces, c.getInterfaces());
@@ -292,7 +186,7 @@ public class Dynamic {
                                                  boolean onlyStatic) {
                 for (Method m : c.getDeclaredMethods()) {
                         if (!m.getName().equals(method)) continue;
-                        if (m.getParameterCount() != args.length) continue;
+                        if (m.getParameterTypes().length != args.length) continue;
 
                         // access check
                         if (!LtRuntime.haveAccess(m.getModifiers(), c, invoker)) continue;
@@ -314,31 +208,31 @@ public class Dynamic {
          * overridden methods
          * (superClass method) => (subClass method)
          */
-        private static Map<Method, Set<Method>> overriddenMethods = new WeakHashMap<>();
+        private static Map<Method, Set<Method>> overriddenMethods = new WeakHashMap<Method, Set<Method>>();
         /**
          * classes already done override analysis
          */
-        private static Map<Class<?>, Object> classesDoneOverrideAnalysis = new WeakHashMap<>();
+        private static Map<Class<?>, Object> classesDoneOverrideAnalysis = new WeakHashMap<Class<?>, Object>();
         /**
          * functional abstract classes
          */
-        private static Map<Class<?>, Object> functionalAbstractClasses = new WeakHashMap<>();
+        private static Map<Class<?>, Object> functionalAbstractClasses = new WeakHashMap<Class<?>, Object>();
         /**
          * not functional abstract classes
          */
-        private static Map<Class<?>, Object> notFunctionalAbstractClass = new WeakHashMap<>();
+        private static Map<Class<?>, Object> notFunctionalAbstractClass = new WeakHashMap<Class<?>, Object>();
         /**
          * functional interfaces
          */
-        private static Map<Class<?>, Object> functionalInterfaces = new WeakHashMap<>();
+        private static Map<Class<?>, Object> functionalInterfaces = new WeakHashMap<Class<?>, Object>();
         /**
          * not functional interfaces
          */
-        private static Map<Class<?>, Object> notFunctionalInterfaces = new WeakHashMap<>();
+        private static Map<Class<?>, Object> notFunctionalInterfaces = new WeakHashMap<Class<?>, Object>();
         /**
          * abstract method of a functional interface/abstract class
          */
-        private static Map<Class<?>, Method> abstractMethod = new WeakHashMap<>();
+        private static Map<Class<?>, Method> abstractMethod = new WeakHashMap<Class<?>, Method>();
 
         /**
          * check signature, whether they are the same.
@@ -351,8 +245,8 @@ public class Dynamic {
                 String name = parentM.getName();
 
                 if (subM.getName().equals(name)) {
-                        if (subM.getParameterCount() == parentM.getParameterCount()) {
-                                for (int i = 0; i < subM.getParameterCount(); ++i) {
+                        if (subM.getParameterTypes().length == parentM.getParameterTypes().length) {
+                                for (int i = 0; i < subM.getParameterTypes().length; ++i) {
                                         Class<?> subP = subM.getParameterTypes()[i];
                                         Class<?> parentP = parentM.getParameterTypes()[i];
                                         if (!subP.equals(parentP)) return false;
@@ -363,7 +257,7 @@ public class Dynamic {
                         if (overriddenMethods.containsKey(parentM)) {
                                 set = overriddenMethods.get(parentM);
                         } else {
-                                set = new HashSet<>();
+                                set = new HashSet<Method>();
                                 overriddenMethods.put(parentM, set);
                         }
                         set.add(subM);
@@ -469,8 +363,8 @@ public class Dynamic {
 
                 // check interfaces
 
-                Set<Class<?>> visited = new HashSet<>();
-                Queue<Class<?>> interfaces = new ArrayDeque<>();
+                Set<Class<?>> visited = new HashSet<Class<?>>();
+                Queue<Class<?>> interfaces = new ArrayDeque<Class<?>>();
 
                 Collections.addAll(interfaces);
 
@@ -507,10 +401,10 @@ public class Dynamic {
 
                 analyseClassOverride(i);
 
-                Set<Class<?>> visited = new HashSet<>();
+                Set<Class<?>> visited = new HashSet<Class<?>>();
 
                 boolean found = false;
-                Queue<Class<?>> interfaces = new ArrayDeque<>();
+                Queue<Class<?>> interfaces = new ArrayDeque<Class<?>>();
                 interfaces.add(i);
 
                 while (!interfaces.isEmpty()) {
@@ -552,7 +446,7 @@ public class Dynamic {
                 boolean containsPublicZeroParamConstructor = false;
                 for (Constructor<?> con : cons) {
                         if (Modifier.isPublic(con.getModifiers())) {
-                                if (con.getParameterCount() == 0) {
+                                if (con.getParameterTypes().length == 0) {
                                         containsPublicZeroParamConstructor = true;
                                         break;
                                 }
@@ -563,7 +457,7 @@ public class Dynamic {
 
                 analyseClassOverride(c);
 
-                Set<Class<?>> visited = new HashSet<>();
+                Set<Class<?>> visited = new HashSet<Class<?>>();
 
                 boolean found = false;
 
@@ -582,7 +476,7 @@ public class Dynamic {
                         tmpCls = tmpCls.getSuperclass();
                 }
 
-                Queue<Class<?>> interfaces = new ArrayDeque<>();
+                Queue<Class<?>> interfaces = new ArrayDeque<Class<?>>();
                 Collections.addAll(interfaces);
 
                 while (!interfaces.isEmpty()) {
@@ -614,9 +508,9 @@ public class Dynamic {
          * @return cast steps - 0 means no cast
          */
         private static int bfsSearch(Class<?> current, Class<?> required) {
-                Set<Class<?>> visited = new HashSet<>();
-                Queue<Class<?>> queue = new ArrayDeque<>();
-                List<Class<?>> ready = new LinkedList<>();
+                Set<Class<?>> visited = new HashSet<Class<?>>();
+                Queue<Class<?>> queue = new ArrayDeque<Class<?>>();
+                List<Class<?>> ready = new LinkedList<Class<?>>();
                 queue.add(current);
                 visited.add(current);
                 int count = 0;
@@ -675,13 +569,18 @@ public class Dynamic {
          * @param <T>        {@link Constructor} or {@link Method}
          * @return the found method
          */
-        private static <T extends Executable> T findBestMatch(List<T> methodList, Object[] args, boolean[] primitives) {
+        private static <T> T findBestMatch(List<T> methodList, Object[] args, boolean[] primitives) {
                 // calculate every method's cast steps
-                Map<T, int[]> steps = new HashMap<>();
+                Map<T, int[]> steps = new HashMap<T, int[]>();
                 for (T m : methodList) {
                         int[] step = new int[args.length];
                         for (int i = 0; i < args.length; ++i) {
-                                Class<?> type = m.getParameterTypes()[i];
+                                Class<?> type;
+                                if (m instanceof Method) {
+                                        type = ((Method) m).getParameterTypes()[i];
+                                } else {
+                                        type = ((Constructor) m).getParameterTypes()[i];
+                                }
                                 if (primitives[i] && type.isPrimitive()) {
                                         step[i] = 0;
                                 } else if (primitives[i]) {
@@ -764,11 +663,11 @@ public class Dynamic {
                 Constructor<?>[] constructors = targetType.getDeclaredConstructors();
 
                 // select candidates
-                List<Constructor<?>> candidates = new ArrayList<>();
+                List<Constructor<?>> candidates = new ArrayList<Constructor<?>>();
                 for (Constructor<?> con : constructors) {
                         if (!LtRuntime.haveAccess(con.getModifiers(), targetType, invoker)) continue;
 
-                        if (con.getParameterCount() == args.length) {
+                        if (con.getParameterTypes().length == args.length) {
                                 if (canBeCandidate(con.getParameterTypes(), args)) {
                                         candidates.add(con);
                                 }
@@ -898,7 +797,7 @@ public class Dynamic {
                                                 if (!ic.isAnnotationPresent(LatteObject.class)) continue;
                                                 Method[] methods = ic.getDeclaredMethods();
                                                 for (Method m : methods) {
-                                                        if (m.isAnnotationPresent(Implicit.class) && m.getParameterCount() == 1 && m.getReturnType() != void.class) {
+                                                        if (m.isAnnotationPresent(Implicit.class) && m.getParameterTypes().length == 1 && m.getReturnType() != void.class) {
                                                                 Class<?> inputType = m.getParameterTypes()[0];
                                                                 if (inputType.isInstance(o)) {
                                                                         Class<?> outputType = m.getReturnType();
@@ -1005,7 +904,12 @@ public class Dynamic {
                         sb.append(arg == null ? "null" : arg.getClass().getName());
                 }
                 sb.append(")");
-                ec.throwIfNotEmpty("Cannot find method to invoke: " + sb.toString(), LtRuntimeException::new);
+                ec.throwIfNotEmpty("Cannot find method to invoke: " + sb.toString(), new Function1<Throwable, String>() {
+                        @Override
+                        public Throwable apply(String s) {
+                                return new LtRuntimeException(s);
+                        }
+                });
                 // code won't reach here
                 throw new LtBug("code won't reach here");
         }
@@ -1020,7 +924,7 @@ public class Dynamic {
          * @throws Throwable exception when calling the functional object.
          */
         @SuppressWarnings("unused")
-        private static Object callFunctionalObject(Object functionalObject,
+        public static Object callFunctionalObject(Object functionalObject,
                                                    Class<?> callerClass,
                                                    Object[] args) throws Throwable {
                 return callFunctionalObject(new InvocationState(), functionalObject, callerClass, args);
@@ -1036,7 +940,7 @@ public class Dynamic {
          * @return the calling result.
          * @throws Throwable exception when calling the functional object.
          */
-        private static Object callFunctionalObject(InvocationState invocationState,
+        public static Object callFunctionalObject(InvocationState invocationState,
                                                    Object functionalObject,
                                                    Class<?> callerClass,
                                                    Object[] args) throws Throwable {

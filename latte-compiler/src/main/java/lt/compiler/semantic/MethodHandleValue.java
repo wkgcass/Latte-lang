@@ -25,8 +25,10 @@
 package lt.compiler.semantic;
 
 /**
- * method handle
+ * method handle<br>
+ * should not use after version changing to 1.6
  */
+@Deprecated
 public class MethodHandleValue implements Value {
         private final SMethodDef method;
         private final int mode;

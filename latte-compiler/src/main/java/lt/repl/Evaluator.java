@@ -32,13 +32,13 @@ import lt.compiler.syntactic.Expression;
 import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.pre.Import;
+import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
 
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * evaluator for Latte
@@ -47,12 +47,12 @@ public class Evaluator {
         private final static String evalFileName = "eval";
         private final static String EvaluateClassName = "Evaluate";
 
-        private List<Entry> recordedEntries = new ArrayList<>();
-        private List<Import> imports = new ArrayList<>();
-        private List<MethodDef> recordedMethods = new ArrayList<>();
+        private List<Entry> recordedEntries = new ArrayList<Entry>();
+        private List<Import> imports = new ArrayList<Import>();
+        private List<MethodDef> recordedMethods = new ArrayList<MethodDef>();
 
         private class CL extends ClassLoader {
-                private Map<String, byte[]> byteCodes = new HashMap<>();
+                private Map<String, byte[]> byteCodes = new HashMap<String, byte[]>();
 
                 CL(ClassLoader cl) {
                         super(cl);
@@ -162,8 +162,8 @@ public class Evaluator {
                         statements.add(lastStatement);
                 }
 
-                List<Statement> innerStatements = new ArrayList<>();
-                List<Statement> defList = new ArrayList<>();
+                List<Statement> innerStatements = new ArrayList<Statement>();
+                final List<Statement> defList = new ArrayList<Statement>();
 
                 for (Statement s : statements) {
                         if (s instanceof ClassDef || s instanceof InterfaceDef || s instanceof FunDef || s instanceof ObjectDef) {
@@ -210,19 +210,25 @@ public class Evaluator {
                 innerStatements.addAll(recordedMethods);
 
                 // parameters of the class
-                List<VariableDef> parameters = recordedEntries.
-                        stream().
-                        map(entry ->
-                                new VariableDef(
-                                        entry.name,
-                                        Collections.emptySet(),
-                                        Collections.emptySet(),
-                                        LineCol.SYNTHETIC)).
-                        collect(Collectors.toList());
+                List<VariableDef> parameters = new ArrayList<VariableDef>();
+                for (Entry entry : recordedEntries) {
+                        VariableDef v = new VariableDef(
+                                entry.name,
+                                Collections.<Modifier>emptySet(),
+                                Collections.<AST.Anno>emptySet(),
+                                LineCol.SYNTHETIC);
+                        parameters.add(v);
+                }
 
                 ClassDef evalClass = new ClassDef(
-                        EvaluateClassName, Collections.emptySet(), parameters, null, Collections.emptyList(), Collections.emptySet(),
-                        innerStatements, new LineCol(evalFileName, 0, 0)
+                        EvaluateClassName,
+                        Collections.<Modifier>emptySet(),
+                        parameters,
+                        null,
+                        Collections.<AST.Access>emptyList(),
+                        Collections.<AST.Anno>emptySet(),
+                        innerStatements,
+                        new LineCol(evalFileName, 0, 0)
                 );
 
                 // fill the eval class into the def list
@@ -238,11 +244,12 @@ public class Evaluator {
                 }}, cl, err);
                 CodeGenerator codeGen = new CodeGenerator(processor.parse(), processor.getTypes());
                 Map<String, byte[]> byteCodes = codeGen.generate();
-                List<Class<?>> classes = new ArrayList<>();
-                byteCodes.entrySet().stream()
-                        .filter(entry -> !entry.getKey()
-                                .equals(EvaluateClassName))
-                        .forEach(entry -> cl.byteCodes.put(entry.getKey(), entry.getValue()));
+                List<Class<?>> classes = new ArrayList<Class<?>>();
+                for (Map.Entry<String, byte[]> entry : byteCodes.entrySet()) {
+                        if (!entry.getKey().equals(EvaluateClassName)) {
+                                cl.byteCodes.put(entry.getKey(), entry.getValue());
+                        }
+                }
                 for (Map.Entry<String, byte[]> entry : byteCodes.entrySet()) {
                         if (!entry.getKey().equals(EvaluateClassName)) {
                                 Class<?> c = cl.loadClass(entry.getKey());
@@ -250,7 +257,7 @@ public class Evaluator {
                                 c.getDeclaredFields(); // check the class format and throw exception
                         }
                 }
-                byte[] EvaluateBytes = byteCodes.get(EvaluateClassName);
+                final byte[] EvaluateBytes = byteCodes.get(EvaluateClassName);
                 ClassLoader classLoader = new ClassLoader(cl) {
                         @Override
                         protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -296,7 +303,7 @@ public class Evaluator {
         }
 
         private VariableDef defineAVariable(String name, Expression initValue) {
-                VariableDef v = new VariableDef(name, Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef v = new VariableDef(name, Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 v.setInit(initValue);
                 return v;
         }

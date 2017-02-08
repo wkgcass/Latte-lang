@@ -38,8 +38,8 @@ import java.util.List;
  * annotation definition
  */
 public class SAnnoDef extends STypeDef {
-        private final List<SAnnoField> annoFields = new ArrayList<>();
-        private final List<SModifier> modifiers = new ArrayList<>();
+        private final List<SAnnoField> annoFields = new ArrayList<SAnnoField>();
+        private final List<SModifier> modifiers = new ArrayList<SModifier>();
 
         public SAnnoDef() {
                 // annotations cannot be defined in Latte

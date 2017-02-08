@@ -51,18 +51,17 @@ public class ScannerSwitcher implements Scanner {
                 } else {
                         text = "";
                 }
-                switch (text) {
-                        case ":scanner-brace":
-                                scanner = new BraceScanner(fileName, plbr, properties, err);
-                                break;
-                        case "":
-                        case ":scanner-indent":
-                                scanner = new IndentScanner(fileName, plbr, properties, err);
-                                break;
-                        default:
-                                err.SyntaxException("got " + text + " which is not a valid scanner select command", LineCol.SYNTHETIC_WITH_FILE(fileName));
-                                err.info("assume it's :scanner-indent");
-                                scanner = new IndentScanner(fileName, plbr, properties, err);
+
+                if (text.equals(":scanner-brace")) {
+                        scanner = new BraceScanner(fileName, plbr, properties, err);
+
+                } else if (text.equals("") || text.equals(":scanner-indent")) {
+                        scanner = new IndentScanner(fileName, plbr, properties, err);
+
+                } else {
+                        err.SyntaxException("got " + text + " which is not a valid scanner select command", LineCol.SYNTHETIC_WITH_FILE(fileName));
+                        err.info("assume it's :scanner-indent");
+                        scanner = new IndentScanner(fileName, plbr, properties, err);
                 }
         }
 

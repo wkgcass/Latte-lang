@@ -40,7 +40,7 @@ public class CodeInfo {
         }
 
         private int currentStackDepth;
-        private Stack<Size> currentStack = new Stack<>();
+        private Stack<Size> currentStack = new Stack<Size>();
         private int maxStack;
         private int maxLocal;
 
@@ -53,7 +53,7 @@ public class CodeInfo {
                 }
         }
 
-        public final Map<Instruction, Container> insToLabel = new HashMap<>();
+        public final Map<Instruction, Container> insToLabel = new HashMap<Instruction, Container>();
 
         public CodeInfo(int localInit) {
                 this.maxLocal = localInit;

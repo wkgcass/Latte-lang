@@ -125,7 +125,7 @@ public class TestParserMix {
                                 "+",
                                 new NumberLiteral("1", LineCol.SYNTHETIC),
                                 new AST.Invocation(new AST.Access(new AST.Access(null, "list", LineCol.SYNTHETIC), "get", LineCol.SYNTHETIC),
-                                        Collections.singletonList(new NumberLiteral("0", LineCol.SYNTHETIC)), false, LineCol.SYNTHETIC),
+                                        Collections.<Expression>singletonList(new NumberLiteral("0", LineCol.SYNTHETIC)), false, LineCol.SYNTHETIC),
                                 LineCol.SYNTHETIC),
                         new NumberLiteral("2", LineCol.SYNTHETIC),
                         LineCol.SYNTHETIC);
@@ -154,7 +154,7 @@ public class TestParserMix {
                                                 new AST.Access(null, "i", LineCol.SYNTHETIC),
                                                 new NumberLiteral("1", LineCol.SYNTHETIC)
                                                 , LineCol.SYNTHETIC),
-                                                Collections.singletonList(
+                                                Collections.<Statement>singletonList(
                                                         new AST.Return(new NumberLiteral("5", LineCol.SYNTHETIC), LineCol.SYNTHETIC)
                                                 ), LineCol.SYNTHETIC))
                                                 , LineCol.SYNTHETIC),
@@ -182,22 +182,22 @@ public class TestParserMix {
 
                 MethodDef m = new MethodDef(
                         "method",
-                        new HashSet<>(Collections.singletonList(
+                        new HashSet<Modifier>(Collections.singletonList(
                                 new Modifier(Modifier.Available.PUBLIC, LineCol.SYNTHETIC)
                         )),
                         new AST.Access(null, "Unit", LineCol.SYNTHETIC),
                         Arrays.asList(
-                                new VariableDef("arg0", Collections.emptySet(), new HashSet<>(Collections.singletonList(
-                                        new AST.Anno(new AST.Access(null, "Anno1", LineCol.SYNTHETIC), Collections.emptyList(), LineCol.SYNTHETIC)
+                                new VariableDef("arg0", Collections.<Modifier>emptySet(), new HashSet<AST.Anno>(Collections.singletonList(
+                                        new AST.Anno(new AST.Access(null, "Anno1", LineCol.SYNTHETIC), Collections.<AST.Assignment>emptyList(), LineCol.SYNTHETIC)
                                 )), LineCol.SYNTHETIC),
-                                new VariableDef("arg1", Collections.emptySet(), new HashSet<>(Collections.singletonList(
-                                        new AST.Anno(new AST.Access(null, "Anno2", LineCol.SYNTHETIC), Collections.emptyList(), LineCol.SYNTHETIC)
+                                new VariableDef("arg1", Collections.<Modifier>emptySet(), new HashSet<AST.Anno>(Collections.singletonList(
+                                        new AST.Anno(new AST.Access(null, "Anno2", LineCol.SYNTHETIC), Collections.<AST.Assignment>emptyList(), LineCol.SYNTHETIC)
                                 )), LineCol.SYNTHETIC)
                         ),
-                        new HashSet<>(Collections.singletonList(
-                                new AST.Anno(new AST.Access(null, "Anno", LineCol.SYNTHETIC), Collections.emptyList(), LineCol.SYNTHETIC)
+                        new HashSet<AST.Anno>(Collections.singletonList(
+                                new AST.Anno(new AST.Access(null, "Anno", LineCol.SYNTHETIC), Collections.<AST.Assignment>emptyList(), LineCol.SYNTHETIC)
                         )),
-                        Collections.emptyList(),
+                        Collections.<Statement>emptyList(),
                         LineCol.SYNTHETIC);
 
                 assertEquals(m, statement);
@@ -257,7 +257,7 @@ public class TestParserMix {
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
-                VariableDef v = new VariableDef("i", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef v = new VariableDef("i", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 v.setType(new AST.Access(null, "int", LineCol.SYNTHETIC));
                 assertEquals(v, statement);
         }
@@ -268,7 +268,7 @@ public class TestParserMix {
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
-                VariableDef v = new VariableDef("i", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef v = new VariableDef("i", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 v.setType(new AST.Access(null, "bool", LineCol.SYNTHETIC));
                 v.setInit(new BoolLiteral("yes", LineCol.SYNTHETIC));
                 assertEquals(v, statement);
@@ -280,7 +280,7 @@ public class TestParserMix {
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
-                MethodDef m = new MethodDef("method", Collections.emptySet(), new AST.Access(null, "int", LineCol.SYNTHETIC), Collections.emptyList(), Collections.emptySet(), Collections.emptyList(), LineCol.SYNTHETIC);
+                MethodDef m = new MethodDef("method", Collections.<Modifier>emptySet(), new AST.Access(null, "int", LineCol.SYNTHETIC), Collections.<VariableDef>emptyList(), Collections.<AST.Anno>emptySet(), Collections.<Statement>emptyList(), LineCol.SYNTHETIC);
                 assertEquals(m, statement);
         }
 
@@ -290,9 +290,9 @@ public class TestParserMix {
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
-                LinkedHashMap<Expression, Expression> map = new LinkedHashMap<>();
+                LinkedHashMap<Expression, Expression> map = new LinkedHashMap<Expression, Expression>();
                 map.put(new AST.Access(null, "a", LineCol.SYNTHETIC),
-                        new AST.ArrayExp(Arrays.asList(
+                        new AST.ArrayExp(Arrays.<Expression>asList(
                                 new NumberLiteral("1", LineCol.SYNTHETIC),
                                 new NumberLiteral("2", LineCol.SYNTHETIC)
                         ), LineCol.SYNTHETIC));
@@ -306,11 +306,11 @@ public class TestParserMix {
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
-                LinkedHashMap<Expression, Expression> map1 = new LinkedHashMap<>();
+                LinkedHashMap<Expression, Expression> map1 = new LinkedHashMap<Expression, Expression>();
                 map1.put(new StringLiteral("'a'", LineCol.SYNTHETIC), new AST.Access(null, "b", LineCol.SYNTHETIC));
-                LinkedHashMap<Expression, Expression> map2 = new LinkedHashMap<>();
+                LinkedHashMap<Expression, Expression> map2 = new LinkedHashMap<Expression, Expression>();
                 map2.put(new StringLiteral("'c'", LineCol.SYNTHETIC), new AST.Access(null, "d", LineCol.SYNTHETIC));
-                AST.ArrayExp arrayExp = new AST.ArrayExp(Arrays.asList(
+                AST.ArrayExp arrayExp = new AST.ArrayExp(Arrays.<Expression>asList(
                         new AST.MapExp(map1, LineCol.SYNTHETIC),
                         new AST.MapExp(map2, LineCol.SYNTHETIC)
                 ), LineCol.SYNTHETIC);
@@ -323,9 +323,9 @@ public class TestParserMix {
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
-                LinkedHashMap<Expression, Expression> map = new LinkedHashMap<>();
+                LinkedHashMap<Expression, Expression> map = new LinkedHashMap<Expression, Expression>();
                 map.put(new AST.Access(null, "a", LineCol.SYNTHETIC),
-                        new AST.ArrayExp(Arrays.asList(
+                        new AST.ArrayExp(Arrays.<Expression>asList(
                                 new NumberLiteral("1", LineCol.SYNTHETIC),
                                 new NumberLiteral("2", LineCol.SYNTHETIC)
                         ), LineCol.SYNTHETIC));
@@ -341,7 +341,7 @@ public class TestParserMix {
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
-                LinkedHashMap<Expression, Expression> map2 = new LinkedHashMap<>();
+                LinkedHashMap<Expression, Expression> map2 = new LinkedHashMap<Expression, Expression>();
                 map2.put(new StringLiteral("'c'", LineCol.SYNTHETIC), new AST.Access(null, "d", LineCol.SYNTHETIC));
                 AST.ArrayExp arrayExp = new AST.ArrayExp(Arrays.asList(
                         new AST.Access(null, "a", LineCol.SYNTHETIC),
@@ -356,7 +356,7 @@ public class TestParserMix {
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
-                VariableDef v = new VariableDef("i", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef v = new VariableDef("i", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 v.setType(new AST.Access(new AST.Access(null, "int", LineCol.SYNTHETIC), "[]", LineCol.SYNTHETIC));
                 assertEquals(v, statement);
         }
@@ -367,7 +367,7 @@ public class TestParserMix {
                 assertEquals(1, statements.size());
                 Statement statement = statements.get(0);
 
-                VariableDef v = new VariableDef("i", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef v = new VariableDef("i", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 v.setType(new AST.Access(new AST.Access(new AST.PackageRef("java::util", LineCol.SYNTHETIC), "List", LineCol.SYNTHETIC), "[]", LineCol.SYNTHETIC));
                 assertEquals(v, statement);
         }
@@ -392,7 +392,7 @@ public class TestParserMix {
 
                 assertEquals(
                         new AST.Assignment(
-                                new AST.Access(new AST.Index(new AST.Access(null, "a", LineCol.SYNTHETIC), Collections.singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)), LineCol.SYNTHETIC), null, LineCol.SYNTHETIC),
+                                new AST.Access(new AST.Index(new AST.Access(null, "a", LineCol.SYNTHETIC), Collections.<Expression>singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)), LineCol.SYNTHETIC), null, LineCol.SYNTHETIC),
                                 "=",
                                 new NumberLiteral("2", LineCol.SYNTHETIC)
                                 , LineCol.SYNTHETIC)
@@ -442,12 +442,12 @@ public class TestParserMix {
                         {
                                 put(new StringLiteral("'a'", null), new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
-                                        Collections.singletonList(new AST.Access(null, "b", null)),
+                                        Collections.<Expression>singletonList(new AST.Access(null, "b", null)),
                                         false, null
                                 ));
                                 put(new AST.Invocation(
                                         new AST.Access(new AST.Access(null, "a", null), "op", null),
-                                        Collections.singletonList(new AST.Access(null, "b", null)),
+                                        Collections.<Expression>singletonList(new AST.Access(null, "b", null)),
                                         false, null
                                 ), new StringLiteral("'b'", null));
                                 put(new StringLiteral("'a'", null), new AST.Access(new AST.Access(null, "a", null), "op", null));
@@ -472,7 +472,7 @@ public class TestParserMix {
                                                         "op",
                                                         null
                                                 ),
-                                                Collections.singletonList(
+                                                Collections.<Expression>singletonList(
                                                         new TwoVariableOperation(
                                                                 "+",
                                                                 new AST.Access(
@@ -489,7 +489,7 @@ public class TestParserMix {
                                         "op",
                                         null
                                 ),
-                                Collections.singletonList(new NumberLiteral("2", null)),
+                                Collections.<Expression>singletonList(new NumberLiteral("2", null)),
                                 false, null
                         ),
                         "op",
@@ -513,7 +513,7 @@ public class TestParserMix {
                                         put(new StringLiteral("'USER'", LineCol.SYNTHETIC),
                                                 new AST.Index(
                                                         new AST.Access(null, "session", LineCol.SYNTHETIC),
-                                                        Collections.singletonList(
+                                                        Collections.<Expression>singletonList(
                                                                 new StringLiteral("'USER'", LineCol.SYNTHETIC)
                                                         ), LineCol.SYNTHETIC
                                                 ));
@@ -533,17 +533,17 @@ public class TestParserMix {
                 );
                 assertEquals(Arrays.asList(
                         new AST.Invocation(new AST.Access(null, "a", LineCol.SYNTHETIC),
-                                Collections.singletonList(
+                                Collections.<Expression>singletonList(
                                         new AST.Lambda(
-                                                Collections.singletonList(new VariableDef("it", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)),
-                                                Collections.singletonList(new AST.Access(null, "b", LineCol.SYNTHETIC)), LineCol.SYNTHETIC
+                                                Collections.singletonList(new VariableDef("it", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC)),
+                                                Collections.<Statement>singletonList(new AST.Access(null, "b", LineCol.SYNTHETIC)), LineCol.SYNTHETIC
                                         )
                                 ), false, LineCol.SYNTHETIC),
                         new AST.Invocation(new AST.Access(null, "c", LineCol.SYNTHETIC),
-                                Collections.singletonList(
+                                Collections.<Expression>singletonList(
                                         new AST.Lambda(
-                                                Collections.singletonList(new VariableDef("it", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC)),
-                                                Collections.singletonList(new AST.Access(null, "d", LineCol.SYNTHETIC)), LineCol.SYNTHETIC
+                                                Collections.singletonList(new VariableDef("it", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC)),
+                                                Collections.<Statement>singletonList(new AST.Access(null, "d", LineCol.SYNTHETIC)), LineCol.SYNTHETIC
                                         )
                                 ), false, LineCol.SYNTHETIC)
                 ), list);

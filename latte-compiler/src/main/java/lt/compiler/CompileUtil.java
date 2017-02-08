@@ -73,14 +73,14 @@ public class CompileUtil {
                 ) && str.length() > 1;
         }
 
-        private static Set<String> keys = new HashSet<>(Arrays.asList(
+        private static Set<String> keys = new HashSet<String>(Arrays.asList(
                 "is", "not", "bool", "yes", "no", "type", "as",
                 "in", "elseif", "package", "import",
                 "break", "continue", "return", "fun", "require",
                 "new", "object", "implicit", "match", "case"
         ));
 
-        private static Set<String> javaKeys = new HashSet<>(Arrays.asList(
+        private static Set<String> javaKeys = new HashSet<String>(Arrays.asList(
                 "abstract", "assert", "boolean", "break", "byte", "case",
                 "catch", "char", "class", "const", "continue", "default",
                 "do", "double", "else", "enum", "extends", "final", "finally",
@@ -172,13 +172,13 @@ public class CompileUtil {
                 return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '$' || c == '_';
         }
 
-        private static Set<String> modifiers = new HashSet<>(Arrays.asList(
+        private static Set<String> modifiers = new HashSet<String>(Arrays.asList(
                 "public", "protected", "private", "internal",
                 "abstract", "val", "native", "synchronized", "transient", "volatile", "strictfp",
                 "data", "var", "def", "nonnull", "nonempty", "implicit"
         ));
 
-        private static Set<String> accessModifiers = new HashSet<>(Arrays.asList(
+        private static Set<String> accessModifiers = new HashSet<String>(Arrays.asList(
                 "public", "protected", "private", "internal"
         ));
 
@@ -216,43 +216,42 @@ public class CompileUtil {
         }
 
         public static Modifier.Available getModifierFromString(String str) {
-                switch (str) {
-                        case "public":
-                                return Modifier.Available.PUBLIC;
-                        case "private":
-                                return Modifier.Available.PRIVATE;
-                        case "protected":
-                                return Modifier.Available.PROTECTED;
-                        case "internal":
-                                return Modifier.Available.PKG;
-                        case "abstract":
-                                return Modifier.Available.ABSTRACT;
-                        case "val":
-                                return Modifier.Available.VAL;
-                        case "native":
-                                return Modifier.Available.NATIVE;
-                        case "synchronized":
-                                return Modifier.Available.SYNCHRONIZED;
-                        case "transient":
-                                return Modifier.Available.TRANSIENT;
-                        case "volatile":
-                                return Modifier.Available.VOLATILE;
-                        case "strictfp":
-                                return Modifier.Available.STRICTFP;
-                        case "data":
-                                return Modifier.Available.DATA;
-                        case "var":
-                                return Modifier.Available.VAR;
-                        case "def":
-                                return Modifier.Available.DEF;
-                        case "nonnull":
-                                return Modifier.Available.NONNULL;
-                        case "nonempty":
-                                return Modifier.Available.NONEMPTY;
-                        case "implicit":
-                                return Modifier.Available.IMPLICIT;
-                        default:
-                                throw new LtBug("invalid modifier " + str);
+                if (str.equals("public")) {
+                        return Modifier.Available.PUBLIC;
+                } else if (str.equals("private")) {
+                        return Modifier.Available.PRIVATE;
+                } else if (str.equals("protected")) {
+                        return Modifier.Available.PROTECTED;
+                } else if (str.equals("internal")) {
+                        return Modifier.Available.PKG;
+                } else if (str.equals("abstract")) {
+                        return Modifier.Available.ABSTRACT;
+                } else if (str.equals("val")) {
+                        return Modifier.Available.VAL;
+                } else if (str.equals("native")) {
+                        return Modifier.Available.NATIVE;
+                } else if (str.equals("synchronized")) {
+                        return Modifier.Available.SYNCHRONIZED;
+                } else if (str.equals("transient")) {
+                        return Modifier.Available.TRANSIENT;
+                } else if (str.equals("volatile")) {
+                        return Modifier.Available.VOLATILE;
+                } else if (str.equals("strictfp")) {
+                        return Modifier.Available.STRICTFP;
+                } else if (str.equals("data")) {
+                        return Modifier.Available.DATA;
+                } else if (str.equals("var")) {
+                        return Modifier.Available.VAR;
+                } else if (str.equals("def")) {
+                        return Modifier.Available.DEF;
+                } else if (str.equals("nonnull")) {
+                        return Modifier.Available.NONNULL;
+                } else if (str.equals("nonempty")) {
+                        return Modifier.Available.NONEMPTY;
+                } else if (str.equals("implicit")) {
+                        return Modifier.Available.IMPLICIT;
+                } else {
+                        throw new LtBug("invalid modifier " + str);
                 }
         }
 
@@ -372,7 +371,7 @@ public class CompileUtil {
                 return twoVarOperators.contains(str);
         }
 
-        private static Set<String> oneVarOperatorsPost = new HashSet<>(Arrays.asList(
+        private static Set<String> oneVarOperatorsPost = new HashSet<String>(Arrays.asList(
                 "++", "--"
         ));
 
@@ -380,11 +379,11 @@ public class CompileUtil {
                 return oneVarOperatorsPost.contains(str);
         }
 
-        private static Set<String> oneVarOperatorsPreWithoutCheckingExps = new HashSet<>(Arrays.asList(
+        private static Set<String> oneVarOperatorsPreWithoutCheckingExps = new HashSet<String>(Arrays.asList(
                 "!", "~"
         ));
 
-        private static Set<String> oneVarOperatorsPreMustCheckExps = new HashSet<>(Arrays.asList(
+        private static Set<String> oneVarOperatorsPreMustCheckExps = new HashSet<String>(Arrays.asList(
                 "++", "--", "!", "~", "+", "-"
         ));
 
@@ -540,7 +539,7 @@ public class CompileUtil {
                 return false;
         }
 
-        private static Set<String> primitives = new HashSet<>(Arrays.asList(
+        private static Set<String> primitives = new HashSet<String>(Arrays.asList(
                 "int", "double", "float", "short", "long", "byte", "char", "bool"
         ));
 
@@ -550,7 +549,7 @@ public class CompileUtil {
 
         static {
                 // 2 var op
-                twoVarOperators = new HashSet<>();
+                twoVarOperators = new HashSet<String>();
                 for (String[] sArr : twoVar_priority) {
                         Collections.addAll(twoVarOperators, sArr);
                 }

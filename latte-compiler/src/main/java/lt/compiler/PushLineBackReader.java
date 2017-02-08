@@ -10,7 +10,7 @@ import java.util.LinkedList;
  */
 public class PushLineBackReader extends Reader {
         private final BufferedReader reader;
-        private final LinkedList<String> lines = new LinkedList<>();
+        private final LinkedList<String> lines = new LinkedList<String>();
 
         public PushLineBackReader(Reader reader) {
                 if (reader instanceof BufferedReader) {

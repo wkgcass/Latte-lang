@@ -34,8 +34,8 @@ import java.util.List;
  */
 public class SMethodDef extends SInvokable {
         private String name;
-        private final List<SMethodDef> overRide = new ArrayList<>();
-        private final List<SMethodDef> overridden = new ArrayList<>();
+        private final List<SMethodDef> overRide = new ArrayList<SMethodDef>();
+        private final List<SMethodDef> overridden = new ArrayList<SMethodDef>();
 
         public SMethodDef(LineCol lineCol) {
                 super(lineCol);

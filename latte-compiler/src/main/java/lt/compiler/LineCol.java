@@ -36,7 +36,7 @@ public class LineCol implements Serializable {
         public final int line;
         public final int column;
         public int length;
-        public final Map<String, String> useDefine = new LinkedHashMap<>();
+        public final Map<String, String> useDefine = new LinkedHashMap<String, String>();
 
         /**
          * construct an LineCol that represents (filename, line, column and whether uses define replacement) of a Token

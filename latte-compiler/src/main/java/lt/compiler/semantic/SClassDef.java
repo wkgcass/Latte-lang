@@ -38,11 +38,11 @@ public class SClassDef extends SRefTypeDef {
         public static final int NORMAL = 0;
 
         private final int type;
-        private final List<SConstructorDef> constructors = new ArrayList<>();
+        private final List<SConstructorDef> constructors = new ArrayList<SConstructorDef>();
         private SClassDef parent;
-        private final List<SInterfaceDef> superInterfaces = new ArrayList<>();
-        private final List<Instruction> staticStatements = new ArrayList<>();
-        private final List<ExceptionTable> staticExceptionTable = new ArrayList<>();
+        private final List<SInterfaceDef> superInterfaces = new ArrayList<SInterfaceDef>();
+        private final List<Instruction> staticStatements = new ArrayList<Instruction>();
+        private final List<ExceptionTable> staticExceptionTable = new ArrayList<ExceptionTable>();
         private boolean isDataClass;
 
         public SClassDef(int type, LineCol lineCol) {

@@ -26,12 +26,14 @@ package lt.generator;
 
 import lt.compiler.*;
 import lt.compiler.semantic.builtin.StringConstantValue;
+import lt.compiler.syntactic.Statement;
 import lt.lang.js;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -44,7 +46,7 @@ public class TestJsSupport {
                 IndentScanner scanner = new IndentScanner("test-js.ltjs", new StringReader(source), new Properties(), err);
                 Parser parser = new Parser(scanner.scan(), err);
                 js js = new js();
-                js.init(parser.parse(), new SemanticProcessor(Collections.emptyMap(), ClassLoader.getSystemClassLoader(), err), null, null, err);
+                js.init(parser.parse(), new SemanticProcessor(Collections.<String, List<Statement>>emptyMap(), ClassLoader.getSystemClassLoader(), err), null, null, err);
                 return ((StringConstantValue) js.generate()).getStr();
         }
 

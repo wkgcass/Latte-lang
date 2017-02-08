@@ -46,8 +46,8 @@ public class SemanticScope {
 
         public final SemanticScope parent;
 
-        private final Map<String, LeftValue> leftValueMap = new LinkedHashMap<>();
-        private final Map<String, MethodRecorder> innerMethodMap = new HashMap<>();
+        private final Map<String, LeftValue> leftValueMap = new LinkedHashMap<String, LeftValue>();
+        private final Map<String, MethodRecorder> innerMethodMap = new HashMap<String, MethodRecorder>();
 
         private final STypeDef sTypeDef;
 
@@ -78,9 +78,13 @@ public class SemanticScope {
                 if (parent != null) {
                         map = parent.getLocalVariables();
                 } else {
-                        map = new LinkedHashMap<>();
+                        map = new LinkedHashMap<String, STypeDef>();
                 }
-                leftValueMap.forEach((k, v) -> map.put(k, v.type()));
+                for (Map.Entry<String, LeftValue> entry : leftValueMap.entrySet()) {
+                        String k = entry.getKey();
+                        LeftValue v = entry.getValue();
+                        map.put(k, v.type());
+                }
                 return map;
         }
 
@@ -102,7 +106,7 @@ public class SemanticScope {
         public List<LeftValue> getLeftValues(int count, boolean lambdaParam) {
                 List<LeftValue> list;
                 if (parent != null) list = parent.getLeftValues(count, lambdaParam);
-                else list = new ArrayList<>();
+                else list = new ArrayList<LeftValue>();
                 Iterator<Map.Entry<String, LeftValue>> it = leftValueMap.entrySet().iterator();
                 while (list.size() != count && it.hasNext()) {
                         Map.Entry<String, LeftValue> entry = it.next();
@@ -123,7 +127,7 @@ public class SemanticScope {
         }
 
         public Map<String, MethodRecorder> getInnerMethods() {
-                Map<String, MethodRecorder> recorders = new HashMap<>();
+                Map<String, MethodRecorder> recorders = new HashMap<String, MethodRecorder>();
                 SemanticScope scope = this;
                 while (scope != null) {
                         recorders.putAll(scope.innerMethodMap);

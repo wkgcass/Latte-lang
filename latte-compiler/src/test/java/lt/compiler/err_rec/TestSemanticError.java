@@ -17,7 +17,7 @@ public class TestSemanticError {
         private Set<STypeDef> get(String code) throws IOException, SyntaxException {
                 ErrorManager err = new ErrorManager(true);
                 IndentScanner scanner = new IndentScanner("test.lt", new StringReader(code), new Properties(), err);
-                Parser parser = new Parser(scanner.scan(), err);
+                final Parser parser = new Parser(scanner.scan(), err);
                 SemanticProcessor semanticProcessor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                         put("test.lt", parser.parse());
                 }}, Thread.currentThread().getContextClassLoader(), err);

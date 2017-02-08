@@ -35,7 +35,7 @@ public class ObjectDef implements Definition {
                 this.superWithoutInvocation = superWithoutInvocation;
                 this.modifiers = modifiers;
                 this.annos = annos;
-                this.statements = new ArrayList<>(statements);
+                this.statements = new ArrayList<Statement>(statements);
                 this.lineCol = lineCol;
         }
 

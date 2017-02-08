@@ -91,17 +91,17 @@
                 </executions>
             </plugin>
             <!-- source -->
-            <!-- 1.8 start -->
+            <!-- 1.6 start -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>1.6</source>
+                    <target>1.6</target>
                 </configuration>
             </plugin>
-            <!-- 1.8 end -->
+            <!-- 1.6 end -->
             <!-- oss -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

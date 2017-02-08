@@ -57,8 +57,8 @@ public class VariableDef implements Definition, Expression {
 
                 this.name = name;
                 this.lineCol = lineCol;
-                this.modifiers = new HashSet<>(modifiers);
-                this.annos = new HashSet<>(annos);
+                this.modifiers = new HashSet<Modifier>(modifiers);
+                this.annos = new HashSet<AST.Anno>(annos);
         }
 
         public String getName() {
@@ -120,6 +120,7 @@ public class VariableDef implements Definition, Expression {
                 if (type != null ? !type.equals(that.type) : that.type != null) return false;
                 if (init != null ? !init.equals(that.init) : that.init != null) return false;
                 if (!modifiers.equals(that.modifiers)) return false;
+                //
                 return annos.equals(that.annos);
         }
 

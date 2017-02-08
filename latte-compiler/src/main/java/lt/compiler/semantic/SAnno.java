@@ -32,8 +32,8 @@ import java.util.Map;
  */
 public class SAnno implements Value {
         private SAnnoDef annoDef;
-        private final Map<SAnnoField, Value> valueMap = new LinkedHashMap<>();
-        private final Map<String, Object> alreadyCompiledAnnotationValueMap = new LinkedHashMap<>();
+        private final Map<SAnnoField, Value> valueMap = new LinkedHashMap<SAnnoField, Value>();
+        private final Map<String, Object> alreadyCompiledAnnotationValueMap = new LinkedHashMap<String, Object>();
         private SAnnotationPresentable present;
 
         public void setAnnoDef(SAnnoDef annoDef) {

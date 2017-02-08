@@ -6,7 +6,6 @@ import lt.compiler.syntactic.UnknownTokenException;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * the base scanner.
@@ -25,11 +24,11 @@ public abstract class AbstractScanner implements Scanner {
          *                            +-[a]-[+]-[b]
          * </pre>
          */
-        public final Set<String> LAYER = new HashSet<>(Collections.singletonList("->"));
+        public final Set<String> LAYER = new HashSet<String>(Collections.singletonList("->"));
         /**
          * the input should be split when meets these tokens
          */
-        public final Set<String> SPLIT_X = new HashSet<>(Arrays.asList(
+        public final Set<String> SPLIT_X = new HashSet<String>(Arrays.asList(
                 ".", // class positioning or method access
                 ":", // type specification or generic extends
                 "::", // package::package
@@ -48,7 +47,7 @@ public abstract class AbstractScanner implements Scanner {
                 "#", // generator
                 "<-" // pattern matching destructing
         ));
-        public final Set<String> SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN = new HashSet<>(Arrays.asList(
+        public final Set<String> SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN = new HashSet<String>(Arrays.asList(
                 "+", "-", "*", "/", "%",
                 "<<", ">>", ">>>", // shift
                 "&", "^", "|", "~" // bit logic
@@ -57,7 +56,7 @@ public abstract class AbstractScanner implements Scanner {
          * symbols that let the scanner know the following input should be scanned as a string<br>
          * a string starts with one of these symbols and ends with the same symbol.
          */
-        public final Set<String> STRING = new HashSet<>(Arrays.asList("\"", "'", "`"));
+        public final Set<String> STRING = new HashSet<String>(Arrays.asList("\"", "'", "`"));
         /**
          * the escape character.
          */
@@ -69,11 +68,11 @@ public abstract class AbstractScanner implements Scanner {
          * </pre>
          * the spaces split the input, but they won't be recorded.
          */
-        public final Set<String> NO_RECORD = new HashSet<>(Collections.singletonList(" "));
+        public final Set<String> NO_RECORD = new HashSet<String>(Collections.singletonList(" "));
         /**
          * the str is considered as ending text. Append an EndingNode to the token tree
          */
-        public static Set<String> ENDING = new HashSet<>(Arrays.asList(",", ";"));
+        public static Set<String> ENDING = new HashSet<String>(Arrays.asList(",", ";"));
         /**
          * comment, strings after the token are ignored
          */
@@ -98,7 +97,7 @@ public abstract class AbstractScanner implements Scanner {
          *                --['name']-[:]-['cass']
          * </pre>
          */
-        public final Map<String, String> PAIR = new HashMap<>();
+        public final Map<String, String> PAIR = new HashMap<String, String>();
         /**
          * the input should be split when meets these tokens
          */
@@ -111,9 +110,11 @@ public abstract class AbstractScanner implements Scanner {
 
                 SPLIT_X.addAll(NO_RECORD);
                 SPLIT_X.addAll(SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN);
-                SPLIT_X.addAll(SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN.stream().map(s -> s + "=").collect(Collectors.toList()));
+                for (String s : SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN) {
+                        SPLIT_X.add(s + "=");
+                }
 
-                Set<String> set = new HashSet<>();
+                Set<String> set = new HashSet<String>();
                 set.addAll(LAYER);
                 set.addAll(SPLIT_X);
                 set.addAll(ENDING);
@@ -124,7 +125,13 @@ public abstract class AbstractScanner implements Scanner {
                 set.addAll(PAIR.values());
 
                 // the longest string is considered first
-                SPLIT = set.stream().sorted((a, b) -> b.length() - a.length()).collect(Collectors.toList());
+                SPLIT = new ArrayList<String>(set);
+                Collections.sort(SPLIT, new Comparator<String>() {
+                        @Override
+                        public int compare(String a, String b) {
+                                return b.length() - a.length();
+                        }
+                });
                 SPLIT.addAll(0, STRING);
         }
 

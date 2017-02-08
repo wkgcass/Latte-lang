@@ -47,10 +47,10 @@ public class InterfaceDef implements Definition {
         public InterfaceDef(String name, Set<Modifier> modifiers, List<AST.Access> superInterfaces, Set<AST.Anno> annos, List<Statement> statements, LineCol lineCol) {
                 this.name = name;
                 this.lineCol = lineCol;
-                this.modifiers = new HashSet<>(modifiers);
+                this.modifiers = new HashSet<Modifier>(modifiers);
                 this.superInterfaces = superInterfaces;
                 this.statements = statements;
-                this.annos = new HashSet<>(annos);
+                this.annos = new HashSet<AST.Anno>(annos);
         }
 
         @Override
@@ -90,6 +90,7 @@ public class InterfaceDef implements Definition {
                 if (!modifiers.equals(that.modifiers)) return false;
                 if (!superInterfaces.equals(that.superInterfaces)) return false;
                 if (!statements.equals(that.statements)) return false;
+                //
                 return annos.equals(that.annos);
         }
 

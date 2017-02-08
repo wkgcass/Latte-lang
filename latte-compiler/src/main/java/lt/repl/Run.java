@@ -53,7 +53,7 @@ public class Run {
          * @throws IllegalArgumentException the list contain elements that are not URL nor String
          */
         public void setClassPath(List<?> classPath) throws MalformedURLException {
-                List<URL> urls = new ArrayList<>();
+                List<URL> urls = new ArrayList<URL>();
                 for (Object o : classPath) {
                         if (o instanceof URL) {
                                 urls.add((URL) o);
@@ -116,6 +116,6 @@ public class Run {
          * @throws Throwable exception
          */
         public void exec() throws Throwable {
-                exec(Collections.emptyList());
+                exec(Collections.<String>emptyList());
         }
 }

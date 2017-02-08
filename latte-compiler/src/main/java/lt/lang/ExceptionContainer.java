@@ -1,14 +1,15 @@
 package lt.lang;
 
+import lt.lang.function.Function1;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * exception container
  */
 public class ExceptionContainer {
-        private List<String> exceptionMsgList = new ArrayList<>();
+        private List<String> exceptionMsgList = new ArrayList<String>();
 
         public void add(String msg) {
                 exceptionMsgList.add(msg);
@@ -21,7 +22,7 @@ public class ExceptionContainer {
          * @param f   the function accepts a string of message and return an exception
          * @throws Throwable throwable
          */
-        public void throwIfNotEmpty(String msg, Function<String, Throwable> f) throws Throwable {
+        public void throwIfNotEmpty(String msg, Function1<Throwable, String> f) throws Throwable {
                 if (exceptionMsgList.isEmpty()) return;
 
                 StringBuilder sb = new StringBuilder();

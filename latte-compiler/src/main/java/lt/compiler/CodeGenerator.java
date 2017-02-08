@@ -29,7 +29,6 @@ import lt.compiler.semantic.builtin.*;
 import lt.dependencies.asm.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The code generator, generate byte code from STypeDef.
@@ -139,13 +138,21 @@ public class CodeGenerator {
                 return desc.toString();
         }
 
+        private String methodDescWithParameters(STypeDef returnType, List<SParameter> parameters) {
+                List<STypeDef> types = new ArrayList<STypeDef>();
+                for (SParameter p : parameters) {
+                        types.add(p.type());
+                }
+                return methodDesc(returnType, types);
+        }
+
         /**
          * start the generating process.
          *
          * @return Map&lt;FileName, byte[]&gt;
          */
         public Map<String, byte[]> generate() {
-                Map<String, byte[]> result = new HashMap<>();
+                Map<String, byte[]> result = new HashMap<String, byte[]>();
                 for (STypeDef type : types) {
                         ClassWriter classWriter = new SClassWriter(ClassWriter.COMPUTE_FRAMES, typeDefMap);
 
@@ -185,7 +192,7 @@ public class CodeGenerator {
                                 interfaces[i] = typeToInternalName(superInterfaces.get(i));
                         }
 
-                        classWriter.visit(Opcodes.V1_8, acc(modifiers) | (type instanceof SClassDef ? 0 : Opcodes.ACC_INTERFACE),
+                        classWriter.visit(Opcodes.V1_6, acc(modifiers) | (type instanceof SClassDef ? 0 : Opcodes.ACC_INTERFACE),
                                 typeToInternalName(type), null, superClass == null ? "java/lang/Object" : typeToInternalName(superClass), interfaces);
 
                         // annotations
@@ -237,9 +244,9 @@ public class CodeGenerator {
                         Opcodes.INVOKESPECIAL,
                         typeToInternalName(aNew.type()),
                         "<init>",
-                        methodDesc(
+                        methodDescWithParameters(
                                 VoidType.get(),
-                                aNew.constructor().getParameters().stream().map(SParameter::type).collect(Collectors.toList())),
+                                aNew.constructor().getParameters()),
                         false);
                 info.pop(1 + aNew.args().size());
 
@@ -415,9 +422,9 @@ public class CodeGenerator {
                         Opcodes.INVOKESTATIC,
                         typeToInternalName(castToBool.declaringType()),
                         castToBool.name(),
-                        methodDesc(
+                        methodDescWithParameters(
                                 castToBool.getReturnType(),
-                                castToBool.getParameters().stream().map(SParameter::type).collect(Collectors.toList())),
+                                castToBool.getParameters()),
                         false);
                 info.pop(1);
                 info.push(CodeInfo.Size._1);
@@ -753,7 +760,6 @@ public class CodeGenerator {
          * @see lt.compiler.semantic.Ins.ANewArray
          * @see lt.compiler.semantic.Ins.NewList
          * @see lt.compiler.semantic.Ins.NewMap
-         * @see MethodHandleValue
          * @see lt.compiler.semantic.Ins.CheckCast
          */
         private void buildValueAccess(MethodVisitor methodVisitor, CodeInfo info, Value value, boolean requireValue) {
@@ -866,9 +872,6 @@ public class CodeGenerator {
                         buildNewList(methodVisitor, info, (Ins.NewList) value);
                 } else if (value instanceof Ins.NewMap) {
                         buildNewMap(methodVisitor, info, (Ins.NewMap) value);
-                } else if (value instanceof MethodHandleValue) {
-                        methodVisitor.visitLdcInsn(getHandle((MethodHandleValue) value));
-                        info.push(CodeInfo.Size._1);
                 } else if (value instanceof Ins.CheckCast) {
                         buildValueAccess(methodVisitor, info, ((Ins.CheckCast) value).theValueToCheck(), true);
 
@@ -950,7 +953,6 @@ public class CodeGenerator {
          * @see lt.compiler.semantic.Ins.InvokeVirtual
          * @see lt.compiler.semantic.Ins.InvokeStatic
          * @see lt.compiler.semantic.Ins.InvokeInterface
-         * @see lt.compiler.semantic.Ins.InvokeDynamic
          */
         private void buildInvoke(MethodVisitor methodVisitor, CodeInfo info, Ins.Invoke invoke, boolean requireValue) {
                 Label label = new Label();
@@ -971,11 +973,12 @@ public class CodeGenerator {
                         String desc;
                         if (invokable instanceof SMethodDef) {
                                 name = ((SMethodDef) invokable).name();
-                                desc = methodDesc(invokable.getReturnType(),
-                                        invokable.getParameters().stream().map(SParameter::type).collect(Collectors.toList()));
+                                desc = methodDescWithParameters(
+                                        invokable.getReturnType(),
+                                        invokable.getParameters());
                         } else if (invokable instanceof SConstructorDef) {
                                 name = "<init>";
-                                desc = methodDesc(VoidType.get(), invokable.getParameters().stream().map(SParameter::type).collect(Collectors.toList()));
+                                desc = methodDescWithParameters(VoidType.get(), invokable.getParameters());
                         } else throw new LtBug("cannot invoke special on " + invokable);
 
                         String owner = typeToInternalName(invokable.declaringType());
@@ -1011,8 +1014,9 @@ public class CodeGenerator {
                         String desc;
                         if (invokable instanceof SMethodDef) {
                                 name = ((SMethodDef) invokable).name();
-                                desc = methodDesc(invokable.getReturnType(),
-                                        invokable.getParameters().stream().map(SParameter::type).collect(Collectors.toList()));
+                                desc = methodDescWithParameters(
+                                        invokable.getReturnType(),
+                                        invokable.getParameters());
                         } else throw new LtBug("cannot invoke virtual on " + invokable);
 
                         String owner = typeToInternalName(invokable.declaringType());
@@ -1045,8 +1049,9 @@ public class CodeGenerator {
                         String desc;
                         if (invokable instanceof SMethodDef) {
                                 name = ((SMethodDef) invokable).name();
-                                desc = methodDesc(invokable.getReturnType(),
-                                        invokable.getParameters().stream().map(SParameter::type).collect(Collectors.toList()));
+                                desc = methodDescWithParameters(
+                                        invokable.getReturnType(),
+                                        invokable.getParameters());
                         } else throw new LtBug("cannot invoke static on " + invokable);
 
                         String owner = typeToInternalName(invokable.declaringType());
@@ -1082,8 +1087,9 @@ public class CodeGenerator {
                         String desc;
                         if (invokable instanceof SMethodDef) {
                                 name = ((SMethodDef) invokable).name();
-                                desc = methodDesc(invokable.getReturnType(),
-                                        invokable.getParameters().stream().map(SParameter::type).collect(Collectors.toList()));
+                                desc = methodDescWithParameters(
+                                        invokable.getReturnType(),
+                                        invokable.getParameters());
                         } else throw new LtBug("cannot invoke interface on " + invokable);
 
                         String owner = typeToInternalName(invokable.declaringType());
@@ -1095,40 +1101,6 @@ public class CodeGenerator {
                                 owner,
                                 name, desc, true);
                         info.pop(1 + invoke.arguments().size());
-                        if (!invoke.invokable().getReturnType().equals(VoidType.get())) {
-                                STypeDef typeDef = invoke.invokable().getReturnType();
-                                if (typeDef.equals(DoubleTypeDef.get()) || typeDef.equals(LongTypeDef.get()))
-                                        info.push(CodeInfo.Size._2);
-                                else info.push(CodeInfo.Size._1);
-                        }
-
-                } else if (invoke instanceof Ins.InvokeDynamic) {
-                        // push parameters
-                        for (Value v : invoke.arguments()) {
-                                buildValueAccess(methodVisitor, info, v, true);
-                        }
-
-                        // invoke dynamic
-                        Ins.InvokeDynamic invokeDynamic = (Ins.InvokeDynamic) invoke;
-                        SInvokable bootstrapMethod = invokeDynamic.invokable();
-
-                        methodVisitor.visitLabel(label);
-
-                        methodVisitor.visitInvokeDynamicInsn(
-                                invokeDynamic.methodName(),
-                                methodDesc(
-                                        invokeDynamic.returnType(),
-                                        invokeDynamic.arguments().stream().map(Value::type).collect(Collectors.toList())),
-                                new Handle(
-                                        invokeDynamic.indyType(), // tag
-                                        typeToInternalName(bootstrapMethod.declaringType()), // bootstrap method owner
-                                        ((SMethodDef) bootstrapMethod).name(), // bootstrap method name
-                                        methodDesc( // desc
-                                                bootstrapMethod.getReturnType(),
-                                                bootstrapMethod.getParameters().stream().map(SParameter::type).collect(Collectors.toList())),
-                                        false),
-                                getIndyArgs(invokeDynamic));
-                        info.pop(invoke.arguments().size());
                         if (!invoke.invokable().getReturnType().equals(VoidType.get())) {
                                 STypeDef typeDef = invoke.invokable().getReturnType();
                                 if (typeDef.equals(DoubleTypeDef.get()) || typeDef.equals(LongTypeDef.get()))
@@ -1152,53 +1124,6 @@ public class CodeGenerator {
                                 false);
                         info.push(CodeInfo.Size._1);
                 }
-        }
-
-        /**
-         * get asm {@link Handle} object from {@link MethodHandleValue}.
-         *
-         * @param handle {@link MethodHandleValue}
-         * @return {@link Handle}
-         */
-        private Handle getHandle(MethodHandleValue handle) {
-                return new Handle(
-                        handle.mode(),
-                        typeToInternalName(handle.method().declaringType()),
-                        handle.method().name(),
-                        methodDesc(
-                                handle.method().getReturnType(),
-                                handle.method().getParameters().stream().map(SParameter::type).collect(Collectors.toList())),
-                        handle.method().declaringType() instanceof SInterfaceDef
-                );
-        }
-
-        /**
-         * get invoke dynamic arguments (bootstrap arguments).
-         *
-         * @param invokeDynamic invoke dynamic
-         * @return Object array containing required objects
-         */
-        private Object[] getIndyArgs(Ins.InvokeDynamic invokeDynamic) {
-                Object[] args = new Object[invokeDynamic.indyArgs().size()];
-                for (int i = 0; i < args.length; ++i) {
-                        Value v = invokeDynamic.indyArgs().get(i);
-                        Object o;
-                        if (v instanceof MethodHandleValue) {
-                                MethodHandleValue handle = (MethodHandleValue) v;
-                                o = getHandle(handle);
-                        } else if (v instanceof MethodTypeValue) {
-                                Type[] types = new Type[((MethodTypeValue) v).parameters().size()];
-                                for (int j = 0; j < types.length; ++j) {
-                                        Type t = Type.getType(typeToDesc(((MethodTypeValue) v).parameters().get(j)));
-                                        types[j] = t;
-                                }
-                                o = Type.getMethodType(
-                                        Type.getType(typeToDesc(((MethodTypeValue) v).returnType())),
-                                        types);
-                        } else throw new LtBug("unsupported indy arg type " + v.type());
-                        args[i] = o;
-                }
-                return args;
         }
 
         /**
@@ -1649,9 +1574,9 @@ public class CodeGenerator {
                         MethodVisitor methodVisitor = classWriter.visitMethod(
                                 acc(cons.modifiers()),
                                 "<init>",
-                                methodDesc(
+                                methodDescWithParameters(
                                         VoidType.get(),
-                                        cons.getParameters().stream().map(SParameter::type).collect(Collectors.toList())),
+                                        cons.getParameters()),
                                 null, null);
 
                         // annotations
@@ -1703,9 +1628,9 @@ public class CodeGenerator {
                         MethodVisitor methodVisitor = classWriter.visitMethod(
                                 acc(method.modifiers()),
                                 method.name(),
-                                methodDesc(
+                                methodDescWithParameters(
                                         method.getReturnType(),
-                                        method.getParameters().stream().map(SParameter::type).collect(Collectors.toList())),
+                                        method.getParameters()),
                                 null, null);
 
                         // annotations
@@ -1831,7 +1756,7 @@ public class CodeGenerator {
 
         /**
          * transform {@link Value} into asm Object.<br>
-         * the Value can only be {@link PrimitiveValue}, {@link StringConstantValue}, {@link ClassValue}, {@link SArrayValue}
+         * the Value can only be {@link PrimitiveValue}, {@link StringConstantValue}, {link ClassValue}, {@link SArrayValue}
          *
          * @param value the value
          * @return parsed object
@@ -1854,49 +1779,49 @@ public class CodeGenerator {
                         if (primitiveType.equals(IntTypeDef.get())) {
                                 int[] arr = new int[length];
                                 for (int i = 0; i < length; ++i) {
-                                        arr[i] = (int) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
+                                        arr[i] = (Integer) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
                                 }
                                 return arr;
                         } else if (primitiveType.equals(LongTypeDef.get())) {
                                 long[] arr = new long[length];
                                 for (int i = 0; i < length; ++i) {
-                                        arr[i] = (long) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
+                                        arr[i] = (Long) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
                                 }
                                 return arr;
                         } else if (primitiveType.equals(CharTypeDef.get())) {
                                 char[] arr = new char[length];
                                 for (int i = 0; i < length; ++i) {
-                                        arr[i] = (char) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
+                                        arr[i] = (Character) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
                                 }
                                 return arr;
                         } else if (primitiveType.equals(ShortTypeDef.get())) {
                                 short[] arr = new short[length];
                                 for (int i = 0; i < length; ++i) {
-                                        arr[i] = (short) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
+                                        arr[i] = (Short) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
                                 }
                                 return arr;
                         } else if (primitiveType.equals(ByteTypeDef.get())) {
                                 byte[] arr = new byte[length];
                                 for (int i = 0; i < length; ++i) {
-                                        arr[i] = (byte) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
+                                        arr[i] = (Byte) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
                                 }
                                 return arr;
                         } else if (primitiveType.equals(BoolTypeDef.get())) {
                                 boolean[] arr = new boolean[length];
                                 for (int i = 0; i < length; ++i) {
-                                        arr[i] = (boolean) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
+                                        arr[i] = (Boolean) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
                                 }
                                 return arr;
                         } else if (primitiveType.equals(FloatTypeDef.get())) {
                                 float[] arr = new float[length];
                                 for (int i = 0; i < length; ++i) {
-                                        arr[i] = (float) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
+                                        arr[i] = (Float) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
                                 }
                                 return arr;
                         } else if (primitiveType.equals(DoubleTypeDef.get())) {
                                 double[] arr = new double[length];
                                 for (int i = 0; i < length; ++i) {
-                                        arr[i] = (double) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
+                                        arr[i] = (Double) parseValueIntoASMObject(((SArrayValue) value).values()[i]);
                                 }
                                 return arr;
                         } else throw new LtBug("unknown primitive type " + primitiveType);

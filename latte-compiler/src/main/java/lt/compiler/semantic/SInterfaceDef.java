@@ -27,16 +27,15 @@ package lt.compiler.semantic;
 import lt.compiler.LineCol;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * interface definition
  */
 public class SInterfaceDef extends SRefTypeDef {
-        private final List<SInterfaceDef> superInterfaces = new ArrayList<>();
+        private final List<SInterfaceDef> superInterfaces = new ArrayList<SInterfaceDef>();
 
-        private final List<Instruction> staticStatements = new ArrayList<>();
-        private final List<ExceptionTable> staticExceptionTable = new ArrayList<>();
+        private final List<Instruction> staticStatements = new ArrayList<Instruction>();
+        private final List<ExceptionTable> staticExceptionTable = new ArrayList<ExceptionTable>();
 
         public SInterfaceDef(LineCol lineCol) {
                 super(lineCol);
@@ -78,22 +77,26 @@ public class SInterfaceDef extends SRefTypeDef {
 
         public boolean isAssignableFrom(STypeDef cls) {
                 if (super.isAssignableFrom(cls)) return true;
-                Queue<SInterfaceDef> q = new ArrayDeque<>();
-                Set<SInterfaceDef> used = new HashSet<>();
+                Queue<SInterfaceDef> q = new ArrayDeque<SInterfaceDef>();
+                Set<SInterfaceDef> used = new HashSet<SInterfaceDef>();
                 if (cls instanceof SClassDef) {
                         SClassDef tmp = (SClassDef) cls;
                         while (tmp != null) {
-                                q.addAll(tmp.superInterfaces().stream().filter(used::add).collect(Collectors.toList()));
+                                for (SInterfaceDef it : tmp.superInterfaces()) {
+                                        if (used.add(it)) {
+                                                q.add(it);
+                                        }
+                                }
                                 tmp = tmp.parent();
                         }
                 } else if (cls instanceof SInterfaceDef) {
                         SInterfaceDef tmp = (SInterfaceDef) cls;
-                        q.addAll(tmp.superInterfaces().stream().collect(Collectors.toList()));
+                        q.addAll(tmp.superInterfaces());
                 }
                 while (!q.isEmpty()) {
                         SInterfaceDef i = q.remove();
                         if (isAssignableFrom(i)) return true;
-                        q.addAll(i.superInterfaces().stream().collect(Collectors.toList()));
+                        q.addAll(i.superInterfaces());
                 }
                 return false;
         }

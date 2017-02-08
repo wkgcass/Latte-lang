@@ -49,11 +49,11 @@ public class ClassDef implements Definition {
         public ClassDef(String name, Set<Modifier> modifiers, List<VariableDef> params, AST.Invocation superWithInvocation, List<AST.Access> superWithoutInvocation, Set<AST.Anno> annos, List<Statement> statements, LineCol lineCol) {
                 this.name = name;
                 this.lineCol = lineCol;
-                this.modifiers = new HashSet<>(modifiers);
+                this.modifiers = new HashSet<Modifier>(modifiers);
                 this.params = params;
                 this.superWithInvocation = superWithInvocation;
                 this.superWithoutInvocation = superWithoutInvocation;
-                this.annos = new HashSet<>(annos);
+                this.annos = new HashSet<AST.Anno>(annos);
                 this.statements = statements;
         }
 
@@ -113,6 +113,7 @@ public class ClassDef implements Definition {
                         return false;
                 if (!superWithoutInvocation.equals(classDef.superWithoutInvocation)) return false;
                 if (!annos.equals(classDef.annos)) return false;
+                //
                 return statements.equals(classDef.statements);
         }
 

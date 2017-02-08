@@ -36,7 +36,7 @@ import java.util.List;
 public class STypeDef implements SAnnotationPresentable {
         private String pkg;
         private String fullName;
-        private List<SAnno> annos = new ArrayList<>();
+        private List<SAnno> annos = new ArrayList<SAnno>();
         private final LineCol lineCol;
 
         public STypeDef(LineCol lineCol) {

@@ -29,10 +29,7 @@ import lt.compiler.syntactic.UnknownTokenException;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * scan text which is formed up by braces.<br>
@@ -56,7 +53,7 @@ public class BraceScanner extends AbstractScanner {
                 LAYER.remove("->");
                 SPLIT_X.add("->");
 
-                Set<String> set = new HashSet<>();
+                Set<String> set = new HashSet<String>();
                 set.addAll(LAYER);
                 set.addAll(SPLIT_X);
                 set.addAll(ENDING);
@@ -68,7 +65,14 @@ public class BraceScanner extends AbstractScanner {
 
                 SPLIT.clear();
                 // the longest string is considered first
-                SPLIT.addAll(set.stream().sorted((a, b) -> b.length() - a.length()).collect(Collectors.toList()));
+                List<String> tmpList = new ArrayList<String>(set);
+                Collections.sort(tmpList, new Comparator<String>() {
+                        @Override
+                        public int compare(String a, String b) {
+                                return b.length() - a.length();
+                        }
+                });
+                SPLIT.addAll(tmpList);
                 SPLIT.addAll(0, STRING);
         }
 

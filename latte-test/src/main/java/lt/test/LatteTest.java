@@ -19,7 +19,7 @@ public class LatteTest {
                         return Thread.currentThread().getContextClassLoader();
                 } catch (ClassNotFoundException e) {
                         Compiler compiler = new Compiler(Thread.currentThread().getContextClassLoader());
-                        Map<String, File> compileList = new HashMap<>();
+                        Map<String, File> compileList = new HashMap<String, File>();
                         for (File dir : dirs) {
                                 compileList.putAll(Utils.filesInDirectory(dir, Pattern.compile(".*\\.lt"), true));
                         }

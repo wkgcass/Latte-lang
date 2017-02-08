@@ -33,9 +33,9 @@ import java.util.List;
  * define a member
  */
 abstract public class SMember implements SAnnotationPresentable {
-        private final List<SModifier> modifiers = new ArrayList<>();
+        private final List<SModifier> modifiers = new ArrayList<SModifier>();
         private STypeDef declaringType;
-        private final List<SAnno> annos = new ArrayList<>();
+        private final List<SAnno> annos = new ArrayList<SAnno>();
         private LineCol lineCol;
 
         public SMember(LineCol lineCol) {

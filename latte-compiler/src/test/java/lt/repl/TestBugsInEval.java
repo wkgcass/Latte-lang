@@ -59,7 +59,7 @@ public class TestBugsInEval {
 
                 IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader(code), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(
                         map,
@@ -70,7 +70,7 @@ public class TestBugsInEval {
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
-                byte[] bs = list.get(clsName);
+                final byte[] bs = list.get(clsName);
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)

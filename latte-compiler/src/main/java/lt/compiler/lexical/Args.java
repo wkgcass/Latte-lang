@@ -47,11 +47,11 @@ public class Args {
         /**
          * element start nodes
          */
-        public Stack<ElementStartNode> startNodeStack = new Stack<>();
+        public Stack<ElementStartNode> startNodeStack = new Stack<ElementStartNode>();
         /**
          * pair stack
          */
-        public Stack<PairEntry> pairEntryStack = new Stack<>();
+        public Stack<PairEntry> pairEntryStack = new Stack<PairEntry>();
 
         /**
          * @return a new LineCol object containing current file, line, column and whether it uses define command
@@ -65,11 +65,11 @@ public class Args {
         /**
          * the defined strings
          */
-        public Map<String, String> defined = new LinkedHashMap<>();
+        public Map<String, String> defined = new LinkedHashMap<String, String>();
         /**
          * whether this line uses define
          */
-        public Map<String, String> useDefine = new LinkedHashMap<>();
+        public Map<String, String> useDefine = new LinkedHashMap<String, String>();
         /**
          * is parsing multiple line comment
          */

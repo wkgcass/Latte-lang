@@ -9,9 +9,9 @@ import java.util.List;
  * reference types
  */
 public abstract class SRefTypeDef extends STypeDef {
-        private final List<SFieldDef> fields = new ArrayList<>();
-        private final List<SMethodDef> methods = new ArrayList<>();
-        private final List<SModifier> modifiers = new ArrayList<>();
+        private final List<SFieldDef> fields = new ArrayList<SFieldDef>();
+        private final List<SMethodDef> methods = new ArrayList<SMethodDef>();
+        private final List<SModifier> modifiers = new ArrayList<SModifier>();
 
         public SRefTypeDef(LineCol lineCol) {
                 super(lineCol);

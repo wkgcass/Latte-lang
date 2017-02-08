@@ -53,15 +53,18 @@ public class TestSynchronized {
                 class Container {
                         public int i = 0;
                 }
-                Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
-                Container a = new Container();
-                Container b = new Container();
-                Container c = new Container();
-                new Thread(() -> {
-                        try {
-                                method.invoke(null, a, b, c);
-                        } catch (Exception e) {
-                                e.printStackTrace();
+                final Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
+                final Container a = new Container();
+                final Container b = new Container();
+                final Container c = new Container();
+                new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                                try {
+                                        method.invoke(null, a, b, c);
+                                } catch (Exception e) {
+                                        e.printStackTrace();
+                                }
                         }
                 }).start();
 
@@ -73,17 +76,24 @@ public class TestSynchronized {
                         boolean pass1 = false;
                         boolean pass2 = false;
                 }
-                Result result = new Result();
+                final Result result = new Result();
 
-                Thread t1 = new Thread(() -> {
-                        synchronized (a) {
-                                if (1 == a.i) result.pass1 = true;
+                Thread t1 = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                                synchronized (a) {
+                                        if (1 == a.i) result.pass1 = true;
+                                }
                         }
                 });
                 t1.start();
-                Thread t2 = new Thread(() -> {
-                        synchronized (b) {
-                                if (2 == b.i) result.pass2 = true;
+                Thread t2;
+                t2 = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                                synchronized (b) {
+                                        if (2 == b.i) result.pass2 = true;
+                                }
                         }
                 });
                 t2.start();
@@ -100,23 +110,26 @@ public class TestSynchronized {
                 class Container {
                         public int i = 0;
                 }
-                Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
-                Container a = new Container();
-                Container b = new Container();
-                Container c = new Container();
+                final Method method = cls.getMethod("method", Object.class, Object.class, Object.class);
+                final Container a = new Container();
+                final Container b = new Container();
+                final Container c = new Container();
                 class Result {
                         boolean result = false;
                         boolean pass1 = false;
                         boolean pass2 = false;
                 }
-                Result result = new Result();
-                new Thread(() -> {
-                        try {
-                                Object res = method.invoke(null, a, b, c);
-                                if (res.equals(10)) result.result = true;
-                                c.i = 2;
-                        } catch (Exception e) {
-                                e.printStackTrace();
+                final Result result = new Result();
+                new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                                try {
+                                        Object res = method.invoke(null, a, b, c);
+                                        if (res.equals(10)) result.result = true;
+                                        c.i = 2;
+                                } catch (Exception e) {
+                                        e.printStackTrace();
+                                }
                         }
                 }).start();
 
@@ -124,15 +137,21 @@ public class TestSynchronized {
                         Thread.sleep(1);
                 }
 
-                Thread t1 = new Thread(() -> {
-                        synchronized (a) {
-                                if (1 == a.i) result.pass1 = true;
+                Thread t1 = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                                synchronized (a) {
+                                        if (1 == a.i) result.pass1 = true;
+                                }
                         }
                 });
                 t1.start();
-                Thread t2 = new Thread(() -> {
-                        synchronized (b) {
-                                if (2 == b.i) result.pass2 = true;
+                Thread t2 = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                                synchronized (b) {
+                                        if (2 == b.i) result.pass2 = true;
+                                }
                         }
                 });
                 t2.start();

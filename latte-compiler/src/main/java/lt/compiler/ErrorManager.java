@@ -56,14 +56,14 @@ public class ErrorManager {
 
         private boolean fastFail;
         public Out out = new Out();
-        public final List<CompilingError> errorList = new ArrayList<>();
+        public final List<CompilingError> errorList = new ArrayList<CompilingError>();
 
         public final StringBuilder sb = new StringBuilder();
 
         /**
          * records {fileName =&gt;{LineNumber=&gt;LineContent}}
          */
-        public final Map<String, Map<Integer, String>> lineRecord = new ConcurrentHashMap<>();
+        public final Map<String, Map<Integer, String>> lineRecord = new ConcurrentHashMap<String, Map<Integer, String>>();
 
         public static class CompilingError {
                 public final String msg;
@@ -117,7 +117,7 @@ public class ErrorManager {
                 if (lineRecord.containsKey(file)) {
                         map = lineRecord.get(file);
                 } else {
-                        map = new HashMap<>();
+                        map = new HashMap<Integer, String>();
                         lineRecord.put(file, map);
                 }
 

@@ -36,7 +36,6 @@ import org.junit.Test;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.function.Function;
 
 import static org.junit.Assert.*;
 
@@ -49,7 +48,7 @@ public class TestDemo {
 
                 IndentScanner lexicalProcessor = new IndentScanner(fileName, br, new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put(fileName, syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
@@ -70,7 +69,7 @@ public class TestDemo {
                 }
 
                 Map<String, byte[]> map = generate(new BufferedReader(new StringReader(sb.toString())), "literals.lts");
-                byte[] bs = map.get("literals");
+                final byte[] bs = map.get("literals");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -254,7 +253,7 @@ public class TestDemo {
         public void testLtFileStructure() throws Exception {
                 InputStream is = TestDemo.class.getResourceAsStream("/lang-demo/ltFileStructure.lt");
 
-                Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "ltFileStructure.lt");
+                final Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "ltFileStructure.lt");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -305,7 +304,7 @@ public class TestDemo {
                 }
 
                 Map<String, byte[]> map = generate(new BufferedReader(new StringReader(sb.toString())), "statements.lts");
-                byte[] bs = map.get("statements");
+                final byte[] bs = map.get("statements");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -361,19 +360,34 @@ public class TestDemo {
                 // RuntimeException, then a=2 and finally ++a , a==3
                 // Error, Exception, then a=3 and finally ++a , a==4
                 // Throwable, then a=4 and finally ++a , a==5
-                assertEquals(2, method_try_catch_finally.invoke(o, (I) () -> {
+                assertEquals(2, method_try_catch_finally.invoke(o, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                        }
                 }));
-                assertEquals(3, method_try_catch_finally.invoke(o, (I) () -> {
-                        throw new RuntimeException();
+                assertEquals(3, method_try_catch_finally.invoke(o, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new RuntimeException();
+                        }
                 }));
-                assertEquals(4, method_try_catch_finally.invoke(o, (I) () -> {
-                        throw new Error();
+                assertEquals(4, method_try_catch_finally.invoke(o, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new Error();
+                        }
                 }));
-                assertEquals(4, method_try_catch_finally.invoke(o, (I) () -> {
-                        throw new Exception();
+                assertEquals(4, method_try_catch_finally.invoke(o, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new Exception();
+                        }
                 }));
-                assertEquals(5, method_try_catch_finally.invoke(o, (I) () -> {
-                        throw new Throwable();
+                assertEquals(5, method_try_catch_finally.invoke(o, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new Throwable();
+                        }
                 }));
 
                 // res2
@@ -445,10 +459,11 @@ public class TestDemo {
         }
 
         @Test
+        @SuppressWarnings("unchecked")
         public void testAdvanced() throws Throwable {
                 InputStream is = TestDemo.class.getResourceAsStream("/lang-demo/advanced.lt");
 
-                Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "advanced.lt");
+                final Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "advanced.lt");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -478,7 +493,7 @@ public class TestDemo {
 
                 Object func1 = func1F.get(o);
                 assertTrue(Func.isInstance(func1));
-                Function func2 = (Function) func2F.get(o);
+                Function1 func2 = (Function1) func2F.get(o);
                 Function1 func3 = (Function1) func3F.get(o);
 
                 assertEquals(2, apply.invoke(func1, 1));
@@ -494,7 +509,7 @@ public class TestDemo {
         public void testOperator() throws Exception {
                 InputStream is = TestDemo.class.getResourceAsStream("/lang-demo/operator.lt");
 
-                Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "operator.lt");
+                final Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "operator.lt");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -601,10 +616,11 @@ public class TestDemo {
         }
 
         @Test
+        @SuppressWarnings("unchecked")
         public void testTypeDef() throws Exception {
                 InputStream is = TestDemo.class.getResourceAsStream("/lang-demo/typeDef.lt");
 
-                Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "typeDef.lt");
+                final Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "typeDef.lt");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -782,7 +798,8 @@ public class TestDemo {
                 assertTrue(Modifier.isAbstract(i_am_an_abstract_method.getModifiers()));
                 Method i_am_a_default_method = Interface_Have_Methods.getMethod("i_am_a_default_method");
                 assertFalse(Modifier.isAbstract(i_am_a_default_method.getModifiers()));
-                assertTrue(i_am_a_default_method.isDefault());
+                // assertTrue(i_am_a_default_method.isDefault());
+                // it's not supported now
 
                 // TesterForInterface_Have_Methods
                 Class<?> TesterForInterface_Have_Methods = classLoader.loadClass("TesterForInterface_Have_Methods");
@@ -806,9 +823,9 @@ public class TestDemo {
 
                 // I_Am_A_Function_With_Super_Type
                 Class<?> I_Am_A_Function_With_Super_Type = classLoader.loadClass("I_Am_A_Function_With_Super_Type");
-                assertEquals(Function.class, I_Am_A_Function_With_Super_Type.getInterfaces()[0]);
+                assertEquals(Function1.class, I_Am_A_Function_With_Super_Type.getInterfaces()[0]);
                 @SuppressWarnings("unchecked")
-                Function<Object, Object> ff = (Function<Object, Object>) I_Am_A_Function_With_Super_Type.newInstance();
+                Function1<Object, Object> ff = (Function1<Object, Object>) I_Am_A_Function_With_Super_Type.newInstance();
                 assertEquals(1, ff.apply(0));
         }
 
@@ -816,7 +833,7 @@ public class TestDemo {
         public void testFunCompile() throws Exception {
                 InputStream is = TestDemo.class.getResourceAsStream("/lang-demo/fun.lt");
 
-                Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "fun.lt");
+                final Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "fun.lt");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -833,7 +850,7 @@ public class TestDemo {
         public void testRational() throws Exception {
                 InputStream is = TestDemo.class.getResourceAsStream("/lang-demo/examples/rational.lt");
 
-                Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "rational.lt");
+                final Map<String, byte[]> map = generate(new BufferedReader(new InputStreamReader(is)), "rational.lt");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -906,7 +923,7 @@ public class TestDemo {
                         sb.append("    ").append(line).append("\n");
                 }
 
-                Map<String, byte[]> byteMap = generate(new BufferedReader(new StringReader(sb.toString())), "list-map.lts");
+                final Map<String, byte[]> byteMap = generate(new BufferedReader(new StringReader(sb.toString())), "list-map.lts");
 
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
@@ -962,7 +979,7 @@ public class TestDemo {
                 // m
                 Field m = cls.getDeclaredField("m");
                 m.setAccessible(true);
-                Map<String, Integer> jm = new LinkedHashMap<>();
+                Map<String, Integer> jm = new LinkedHashMap<String, Integer>();
                 jm.put("a", 1);
                 jm.put("b", 2);
                 assertEquals(jm, m.get(o));

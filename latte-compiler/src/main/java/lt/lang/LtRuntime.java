@@ -115,7 +115,7 @@ public class LtRuntime {
         /**
          * the lambda function map. maps "required class" to "create the required object"
          */
-        private static final Map<Class<?>, Function1<Object, Object>> lambdaFunctionMap = new WeakHashMap<>();
+        private static final Map<Class<?>, Function1<Object, Object>> lambdaFunctionMap = new WeakHashMap<Class<?>, Function1<Object, Object>>();
 
         /**
          * Check whether the given type is {@link Integer} {@link Short}
@@ -184,7 +184,7 @@ public class LtRuntime {
                                 Method[] methods = ic.getDeclaredMethods();
                                 for (Method m : methods) {
                                         if (m.isAnnotationPresent(Implicit.class)
-                                                && m.getParameterCount() == 1
+                                                && m.getParameterTypes().length == 1
                                                 && m.getParameterTypes()[0].equals(o.getClass())
                                                 && targetType.isAssignableFrom(m.getReturnType())) {
 
@@ -294,7 +294,7 @@ public class LtRuntime {
                         if (o instanceof Function) {
                                 Method method = Dynamic.findAbstractMethod(targetType);
                                 Method funcMethod = o.getClass().getDeclaredMethods()[0];
-                                if (method.getParameterCount() == funcMethod.getParameterCount()) {
+                                if (method.getParameterTypes().length == funcMethod.getParameterTypes().length) {
                                         int i = 0;
                                         while (true) {
                                                 try {
@@ -339,8 +339,13 @@ public class LtRuntime {
                                         Class<?> cls = ((java.util.List<Class<?>>) Utils.eval(
                                                 targetTypeCL,
                                                 sb.toString())).get(0);
-                                        Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
-                                        Function1<Object, Object> func = con::newInstance;
+                                        final Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
+                                        Function1<Object, Object> func = new Function1<Object, Object>() {
+                                                @Override
+                                                public Object apply(Object o) throws Exception {
+                                                        return con.newInstance(o);
+                                                }
+                                        };
                                         lambdaFunctionMap.put(targetType, func); // put into map
                                         return func.apply(o);
                                 }
@@ -448,7 +453,7 @@ public class LtRuntime {
                         if (m.getReturnType().equals(boolean.class) || m.getReturnType().equals(Boolean.class)) {
                                 try {
                                         Object res = m.invoke(o);
-                                        return res != null && !(boolean) res;
+                                        return res != null && !(Boolean) res;
                                 } catch (InvocationTargetException e) {
                                         throw e.getTargetException();
                                 }
@@ -562,7 +567,12 @@ public class LtRuntime {
                         throwNonRuntime(invocationState, t);
                         ec.add("Cannot invoke method " + o.getClass().getName() + "#get(" + fieldName + ")\n\t" + t.getMessage());
                 }
-                ec.throwIfNotEmpty(fieldName, NoSuchFieldException::new);
+                ec.throwIfNotEmpty(fieldName, new Function1<Throwable, String>() {
+                        @Override
+                        public Throwable apply(String s) throws Exception {
+                                return new NoSuchFieldException(s);
+                        }
+                });
                 // won't reach here
                 return null;
         }
@@ -662,7 +672,12 @@ public class LtRuntime {
                         } catch (Throwable t2) {
                                 throwNonRuntime(invocationState, t2);
                                 ec.add("Cannot invoke method " + o.getClass().getName() + "#set(" + fieldName + ",...)\n\t" + t2.getMessage());
-                                ec.throwIfNotEmpty(fieldName, NoSuchFieldException::new);
+                                ec.throwIfNotEmpty(fieldName, new Function1<Throwable, String>() {
+                                        @Override
+                                        public Throwable apply(String s) throws Exception {
+                                                return new NoSuchFieldException(s);
+                                        }
+                                });
                         }
                 }
         }
@@ -670,15 +685,15 @@ public class LtRuntime {
         /**
          * if a &gt; b then return true.
          */
-        public static final int COMPARE_MODE_GT = 0b001;
+        public static final int COMPARE_MODE_GT = 1; // 0b001
         /**
          * if a == b then return true.
          */
-        public static final int COMPARE_MODE_EQ = 0b010;
+        public static final int COMPARE_MODE_EQ = 2; // 0b010
         /**
          * if a &lt; b then return true.
          */
-        public static final int COMPARE_MODE_LT = 0b100;
+        public static final int COMPARE_MODE_LT = 4; // 0b100
 
         /**
          * change compare result into boolean
@@ -803,7 +818,7 @@ public class LtRuntime {
                 return res;
         }
 
-        private static final Map<String, Object> requiredObjects = new HashMap<>();
+        private static final Map<String, Object> requiredObjects = new HashMap<String, Object>();
 
         /**
          * run a script and retrieve the script result. One file would only be run for only once.

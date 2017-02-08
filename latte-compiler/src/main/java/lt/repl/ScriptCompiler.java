@@ -31,6 +31,7 @@ import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.pre.Import;
+import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
 
 import java.io.*;
@@ -122,7 +123,7 @@ public class ScriptCompiler {
 
         private final Compiler compiler;
 
-        private Map<String, Object> sources = new HashMap<>();
+        private Map<String, Object> sources = new HashMap<String, Object>();
 
         /**
          * construct a script compiler
@@ -261,7 +262,7 @@ public class ScriptCompiler {
          * @return compiling result
          * @throws Exception exception
          */
-        public Script compile(String name, Reader scriptReader) throws Exception {
+        public Script compile(final String name, Reader scriptReader) throws Exception {
                 ClassLoader theCompiledClasses = compiler.compile(sources);
 
                 String nameForTheScript = "Script$Latte$";
@@ -280,8 +281,8 @@ public class ScriptCompiler {
                 Parser parser = new Parser(scanner.scan(), err);
                 List<Statement> statements = parser.parse();
 
-                List<Statement> innerStatements = new ArrayList<>();
-                List<Statement> defsAndImports = new ArrayList<>();
+                List<Statement> innerStatements = new ArrayList<Statement>();
+                final List<Statement> defsAndImports = new ArrayList<Statement>();
 
                 for (Statement stmt : statements) {
                         if (stmt instanceof ClassDef || stmt instanceof InterfaceDef || stmt instanceof Import || stmt instanceof FunDef) {
@@ -293,22 +294,22 @@ public class ScriptCompiler {
                         }
                 }
 
-                VariableDef v = new VariableDef("args", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                VariableDef v = new VariableDef("args", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 v.setType(new AST.Access(new AST.Access(null, "String", LineCol.SYNTHETIC), "[]", LineCol.SYNTHETIC));
                 ClassDef classDef = new ClassDef(
                         nameForTheScript,
-                        Collections.emptySet(),
-                        Collections.emptyList(),
+                        Collections.<Modifier>emptySet(),
+                        Collections.<VariableDef>emptyList(),
                         null,
-                        Collections.emptyList(),
-                        Collections.emptySet(),
-                        Collections.singletonList(
+                        Collections.<AST.Access>emptyList(),
+                        Collections.<AST.Anno>emptySet(),
+                        Collections.<Statement>singletonList(
                                 new MethodDef(
                                         "method",
-                                        Collections.emptySet(),
+                                        Collections.<Modifier>emptySet(),
                                         null,
                                         Collections.singletonList(v),
-                                        Collections.emptySet(),
+                                        Collections.<AST.Anno>emptySet(),
                                         innerStatements,
                                         LineCol.SYNTHETIC
                                 )
@@ -326,7 +327,7 @@ public class ScriptCompiler {
                         put(name, defsAndImports);
                 }}, theCompiledClasses, err);
                 CodeGenerator cg = new CodeGenerator(sp.parse(), sp.getTypes());
-                Map<String, byte[]> map = cg.generate();
+                final Map<String, byte[]> map = cg.generate();
                 ClassLoader loader = new ClassLoader(theCompiledClasses) {
                         @Override
                         protected Class<?> findClass(String name) throws ClassNotFoundException {

@@ -33,10 +33,10 @@ import java.util.List;
  * invokable
  */
 abstract public class SInvokable extends SMember {
-        private final List<SParameter> parameters = new ArrayList<>();
+        private final List<SParameter> parameters = new ArrayList<SParameter>();
         private STypeDef returnType;
-        private final List<Instruction> statements = new ArrayList<>();
-        private final List<ExceptionTable> exceptionTables = new ArrayList<>();
+        private final List<Instruction> statements = new ArrayList<Instruction>();
+        private final List<ExceptionTable> exceptionTables = new ArrayList<ExceptionTable>();
 
         public SInvokable(LineCol lineCol) {
                 super(lineCol);

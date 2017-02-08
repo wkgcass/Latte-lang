@@ -47,8 +47,6 @@ import java.io.StringReader;
 import java.lang.reflect.*;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
@@ -61,13 +59,13 @@ public class TestCodeGen {
                 ErrorManager err = new ErrorManager(true);
                 Scanner lexicalProcessor = new ScannerSwitcher("test.lt", new StringReader(code), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
-                Map<String, byte[]> list = codeGenerator.generate();
+                final Map<String, byte[]> list = codeGenerator.generate();
 
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
@@ -98,7 +96,7 @@ public class TestCodeGen {
                 assertEquals("TestClass", cls.getName());
                 assertEquals(Modifier.PUBLIC, cls.getModifiers());
                 assertEquals(1, cls.getDeclaredConstructors().length);
-                assertEquals(0, cls.getDeclaredConstructors()[0].getParameterCount());
+                assertEquals(0, cls.getDeclaredConstructors()[0].getParameterTypes().length);
         }
 
         @Test
@@ -107,7 +105,7 @@ public class TestCodeGen {
                 assertEquals("TestConstructorParam", cls.getName());
                 assertEquals(Modifier.PUBLIC, cls.getModifiers());
                 assertEquals(1, cls.getDeclaredConstructors().length);
-                assertEquals(2, cls.getDeclaredConstructors()[0].getParameterCount());
+                assertEquals(2, cls.getDeclaredConstructors()[0].getParameterTypes().length);
         }
 
         @Test
@@ -136,7 +134,7 @@ public class TestCodeGen {
                 Method m = cls.getDeclaredMethods()[0];
                 assertEquals("method", m.getName());
                 assertEquals(void.class, m.getReturnType());
-                assertEquals(0, m.getParameterCount());
+                assertEquals(0, m.getParameterTypes().length);
                 assertEquals(Modifier.PUBLIC, m.getModifiers());
         }
 
@@ -244,7 +242,7 @@ public class TestCodeGen {
                         "TestInvokeDynamic");
 
                 Method method = cls.getMethod("method", Object.class);
-                List<Integer> l = new ArrayList<>();
+                List<Integer> l = new ArrayList<Integer>();
                 l.add(1);
                 l.add(2);
                 Object o = method.invoke(null, l);
@@ -262,7 +260,7 @@ public class TestCodeGen {
                         "TestInvokeDynamic");
 
                 Method method = cls.getMethod("method", Object.class);
-                List<Integer> l = new ArrayList<>();
+                List<Integer> l = new ArrayList<Integer>();
                 l.add(1);
                 l.add(2);
                 method.invoke(null, l);
@@ -280,7 +278,7 @@ public class TestCodeGen {
                         "TestInvokeDynamic");
 
                 Method method = cls.getMethod("method", Object.class);
-                List<Integer> l = new ArrayList<>();
+                List<Integer> l = new ArrayList<Integer>();
                 l.add(1);
                 l.add(2);
                 method.invoke(null, l);
@@ -578,23 +576,38 @@ public class TestCodeGen {
 
                 Method method = cls.getMethod("method", Object.class);
                 // null pointer exception
-                assertEquals(1, method.invoke(null, (I) () -> {
-                        throw new NullPointerException();
+                assertEquals(1, method.invoke(null, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new NullPointerException();
+                        }
                 }));
                 // class cast exception
-                assertEquals(1, method.invoke(null, (I) () -> {
-                        throw new ClassCastException();
+                assertEquals(1, method.invoke(null, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new ClassCastException();
+                        }
                 }));
                 // error
-                assertEquals("msg", method.invoke(null, (I) () -> {
-                        throw new Error("msg");
+                assertEquals("msg", method.invoke(null, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new Error("msg");
+                        }
                 }));
                 // throwable
-                assertEquals(3, method.invoke(null, (I) () -> {
-                        throw new Throwable();
+                assertEquals(3, method.invoke(null, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new Throwable();
+                        }
                 }));
                 // none
-                assertEquals(4, method.invoke(null, (I) () -> {
+                assertEquals(4, method.invoke(null, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                        }
                 }));
         }
 
@@ -616,8 +629,11 @@ public class TestCodeGen {
 
                 Method method = cls.getMethod("method", Object.class);
                 // null pointer exception
-                assertEquals(1, method.invoke(null, (I) () -> {
-                        throw new NullPointerException();
+                assertEquals(1, method.invoke(null, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new NullPointerException();
+                        }
                 }));
         }
 
@@ -698,7 +714,7 @@ public class TestCodeGen {
 
                 Method method = cls.getMethod("method", Object.class, Object.class);
 
-                List<Integer> ls = new ArrayList<>();
+                List<Integer> ls = new ArrayList<Integer>();
                 method.invoke(null, true, ls);
                 assertEquals(Collections.singletonList(1), ls);
 
@@ -761,7 +777,7 @@ public class TestCodeGen {
 
                 Method method = cls.getMethod("method", Object.class, Object.class);
 
-                List<Integer> ls = new ArrayList<>();
+                List<Integer> ls = new ArrayList<Integer>();
                 assertEquals(10, method.invoke(null, false, ls));
                 assertEquals(Collections.singletonList(1), ls);
 
@@ -904,13 +920,13 @@ public class TestCodeGen {
                         "TestIndexAccessObject");
                 Method method = cls.getMethod("method", Object.class);
 
-                List<Integer> arr = new ArrayList<>();
+                List<Integer> arr = new ArrayList<Integer>();
                 arr.add(1);
                 arr.add(2);
                 method.invoke(null, arr);
                 assertEquals(Integer.valueOf(100), arr.get(1));
 
-                Map<Integer, Integer> map = new HashMap<>();
+                Map<Integer, Integer> map = new HashMap<Integer, Integer>();
                 map.put(1, 1);
                 map.put(2, 2);
                 method.invoke(null, map);
@@ -1069,12 +1085,11 @@ public class TestCodeGen {
                                 "        ]",
                         "TestNewMap");
                 Method method = cls.getMethod("method");
-                LinkedHashMap<String, Integer> expected = new LinkedHashMap<>();
+                LinkedHashMap<String, Integer> expected = new LinkedHashMap<String, Integer>();
                 expected.put("a", 1);
                 expected.put("b", 2);
-                Object o = expected;
                 Object res = method.invoke(null);
-                assertEquals(o, res);
+                assertEquals(expected, res);
                 assertEquals(java.util.LinkedHashMap.class, res.getClass());
         }
 
@@ -1090,7 +1105,7 @@ public class TestCodeGen {
                                 "        method():Unit",
                         "TestAnnotation");
                 Method method = cls.getMethod("method");
-                MyAnno myAnno = method.getDeclaredAnnotation(MyAnno.class);
+                MyAnno myAnno = method.getAnnotation(MyAnno.class);
                 assertNotNull(myAnno);
                 assertEquals("abc", myAnno.str());
                 assertEquals(100, myAnno.i());
@@ -1190,38 +1205,38 @@ public class TestCodeGen {
         @Test
         public void testLambdaStatic1() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                "import java::util::function::_\n" +
+                                "import lt::lang::function::_\n" +
                                 "class TestLambdaStatic1\n" +
                                 "    static\n" +
-                                "        method():Function\n" +
+                                "        method():Function1\n" +
                                 "            return (o)->o+1",
                         "TestLambdaStatic1");
                 Method m = cls.getDeclaredMethod("method");
                 @SuppressWarnings("unchecked")
-                Function<Object, Object> f = (Function<Object, Object>) m.invoke(null);
+                Function1<Object, Object> f = (Function1<Object, Object>) m.invoke(null);
                 assertEquals(2, f.apply(1));
         }
 
         @Test
         public void testLambdaStatic2() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                "import java::util::function::_\n" +
+                                "import lt::lang::function::_\n" +
                                 "class TestLambdaStatic2\n" +
                                 "    static\n" +
-                                "        method():Function\n" +
+                                "        method():Function1\n" +
                                 "            i=1\n" +
                                 "            return (o)->o+1+i",
                         "TestLambdaStatic2");
                 Method m = cls.getDeclaredMethod("method");
                 @SuppressWarnings("unchecked")
-                Function<Object, Object> f = (Function<Object, Object>) m.invoke(null);
+                Function1<Object, Object> f = (Function1<Object, Object>) m.invoke(null);
                 assertEquals(3, f.apply(1));
         }
 
         @Test
+        @SuppressWarnings("unchecked")
         public void testLambdaStatic3() throws Throwable {
                 Class<?> cls = retrieveClass("" +
-                                "import java::util::function::_\n" +
                                 "class TestLambdaStatic3\n" +
                                 "    static\n" +
                                 "        def method()\n" +
@@ -1229,7 +1244,6 @@ public class TestCodeGen {
                                 "            return (o)->o+1+i",
                         "TestLambdaStatic3");
                 Method m = cls.getDeclaredMethod("method");
-                @SuppressWarnings("unchecked")
                 Function1 f = (Function1) m.invoke(null);
                 assertEquals(3, f.apply(1));
         }
@@ -1245,7 +1259,7 @@ public class TestCodeGen {
                         "            i=1\n" +
                         "            return (o)->o+1+i"), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
@@ -1253,8 +1267,8 @@ public class TestCodeGen {
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
-                byte[] b1 = list.get("TestLambdaLT");
-                byte[] b2 = list.get("TestLambdaLT$Latte$Lambda$0");
+                final byte[] b1 = list.get("TestLambdaLT");
+                final byte[] b2 = list.get("TestLambdaLT$Latte$Lambda$0");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -1286,7 +1300,7 @@ public class TestCodeGen {
                         "        i=1\n" +
                         "        return (o)->o+1+i"), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
@@ -1294,8 +1308,8 @@ public class TestCodeGen {
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
-                byte[] b1 = list.get("TestLambdaLT");
-                byte[] b2 = list.get("TestLambdaLT$Latte$Lambda$0");
+                final byte[] b1 = list.get("TestLambdaLT");
+                final byte[] b2 = list.get("TestLambdaLT$Latte$Lambda$0");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -1318,16 +1332,17 @@ public class TestCodeGen {
         }
 
         @Test
+        @SuppressWarnings("unchecked")
         public void testLambdaLT3() throws Throwable {
                 ErrorManager err = new ErrorManager(true);
                 IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader("" +
-                        "import java::util::function::_\n" +
+                        "import lt::lang::function::_\n" +
                         "class TestLambdaLT\n" +
-                        "    method():Function\n" +
+                        "    method():Function1\n" +
                         "        i=1\n" +
                         "        return (o)->o+1+i"), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
@@ -1335,8 +1350,8 @@ public class TestCodeGen {
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
-                byte[] b1 = list.get("TestLambdaLT");
-                byte[] b2 = list.get("TestLambdaLT$Latte$Lambda$0");
+                final byte[] b1 = list.get("TestLambdaLT");
+                final byte[] b2 = list.get("TestLambdaLT$Latte$Lambda$0");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -1352,13 +1367,14 @@ public class TestCodeGen {
                 Class<?> TestLambdaLT = classLoader.loadClass("TestLambdaLT");
                 Class<?> lambda = classLoader.loadClass("TestLambdaLT$Latte$Lambda$0");
 
-                Function func = (Function) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
+                Function1 func = (Function1) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(3, func.apply(1));
 
                 assertEquals(4, lambda.getDeclaredFields().length);
         }
 
         @Test
+        @SuppressWarnings("unchecked")
         public void testLambdaMultipleArguments() throws Exception {
                 ErrorManager err = new ErrorManager(true);
                 IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader("" +
@@ -1366,7 +1382,7 @@ public class TestCodeGen {
                         "class TestLambdaMultipleArguments\n" +
                         "    method() = (a,b,c)->a+b+c"), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
@@ -1374,8 +1390,8 @@ public class TestCodeGen {
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
 
-                byte[] b1 = list.get("TestLambdaMultipleArguments");
-                byte[] b2 = list.get("TestLambdaMultipleArguments$Latte$Lambda$0");
+                final byte[] b1 = list.get("TestLambdaMultipleArguments");
+                final byte[] b2 = list.get("TestLambdaMultipleArguments$Latte$Lambda$0");
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
                         protected Class<?> findClass(String name)
@@ -1410,7 +1426,7 @@ public class TestCodeGen {
                                 "            ls.remove(Integer(1))",
                         "TestInvokeInterface");
 
-                List<Integer> list = new ArrayList<>();
+                List<Integer> list = new ArrayList<Integer>();
                 list.add(1);
                 list.add(2);
                 list.add(3);
@@ -1516,11 +1532,17 @@ public class TestCodeGen {
                 }
 
                 Method testCatch = cls.getMethod("testCatch", Object.class);
-                assertEquals("abc", testCatch.invoke(null, (I) () -> {
-                        throw new Wrapper("abc");
+                assertEquals("abc", testCatch.invoke(null, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new Wrapper("abc");
+                        }
                 }));
-                assertEquals(1, testCatch.invoke(null, (I) () -> {
-                        throw new Wrapper(1);
+                assertEquals(1, testCatch.invoke(null, (I) new I() {
+                        @Override
+                        public void apply() throws Throwable {
+                                throw new Wrapper(1);
+                        }
                 }));
         }
 
@@ -1790,7 +1812,7 @@ public class TestCodeGen {
                         "TestInvokeDynamicThisAndStatic");
                 Object TestInvokeDynamicThisAndStatic_inst = cls.newInstance();
                 Method indyThis = cls.getMethod("indyThis", Object.class);
-                List<Integer> list = new ArrayList<>();
+                List<Integer> list = new ArrayList<Integer>();
                 list.add(3);
                 list.add(2);
                 assertEquals(Arrays.asList(3, 2, 1), indyThis.invoke(TestInvokeDynamicThisAndStatic_inst, list));
@@ -2087,6 +2109,7 @@ public class TestCodeGen {
         }
 
         @Test
+        @SuppressWarnings("unchecked")
         public void testGetFunWithTypeName() throws Exception {
                 Class<?> cls = retrieveClass("" +
                                 "fun TheFun(o)\n" +
@@ -2294,9 +2317,9 @@ public class TestCodeGen {
                 assertEquals("var a = 1;\nvar b = 2;", method1.invoke(null));
 
                 Method method2 = cls.getMethod("method2", Object.class);
-                assertEquals('v', (char) method2.invoke(null, 0));
-                assertEquals('a', (char) method2.invoke(null, 1));
-                assertEquals('r', (char) method2.invoke(null, 2));
+                assertEquals('v', method2.invoke(null, 0));
+                assertEquals('a', method2.invoke(null, 1));
+                assertEquals('r', method2.invoke(null, 2));
         }
 
         @Test
@@ -2376,7 +2399,12 @@ public class TestCodeGen {
                 assertEquals(7, method1.invoke(null, 2));
                 Method method2 = cls.getMethod("method2", Object.class);
                 assertEquals(4, method2.invoke(null,
-                        (Object) new Function[]{(Function<Integer, Object>) o -> o + 1}));
+                        (Object) new Function1[]{new Function1<Object, Integer>() {
+                                @Override
+                                public Object apply(Integer o) throws Exception {
+                                        return o + 1;
+                                }
+                        }}));
         }
 
         @Test
@@ -2552,7 +2580,7 @@ public class TestCodeGen {
                                 "        method()=[\"a\":1, \"b\":2]"
                         , "TestArrayMap");
                 Method method = cls.getMethod("method");
-                LinkedHashMap<String, Integer> map = new LinkedHashMap<>();
+                LinkedHashMap<String, Integer> map = new LinkedHashMap<String, Integer>();
                 map.put("a", 1);
                 map.put("b", 2);
                 assertEquals(map, method.invoke(null));
@@ -2569,7 +2597,7 @@ public class TestCodeGen {
                                 "}"
                         , "TestArrayMap2");
                 Method method = cls.getMethod("method");
-                LinkedHashMap<String, Integer> map = new LinkedHashMap<>();
+                LinkedHashMap<String, Integer> map = new LinkedHashMap<String, Integer>();
                 map.put("a", 1);
                 map.put("b", 2);
                 assertEquals(map, method.invoke(null));
@@ -2786,18 +2814,30 @@ public class TestCodeGen {
                 Method q = cls.getMethod("q");
                 Method r = cls.getMethod("r");
 
-                Consumer<Method> noParam = method -> assertEquals(0, method.getParameterCount());
-                noParam.accept(m);
-                noParam.accept(n);
-                noParam.accept(o);
-                noParam.accept(p);
-                noParam.accept(q);
-                noParam.accept(r);
+                Function1<Void, Method> noParam = new Function1<Void, Method>() {
+                        @Override
+                        public Void apply(Method method) throws Exception {
+                                assertEquals(0, method.getParameterTypes().length);
+                                return null;
+                        }
+                };
+                noParam.apply(m);
+                noParam.apply(n);
+                noParam.apply(o);
+                noParam.apply(p);
+                noParam.apply(q);
+                noParam.apply(r);
 
-                Consumer<Method> returnInt = method -> assertEquals(int.class, method.getReturnType());
-                returnInt.accept(o);
-                returnInt.accept(p);
-                returnInt.accept(r);
+                Function1<Void, Method> returnInt = new Function1<Void, Method>() {
+                        @Override
+                        public Void apply(Method method) throws Exception {
+                                assertEquals(int.class, method.getReturnType());
+                                return null;
+                        }
+                };
+                returnInt.apply(o);
+                returnInt.apply(p);
+                returnInt.apply(r);
         }
 
         @Test
@@ -3184,7 +3224,7 @@ public class TestCodeGen {
                 Method method4 = cls.getMethod("method4", Object.class, Object.class);
                 Method method5 = cls.getMethod("method5");
 
-                assertEquals(new LinkedHashMap<>(), method1.invoke(null));
+                assertEquals(new LinkedHashMap<Object, Object>(), method1.invoke(null));
                 assertEquals(1, method2.invoke(null));
                 Map<Object, Object> map = new LinkedHashMap<Object, Object>() {{
                         put("a", 1);

@@ -46,7 +46,7 @@ public class Ins {
                 private final SArrayTypeDef arrayType;
                 private final STypeDef componentType;
                 private final IntValue count;
-                private final List<Value> initValues = new ArrayList<>();
+                private final List<Value> initValues = new ArrayList<Value>();
 
                 public ANewArray(SArrayTypeDef arrayType, STypeDef componentType, IntValue count) {
                         this.arrayType = arrayType;
@@ -538,7 +538,7 @@ public class Ins {
                 private final LineCol lineCol;
 
                 private SInvokable invokable;
-                private final List<Value> arguments = new ArrayList<>();
+                private final List<Value> arguments = new ArrayList<Value>();
 
                 public Invoke(SInvokable invokable, LineCol lineCol) {
                         setInvokable(invokable);
@@ -571,8 +571,9 @@ public class Ins {
         /**
          * invoke dynamic
          */
+        @Deprecated
         public static class InvokeDynamic extends Invoke {
-                private final List<Value> indyArgs = new ArrayList<>();
+                private final List<Value> indyArgs = new ArrayList<Value>();
                 private final String methodName;
                 private final STypeDef returnType;
                 private int indyType;
@@ -810,7 +811,7 @@ public class Ins {
          */
         public static class New implements Value, Instruction {
                 private final SConstructorDef constructor;
-                private final List<Value> args = new ArrayList<>();
+                private final List<Value> args = new ArrayList<Value>();
 
                 private final LineCol lineCol;
 
@@ -855,7 +856,7 @@ public class Ins {
                 private final IntValue count;
                 private final STypeDef type;
                 private final int storeMode;
-                private final List<Value> initValues = new ArrayList<>();
+                private final List<Value> initValues = new ArrayList<Value>();
 
                 public NewArray(IntValue count, int mode, int storeMode, STypeDef type) {
                         this.count = count;
@@ -891,7 +892,7 @@ public class Ins {
          */
         public static class NewList implements Value {
                 private final STypeDef type;
-                private List<Value> initValues = new ArrayList<>();
+                private List<Value> initValues = new ArrayList<Value>();
 
                 public NewList(STypeDef linkedListType) {
                         this.type = linkedListType;
@@ -912,7 +913,7 @@ public class Ins {
          */
         public static class NewMap implements Value {
                 private final STypeDef linkedListClass;
-                private final LinkedHashMap<Value, Value> initValues = new LinkedHashMap<>();
+                private final LinkedHashMap<Value, Value> initValues = new LinkedHashMap<Value, Value>();
 
                 public NewMap(STypeDef linkedListClass) {
                         this.linkedListClass = linkedListClass;

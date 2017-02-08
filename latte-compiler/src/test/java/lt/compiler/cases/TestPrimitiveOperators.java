@@ -5,13 +5,13 @@ import lt.compiler.Properties;
 import lt.compiler.Scanner;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
+import lt.lang.function.Function1;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.function.Function;
 
 import static org.junit.Assert.*;
 
@@ -19,34 +19,96 @@ import static org.junit.Assert.*;
  * primitive operators
  */
 public class TestPrimitiveOperators {
-        public List<Function<Number, ?>> numberFuncs = Arrays.asList(
-                Number::intValue,
-                Number::longValue,
-                Number::floatValue,
-                Number::doubleValue,
-                Number::byteValue,
-                Number::shortValue,
-                (Number n) -> (char) n.intValue()
+        @SuppressWarnings("unchecked")
+        public List<Function1<Object, Number>> numberFuncs = Arrays.asList(
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.intValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.longValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.floatValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.doubleValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.byteValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.shortValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number n) throws Exception {
+                                return (char) n.intValue();
+                        }
+                }
         );
-        public List<Function<Number, ?>> integerFuncs = Arrays.asList(
-                Number::intValue,
-                Number::longValue,
-                Number::byteValue,
-                Number::shortValue,
-                (Number n) -> (char) n.intValue()
+        @SuppressWarnings("unchecked")
+        public List<Function1<Object, Number>> integerFuncs = Arrays.asList(
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.intValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.longValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.byteValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number number) throws Exception {
+                                return number.shortValue();
+                        }
+                },
+                new Function1<Object, Number>() {
+                        @Override
+                        public Object apply(Number n) throws Exception {
+                                return (char) n.intValue();
+                        }
+                }
         );
 
         public static Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
                 ErrorManager err = new ErrorManager(true);
                 Scanner lexicalProcessor = new ScannerSwitcher("test.lt", new StringReader(code), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                Map<String, List<Statement>> map = new HashMap<>();
+                Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 map.put("test.lt", syntacticProcessor.parse());
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
-                Map<String, byte[]> list = codeGenerator.generate();
+                final Map<String, byte[]> list = codeGenerator.generate();
 
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
@@ -67,9 +129,9 @@ public class TestPrimitiveOperators {
                 int countLong = 0;
                 int countInt = 0;
 
-                for (Function<Number, ?> f1 : numberFuncs) {
+                for (Function1<Object, Number> f1 : numberFuncs) {
                         Object aa = f1.apply(a);
-                        for (Function<Number, ?> f2 : numberFuncs) {
+                        for (Function1<Object, Number> f2 : numberFuncs) {
                                 Object bb = f2.apply(b);
                                 Object rr = method.invoke(null, aa, bb);
 
@@ -144,9 +206,9 @@ public class TestPrimitiveOperators {
         }
 
         private void testShift(Number a, Number b, int by, int s, int c, int i, long l, Method method) throws Exception {
-                for (Function<Number, ?> f1 : integerFuncs) {
+                for (Function1<Object, Number> f1 : integerFuncs) {
                         Object aa = f1.apply(a);
-                        for (Function<Number, ?> f2 : integerFuncs) {
+                        for (Function1<Object, Number> f2 : integerFuncs) {
                                 Object bb = f2.apply(b);
                                 Object rr = method.invoke(null, aa, bb);
 
@@ -207,9 +269,9 @@ public class TestPrimitiveOperators {
                 int countLong = 0;
                 int countInt = 0;
 
-                for (Function<Number, ?> f1 : integerFuncs) {
+                for (Function1<Object, Number> f1 : integerFuncs) {
                         Object aa = f1.apply(a);
-                        for (Function<Number, ?> f2 : integerFuncs) {
+                        for (Function1<Object, Number> f2 : integerFuncs) {
                                 Object bb = f2.apply(b);
                                 Object rr = method.invoke(null, aa, bb);
 
@@ -236,7 +298,7 @@ public class TestPrimitiveOperators {
         }
 
         private void testBoolOps(Number a, boolean b, boolean res, Method method) throws Exception {
-                for (Function<Number, ?> f : numberFuncs) {
+                for (Function1<Object, Number> f : numberFuncs) {
                         Object aa = f.apply(a);
                         Object rr1 = method.invoke(null, aa, b);
                         Object rr2 = method.invoke(null, b, aa);
@@ -312,7 +374,7 @@ public class TestPrimitiveOperators {
 
                 Number a = 3;
                 Number r = -3;
-                for (Function<Number, ?> f : numberFuncs) {
+                for (Function1<Object, Number> f : numberFuncs) {
                         Object aa = f.apply(a);
                         Object rr = method.invoke(null, aa);
                         if (aa instanceof Double) {
@@ -337,7 +399,7 @@ public class TestPrimitiveOperators {
                 Method method = not.getMethod("method", Object.class);
 
                 Number a = 3;
-                for (Function<Number, ?> f : integerFuncs) {
+                for (Function1<Object, Number> f : integerFuncs) {
                         Object aa = f.apply(a);
                         Object rr = method.invoke(null, aa);
                         if (aa instanceof Long) {
@@ -349,9 +411,9 @@ public class TestPrimitiveOperators {
         }
 
         private void testBoolRes(Number a, Number b, boolean res, Method method) throws Exception {
-                for (Function<Number, ?> f1 : numberFuncs) {
+                for (Function1<Object, Number> f1 : numberFuncs) {
                         Object aa = f1.apply(a);
-                        for (Function<Number, ?> f2 : numberFuncs) {
+                        for (Function1<Object, Number> f2 : numberFuncs) {
                                 Object bb = f2.apply(b);
                                 Object rr = method.invoke(null, aa, bb);
                                 assertEquals(res, rr);
@@ -416,7 +478,7 @@ public class TestPrimitiveOperators {
         }
 
         private void testBoolRes(Number a, boolean res, Method method) throws Exception {
-                for (Function<Number, ?> f1 : numberFuncs) {
+                for (Function1<Object, Number> f1 : numberFuncs) {
                         Object aa = f1.apply(a);
                         Object rr = method.invoke(null, aa);
                         assertEquals(res, rr);
@@ -464,9 +526,9 @@ public class TestPrimitiveOperators {
                         , "TestPow");
                 double result = Math.pow(3, 4);
                 Method method = pow.getMethod("method", Object.class, Object.class);
-                for (Function<Number, ?> f1 : numberFuncs) {
+                for (Function1<Object, Number> f1 : numberFuncs) {
                         Object a = f1.apply(3);
-                        for (Function<Number, ?> f2 : numberFuncs) {
+                        for (Function1<Object, Number> f2 : numberFuncs) {
                                 Object b = f2.apply(4);
                                 assertEquals(result, method.invoke(null, a, b));
                         }

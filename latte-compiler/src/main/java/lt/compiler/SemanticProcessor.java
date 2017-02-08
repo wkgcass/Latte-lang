@@ -45,14 +45,11 @@ import lt.dependencies.asm.MethodVisitor;
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.*;
 import java.net.URL;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 
 /**
  * semantic processor
@@ -60,6 +57,8 @@ import java.util.stream.Collectors;
 public class SemanticProcessor {
         public static final int PARSING_CLASS = 0;
         public static final int PARSING_INTERFACE = 1;
+
+        public static final String DYNAMIC_CLASS_NAME = Dynamic.class.getName();
 
         /**
          * Map&lt;FileName, List of statements&gt;
@@ -69,36 +68,36 @@ public class SemanticProcessor {
          * maps full name to type<br>
          * one type should only exist once in a Processor
          */
-        public Map<String, STypeDef> types = new HashMap<>();
+        public Map<String, STypeDef> types = new HashMap<String, STypeDef>();
         /**
          * full name to {@link ClassDef} from {@link Parser}
          */
-        public Map<String, ClassDef> originalClasses = new HashMap<>();
+        public Map<String, ClassDef> originalClasses = new HashMap<String, ClassDef>();
         /**
          * full name to {@link InterfaceDef} from {@link Parser}
          */
-        public Map<String, InterfaceDef> originalInterfaces = new HashMap<>();
+        public Map<String, InterfaceDef> originalInterfaces = new HashMap<String, InterfaceDef>();
         /**
          * full name to {@link ObjectDef} from {@link Parser}
          */
-        public Map<String, ObjectDef> originalObjects = new HashMap<>();
+        public Map<String, ObjectDef> originalObjects = new HashMap<String, ObjectDef>();
         /**
          * {@link SMethodDef} to it's containing statements
          */
-        public Map<SMethodDef, List<Statement>> methodToStatements = new HashMap<>();
+        public Map<SMethodDef, List<Statement>> methodToStatements = new HashMap<SMethodDef, List<Statement>>();
         /**
          * file name to Import info
          */
-        public Map<String, List<Import>> fileNameToImport = new HashMap<>();
+        public Map<String, List<Import>> fileNameToImport = new HashMap<String, List<Import>>();
         /**
          * a set of types that should be return value of {@link #parse()} method.<br>
          * these types are to be compiled into byte codes
          */
-        public final Set<STypeDef> typeDefSet = new HashSet<>();
+        public final Set<STypeDef> typeDefSet = new HashSet<STypeDef>();
         /**
          * invokable =&gt; (the-invokable-to-invoke =&gt; the current default parameter).
          */
-        public Map<SInvokable, Map<SInvokable, Expression>> defaultParamInvokable = new HashMap<>();
+        public Map<SInvokable, Map<SInvokable, Expression>> defaultParamInvokable = new HashMap<SInvokable, Map<SInvokable, Expression>>();
         /**
          * retrieve existing classes from this class loader
          */
@@ -199,26 +198,26 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         public Set<STypeDef> parse() throws SyntaxException {
-                Map<String, List<ClassDef>> fileNameToClassDef = new HashMap<>();
-                Map<String, List<InterfaceDef>> fileNameToInterfaceDef = new HashMap<>();
-                Map<String, List<FunDef>> fileNameToFunctions = new HashMap<>();
-                Map<String, List<ObjectDef>> fileNameToObjectDef = new HashMap<>();
-                Map<String, String> fileNameToPackageName = new HashMap<>();
+                Map<String, List<ClassDef>> fileNameToClassDef = new HashMap<String, List<ClassDef>>();
+                Map<String, List<InterfaceDef>> fileNameToInterfaceDef = new HashMap<String, List<InterfaceDef>>();
+                Map<String, List<FunDef>> fileNameToFunctions = new HashMap<String, List<FunDef>>();
+                Map<String, List<ObjectDef>> fileNameToObjectDef = new HashMap<String, List<ObjectDef>>();
+                Map<String, String> fileNameToPackageName = new HashMap<String, String>();
                 // record types and packages
                 for (String fileName : mapOfStatements.keySet()) {
                         List<Statement> statements = mapOfStatements.get(fileName);
                         Iterator<Statement> statementIterator = statements.iterator();
 
                         // import
-                        List<Import> imports = new ArrayList<>();
+                        List<Import> imports = new ArrayList<Import>();
                         // class definition
-                        List<ClassDef> classDefs = new ArrayList<>();
+                        List<ClassDef> classDefs = new ArrayList<ClassDef>();
                         // interface definition
-                        List<InterfaceDef> interfaceDefs = new ArrayList<>();
+                        List<InterfaceDef> interfaceDefs = new ArrayList<InterfaceDef>();
                         // fun definition
-                        List<FunDef> funDefs = new ArrayList<>();
+                        List<FunDef> funDefs = new ArrayList<FunDef>();
                         // object definition
-                        List<ObjectDef> objectDefs = new ArrayList<>();
+                        List<ObjectDef> objectDefs = new ArrayList<ObjectDef>();
 
                         // put into map
                         fileNameToImport.put(fileName, imports);
@@ -282,7 +281,7 @@ public class SemanticProcessor {
                         List<ObjectDef> objectDefs = fileNameToObjectDef.get(fileName);
 
                         // check importing same simple name
-                        Set<String> importSimpleNames = new HashSet<>();
+                        Set<String> importSimpleNames = new HashSet<String>();
                         for (Import i : imports) {
                                 if (i.pkg == null && !i.importAll) {
                                         // class name are the same
@@ -417,7 +416,7 @@ public class SemanticProcessor {
                                 if (i.pkg == null) {
                                         // class exists
                                         try {
-                                                getTypeWithAccess(i.access, Collections.emptyList());
+                                                getTypeWithAccess(i.access, Collections.<Import>emptyList());
                                         } catch (SyntaxException e) {
                                                 err.SyntaxException("Type " + i.access + " not found", i.access.line_col());
                                         }
@@ -450,13 +449,19 @@ public class SemanticProcessor {
                 for (List<Import> imports : fileNameToImport.values()) {
                         for (Import im : imports) {
                                 if (im.implicit) {
-                                        STypeDef type = getTypeWithAccess(im.access, Collections.emptyList());
+                                        STypeDef type = getTypeWithAccess(im.access, Collections.<Import>emptyList());
                                         if (!(type instanceof SClassDef)) {
                                                 err.SyntaxException("import implicit should be an implicit class", im.line_col());
                                                 return;
                                         }
                                         SClassDef cType = (SClassDef) type;
-                                        if (cType.annos().stream().filter(a -> a.type().fullName().equals("lt.lang.Implicit")).count() != 1) {
+                                        int count = 0;
+                                        for (SAnno a : cType.annos()) {
+                                                if (a.type().fullName().equals("lt.lang.Implicit")) {
+                                                        ++count;
+                                                }
+                                        }
+                                        if (count != 1) {
                                                 err.SyntaxException("import implicit should be an implicit class", im.line_col());
                                                 return;
                                         }
@@ -480,16 +485,27 @@ public class SemanticProcessor {
                         if (sTypeDef.line_col().fileName == null || !fileNameToImport.containsKey(sTypeDef.line_col().fileName)) {
                                 continue;
                         }
-                        boolean alreadyExists = sTypeDef.annos().stream().filter(anno -> anno.type().fullName().equals("lt.lang.ImplicitImports")).count() > 0;
+                        int count = 0;
+                        for (SAnno anno : sTypeDef.annos()) {
+                                if (anno.type().fullName().equals("lt.lang.ImplicitImports")) {
+                                        ++count;
+                                }
+                        }
+                        boolean alreadyExists = count > 0;
                         if (alreadyExists) continue;
                         List<Import> imports = fileNameToImport.get(sTypeDef.line_col().fileName);
-                        List<Ins.GetClass> valueList = imports.stream().filter(i -> i.implicit).map(i -> {
-                                try {
-                                        return new Ins.GetClass(getTypeWithAccess(i.access, Collections.emptyList()), classTypeDef);
-                                } catch (SyntaxException e) {
-                                        throw new LtBug(e);
+                        List<Ins.GetClass> valueList = new ArrayList<Ins.GetClass>();
+                        Set<Ins.GetClass> tmpSet = new HashSet<Ins.GetClass>(); // distinct
+                        for (Import i : imports) {
+                                if (i.implicit) {
+                                        Ins.GetClass getC = new Ins.GetClass(getTypeWithAccess(i.access, Collections.<Import>emptyList()), classTypeDef);
+                                        if (!getC.targetType().equals(sTypeDef)) {
+                                                if (tmpSet.add(getC)) {
+                                                        valueList.add(getC);
+                                                }
+                                        }
                                 }
-                        }).filter(c -> !c.targetType().equals(sTypeDef)).distinct().collect(Collectors.toList());
+                        }
                         if (valueList.isEmpty()) continue;
 
                         // build the annotation instance
@@ -523,10 +539,22 @@ public class SemanticProcessor {
                         String binPath = System.getProperty("sun.boot.library.path");
                         if (binPath == null) return true; // assume it's a valid import
                         File binPathFile = new File(binPath);
-                        File[] libFileA = binPathFile.getParentFile().listFiles(f -> f.getName().equals("lib"));
+                        File[] libFileA = binPathFile.getParentFile().listFiles(
+                                new FileFilter() {
+                                        @Override
+                                        public boolean accept(File f) {
+                                                return f.getName().equals("lib");
+                                        }
+                                });
                         if (libFileA == null || libFileA.length == 0) return true;
                         File libFile = libFileA[0];
-                        File[] rtFileA = libFile.listFiles(f -> f.getName().equals("rt.jar"));
+                        File[] rtFileA = libFile.listFiles(
+                                new FileFilter() {
+                                        @Override
+                                        public boolean accept(File f) {
+                                                return f.getName().equals("rt.jar");
+                                        }
+                                });
                         if (rtFileA == null || rtFileA.length == 0) return true;
                         File rtFile = rtFileA[0];
                         if (!rtFile.exists()) return true;
@@ -662,7 +690,7 @@ public class SemanticProcessor {
 
                                         if (lastConstructor != null) {
                                                 // record the constructor and expressions
-                                                Map<SInvokable, Expression> invoke = new HashMap<>();
+                                                Map<SInvokable, Expression> invoke = new HashMap<SInvokable, Expression>();
                                                 invoke.put(lastConstructor, classDef.params.get(i).getInit());
                                                 defaultParamInvokable.put(constructor, invoke);
                                         }
@@ -687,10 +715,10 @@ public class SemanticProcessor {
                                 }
 
                                 // parse annos
-                                parseAnnos(interfaceDef.annos, sInterfaceDef, imports, ElementType.TYPE, Collections.emptyList());
+                                parseAnnos(interfaceDef.annos, sInterfaceDef, imports, ElementType.TYPE, Collections.<ElementType>emptyList());
 
                                 // parse fields and methods
-                                List<AST.StaticScope> staticScopes = new ArrayList<>();
+                                List<AST.StaticScope> staticScopes = new ArrayList<AST.StaticScope>();
                                 for (Statement stmt : interfaceDef.statements) {
                                         if (stmt instanceof VariableDef) {
                                                 parseField((VariableDef) stmt, sInterfaceDef, imports, PARSING_INTERFACE, false, false);
@@ -807,13 +835,13 @@ public class SemanticProcessor {
 
                                 // static public val singletonInstance = XXX
                                 VariableDef v = new VariableDef(CompileUtil.SingletonFieldName,
-                                        new HashSet<>(Arrays.asList(
+                                        new HashSet<Modifier>(Arrays.asList(
                                                 new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC),
                                                 new Modifier(Modifier.Available.PUBLIC, LineCol.SYNTHETIC)
-                                        )), Collections.emptySet(), LineCol.SYNTHETIC);
+                                        )), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                                 v.setType(new AST.Access(pkg.isEmpty() ? null : new AST.PackageRef(pkg, LineCol.SYNTHETIC),
                                         objectDef.name, LineCol.SYNTHETIC));
-                                objectDef.statements.add(0, new AST.StaticScope(Collections.singletonList(v),
+                                objectDef.statements.add(0, new AST.StaticScope(Collections.<Statement>singletonList(v),
                                         LineCol.SYNTHETIC));
                                 // fields methods
                                 parseFieldsAndMethodsForClass(sClassDef, objectDef.statements, imports);
@@ -921,7 +949,7 @@ public class SemanticProcessor {
                                                    List<Statement> statements,
                                                    List<Import> imports) throws SyntaxException {
                 // get static scope and parse non-static fields/methods
-                List<AST.StaticScope> staticScopes = new ArrayList<>();
+                List<AST.StaticScope> staticScopes = new ArrayList<AST.StaticScope>();
                 for (Statement stmt : statements) {
                         if (stmt instanceof AST.StaticScope) {
                                 staticScopes.add((AST.StaticScope) stmt);
@@ -998,7 +1026,7 @@ public class SemanticProcessor {
                           Map<String, List<FunDef>> fileNameToFunctions) throws SyntaxException {
                 for (STypeDef sTypeDef : typeDefSet) {
                         if (sTypeDef instanceof SClassDef) {
-                                List<STypeDef> circularRecorder = new ArrayList<>();
+                                List<STypeDef> circularRecorder = new ArrayList<STypeDef>();
                                 SClassDef parent = ((SClassDef) sTypeDef).parent();
                                 while (parent != null) {
                                         circularRecorder.add(parent);
@@ -1011,7 +1039,7 @@ public class SemanticProcessor {
                                 circularRecorder.clear();
                         } else if (sTypeDef instanceof SInterfaceDef) {
                                 SInterfaceDef i = (SInterfaceDef) sTypeDef;
-                                checkInterfaceCircularInheritance(i, i.superInterfaces(), new ArrayList<>());
+                                checkInterfaceCircularInheritance(i, i.superInterfaces(), new ArrayList<SInterfaceDef>());
                         } else {
                                 throw new LtBug("wrong STypeDefType " + sTypeDef.getClass());
                         }
@@ -1205,7 +1233,7 @@ public class SemanticProcessor {
                 }
                 // then
                 // foreach typeDefSet, parse their statements
-                List<STypeDef> typeDefList = new ArrayList<>(typeDefSet);
+                List<STypeDef> typeDefList = new ArrayList<STypeDef>(typeDefSet);
                 for (STypeDef sTypeDef : typeDefList) {
                         if (sTypeDef instanceof SClassDef) {
                                 SClassDef sClassDef = (SClassDef) sTypeDef;
@@ -1431,7 +1459,7 @@ public class SemanticProcessor {
 
                         // check all abstract methods
                         // record them
-                        List<SMethodDef> abstractMethods = new ArrayList<>();
+                        List<SMethodDef> abstractMethods = new ArrayList<SMethodDef>();
                         recordAbstractMethodsForOverrideCheck(c, abstractMethods);
 
                         // do check
@@ -1520,8 +1548,8 @@ public class SemanticProcessor {
                         }
                 }
 
-                Map<SFieldDef, SMethodDef> setters = new HashMap<>();
-                Map<SFieldDef, SMethodDef> getters = new HashMap<>();
+                Map<SFieldDef, SMethodDef> setters = new HashMap<SFieldDef, SMethodDef>();
+                Map<SFieldDef, SMethodDef> getters = new HashMap<SFieldDef, SMethodDef>();
                 SMethodDef toStringOverride = null;
                 SMethodDef equalsOverride = null;
                 SMethodDef hashCodeOverride = null;
@@ -1665,7 +1693,7 @@ public class SemanticProcessor {
                                                         "getHashCode",
                                                         lineCol
                                                 ),
-                                                Collections.singletonList(
+                                                Collections.<Expression>singletonList(
                                                         new AST.Access(
                                                                 new AST.Access(
                                                                         null, "this", lineCol
@@ -1774,7 +1802,7 @@ public class SemanticProcessor {
                         zeroParamCons.modifiers().add(SModifier.PUBLIC);
 
                         SConstructorDef con = cls.constructors().get(cls.constructors().size() - 2);
-                        List<Value> initValues = new ArrayList<>();
+                        List<Value> initValues = new ArrayList<Value>();
                         for (SParameter p : con.getParameters()) {
                                 if (p.type().equals(IntTypeDef.get())) {
                                         initValues.add(new IntValue(0));
@@ -1893,14 +1921,16 @@ public class SemanticProcessor {
                         SemanticScope unapplyScope = new SemanticScope(new SemanticScope(cls));
                         unapplyScope.putLeftValue("o", p);
 
+                        List<Expression> tmpList = new ArrayList<Expression>();
+                        for (SFieldDef f : cls.fields()) {
+                                tmpList.add(new AST.Access(
+                                        // o.f
+                                        new AST.Access(null, "o", LineCol.SYNTHETIC),
+                                        f.name(), LineCol.SYNTHETIC
+                                ));
+                        }
                         AST.Return ret = new AST.Return(
-                                new AST.ArrayExp(cls.fields().stream()
-                                        .map(f ->
-                                                new AST.Access(
-                                                        // o.f
-                                                        new AST.Access(null, "o", LineCol.SYNTHETIC),
-                                                        f.name(), LineCol.SYNTHETIC))
-                                        .collect(Collectors.toList()), LineCol.SYNTHETIC),
+                                new AST.ArrayExp(tmpList, LineCol.SYNTHETIC),
                                 LineCol.SYNTHETIC
                         );
                         parseStatement(ret, unapply.getReturnType(), unapplyScope, unapply.statements(),
@@ -2104,7 +2134,7 @@ public class SemanticProcessor {
                 // check annotation
                 for (SAnno sAnno : annos) {
                         AST.Anno anno = annotationRecorder.get(sAnno); // get original anno object
-                        Map<SAnnoField, Value> map = new HashMap<>();
+                        Map<SAnnoField, Value> map = new HashMap<SAnnoField, Value>();
                         out:
                         for (SAnnoField f : sAnno.type().annoFields()) {
                                 if (anno == null) {
@@ -2177,7 +2207,7 @@ public class SemanticProcessor {
                         arr.setDimension(1);
                         arr.setType((SArrayTypeDef) value.type());
 
-                        List<Value> values = new ArrayList<>();
+                        List<Value> values = new ArrayList<Value>();
                         for (Value v : theValues) {
                                 values.add(checkAndCastAnnotationValues(v, lineCol));
                         }
@@ -2623,14 +2653,16 @@ public class SemanticProcessor {
                 // fill in local variable as parameters
                 // the params are added to front positions
                 LinkedHashMap<String, STypeDef> localVariables = scope.getLocalVariables();
-                List<VariableDef> param4Locals = new ArrayList<>();
-                List<PointerType> realPointerTypes = new ArrayList<>();
-                localVariables.forEach((k, v) -> {
-                        if (!CompileUtil.isValidName(k)) return;
-                        if (k.equals("$")) return;
+                List<VariableDef> param4Locals = new ArrayList<VariableDef>();
+                List<PointerType> realPointerTypes = new ArrayList<PointerType>();
+                for (Map.Entry<String, STypeDef> entry : localVariables.entrySet()) {
+                        String k = entry.getKey();
+                        STypeDef v = entry.getValue();
+                        if (!CompileUtil.isValidName(k)) continue;
+                        if (k.equals("$")) continue;
 
                         // construct a synthetic VariableDef as param
-                        VariableDef variable = new VariableDef(k, Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC);
+                        VariableDef variable = new VariableDef(k, Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                         if (v instanceof SArrayTypeDef) {
                                 STypeDef x = ((SArrayTypeDef) v).type();
                                 AST.Access theType = new AST.Access(
@@ -2663,13 +2695,13 @@ public class SemanticProcessor {
                                 }
                         }
                         param4Locals.add(variable);
-                });
+                }
                 MethodDef newMethodDef = new MethodDef(
                         generatedMethodName,
-                        Collections.emptySet(),
+                        Collections.<Modifier>emptySet(),
                         methodDef.returnType,
-                        new ArrayList<>(methodDef.params),
-                        Collections.emptySet(),
+                        new ArrayList<VariableDef>(methodDef.params),
+                        Collections.<AST.Anno>emptySet(),
                         methodDef.body,
                         methodDef.line_col()
                 );
@@ -2677,7 +2709,7 @@ public class SemanticProcessor {
                 if (lambdaParam) {
                         newMethodDef.params.add(
                                 new VariableDef("$",
-                                        Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC));
+                                        Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC));
                 }
 
                 // parse the method
@@ -2771,7 +2803,7 @@ public class SemanticProcessor {
                                                      Ins.Nop continueIns) throws SyntaxException {
 
                 SemanticScope subScope = new SemanticScope(scope);
-                Stack<Ins.MonitorEnter> stack = new Stack<>();
+                Stack<Ins.MonitorEnter> stack = new Stack<Ins.MonitorEnter>();
                 for (Expression exp : aSynchronized.toSync) {
                         Value v = parseValueFromExpression(exp, null, subScope);
                         Ins.MonitorEnter enter = new Ins.MonitorEnter(v, subScope, exp.line_col());
@@ -2781,7 +2813,7 @@ public class SemanticProcessor {
                 }
 
                 // parse statements
-                List<Instruction> instructionList = new ArrayList<>();
+                List<Instruction> instructionList = new ArrayList<Instruction>();
                 for (Statement stmt : aSynchronized.statements) {
                         parseStatement(stmt, methodReturnType, subScope, instructionList, exceptionTable, breakIns, continueIns, false);
                 }
@@ -2803,14 +2835,14 @@ public class SemanticProcessor {
                         }
                 }
 
-                List<Ins.MonitorExit> exitNormal = new ArrayList<>(stack.size());
-                List<Ins.MonitorExit> exitForExceptions = new ArrayList<>(stack.size());
-                List<List<Ins.MonitorExit>> exitForReturn = new ArrayList<>();
-                List<List<Ins.MonitorExit>> exitForBreak = new ArrayList<>();
-                List<List<Ins.MonitorExit>> exitForContinue = new ArrayList<>();
-                for (int i = 0; i < returnCount; ++i) exitForReturn.add(new ArrayList<>());
-                for (int i = 0; i < continueCount; ++i) exitForContinue.add(new ArrayList<>());
-                for (int i = 0; i < breakCount; ++i) exitForBreak.add(new ArrayList<>());
+                List<Ins.MonitorExit> exitNormal = new ArrayList<Ins.MonitorExit>(stack.size());
+                List<Ins.MonitorExit> exitForExceptions = new ArrayList<Ins.MonitorExit>(stack.size());
+                List<List<Ins.MonitorExit>> exitForReturn = new ArrayList<List<Ins.MonitorExit>>();
+                List<List<Ins.MonitorExit>> exitForBreak = new ArrayList<List<Ins.MonitorExit>>();
+                List<List<Ins.MonitorExit>> exitForContinue = new ArrayList<List<Ins.MonitorExit>>();
+                for (int i = 0; i < returnCount; ++i) exitForReturn.add(new ArrayList<Ins.MonitorExit>());
+                for (int i = 0; i < continueCount; ++i) exitForContinue.add(new ArrayList<Ins.MonitorExit>());
+                for (int i = 0; i < breakCount; ++i) exitForBreak.add(new ArrayList<Ins.MonitorExit>());
 
                 while (!stack.empty()) {
                         Ins.MonitorEnter monitorEnter = stack.pop();
@@ -2995,7 +3027,7 @@ public class SemanticProcessor {
                                             Ins.Nop continueIns) throws SyntaxException {
                 // try ...
                 SemanticScope scopeA = new SemanticScope(scope);
-                List<Instruction> insA = new ArrayList<>(); // instructions in scope A
+                List<Instruction> insA = new ArrayList<Instruction>(); // instructions in scope A
                 for (Statement stmt : aTry.statements) {
                         parseStatement(stmt, methodReturnType, scopeA, insA, exceptionTable, breakIns, continueIns, false);
                 }
@@ -3003,7 +3035,7 @@ public class SemanticProcessor {
                 // record the start and end for exception table
                 // end is inclusive in this map
                 // and should be converted to an exclusive one when added into exception table
-                LinkedHashMap<Instruction, Instruction> startToEnd = new LinkedHashMap<>();
+                LinkedHashMap<Instruction, Instruction> startToEnd = new LinkedHashMap<Instruction, Instruction>();
                 Instruction start = null;
                 for (int i1 = 0; i1 < insA.size(); i1++) {
                         Instruction i = insA.get(i1);
@@ -3039,7 +3071,7 @@ public class SemanticProcessor {
                 // the map preparation is done
 
                 // build normal finally (D1)
-                List<Instruction> normalFinally = new ArrayList<>();
+                List<Instruction> normalFinally = new ArrayList<Instruction>();
                 for (Statement stmt : aTry.fin) {
                         parseStatement(stmt, methodReturnType, new SemanticScope(scope), normalFinally, exceptionTable, breakIns, continueIns, false);
                 }
@@ -3062,7 +3094,7 @@ public class SemanticProcessor {
                         new Ins.TLoad(tmpForExStore, exceptionFinallyScope,
                                 aTry.line_col()),
                         aTry.line_col());
-                List<Instruction> exceptionFinally = new ArrayList<>();
+                List<Instruction> exceptionFinally = new ArrayList<Instruction>();
                 // fill the list
                 exceptionFinally.add(D2start);
                 for (Statement stmt : aTry.fin) {
@@ -3076,7 +3108,7 @@ public class SemanticProcessor {
                 for (int i = 0; i < insA.size(); ++i) {
                         Instruction ins = insA.get(i);
                         if (ins instanceof Ins.TReturn) {
-                                List<Instruction> list = new ArrayList<>();
+                                List<Instruction> list = new ArrayList<Instruction>();
                                 for (Statement stmt : aTry.fin) {
                                         parseStatement(stmt, methodReturnType,
                                                 new SemanticScope(scopeA),
@@ -3088,7 +3120,7 @@ public class SemanticProcessor {
                                         if (((Ins.Goto) ins).gotoIns() == breakIns
                                                 || ((Ins.Goto) ins).gotoIns() == continueIns) {
 
-                                                List<Instruction> list = new ArrayList<>();
+                                                List<Instruction> list = new ArrayList<Instruction>();
                                                 for (Statement stmt : aTry.fin) {
                                                         parseStatement(stmt, methodReturnType,
                                                                 new SemanticScope(scopeA),
@@ -3106,7 +3138,7 @@ public class SemanticProcessor {
                 instructions.addAll(insA); // A
 
                 // create a map that end is exclusive
-                LinkedHashMap<Instruction, Instruction> startToEndEx = new LinkedHashMap<>();
+                LinkedHashMap<Instruction, Instruction> startToEndEx = new LinkedHashMap<Instruction, Instruction>();
                 int cursor = 0;
                 for (Map.Entry<Instruction, Instruction> entry : startToEnd.entrySet()) {
                         Instruction key = entry.getKey();
@@ -3139,7 +3171,7 @@ public class SemanticProcessor {
                 catchScope.putLeftValue(aTry.varName, unwrapped);
 
                 // build instructions
-                List<Instruction> insCatch = new ArrayList<>();
+                List<Instruction> insCatch = new ArrayList<Instruction>();
                 insCatch.add(new Ins.ExStore(ex, catchScope)); // store the ex
 
                 Ins.InvokeStatic invokeUnwrap = new Ins.InvokeStatic(
@@ -3166,7 +3198,7 @@ public class SemanticProcessor {
                 // record start to end for exception table
                 // end is inclusive
                 // and should be parsed into an exclusive one when added into exception table
-                LinkedHashMap<Instruction, Instruction> catch_startToEnd = new LinkedHashMap<>();
+                LinkedHashMap<Instruction, Instruction> catch_startToEnd = new LinkedHashMap<Instruction, Instruction>();
                 Instruction catch_start = null;
                 for (int i1 = 0; i1 < insCatch.size(); ++i1) {
                         Instruction i = insCatch.get(i1);
@@ -3195,7 +3227,7 @@ public class SemanticProcessor {
                 for (int i = 0; i < insCatch.size(); ++i) {
                         Instruction ins = insCatch.get(i);
                         if (ins instanceof Ins.TReturn) {
-                                List<Instruction> list = new ArrayList<>();
+                                List<Instruction> list = new ArrayList<Instruction>();
                                 for (Statement stmt : aTry.fin) {
                                         parseStatement(stmt, methodReturnType, new SemanticScope(catchScope),
                                                 list, exceptionTable, breakIns, continueIns, false);
@@ -3206,7 +3238,7 @@ public class SemanticProcessor {
                                         if (((Ins.Goto) ins).gotoIns() == breakIns
                                                 || ((Ins.Goto) ins).gotoIns() == continueIns) {
 
-                                                List<Instruction> list = new ArrayList<>();
+                                                List<Instruction> list = new ArrayList<Instruction>();
                                                 for (Statement stmt : aTry.fin) {
                                                         parseStatement(stmt, methodReturnType,
                                                                 new SemanticScope(catchScope),
@@ -3222,7 +3254,7 @@ public class SemanticProcessor {
                 instructions.addAll(insCatch); // B
 
                 // transform the startToEnd map into exclusive end map
-                LinkedHashMap<Instruction, Instruction> catch_startToEndEx = new LinkedHashMap<>();
+                LinkedHashMap<Instruction, Instruction> catch_startToEndEx = new LinkedHashMap<Instruction, Instruction>();
                 cursor = 0;
                 for (Map.Entry<Instruction, Instruction> entry : catch_startToEnd.entrySet()) {
                         Instruction key = entry.getKey();
@@ -3454,7 +3486,7 @@ public class SemanticProcessor {
 
                 SemanticScope whileScope = new SemanticScope(scope);
 
-                List<Instruction> ins = new ArrayList<>();
+                List<Instruction> ins = new ArrayList<Instruction>();
                 for (Statement stmt : aWhile.statements) {
                         parseStatement(
                                 stmt,
@@ -3583,7 +3615,7 @@ public class SemanticProcessor {
 
                 for (AST.If.IfPair ifPair : anIf.ifs) {
                         SemanticScope ifScope = new SemanticScope(scope);
-                        List<Instruction> instructionList = new ArrayList<>();
+                        List<Instruction> instructionList = new ArrayList<Instruction>();
 
                         if (ifPair.condition == null) {
                                 // it's else
@@ -3841,33 +3873,6 @@ public class SemanticProcessor {
                         }
                         err.SyntaxException("cannot assign", lineCol);
                         // code won't reach here
-                } else if (assignTo instanceof Ins.InvokeDynamic) {
-                        // invoke dynamic get(?)
-                        // list[?1]=?2
-                        // or
-                        // map[?1]=?2
-                        Ins.InvokeDynamic invokeDynamic = (Ins.InvokeDynamic) assignTo;
-                        if (invokeDynamic.methodName().equals("get") && invokeDynamic.arguments().size() > 0) {
-                                // the method to invoke should be set
-                                List<Value> list = new ArrayList<>();
-                                Iterator<Value> it = invokeDynamic.arguments().iterator();
-                                Ins.GetClass cls = (Ins.GetClass) it.next(); // class
-                                Value target = it.next();
-                                it.next(); // it is functional object, and it's NullValue.get()
-                                while (it.hasNext()) list.add(it.next());
-                                list.add(assignFrom);
-
-                                instructions.add((Instruction) invokeMethodWithArgs(
-                                        lineCol,
-                                        cls.targetType(),
-                                        target,
-                                        "set",
-                                        list,
-                                        scope));
-                                return;
-                        }
-                        err.SyntaxException("cannot assign", lineCol);
-                        // code won't reach here
                 } else if (assignTo instanceof Ins.InvokeWithTarget) {
                         // the method name should be 'get(?1)'
                         Ins.InvokeWithTarget invoke = (Ins.InvokeWithTarget) assignTo;
@@ -3875,7 +3880,7 @@ public class SemanticProcessor {
                                 SMethodDef method = (SMethodDef) invoke.invokable();
                                 if (method.name().equals("get")) {
                                         // the method to invoke should be `set(?1,?2)`
-                                        List<Value> list = new ArrayList<>();
+                                        List<Value> list = new ArrayList<Value>();
                                         list.addAll(invoke.arguments());
                                         list.add(assignFrom);
                                         instructions.add((Instruction) invokeMethodWithArgs(
@@ -4173,8 +4178,15 @@ public class SemanticProcessor {
                 if (d.modifiers.size() > 1) {
                         err.SyntaxException("modifier for destruct should only be `var` or `val`", d.line_col());
                 }
-                boolean isVar = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAR).count() > 0;
-                boolean isVal = d.modifiers.stream().filter(m -> m.modifier == Modifier.Available.VAL).count() > 0;
+                boolean isVar = false;
+                boolean isVal = false;
+                for (Modifier m : d.modifiers) {
+                        if (m.modifier == Modifier.Available.VAR) {
+                                isVar = true;
+                        } else if (m.modifier == Modifier.Available.VAL) {
+                                isVal = true;
+                        }
+                }
                 if (!isVal && !isVar && d.modifiers.size() > 0) {
                         err.SyntaxException("modifier for destruct should only be `var` or `val`", d.line_col());
                 }
@@ -4196,7 +4208,7 @@ public class SemanticProcessor {
                 // init value pack
                 ValuePack pack = new ValuePack(true);
 
-                Map<String, SFieldDef> nameToField = new HashMap<>(); // not used when pattern variables are defined as local variables
+                Map<String, SFieldDef> nameToField = new HashMap<String, SFieldDef>(); // not used when pattern variables are defined as local variables
                 // define variables
                 for (AST.Pattern p : destruct.pattern.subPatterns) {
                         assert (p instanceof AST.Pattern_Default || p instanceof AST.Pattern_Define);
@@ -4432,17 +4444,12 @@ public class SemanticProcessor {
                         if (isBool(requiredType, exp.line_col())) {
                                 String literal = ((BoolLiteral) exp).literal();
                                 boolean b;
-                                switch (literal) {
-                                        case "true":
-                                        case "yes":
-                                                b = true;
-                                                break;
-                                        case "false":
-                                        case "no":
-                                                b = false;
-                                                break;
-                                        default:
-                                                throw new LtBug(literal + " for bool literal");
+                                if (literal.equals("true") || literal.equals("yes")) {
+                                        b = true;
+                                } else if (literal.equals("false") || literal.equals("no")) {
+                                        b = false;
+                                } else {
+                                        throw new LtBug(literal + " for bool literal");
                                 }
                                 BoolValue boolValue = new BoolValue(b);
                                 if (requiredType == null || requiredType instanceof PrimitiveTypeDef) {
@@ -4618,31 +4625,31 @@ public class SemanticProcessor {
 
                 // transform the `PatternMatching` into `Procedure`
                 // and invoke parseValueFromProcedure
-                List<Statement> stmts = new ArrayList<>();
+                List<Statement> stmts = new ArrayList<Statement>();
                 AST.Procedure procedure = new AST.Procedure(stmts, pm.line_col());
 
                 // store the expToMatch
                 // vExp = expToMatch
                 Expression exp = pm.expToMatch;
-                VariableDef vExp = new VariableDef(scope.generateTempName(), Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC_WITH_FILE(fileName));
+                VariableDef vExp = new VariableDef(scope.generateTempName(), Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC_WITH_FILE(fileName));
                 vExp.setInit(exp);
                 procedure.statements.add(vExp);
 
                 // define some inner methods
                 // def patternMatching${hashCode}${count}
-                List<MethodDef> patternMethods = new ArrayList<>();
+                List<MethodDef> patternMethods = new ArrayList<MethodDef>();
                 int index = -1;
                 for (AST.Pattern ignore : pm.patternsToStatements.keySet()) {
                         ++index;
                         MethodDef methodDef = new MethodDef(
                                 "patternMatching$" + Integer.toHexString(Math.abs(pm.hashCode())) + "$" + index,
-                                Collections.emptySet(),
+                                Collections.<Modifier>emptySet(),
                                 null,
                                 Collections.singletonList(
-                                        new VariableDef("**", Collections.emptySet(), Collections.emptySet(), LineCol.SYNTHETIC_WITH_FILE(fileName))
+                                        new VariableDef("**", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC_WITH_FILE(fileName))
                                 ),
-                                Collections.emptySet(),
-                                new ArrayList<>(),
+                                Collections.<AST.Anno>emptySet(),
+                                new ArrayList<Statement>(),
                                 LineCol.SYNTHETIC_WITH_FILE(fileName)
                         );
                         patternMethods.add(methodDef);
@@ -4666,7 +4673,7 @@ public class SemanticProcessor {
                 // invoke first method
                 AST.Invocation invocation = new AST.Invocation(
                         new AST.Access(null, patternMethods.get(0).name, LineCol.SYNTHETIC_WITH_FILE(fileName)),
-                        Collections.singletonList(new AST.Access(null, vExp.getName(), LineCol.SYNTHETIC_WITH_FILE(fileName))),
+                        Collections.<Expression>singletonList(new AST.Access(null, vExp.getName(), LineCol.SYNTHETIC_WITH_FILE(fileName))),
                         false, pm.line_col()
                 );
                 procedure.statements.add(invocation);
@@ -4705,7 +4712,7 @@ public class SemanticProcessor {
                                 ), statements, LineCol.SYNTHETIC_WITH_FILE(fileName)
                         );
                         AST.If anIf = new AST.If(Arrays.asList(testClass, anElse), LineCol.SYNTHETIC_WITH_FILE(fileName));
-                        return Collections.singletonList(anIf);
+                        return Collections.<Statement>singletonList(anIf);
                 }
         }
 
@@ -4721,7 +4728,7 @@ public class SemanticProcessor {
                                 ), statements, LineCol.SYNTHETIC_WITH_FILE(fileName)
                         );
                         AST.If anIf = new AST.If(Arrays.asList(testValue, anElse), LineCol.SYNTHETIC_WITH_FILE(fileName));
-                        return Collections.singletonList(anIf);
+                        return Collections.<Statement>singletonList(anIf);
                 }
         }
 
@@ -4734,12 +4741,12 @@ public class SemanticProcessor {
                                 // val v = **
                                 VariableDef v = new VariableDef(((AST.Pattern_Define) pattern).name,
                                         Collections.singleton(new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC_WITH_FILE(fileName))),
-                                        Collections.emptySet(), LineCol.SYNTHETIC_WITH_FILE(fileName));
+                                        Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC_WITH_FILE(fileName));
                                 v.setType(((AST.Pattern_Define) pattern).type);
                                 v.setInit(new AST.Access(null, varName, LineCol.SYNTHETIC_WITH_FILE(fileName)));
-                                theList = new ArrayList<>();
+                                theList = new ArrayList<Statement>();
                                 theList.add(v);
-                                theList = new BindList<>(theList, statements);
+                                theList = new BindList<Statement>(theList, statements);
                         } else {
                                 theList = statements;
                         }
@@ -4756,7 +4763,7 @@ public class SemanticProcessor {
                                         ), theList, LineCol.SYNTHETIC_WITH_FILE(fileName)
                                 );
                                 AST.If anIf = new AST.If(Arrays.asList(testClass, anElse), LineCol.SYNTHETIC_WITH_FILE(fileName));
-                                return Collections.singletonList(anIf);
+                                return Collections.<Statement>singletonList(anIf);
                         } else {
                                 return statements;
                         }
@@ -4773,7 +4780,7 @@ public class SemanticProcessor {
                 @Override
                 public List<Statement> parse(AST.Pattern pattern, List<Statement> statements, AST.If.IfPair anElse, String varName, String fileName) {
                         // check if null
-                        List<Statement> stmtsInCheckNull = new ArrayList<>();
+                        List<Statement> stmtsInCheckNull = new ArrayList<Statement>();
                         AST.If checkNull = new AST.If(Arrays.asList(
                                 new AST.If.IfPair(
                                         new TwoVariableOperation(
@@ -4792,56 +4799,44 @@ public class SemanticProcessor {
                         AST.Pattern_Destruct patternDestruct = (AST.Pattern_Destruct) pattern;
                         // construct a destruct without type def
                         // arg index
-                        Pointer<Integer> count = new Pointer<>(true, false);
+                        int count = initialCount;
                         // tmpName count
-                        Pointer<Integer> tmpNameCountPtr = new Pointer<>(true, false);
-                        try {
-                                count.set(initialCount);
-                                tmpNameCountPtr.set(0);
-                        } catch (Throwable throwable) {
-                                throw new LtBug(throwable);
+                        int tmpNameCount = 0;
+                        List<AST.Pattern> tmpList = new ArrayList<AST.Pattern>();
+                        for (AST.Pattern p : patternDestruct.subPatterns) {
+                                ++count;
+                                ++tmpNameCount;
+
+                                if (p.patternType == AST.PatternType.TYPE) {
+                                        tmpList.add(new AST.Pattern_Define("**" + count, null));
+                                        continue;
+                                }
+                                if (p.patternType == AST.PatternType.DEFINE && ((AST.Pattern_Define) p).type != null) {
+                                        tmpList.add(new AST.Pattern_Define(((AST.Pattern_Define) p).name, null));
+                                        continue;
+                                }
+                                if (p.patternType == AST.PatternType.VALUE) {
+                                        tmpList.add(new AST.Pattern_Define("**" + count, null));
+                                        continue;
+                                }
+                                if (p.patternType == AST.PatternType.DESTRUCT) {
+                                        tmpList.add(new AST.Pattern_Define("**" + count, null));
+                                        continue;
+                                }
+
+                                --tmpNameCount;
+                                tmpList.add(p);
                         }
                         AST.Pattern_Destruct patternDestructWithoutTypeDef = new AST.Pattern_Destruct(
                                 patternDestruct.type,
-                                patternDestruct.subPatterns.stream().map(p -> {
-                                        int c;
-                                        try {
-                                                count.set(count.get() + 1);
-                                                c = count.get();
-                                                tmpNameCountPtr.set(tmpNameCountPtr.get() + 1);
-                                        } catch (Throwable throwable) {
-                                                throw new LtBug(throwable);
-                                        }
-
-                                        if (p.patternType == AST.PatternType.TYPE) return new AST.Pattern_Define(
-                                                "**" + c, null
-                                        );
-                                        if (p.patternType == AST.PatternType.DEFINE && ((AST.Pattern_Define) p).type != null)
-                                                return new AST.Pattern_Define(((AST.Pattern_Define) p).name, null);
-                                        if (p.patternType == AST.PatternType.VALUE) return new AST.Pattern_Define(
-                                                "**" + c, null
-                                        );
-                                        if (p.patternType == AST.PatternType.DESTRUCT) return new AST.Pattern_Define(
-                                                "**" + c, null
-                                        );
-
-                                        try {
-                                                tmpNameCountPtr.set(tmpNameCountPtr.get() - 1);
-                                        } catch (Throwable throwable) {
-                                                throw new LtBug(throwable);
-                                        }
-                                        return p;
-                                }).collect(Collectors.toList())
+                                tmpList
                         );
 
-                        // tmpNameCount
-                        int tmpNameCount = tmpNameCountPtr.get();
-
-                        AST.Destruct doDestruct = new AST.Destruct(Collections.emptySet(), Collections.emptySet(),
+                        AST.Destruct doDestruct = new AST.Destruct(Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(),
                                 patternDestructWithoutTypeDef, new AST.Access(null, varName, LineCol.SYNTHETIC), LineCol.SYNTHETIC);
                         List<Statement> stmtsInDestruct;
                         if (tmpNameCount > 0) {
-                                stmtsInDestruct = new ArrayList<>();
+                                stmtsInDestruct = new ArrayList<Statement>();
                         } else {
                                 stmtsInDestruct = statements;
                         }
@@ -4873,7 +4868,7 @@ public class SemanticProcessor {
                                         } else if (sub.patternType == AST.PatternType.VALUE) {
                                                 parser = new PatternMatchingValueParser();
                                         } else if (sub.patternType == AST.PatternType.DESTRUCT) {
-                                                parser = new PatternMatchingDestructParser(count.get());
+                                                parser = new PatternMatchingDestructParser(count);
                                         } else continue;
 
                                         // handle
@@ -4884,7 +4879,7 @@ public class SemanticProcessor {
                                         if (tmpNameCount == 0) {
                                                 list = statements;
                                         } else {
-                                                list = new ArrayList<>();
+                                                list = new ArrayList<Statement>();
                                         }
                                         currentStmts.addAll(parser.parse(
                                                 sub, list, anElse, tmpName, fileName
@@ -4894,7 +4889,7 @@ public class SemanticProcessor {
                                 }
                         }
 
-                        return Collections.singletonList(checkNull);
+                        return Collections.<Statement>singletonList(checkNull);
                 }
         }
 
@@ -4910,14 +4905,14 @@ public class SemanticProcessor {
                         // throw when else
                         anElse = new AST.If.IfPair(
                                 null,
-                                Collections.singletonList(
+                                Collections.<Statement>singletonList(
                                         new AST.Throw(
                                                 new AST.Invocation(
                                                         new AST.Access(
                                                                 new AST.PackageRef("lt::lang", LineCol.SYNTHETIC_WITH_FILE(fileName)),
                                                                 "MatchError",
                                                                 LineCol.SYNTHETIC_WITH_FILE(fileName)),
-                                                        Collections.emptyList(),
+                                                        Collections.<Expression>emptyList(),
                                                         false,
                                                         LineCol.SYNTHETIC_WITH_FILE(fileName)
                                                 ), LineCol.SYNTHETIC_WITH_FILE(fileName)
@@ -4928,11 +4923,11 @@ public class SemanticProcessor {
                         // invoke nextMethod
                         anElse = new AST.If.IfPair(
                                 null,
-                                Collections.singletonList(
+                                Collections.<Statement>singletonList(
                                         new AST.Return(
                                                 new AST.Invocation(
                                                         new AST.Access(null, nextMethod.name, LineCol.SYNTHETIC_WITH_FILE(fileName)),
-                                                        Collections.singletonList(
+                                                        Collections.<Expression>singletonList(
                                                                 new AST.Access(null, "**", LineCol.SYNTHETIC_WITH_FILE(fileName))
                                                         ),
                                                         false,
@@ -5010,10 +5005,20 @@ public class SemanticProcessor {
                         } else if (sourceGen.resultType() == SourceGenerator.SERIALIZE) {
                                 Serializable ser = (Serializable) sourceGen.generate();
                                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                                try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                                ObjectOutputStream oos = null;
+                                try {
+                                        oos = new ObjectOutputStream(baos);
                                         oos.writeObject(ser);
                                 } catch (IOException e) {
                                         throw new LtBug(e);
+                                } finally {
+                                        if (oos != null) {
+                                                try {
+                                                        oos.close();
+                                                } catch (IOException e) {
+                                                        e.printStackTrace();
+                                                }
+                                        }
                                 }
                                 String serStr;
                                 serStr = byte2hex(baos.toByteArray());
@@ -5137,11 +5142,11 @@ public class SemanticProcessor {
                         err.SyntaxException("abstract class cannot be instantiated", aNew.line_col());
                         return null;
                 }
-                List<Value> argList = new ArrayList<>();
+                List<Value> argList = new ArrayList<Value>();
                 for (Expression e : aNew.invocation.args) {
                         argList.add(parseValueFromExpression(e, null, scope));
                 }
-                return constructingNewInst(type, argList, aNew.line_col());
+                return constructingNewInst(type, argList, scope, aNew.line_col());
         }
 
         /**
@@ -5198,7 +5203,7 @@ public class SemanticProcessor {
                 assert classType != null;
 
                 int count = 0;
-                List<Value> constructingArgs = new ArrayList<>();
+                List<Value> constructingArgs = new ArrayList<Value>();
                 for (Expression exp : invocation.args) {
                         if (!(exp instanceof VariableDef)
                                 || ((VariableDef) exp).getInit() == null) {
@@ -5216,7 +5221,7 @@ public class SemanticProcessor {
                 String name = scope.generateTempName();
                 scope.putLeftValue(name, local);
 
-                Value aNew = constructingNewInst(classType, constructingArgs, invocation.line_col());
+                Value aNew = constructingNewInst(classType, constructingArgs, scope, invocation.line_col());
                 Ins.TStore store = new Ins.TStore(local, aNew, scope, invocation.line_col(), err);
                 valuePack.instructions().add(store);
 
@@ -5294,7 +5299,7 @@ public class SemanticProcessor {
                                         // check unimplemented methods
                                         int count = 0;
                                         // record all abstract classes
-                                        List<SClassDef> classes = new ArrayList<>();
+                                        List<SClassDef> classes = new ArrayList<SClassDef>();
                                         while (c.modifiers().contains(SModifier.ABSTRACT)) {
                                                 classes.add(c);
                                                 c = c.parent();
@@ -5322,8 +5327,8 @@ public class SemanticProcessor {
                                         }
                                         if (count <= 1) {
                                                 // record all interfaces
-                                                Set<SInterfaceDef> interfaces = new HashSet<>();
-                                                Queue<SInterfaceDef> q = new ArrayDeque<>();
+                                                Set<SInterfaceDef> interfaces = new HashSet<SInterfaceDef>();
+                                                Queue<SInterfaceDef> q = new ArrayDeque<SInterfaceDef>();
                                                 for (SInterfaceDef i : ((SClassDef) requiredType).superInterfaces()) {
                                                         q.add(i);
                                                         interfaces.add(i);
@@ -5365,8 +5370,8 @@ public class SemanticProcessor {
                 } else if (requiredType instanceof SInterfaceDef) {
                         int count = 0;
                         // record all super interfaces
-                        Set<SInterfaceDef> interfaces = new HashSet<>();
-                        Queue<SInterfaceDef> q = new ArrayDeque<>();
+                        Set<SInterfaceDef> interfaces = new HashSet<SInterfaceDef>();
+                        Queue<SInterfaceDef> q = new ArrayDeque<SInterfaceDef>();
                         q.add((SInterfaceDef) requiredType);
                         interfaces.add((SInterfaceDef) requiredType);
                         while (!q.isEmpty()) {
@@ -5406,39 +5411,18 @@ public class SemanticProcessor {
 
         /**
          * parse lambda<br>
-         * <ol>
-         * <li>the function is Functional Interface, and current method is static: use JDK {@link java.lang.invoke.LambdaMetafactory}</li>
-         * <li>the function is Functional Abstract Class, or current method is non-static : create a new class for the lambda</li>
-         * </ol>
-         * <tt>Functional Abstract Class</tt> means an abstract class with accessible constructor whose parameter count is 0 and only one unimplemented method.<br>
-         * if not using {@link java.lang.invoke.LambdaMetafactory}, the generated class would be in the same package of the caller class<br>
-         * the class and constructor would have no access modifiers<br>
-         * the constructor takes 2 or 3 params: 1. MethodHandle (required), 2. Instance (omitted if the caller method is static), 3. captured local variables (required)<br>
-         * when called, it creates a new List based on the 3rd param from constructor<br>
-         * and add(0, Instance) (omitted if the caller method is static), and foreach argument passed in, add(the argument)<br>
-         * then it invokes {@link java.lang.invoke.MethodHandle#invokeWithArguments(List)}<br>
-         * finally, it return the result or simple return if the abstract method returns void<br>
-         * generally the class look like this in java <br>
-         * (assume that the 2nd param exists)<br>
+         * it creates a new class for the lambda<br>
          * <pre>
          * class LambdaClassName extends SomeFunctionalAbstractClass { // may be implements SomeFunctionalInterface
-         *         MethodHandle methodHandle;
          *         Object o;
          *         List local;
-         *         LambdaClassName(MethodHandle methodHandle, Object o, List local){
-         *                 this.methodHandle=methodHandle;
+         *         LambdaClassName(Object o, List local){
          *                 this.o=o;
          *                 this.local=local;
          *         }
-         *         public Object theAbstractMethodToImpl(Object x,Object y){
-         *                 List newList=new LinkedList(local);
-         *                 newList.add(0, o);
-         *                 newList.add(x);
-         *                 newList.add(y);
-         *
-         *                 return methodHandle.invokeWithArguments(newList);
+         *         public Object theAbstractMethodToImpl(Object x,Object y) {
+         *                 return o.someMethod(x, y, local.get(0), local.get(1), ... )
          *         }
-         *
          * }
          * </pre>
          *
@@ -5447,7 +5431,7 @@ public class SemanticProcessor {
          * @param scope        current scope
          * @return return the new instance
          * @throws SyntaxException compile error
-         * @see #buildAClassForLambda(STypeDef, boolean, SMethodDef, SConstructorDef, SInterfaceDef, boolean)
+         * @see #buildAClassForLambda(STypeDef, boolean, SMethodDef, SConstructorDef, SInterfaceDef, boolean, int, SMethodDef)
          */
         public Value parseValueFromLambda(AST.Lambda lambda, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
                 SMethodDef methodToOverride;
@@ -5486,7 +5470,7 @@ public class SemanticProcessor {
                 STypeDef returnType = methodToOverride.getReturnType();
                 MethodDef methodDef = new MethodDef(
                         methodName,
-                        Collections.emptySet(),
+                        Collections.<Modifier>emptySet(),
                         new AST.Access(
                                 returnType.pkg() == null
                                         ? null
@@ -5497,20 +5481,20 @@ public class SemanticProcessor {
                                 LineCol.SYNTHETIC
                         ),
                         lambda.params,
-                        Collections.emptySet(),
+                        Collections.<AST.Anno>emptySet(),
                         lambda.statements,
                         LineCol.SYNTHETIC
                 );
                 SMethodDef method = parseInnerMethod(methodDef, scope, true);
+                assert method != null;
+                method.modifiers().remove(SModifier.PRIVATE);
+                method.modifiers().add(SModifier.PUBLIC);
                 methodToStatements.put(method, lambda.statements);
 
-                List<Value> args = new ArrayList<>();
-                assert method != null;
-                args.addAll(
-                        scope.getLeftValues(method.getParameters().size() - lambda.params.size(), true)
-                                .stream()
-                                .map(l -> new Ins.TLoad(l, scope, LineCol.SYNTHETIC)).collect(Collectors.toList())
-                );
+                List<Value> args = new ArrayList<Value>();
+                for (LeftValue l : scope.getLeftValues(method.getParameters().size() - lambda.params.size(), true)) {
+                        args.add(new Ins.TLoad(l, scope, LineCol.SYNTHETIC));
+                }
 
                 if (constructorWithZeroParamAndCanAccess == null && !(requiredType instanceof SInterfaceDef))
                         throw new LtBug("constructorWithZeroParamAndCanAccess should not be null");
@@ -5523,7 +5507,8 @@ public class SemanticProcessor {
                 //         methodHandle.invokeExact(o,local)
 
                 // constructor arguments
-                List<Value> consArgs = new ArrayList<>();
+                List<Value> consArgs = new ArrayList<Value>();
+                /* it's no longer used
                 // methodHandle
                 consArgs.add(new MethodHandleValue(
                         method,
@@ -5532,6 +5517,7 @@ public class SemanticProcessor {
                                 : Dynamic.INVOKE_SPECIAL,
                         getMethodHandle_Class()
                 ));
+                */
                 // o
                 if (scope.getThis() != null) consArgs.add(scope.getThis());
                 // local
@@ -5549,7 +5535,8 @@ public class SemanticProcessor {
                         scope.type(), scope.getThis() == null, methodToOverride,
                         constructorWithZeroParamAndCanAccess,
                         isInterface ? (SInterfaceDef) requiredType : null,
-                        isInterface);
+                        isInterface, newList.initValues().size(),
+                        method);
 
                 SConstructorDef cons = builtClass.constructors().get(0);
                 Ins.New aNew = new Ins.New(cons, LineCol.SYNTHETIC);
@@ -5577,13 +5564,15 @@ public class SemanticProcessor {
          * @param superConstructor the constructor to invoke (or null if it's interface)
          * @param interfaceType    the interface type (or null if it's class)
          * @param isInterface      the type to extend/implement is interface
+         * @param localVarCount    local variable count
          * @return generated class (SClassDef form)
          * @throws SyntaxException compile error
          */
         public SClassDef buildAClassForLambda(STypeDef lambdaClassType, boolean isStatic, SMethodDef methodToOverride,
                                               SConstructorDef superConstructor,
                                               SInterfaceDef interfaceType,
-                                              boolean isInterface) throws SyntaxException {
+                                              boolean isInterface, int localVarCount,
+                                              SMethodDef innerMethod) throws SyntaxException {
                 // class
                 SClassDef sClassDef = new SClassDef(SClassDef.NORMAL, LineCol.SYNTHETIC);
                 typeDefSet.add(sClassDef);
@@ -5606,12 +5595,14 @@ public class SemanticProcessor {
                 sClassDef.modifiers().add(SModifier.PUBLIC);
 
                 // fields
+                /* it's no longer used!
                 // methodHandle
                 SFieldDef f1 = new SFieldDef(LineCol.SYNTHETIC);
                 f1.setName("methodHandle");
                 f1.setType(getMethodHandle_Class());
                 sClassDef.fields().add(f1);
                 f1.setDeclaringType(sClassDef);
+                */
                 // o
                 SFieldDef f2 = null;
                 if (!isStatic) {
@@ -5659,6 +5650,7 @@ public class SemanticProcessor {
                         f4, new Ins.This(sClassDef),
                         new Ins.This(sClassDef), LineCol.SYNTHETIC, err));
                 con.modifiers().add(SModifier.PUBLIC);
+                /* it's no longer used!
                 // p1
                 SParameter p1 = new SParameter();
                 p1.setType(getMethodHandle_Class());
@@ -5670,6 +5662,7 @@ public class SemanticProcessor {
                         new Ins.TLoad(p1, conScope, LineCol.SYNTHETIC),
                         LineCol.SYNTHETIC, err
                 ));
+                */
                 // p2
                 if (!isStatic) {
                         SParameter p2 = new SParameter();
@@ -5713,147 +5706,46 @@ public class SemanticProcessor {
                         meScope.putLeftValue(name, mp);
                         mp.setName(name);
                 }
-                // new ArrayList
-                SClassDef LinkedList_Type = (SClassDef) getTypeWithName("java.util.LinkedList", LineCol.SYNTHETIC);
-                SConstructorDef LinkedList_Con = null;
-                assert LinkedList_Type != null;
-                for (SConstructorDef co : LinkedList_Type.constructors()) {
-                        if (co.getParameters().size() == 1 && co.getParameters().get(0).type().fullName().equals("java.util.Collection")) {
-                                LinkedList_Con = co;
-                                break;
-                        }
-                }
-                if (LinkedList_Con == null)
-                        throw new LtBug("java.util.LinkedList should have constructor LinkedList(Collection)");
-                Ins.New aNew = new Ins.New(LinkedList_Con, LineCol.SYNTHETIC);
-                aNew.args().add(new Ins.GetField(f3, meScope.getThis(), LineCol.SYNTHETIC));
-                LocalVariable localVariable = new LocalVariable(LinkedList_Type, false);
-                meScope.putLeftValue("list", localVariable);
-                theMethod.statements().add(
-                        new Ins.TStore(localVariable, aNew, meScope, LineCol.SYNTHETIC, err)
-                );
-                // add all params
-                SMethodDef LinkedList_add = null;
-                for (SMethodDef m : LinkedList_Type.methods()) {
-                        if (m.name().equals("add") && m.getParameters().size() == 1
-                                && m.getParameters().get(0).type().fullName().equals("java.lang.Object")) {
-                                LinkedList_add = m;
-                                break;
-                        }
-                }
-                if (LinkedList_add == null) throw new LtBug("java.util.LinkedList should have method add(Object)");
-                for (SParameter param : theMethod.getParameters()) {
-                        LeftValue mp = meScope.getLeftValue(param.name());
-                        Ins.InvokeVirtual invokeVirtual = new Ins.InvokeVirtual(
-                                new Ins.TLoad(localVariable, meScope, LineCol.SYNTHETIC),
-                                LinkedList_add,
-                                LineCol.SYNTHETIC
+                // the lambda USED to be using MethodHandle to invoke the method
+                // now it directly invokes that method
+                List<Value> methodArgs = new ArrayList<Value>();
+                for (int index = 0; index < localVarCount; ++index) {
+                        Ins.InvokeInterface ii = new Ins.InvokeInterface(
+                                new Ins.GetField(f3, scope.getThis(), LineCol.SYNTHETIC),
+                                getList_get(), LineCol.SYNTHETIC
                         );
-                        invokeVirtual.arguments().add(
-                                new Ins.TLoad(mp, meScope, LineCol.SYNTHETIC)
+                        ii.arguments().add(new IntValue(index));
+                        Ins.CheckCast cc = new Ins.CheckCast(ii, innerMethod.getParameters().get(index).type(), LineCol.SYNTHETIC);
+                        methodArgs.add(cc);
+                }
+                for (SParameter p : theMethod.getParameters()) {
+                        methodArgs.add(new Ins.TLoad(
+                                p, scope, LineCol.SYNTHETIC
+                        ));
+                }
+                Instruction theStmt;
+                if (isStatic) {
+                        Ins.InvokeStatic is = new Ins.InvokeStatic(
+                                innerMethod, LineCol.SYNTHETIC
                         );
-                        theMethod.statements().add(invokeVirtual);
-                }
-                // add o if not static
-                if (!isStatic) {
-                        SMethodDef LinkedList_add2 = null;
-                        for (SMethodDef m : LinkedList_Type.methods()) {
-                                if (m.name().equals("add") && m.getParameters().size() == 2
-                                        && m.getParameters().get(0).type().equals(IntTypeDef.get())
-                                        && m.getParameters().get(1).type().fullName().equals("java.lang.Object")) {
-                                        LinkedList_add2 = m;
-                                        break;
-                                }
-                        }
-                        if (LinkedList_add2 == null)
-                                throw new LtBug("java.util.LinkedList should have method add(int,Object)");
-                        Ins.InvokeVirtual invokeVirtual = new Ins.InvokeVirtual(
-                                new Ins.TLoad(localVariable, meScope, LineCol.SYNTHETIC),
-                                LinkedList_add2,
-                                LineCol.SYNTHETIC
-                        );
-                        invokeVirtual.arguments().add(new IntValue(0));
-                        invokeVirtual.arguments().add(new Ins.GetField(f2, meScope.getThis(), LineCol.SYNTHETIC));
-                        theMethod.statements().add(invokeVirtual);
-                }
-                // linkedList.add(self)
-                Ins.InvokeVirtual addSelfInvokeVirtual = new Ins.InvokeVirtual(
-                        new Ins.TLoad(localVariable, meScope, LineCol.SYNTHETIC),
-                        LinkedList_add,
-                        LineCol.SYNTHETIC
-                );
-                addSelfInvokeVirtual.arguments().add(
-                        new Ins.GetField(f4, new Ins.This(sClassDef), LineCol.SYNTHETIC)
-                );
-                theMethod.statements().add(addSelfInvokeVirtual);
-
-                /* invoke println(list)
-                SClassDef cls = (SClassDef) getTypeWithName("lt.lang.Utils", LineCol.SYNTHETIC);
-                SMethodDef println = null;
-                for (SMethodDef m : cls.methods()) {
-                        if (m.name().equals("println") && m.getParameters().size() == 1 && m.getParameters().get(0).type().fullName().equals("java.lang.Object")) {
-                                println = m;
-                                break;
-                        }
-                }
-                Ins.InvokeStatic is = new Ins.InvokeStatic(println, LineCol.SYNTHETIC);
-                is.arguments().add(new Ins.TLoad(localVariable, meScope, LineCol.SYNTHETIC));
-                theMethod.statements().add(is);
-                */
-
-                // invoke the method handle
-                SMethodDef MethodHandle_invokeWithArguments = null;
-                for (SMethodDef m : getMethodHandle_Class().methods()) {
-                        if (m.name().equals("invokeWithArguments")
-                                && m.getParameters().size() == 1
-                                && m.getParameters().get(0).type().fullName().equals("java.util.List")) {
-                                MethodHandle_invokeWithArguments = m;
-                                break;
-                        }
-                }
-                if (MethodHandle_invokeWithArguments == null)
-                        throw new LtBug("java.lang.invoke.MethodHandle should have method invokeWithArguments(Object[])");
-                Ins.InvokeVirtual invokeMethodHandle = new Ins.InvokeVirtual(
-                        new Ins.GetField(f1, meScope.getThis(), LineCol.SYNTHETIC),
-                        MethodHandle_invokeWithArguments,
-                        LineCol.SYNTHETIC
-                );
-                invokeMethodHandle.arguments().add(
-                        new Ins.TLoad(localVariable, meScope, LineCol.SYNTHETIC)
-                );
-
-                // return or not return
-                if (theMethod.getReturnType().equals(VoidType.get())) {
-                        theMethod.statements().add(invokeMethodHandle);
+                        is.arguments().addAll(methodArgs);
+                        theStmt = is;
                 } else {
-                        theMethod.statements().add(
-                                new Ins.TReturn(
-                                        cast(theMethod.getReturnType(),
-                                                invokeMethodHandle,
-                                                scope.type(),
-                                                LineCol.SYNTHETIC),
-                                        LineCol.SYNTHETIC
-                                )
+                        Ins.InvokeVirtual iv = new Ins.InvokeVirtual(
+                                new Ins.GetField(f2, scope.getThis(), LineCol.SYNTHETIC),
+                                innerMethod,
+                                LineCol.SYNTHETIC
                         );
+                        iv.arguments().addAll(methodArgs);
+                        theStmt = iv;
                 }
+                // return if it's not `void`
+                if (!theMethod.getReturnType().equals(VoidType.get())) {
+                        theStmt = new Ins.TReturn((Value) theStmt, LineCol.SYNTHETIC);
+                }
+                theMethod.statements().add(theStmt);
 
                 return sClassDef;
-        }
-
-        /**
-         * {@link java.lang.invoke.MethodHandle}
-         */
-        private SClassDef MethodHandle_Class;
-
-        /**
-         * @return {@link java.lang.invoke.MethodHandle}
-         * @throws SyntaxException exception
-         */
-        public SClassDef getMethodHandle_Class() throws SyntaxException {
-                if (MethodHandle_Class == null) {
-                        MethodHandle_Class = (SClassDef) getTypeWithName("java.lang.invoke.MethodHandle", LineCol.SYNTHETIC);
-                }
-                return MethodHandle_Class;
         }
 
         /**
@@ -5880,7 +5772,7 @@ public class SemanticProcessor {
 
                 assert requiredType != null;
                 MethodDef methodDef = new MethodDef(
-                        methodName, Collections.emptySet(),
+                        methodName, Collections.<Modifier>emptySet(),
                         new AST.Access(
                                 requiredType.pkg() == null ? null : new AST.PackageRef(requiredType.pkg(), LineCol.SYNTHETIC),
                                 requiredType.fullName().contains(".")
@@ -5888,12 +5780,12 @@ public class SemanticProcessor {
                                         : requiredType.fullName(),
                                 LineCol.SYNTHETIC
                         )
-                        , Collections.emptyList(), Collections.emptySet(),
+                        , Collections.<VariableDef>emptyList(), Collections.<AST.Anno>emptySet(),
                         procedure.statements, procedure.line_col()
                 );
                 parseInnerMethod(methodDef, scope, false);
                 AST.Invocation invocation = new AST.Invocation(
-                        new AST.Access(null, methodName, procedure.line_col()), Collections.emptyList(), false, procedure.line_col());
+                        new AST.Access(null, methodName, procedure.line_col()), Collections.<Expression>emptyList(), false, procedure.line_col());
                 return parseValueFromInvocation(invocation, scope);
         }
 
@@ -6150,7 +6042,7 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         public Value invokeMethodWithArgs(LineCol lineCol, STypeDef targetType, Value invokeOn, String methodName, List<Value> args, SemanticScope scope) throws SyntaxException {
-                List<SMethodDef> methods = new ArrayList<>();
+                List<SMethodDef> methods = new ArrayList<SMethodDef>();
                 int FIND_MODE;
                 if (invokeOn.equals(NullValue.get())) {
                         FIND_MODE = FIND_MODE_STATIC;
@@ -6162,16 +6054,15 @@ public class SemanticProcessor {
                 }
                 findMethodFromTypeWithArguments(lineCol, methodName, args, scope.type(), targetType, FIND_MODE, methods, true);
                 if (methods.isEmpty()) {
-                        // invoke dynamic
-                        args.add(0, new Ins.GetClass(targetType, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
-                        args.add(1, invokeOn);
-                        args.add(2, NullValue.get()); // xx.method(...) doesn't support invoking method on functional objects
-                        return new Ins.InvokeDynamic(
-                                getInvokeDynamicBootstrapMethod(),
+                        return invoke_Dynamic_invoke(
+                                targetType,
+                                invokeOn,
+                                NullValue.get(),
+                                scope.type(),
                                 methodName,
                                 args,
-                                getTypeWithName("java.lang.Object", lineCol)
-                                , Dynamic.INVOKE_STATIC, lineCol);
+                                lineCol
+                        );
                 } else {
                         SMethodDef method = findBestMatch(args, methods, lineCol);
                         args = castArgsForMethodInvoke(args, method.getParameters(), lineCol);
@@ -6279,7 +6170,7 @@ public class SemanticProcessor {
                                         baseOp, methodName, right, scope, lineCol);
                         }
                 } else {
-                        List<Value> args = new ArrayList<>();
+                        List<Value> args = new ArrayList<Value>();
                         args.add(right);
                         return invokeMethodWithArgs(lineCol, left.type(), left, methodName, args, scope);
                 }
@@ -6397,7 +6288,7 @@ public class SemanticProcessor {
                                 invokeStatic.arguments().add(new IntValue(compare_mode));
                                 return invokeStatic;
                         } else {
-                                List<Value> args = new ArrayList<>();
+                                List<Value> args = new ArrayList<Value>();
                                 args.add(right);
                                 return invokeMethodWithArgs(lineCol, left.type(), left, methodName, args, scope);
                         }
@@ -6444,214 +6335,204 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         public Value parseValueFromTwoVarOp(Value left, String op, Value right, SemanticScope scope, LineCol lineCol) throws SyntaxException {
-                switch (op) {
-                        case ":::":
-                                List<Value> arg = new ArrayList<>();
-                                arg.add(right);
-                                return invokeMethodWithArgs(lineCol, left.type(), left, "concat", arg, scope);
-                        case "^^":
-                                arg = new ArrayList<>();
-                                arg.add(right);
-                                if (left.type() instanceof PrimitiveTypeDef) {
-                                        left = boxPrimitive(left, LineCol.SYNTHETIC);
+                if (op.equals(":::")) {
+                        List<Value> arg = new ArrayList<Value>();
+                        arg.add(right);
+                        return invokeMethodWithArgs(lineCol, left.type(), left, "concat", arg, scope);
+                } else if (op.equals("^^")) {
+                        List<Value> arg;
+                        arg = new ArrayList<Value>();
+                        arg.add(right);
+                        if (left.type() instanceof PrimitiveTypeDef) {
+                                left = boxPrimitive(left, LineCol.SYNTHETIC);
+                        }
+                        return invokeMethodWithArgs(lineCol, left.type(), left, "pow", arg, scope);
+                } else if (op.equals("*")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Imul, LtRuntime.multiply, right, scope, lineCol);
+                } else if (op.equals("/")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Idiv, LtRuntime.divide, right, scope, lineCol);
+                } else if (op.equals("%")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Irem, LtRuntime.remainder, right, scope, lineCol);
+                } else if (op.equals("+")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iadd, LtRuntime.add, right, scope, lineCol);
+                } else if (op.equals("-")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Isub, LtRuntime.subtract, right, scope, lineCol);
+                } else if (op.equals("<<")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishl, LtRuntime.shiftLeft, right, scope, lineCol);
+                } else if (op.equals(">>")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishr, LtRuntime.shiftRight, right, scope, lineCol);
+                } else if (op.equals(">>>")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iushr, LtRuntime.unsignedShiftRight, right, scope, lineCol);
+                } else if (op.equals(">")) {
+                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_GT, LtRuntime.gt, right, scope, lineCol);
+                } else if (op.equals("<")) {
+                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT, LtRuntime.lt, right, scope, lineCol);
+                } else if (op.equals(">=")) {
+                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_GT | LtRuntime.COMPARE_MODE_EQ, LtRuntime.ge, right, scope, lineCol);
+                } else if (op.equals("<=")) {
+                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT | LtRuntime.COMPARE_MODE_EQ, LtRuntime.le, right, scope, lineCol);
+                } else if (op.equals("==")) {// null check
+                        if (left.equals(NullValue.get()) || right.equals(NullValue.get())) {
+                                if (right.equals(NullValue.get())) {
+                                        Value tmp = left;
+                                        left = right;
+                                        right = tmp;
                                 }
-                                return invokeMethodWithArgs(lineCol, left.type(), left, "pow", arg, scope);
-                        case "*":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Imul, LtRuntime.multiply, right, scope, lineCol);
-                        case "/":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Idiv, LtRuntime.divide, right, scope, lineCol);
-                        case "%":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Irem, LtRuntime.remainder, right, scope, lineCol);
-                        case "+":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iadd, LtRuntime.add, right, scope, lineCol);
-                        case "-":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Isub, LtRuntime.subtract, right, scope, lineCol);
-                        case "<<":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishl, LtRuntime.shiftLeft, right, scope, lineCol);
-                        case ">>":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishr, LtRuntime.shiftRight, right, scope, lineCol);
-                        case ">>>":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iushr, LtRuntime.unsignedShiftRight, right, scope, lineCol);
-                        case ">":
-                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_GT, LtRuntime.gt, right, scope, lineCol);
-                        case "<":
-                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT, LtRuntime.lt, right, scope, lineCol);
-                        case ">=":
-                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_GT | LtRuntime.COMPARE_MODE_EQ, LtRuntime.ge, right, scope, lineCol);
-                        case "<=":
-                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT | LtRuntime.COMPARE_MODE_EQ, LtRuntime.le, right, scope, lineCol);
-                        case "==":
-                                // null check
-                                if (left.equals(NullValue.get()) || right.equals(NullValue.get())) {
-                                        if (right.equals(NullValue.get())) {
-                                                Value tmp = left;
-                                                left = right;
-                                                right = tmp;
-                                        }
-                                        return parseValueFromTwoVarOp(left, "is", right, scope, lineCol);
+                                return parseValueFromTwoVarOp(left, "is", right, scope, lineCol);
+                        }
+                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
+                } else if (op.equals("!=")) {// null check
+                        if (left.equals(NullValue.get()) || right.equals(NullValue.get())) {
+                                if (right.equals(NullValue.get())) {
+                                        Value tmp = left;
+                                        left = right;
+                                        right = tmp;
                                 }
-                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
-                        case "!=":
-                                // null check
-                                if (left.equals(NullValue.get()) || right.equals(NullValue.get())) {
-                                        if (right.equals(NullValue.get())) {
-                                                Value tmp = left;
-                                                left = right;
-                                                right = tmp;
-                                        }
-                                        return parseValueFromTwoVarOp(left, "not", right, scope, lineCol);
-                                }
-                                Value eq = parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
-                                return parseValueFromTwoVarOpILFD(eq, Ins.TwoVarOp.Ixor, null, new BoolValue(true), scope, lineCol);
-                        case "===":
-                                if (left.type() instanceof PrimitiveTypeDef && right.type() instanceof PrimitiveTypeDef) {
-                                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, null, right, scope, lineCol);
+                                return parseValueFromTwoVarOp(left, "not", right, scope, lineCol);
+                        }
+                        Value eq = parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(eq, Ins.TwoVarOp.Ixor, null, new BoolValue(true), scope, lineCol);
+                } else if (op.equals("===")) {
+                        if (left.type() instanceof PrimitiveTypeDef && right.type() instanceof PrimitiveTypeDef) {
+                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, null, right, scope, lineCol);
+                        } else {
+                                if (left.type() instanceof PrimitiveTypeDef || right.type() instanceof PrimitiveTypeDef) {
+                                        err.SyntaxException("reference type cannot compare to primitive type", lineCol);
+                                        return null;
                                 } else {
-                                        if (left.type() instanceof PrimitiveTypeDef || right.type() instanceof PrimitiveTypeDef) {
-                                                err.SyntaxException("reference type cannot compare to primitive type", lineCol);
-                                                return null;
-                                        } else {
-                                                SMethodDef m = getLang_compareRef();
-                                                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
-                                                invokeStatic.arguments().add(left);
-                                                invokeStatic.arguments().add(right);
-                                                return invokeStatic;
-                                        }
+                                        SMethodDef m = getLang_compareRef();
+                                        Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
+                                        invokeStatic.arguments().add(left);
+                                        invokeStatic.arguments().add(right);
+                                        return invokeStatic;
                                 }
-                        case "!==":
-                                if (left.type() instanceof PrimitiveTypeDef && right.type() instanceof PrimitiveTypeDef) {
-                                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT | LtRuntime.COMPARE_MODE_GT, null, right, scope, lineCol);
+                        }
+                } else if (op.equals("!==")) {
+                        if (left.type() instanceof PrimitiveTypeDef && right.type() instanceof PrimitiveTypeDef) {
+                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT | LtRuntime.COMPARE_MODE_GT, null, right, scope, lineCol);
+                        } else {
+                                if (left.type() instanceof PrimitiveTypeDef || right.type() instanceof PrimitiveTypeDef) {
+                                        err.SyntaxException("reference type cannot compare to primitive type", lineCol);
+                                        return null;
                                 } else {
-                                        if (left.type() instanceof PrimitiveTypeDef || right.type() instanceof PrimitiveTypeDef) {
-                                                err.SyntaxException("reference type cannot compare to primitive type", lineCol);
-                                                return null;
-                                        } else {
-                                                // LtRuntime.compareRef(left,right)
-                                                SMethodDef m = getLang_compareRef();
-                                                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
-                                                invokeStatic.arguments().add(left);
-                                                invokeStatic.arguments().add(right);
+                                        // LtRuntime.compareRef(left,right)
+                                        SMethodDef m = getLang_compareRef();
+                                        Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
+                                        invokeStatic.arguments().add(left);
+                                        invokeStatic.arguments().add(right);
 
-                                                // ! LtRuntime.compareRef(left,right)
-                                                return parseValueFromTwoVarOpILFD(invokeStatic, Ins.TwoVarOp.Ixor, null, new BoolValue(true), scope, lineCol);
-                                        }
-                                }
-                        case "=:=":
-                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, LtRuntime.equal, right, scope, lineCol);
-                        case "!:=":
-                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, LtRuntime.notEqual, right, scope, lineCol);
-                        case "is": {
-                                // check second param
-                                if (right instanceof Ins.GetClass) {
-                                        // is type XXX
-                                        // use instance of
-                                        if (left.type() instanceof PrimitiveTypeDef) {
-                                                left = boxPrimitive(left, lineCol);
-                                        }
-                                        return new Ins.InstanceOf(left, (Ins.GetClass) right, lineCol);
-                                } else {
-                                        // invoke static LtRuntime.is
-                                        SMethodDef m = getLang_is();
-                                        Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
-                                        if (left.type() instanceof PrimitiveTypeDef) {
-                                                left = boxPrimitive(left, lineCol);
-                                        }
-                                        if (right.type() instanceof PrimitiveTypeDef) {
-                                                right = boxPrimitive(right, lineCol);
-                                        }
-                                        invokeStatic.arguments().add(left);
-                                        invokeStatic.arguments().add(right);
-                                        invokeStatic.arguments().add(
-                                                new Ins.GetClass(scope.type(),
-                                                        (SClassDef) getTypeWithName(
-                                                                "java.lang.Class",
-                                                                invokeStatic.line_col()))
-                                        );
-                                        return invokeStatic;
+                                        // ! LtRuntime.compareRef(left,right)
+                                        return parseValueFromTwoVarOpILFD(invokeStatic, Ins.TwoVarOp.Ixor, null, new BoolValue(true), scope, lineCol);
                                 }
                         }
-                        case "not": {
-                                // check second param
-                                if (right instanceof Ins.GetClass) {
-                                        // not type XXX
-                                        // use instanceof
-                                        if (left.type() instanceof PrimitiveTypeDef) {
-                                                left = boxPrimitive(left, lineCol);
-                                        }
-                                        return new Ins.TwoVarOp(
-                                                new Ins.TwoVarOp(
-                                                        new Ins.InstanceOf(left, (Ins.GetClass) right, lineCol),
-                                                        new IntValue(1),
-                                                        Ins.TwoVarOp.Iand, BoolTypeDef.get(),
-                                                        lineCol),
-                                                new IntValue(1),
-                                                Ins.TwoVarOp.Ixor,
-                                                BoolTypeDef.get(),
-                                                lineCol);
-                                } else {
-                                        // invoke static LtRuntime.not
-                                        SMethodDef m = getLang_not();
-                                        Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
-                                        if (left.type() instanceof PrimitiveTypeDef) {
-                                                left = boxPrimitive(left, lineCol);
-                                        }
-                                        if (right.type() instanceof PrimitiveTypeDef) {
-                                                right = boxPrimitive(right, lineCol);
-                                        }
-                                        invokeStatic.arguments().add(left);
-                                        invokeStatic.arguments().add(right);
-                                        invokeStatic.arguments().add(
-                                                new Ins.GetClass(scope.type(),
-                                                        (SClassDef) getTypeWithName(
-                                                                "java.lang.Class",
-                                                                invokeStatic.line_col()))
-                                        );
-                                        return invokeStatic;
+                } else if (op.equals("=:=")) {
+                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, LtRuntime.equal, right, scope, lineCol);
+                } else if (op.equals("!:=")) {
+                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, LtRuntime.notEqual, right, scope, lineCol);
+                } else if (op.equals("is")) {
+                        if (right instanceof Ins.GetClass) {
+                                // is type XXX
+                                // use instance of
+                                if (left.type() instanceof PrimitiveTypeDef) {
+                                        left = boxPrimitive(left, lineCol);
                                 }
-                        }
-                        case "in":
-                                List<Value> args = new ArrayList<>();
-                                args.add(left);
-                                if (right.type() instanceof PrimitiveTypeDef) {
-                                        right = boxPrimitive(right, lineCol);
-                                }
-                                return invokeMethodWithArgs(lineCol, right.type(), right, "contains", args, scope);
-                        case "&":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iand, LtRuntime.and, right, scope, lineCol);
-                        case "^":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ixor, LtRuntime.xor, right, scope, lineCol);
-                        case "|":
-                                return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ior, LtRuntime.or, right, scope, lineCol);
-                        case "&&":
-                        case "and":
-                                // logic and with short cut
-                                return new Ins.LogicAnd(
-                                        cast(BoolTypeDef.get(), left, scope.type(), lineCol),
-                                        cast(BoolTypeDef.get(), right, scope.type(), lineCol),
-                                        lineCol);
-                        case "||":
-                        case "or":
-                                // logic or with short cut
+                                return new Ins.InstanceOf(left, (Ins.GetClass) right, lineCol);
+                        } else {
+                                // invoke static LtRuntime.is
+                                SMethodDef m = getLang_is();
+                                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
                                 if (left.type() instanceof PrimitiveTypeDef) {
                                         left = boxPrimitive(left, lineCol);
                                 }
                                 if (right.type() instanceof PrimitiveTypeDef) {
                                         right = boxPrimitive(right, lineCol);
                                 }
-                                return new Ins.LogicOr(
-                                        getLang_castToBool(),
-                                        left, right,
-                                        getCommonParent(left.type(), right.type()),
-                                        lineCol
+                                invokeStatic.arguments().add(left);
+                                invokeStatic.arguments().add(right);
+                                invokeStatic.arguments().add(
+                                        new Ins.GetClass(scope.type(),
+                                                (SClassDef) getTypeWithName(
+                                                        "java.lang.Class",
+                                                        invokeStatic.line_col()))
                                 );
-                        case ":=":
-                                // assign
-                                args = new ArrayList<>();
-                                args.add(right);
-                                return invokeMethodWithArgs(lineCol, left.type(), left, "assign", args, scope);
-                        default:
-                                err.SyntaxException("unknown two variable operator " + op, lineCol);
-                                return null;
+                                return invokeStatic;
+                        }
+                } else if (op.equals("not")) {
+                        if (right instanceof Ins.GetClass) {
+                                // not type XXX
+                                // use instanceof
+                                if (left.type() instanceof PrimitiveTypeDef) {
+                                        left = boxPrimitive(left, lineCol);
+                                }
+                                return new Ins.TwoVarOp(
+                                        new Ins.TwoVarOp(
+                                                new Ins.InstanceOf(left, (Ins.GetClass) right, lineCol),
+                                                new IntValue(1),
+                                                Ins.TwoVarOp.Iand, BoolTypeDef.get(),
+                                                lineCol),
+                                        new IntValue(1),
+                                        Ins.TwoVarOp.Ixor,
+                                        BoolTypeDef.get(),
+                                        lineCol);
+                        } else {
+                                // invoke static LtRuntime.not
+                                SMethodDef m = getLang_not();
+                                Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(m, lineCol);
+                                if (left.type() instanceof PrimitiveTypeDef) {
+                                        left = boxPrimitive(left, lineCol);
+                                }
+                                if (right.type() instanceof PrimitiveTypeDef) {
+                                        right = boxPrimitive(right, lineCol);
+                                }
+                                invokeStatic.arguments().add(left);
+                                invokeStatic.arguments().add(right);
+                                invokeStatic.arguments().add(
+                                        new Ins.GetClass(scope.type(),
+                                                (SClassDef) getTypeWithName(
+                                                        "java.lang.Class",
+                                                        invokeStatic.line_col()))
+                                );
+                                return invokeStatic;
+                        }
+                } else if (op.equals("in")) {
+                        List<Value> args = new ArrayList<Value>();
+                        args.add(left);
+                        if (right.type() instanceof PrimitiveTypeDef) {
+                                right = boxPrimitive(right, lineCol);
+                        }
+                        return invokeMethodWithArgs(lineCol, right.type(), right, "contains", args, scope);
+                } else if (op.equals("&")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iand, LtRuntime.and, right, scope, lineCol);
+                } else if (op.equals("^")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ixor, LtRuntime.xor, right, scope, lineCol);
+                } else if (op.equals("|")) {
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ior, LtRuntime.or, right, scope, lineCol);
+                } else if (op.equals("&&") || op.equals("and")) {// logic and with short cut
+                        return new Ins.LogicAnd(
+                                cast(BoolTypeDef.get(), left, scope.type(), lineCol),
+                                cast(BoolTypeDef.get(), right, scope.type(), lineCol),
+                                lineCol);
+                } else if (op.equals("||") || op.equals("or")) {// logic or with short cut
+                        if (left.type() instanceof PrimitiveTypeDef) {
+                                left = boxPrimitive(left, lineCol);
+                        }
+                        if (right.type() instanceof PrimitiveTypeDef) {
+                                right = boxPrimitive(right, lineCol);
+                        }
+                        return new Ins.LogicOr(
+                                getLang_castToBool(),
+                                left, right,
+                                getCommonParent(left.type(), right.type()),
+                                lineCol
+                        );
+                } else if (op.equals(":=")) {
+                        List<Value> args;// assign
+                        args = new ArrayList<Value>();
+                        args.add(right);
+                        return invokeMethodWithArgs(lineCol, left.type(), left, "assign", args, scope);
+                } else {
+                        err.SyntaxException("unknown two variable operator " + op, lineCol);
+                        return null;
                 }
         }
 
@@ -6852,7 +6733,7 @@ public class SemanticProcessor {
                                 }
                                 // v is object
                                 // invoke `logicNot`
-                                return invokeMethodWithArgs(exp.line_col(), v.type(), v, "logicNot", new ArrayList<>(), scope);
+                                return invokeMethodWithArgs(exp.line_col(), v.type(), v, "logicNot", new ArrayList<Value>(), scope);
                         }
 
                 } else if (op.equals("~") && unary) {
@@ -6886,7 +6767,7 @@ public class SemanticProcessor {
                                 }
                                 // v is object
                                 // invoke `bitwiseNot`
-                                return invokeMethodWithArgs(exp.line_col(), v.type(), v, "not", new ArrayList<>(), scope);
+                                return invokeMethodWithArgs(exp.line_col(), v.type(), v, "not", new ArrayList<Value>(), scope);
                         }
                 } else if (op.equals("+") && unary) {
                         // +i (do nothing)
@@ -6934,7 +6815,7 @@ public class SemanticProcessor {
                                 }
                                 // v is object
                                 // invoke `negate`
-                                return invokeMethodWithArgs(exp.line_col(), v.type(), v, "negate", new ArrayList<>(), scope);
+                                return invokeMethodWithArgs(exp.line_col(), v.type(), v, "negate", new ArrayList<Value>(), scope);
                         }
                 } else {
                         err.SyntaxException("unknown one variable operator " + (unary ? (op + "v") : ("v" + op)), exp.line_col());
@@ -6951,7 +6832,7 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public List<Value> parseArguments(List<Expression> args, SemanticScope scope) throws SyntaxException {
-                List<Value> list = new ArrayList<>();
+                List<Value> list = new ArrayList<Value>();
                 for (Expression exp : args) {
                         Value a = parseValueFromExpression(exp, null, scope);
                         if (a == null) {
@@ -6992,66 +6873,14 @@ public class SemanticProcessor {
                         }
                 }
                 // not array
-                // try to find `get`
-                List<SMethodDef> methods = new ArrayList<>();
-                findMethodFromTypeWithArguments(index.line_col(), "get", list, scope.type(), v.type(), FIND_MODE_NON_STATIC, methods, true);
-                if (methods.isEmpty()) {
-                        // invoke dynamic
-                        list.add(0, new Ins.GetClass(v.type(), (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
-                        list.add(1, v); // add invoke target into list
-                        list.add(2, NullValue.get()); // xx[...] doesn't support invoking method on functional objects
-
-                        return new Ins.InvokeDynamic(
-                                getInvokeDynamicBootstrapMethod(),
-                                "get",
-                                list,
-                                getTypeWithName("java.lang.Object", index.line_col()),
-                                Dynamic.INVOKE_STATIC,
-                                index.line_col());
-                } else {
-                        SMethodDef methodDef = findBestMatch(list, methods, index.line_col());
-                        list = castArgsForMethodInvoke(list, methodDef.getParameters(), LineCol.SYNTHETIC);
-                        if (methodDef.modifiers().contains(SModifier.PRIVATE)) {
-                                // invoke special
-                                Ins.InvokeSpecial invokeSpecial = new Ins.InvokeSpecial(v, methodDef, index.line_col());
-                                invokeSpecial.arguments().addAll(list);
-
-                                if (invokeSpecial.type().equals(VoidType.get())) {
-                                        return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
-                                                invokeSpecial, invokeSpecial.line_col()
-                                        );
-                                }
-
-                                return invokeSpecial;
-                        } else if (methodDef.declaringType() instanceof SInterfaceDef) {
-                                // invoke interface
-                                Ins.InvokeInterface invokeInterface = new Ins.InvokeInterface(v, methodDef, index.line_col());
-                                invokeInterface.arguments().addAll(list);
-
-                                if (invokeInterface.type().equals(VoidType.get())) {
-                                        return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
-                                                invokeInterface, invokeInterface.line_col()
-                                        );
-                                }
-
-                                return invokeInterface;
-                        } else {
-                                // invoke virtual
-                                Ins.InvokeVirtual invokeVirtual = new Ins.InvokeVirtual(v, methodDef, index.line_col());
-                                invokeVirtual.arguments().addAll(list);
-
-                                if (invokeVirtual.type().equals(VoidType.get())) {
-                                        return new ValueAnotherType(
-                                                getTypeWithName("lt.lang.Unit", LineCol.SYNTHETIC),
-                                                invokeVirtual, invokeVirtual.line_col()
-                                        );
-                                }
-
-                                return invokeVirtual;
-                        }
-                }
+                // do invoke
+                return invokeMethodWithArgs(
+                        index.line_col(),
+                        v.type(),
+                        v,
+                        "get",
+                        list,
+                        scope);
         }
 
         /**
@@ -8022,11 +7851,11 @@ public class SemanticProcessor {
                                 err.SyntaxException("invoking methods in annotation should contain no arguments", lineCol);
                                 return;
                         }
-                        matchedMethods.addAll(
-                                ((SAnnoDef) sTypeDef).annoFields().stream().
-                                        filter(f -> f.name().equals(name)).
-                                        collect(Collectors.toList())
-                        );
+                        for (SAnnoField f : ((SAnnoDef) sTypeDef).annoFields()) {
+                                if (f.name().equals(name)) {
+                                        matchedMethods.add(f);
+                                }
+                        }
                 } else throw new LtBug("sTypeDef can only be SClassDef or SInterfaceDef or SAnnoDef");
         }
 
@@ -8039,7 +7868,7 @@ public class SemanticProcessor {
          * @return {@link lt.compiler.semantic.Ins.New} or {@link lt.compiler.semantic.Ins.InvokeDynamic}
          * @throws SyntaxException exception
          */
-        public Value constructingNewInst(SClassDef classDef, List<Value> argList, LineCol lineCol) throws SyntaxException {
+        public Value constructingNewInst(SClassDef classDef, List<Value> argList, SemanticScope scope, LineCol lineCol) throws SyntaxException {
                 out:
                 for (SConstructorDef con : classDef.constructors()) {
                         // foreach constructor, check its parameters
@@ -8073,8 +7902,7 @@ public class SemanticProcessor {
                 // not found
 
                 // add current class into arg list
-                return new Ins.InvokeDynamic(getConstructBootstrapMethod(),
-                        "_init_", argList, classDef, Dynamic.INVOKE_STATIC, lineCol);
+                return invoke_Dynamic_construct(classDef, scope.type(), argList, lineCol);
         }
 
         /**
@@ -8091,12 +7919,66 @@ public class SemanticProcessor {
                 Expression exp = invocation.exp;
                 Value possibleFunctionalObject = parseValueFromExpression(exp, null, scope);
 
-                List<Value> arguments = new ArrayList<>();
+                List<Value> arguments = new ArrayList<Value>();
                 for (Expression e : invocation.args) {
                         arguments.add(parseValueFromExpression(e, null, scope));
                 }
 
-                return callFunctionalObject(possibleFunctionalObject, arguments, invocation.line_col());
+                return callFunctionalObject(possibleFunctionalObject, scope.type(), arguments, invocation.line_col());
+        }
+
+        private SClassDef DYNAMIC_CLASS;
+
+        public SClassDef getDynamicClass() throws SyntaxException {
+                if (DYNAMIC_CLASS == null) {
+                        DYNAMIC_CLASS = (SClassDef) getTypeWithName(DYNAMIC_CLASS_NAME, LineCol.SYNTHETIC);
+                }
+                return DYNAMIC_CLASS;
+        }
+
+        private SMethodDef DYNAMIC_callFunctionalObject;
+
+        public SMethodDef getDYNAMIC_callFunctionalObject() throws SyntaxException {
+                if (DYNAMIC_callFunctionalObject == null) {
+                        SClassDef DYNAMIC = getDynamicClass();
+                        for (SMethodDef m : DYNAMIC.methods()) {
+                                if (m.name().equals("callFunctionalObject") && m.getParameters().size() == 3) {
+                                        DYNAMIC_callFunctionalObject = m;
+                                        break;
+                                }
+                        }
+                }
+                return DYNAMIC_callFunctionalObject;
+        }
+
+        private SMethodDef DYNAMIC_invoke;
+
+        public SMethodDef getDYNAMIC_invoke() throws SyntaxException {
+                if (DYNAMIC_invoke == null) {
+                        SClassDef DYNAMIC = getDynamicClass();
+                        for (SMethodDef m : DYNAMIC.methods()) {
+                                if (m.name().equals("invoke") && m.getParameters().size() == 7) {
+                                        DYNAMIC_invoke = m;
+                                        break;
+                                }
+                        }
+                }
+                return DYNAMIC_invoke;
+        }
+
+        private SMethodDef DYNAMIC_construct;
+
+        public SMethodDef getDYNAMIC_construct() throws SyntaxException {
+                if (DYNAMIC_construct == null) {
+                        SClassDef DYNAMIC = getDynamicClass();
+                        for (SMethodDef m : DYNAMIC.methods()) {
+                                if (m.name().equals("construct") && m.getParameters().size() == 4) {
+                                        DYNAMIC_construct = m;
+                                        break;
+                                }
+                        }
+                }
+                return DYNAMIC_construct;
         }
 
         /**
@@ -8108,16 +7990,84 @@ public class SemanticProcessor {
          * @return the invocation
          * @throws SyntaxException compiling error
          */
-        public Value callFunctionalObject(Value object, List<Value> arguments, LineCol lineCol) throws SyntaxException {
-                List<Value> finalArguments = new ArrayList<>();
-                finalArguments.add(object);
-                finalArguments.addAll(arguments);
-
-                return new Ins.InvokeDynamic(
-                        getCallFunctionalObjectBootstrapMethod(),
-                        "_call_functional_object_", finalArguments,
-                        getObject_Class(), Dynamic.INVOKE_STATIC, lineCol
+        public Value callFunctionalObject(Value object, STypeDef callerClass, List<Value> arguments, LineCol lineCol) throws SyntaxException {
+                Ins.InvokeStatic is = new Ins.InvokeStatic(
+                        getDYNAMIC_callFunctionalObject(), lineCol
                 );
+                is.arguments().add(object);
+                is.arguments().add(new Ins.GetClass(callerClass, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                is.arguments().add(packListValuesIntoObjectArray(arguments));
+                return is;
+        }
+
+        /**
+         * pack a list of values into []Object
+         *
+         * @param values values to pack
+         * @return a value represents the object array
+         * @throws SyntaxException compiling error
+         */
+        private Value packListValuesIntoObjectArray(List<Value> values) throws SyntaxException {
+                Ins.ANewArray aNewArray = new Ins.ANewArray(
+                        (SArrayTypeDef) getTypeWithName("[java.lang.Object;", LineCol.SYNTHETIC),
+                        getTypeWithName("java.lang.Object", LineCol.SYNTHETIC),
+                        new IntValue(values.size()));
+                for (Value v : values) {
+                        if (v.type() instanceof PrimitiveTypeDef) {
+                                v = boxPrimitive(v, LineCol.SYNTHETIC);
+                        }
+                        aNewArray.initValues().add(v);
+                }
+                return aNewArray;
+        }
+
+        /**
+         * pack a list of values into []boolean
+         *
+         * @param values values to pack
+         * @return a value represents the object array
+         * @throws SyntaxException compiling error
+         */
+        private Value packListValuesIntoBooleanArray(List<Value> values) throws SyntaxException {
+                Ins.NewArray newArray = new Ins.NewArray(
+                        new IntValue(values.size()), Ins.NewArray.NewBoolArray, Ins.TAStore.BASTORE,
+                        getTypeWithName("[B", LineCol.SYNTHETIC)
+                );
+                newArray.initValues().addAll(values);
+                return newArray;
+        }
+
+        private Ins.InvokeStatic invoke_Dynamic_invoke(STypeDef targetClass, Value o, Value functionalObject,
+                                                       STypeDef invoker, String method, List<Value> args,
+                                                       LineCol lineCol) throws SyntaxException {
+                Ins.InvokeStatic is = new Ins.InvokeStatic(
+                        getDYNAMIC_invoke(), lineCol
+                );
+                is.arguments().add(new Ins.GetClass(targetClass, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                is.arguments().add(o);
+                is.arguments().add(functionalObject);
+                is.arguments().add(new Ins.GetClass(invoker, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                is.arguments().add(new StringConstantValue(method));
+                List<Value> primitives = new ArrayList<Value>();
+                for (Value a : args) {
+                        primitives.add(new BoolValue(a.type() instanceof PrimitiveTypeDef));
+                }
+                is.arguments().add(packListValuesIntoBooleanArray(primitives));
+                is.arguments().add(packListValuesIntoObjectArray(args));
+                return is;
+        }
+
+        private Ins.InvokeStatic invoke_Dynamic_construct(STypeDef targetClass, STypeDef invoker,
+                                                          List<Value> args,
+                                                          LineCol lineCol) throws SyntaxException {
+                Ins.InvokeStatic is = new Ins.InvokeStatic(
+                        getDYNAMIC_construct(), lineCol
+                );
+                is.arguments().add(new Ins.GetClass(targetClass, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                is.arguments().add(new Ins.GetClass(invoker, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                is.arguments().add(packListValuesIntoBooleanArray(args));
+                is.arguments().add(packListValuesIntoObjectArray(args));
+                return is;
         }
 
         /**
@@ -8143,7 +8093,7 @@ public class SemanticProcessor {
          */
         public Value parseValueFromInvocation(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
                 // parse args
-                List<Value> argList = new ArrayList<>();
+                List<Value> argList = new ArrayList<Value>();
                 boolean tmpEnableTypeAccess = enableTypeAccess;
                 for (Expression arg : invocation.args) {
                         enableTypeAccess = true;
@@ -8160,7 +8110,7 @@ public class SemanticProcessor {
                         argList.add(v);
                 }
 
-                List<SMethodDef> methodsToInvoke = new ArrayList<>();
+                List<SMethodDef> methodsToInvoke = new ArrayList<SMethodDef>();
                 SemanticScope.MethodRecorder innerMethod = null; // inner method ?
                 Value target = null;
                 // get method and target
@@ -8404,26 +8354,18 @@ public class SemanticProcessor {
                                         } else if (access.exp instanceof AST.Access && type != null) {
                                                 // access.exp is type
                                                 if (methodsToInvoke.isEmpty()) {
-                                                        List<Value> args = new ArrayList<>();
-                                                        args.add(new Ins.GetClass(type, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
-                                                        args.add(NullValue.get());
-
                                                         // try to get static field
+                                                        // which could be functional object
                                                         SFieldDef field = findFieldFromTypeDef(access.name, type, scope.type(), FIND_MODE_STATIC, true);
-                                                        if (field == null) {
-                                                                args.add(NullValue.get()); // XXX.method(...) doesn't support invoking method on functional objects
-                                                        } else {
-                                                                args.add(new Ins.GetStatic(field, invocation.line_col()));
-                                                        }
-                                                        args.addAll(argList);
 
-                                                        // invoke dynamic
-                                                        return new Ins.InvokeDynamic(
-                                                                getInvokeDynamicBootstrapMethod(),
+                                                        return invoke_Dynamic_invoke(
+                                                                type, NullValue.get(),
+                                                                field == null
+                                                                        ? NullValue.get()
+                                                                        : new Ins.GetStatic(field, invocation.line_col()),
+                                                                scope.type(),
                                                                 access.name,
-                                                                args,
-                                                                getTypeWithName("java.lang.Object", LineCol.SYNTHETIC),
-                                                                Dynamic.INVOKE_STATIC,
+                                                                argList,
                                                                 invocation.line_col()
                                                         );
                                                 }
@@ -8463,12 +8405,13 @@ public class SemanticProcessor {
                                 // check whether the type is a function
                                 if (((SClassDef) type).classType() == SClassDef.FUN) {
                                         return callFunctionalObject(
-                                                constructingNewInst((SClassDef) type, Collections.emptyList(), invocation.line_col()),
+                                                constructingNewInst((SClassDef) type, Collections.<Value>emptyList(), scope, invocation.line_col()),
+                                                scope.type(),
                                                 argList,
                                                 invocation.line_col()
                                         );
                                 } else {
-                                        return constructingNewInst((SClassDef) type, argList, invocation.line_col());
+                                        return constructingNewInst((SClassDef) type, argList, scope, invocation.line_col());
                                 }
                         }
                 }
@@ -8484,21 +8427,21 @@ public class SemanticProcessor {
 
                 if (methodsToInvoke.isEmpty() && innerMethod == null) {
                         // invoke dynamic
-                        argList.add(0, new Ins.GetClass(
-                                target == null ? scope.type() : target.type(),
-                                (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
+                        STypeDef targetClass = target == null ? scope.type() : target.type();
+                        Value o;
                         if (target == null) {
                                 if (scope.getThis() == null)
-                                        argList.add(1, NullValue.get());
+                                        o = NullValue.get();
                                 else
-                                        argList.add(1, scope.getThis());
+                                        o = scope.getThis();
                         } else {
-                                argList.add(1, target);
+                                o = target;
                         }
 
+                        Value functionalObject;
                         if (access.exp == null) {
                                 // invoking method on functional objects
-                                argList.add(2, findObjectInCurrentScopeWithName(access.name, scope));
+                                functionalObject = findObjectInCurrentScopeWithName(access.name, scope);
                         } else {
                                 if (target == null) {
                                         throw new LtBug("code should not reach here");
@@ -8506,24 +8449,18 @@ public class SemanticProcessor {
                                         // xx.method(...)
                                         SFieldDef field = findFieldFromTypeDef(access.name, target.type(), scope.type(), FIND_MODE_ANY, true);
                                         if (field == null) {
-                                                argList.add(2, NullValue.get());
+                                                functionalObject = NullValue.get();
                                         } else {
                                                 if (field.modifiers().contains(SModifier.STATIC)) {
-                                                        argList.add(2, new Ins.GetStatic(field, invocation.line_col()));
+                                                        functionalObject = new Ins.GetStatic(field, invocation.line_col());
                                                 } else {
-                                                        argList.add(2, new Ins.GetField(field, target, invocation.line_col()));
+                                                        functionalObject = new Ins.GetField(field, target, invocation.line_col());
                                                 }
                                         }
                                 }
                         }
 
-                        return new Ins.InvokeDynamic(
-                                getInvokeDynamicBootstrapMethod(),
-                                access.name,
-                                argList,
-                                getTypeWithName("java.lang.Object", invocation.line_col()),
-                                Dynamic.INVOKE_STATIC,
-                                invocation.line_col());
+                        return invoke_Dynamic_invoke(targetClass, o, functionalObject, scope.type(), access.name, argList, invocation.line_col());
                 } else {
                         SMethodDef methodToInvoke;
                         boolean invokeInnerMethod = false;
@@ -8564,7 +8501,7 @@ public class SemanticProcessor {
                         }
 
                         if (invokeInnerMethod) {
-                                List<Value> values = new ArrayList<>();
+                                List<Value> values = new ArrayList<Value>();
                                 int inc = innerMethod.method.getParameters().size() - innerMethod.paramCount;
                                 for (int i = 0; i < argList.size(); ++i) {
                                         STypeDef requiredType = innerMethod.method.getParameters().get(i + inc).type();
@@ -8587,7 +8524,9 @@ public class SemanticProcessor {
                                 if (leftValues.size() != requiredLocalVariableCount)
                                         throw new LtBug("require " + requiredLocalVariableCount + " local variable(s), got " + leftValues.size());
 
-                                invoke.arguments().addAll(leftValues.stream().map(v -> new Ins.TLoad(v, scope, LineCol.SYNTHETIC)).collect(Collectors.toList()));
+                                for (LeftValue v : leftValues) {
+                                        invoke.arguments().add(new Ins.TLoad(v, scope, LineCol.SYNTHETIC));
+                                }
                                 invoke.arguments().addAll(values);
 
                                 if (invoke.type().equals(VoidType.get()))
@@ -8762,7 +8701,7 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         public List<Value> castArgsForMethodInvoke(List<Value> args, List<SParameter> parameters, LineCol lineCol) throws SyntaxException {
-                List<Value> result = new ArrayList<>();
+                List<Value> result = new ArrayList<Value>();
 
                 for (int i = 0; i < parameters.size(); ++i) {
                         Value v = args.get(i);
@@ -8805,100 +8744,6 @@ public class SemanticProcessor {
                         if (field == null) return NullValue.get();
                         return new Ins.GetStatic(field, LineCol.SYNTHETIC);
                 }
-        }
-
-        /**
-         * {@link Dynamic#bootstrap(MethodHandles.Lookup, String, MethodType)}
-         */
-        private SMethodDef invokeDynamicBootstrapMethod;
-
-        /**
-         * @return {@link Dynamic#bootstrap(MethodHandles.Lookup, String, MethodType)}
-         * @throws SyntaxException exception
-         */
-        public SMethodDef getInvokeDynamicBootstrapMethod() throws SyntaxException {
-                if (invokeDynamicBootstrapMethod == null) {
-                        SClassDef indyType = (SClassDef) getTypeWithName("lt.lang.Dynamic", LineCol.SYNTHETIC);
-                        assert indyType != null;
-
-                        SMethodDef indyMethod = null;
-                        for (SMethodDef m : indyType.methods()) {
-                                if (m.name().equals("bootstrap") && m.getParameters().size() == 3) {
-                                        List<SParameter> parameters = m.getParameters();
-                                        if (parameters.get(0).type().fullName().equals("java.lang.invoke.MethodHandles$Lookup")
-                                                &&
-                                                parameters.get(1).type().fullName().equals("java.lang.String")
-                                                &&
-                                                parameters.get(2).type().fullName().equals("java.lang.invoke.MethodType")) {
-                                                // bootstrap method found
-                                                indyMethod = m;
-                                                break;
-                                        }
-                                }
-                        }
-                        if (indyMethod == null)
-                                throw new LtBug("bootstrap method should exist. lt.lang.Dynamic.bootstrap(java.lang.invoke.MethodHandles.Lookup, java.lang.String, java.lang.invoke.MethodType)");
-                        invokeDynamicBootstrapMethod = indyMethod;
-                }
-                return invokeDynamicBootstrapMethod;
-        }
-
-        private SMethodDef constructBootstrapMethod;
-
-        public SMethodDef getConstructBootstrapMethod() throws SyntaxException {
-                if (constructBootstrapMethod == null) {
-                        SClassDef indyType = (SClassDef) getTypeWithName("lt.lang.Dynamic", LineCol.SYNTHETIC);
-                        assert indyType != null;
-
-                        SMethodDef indyMethod = null;
-                        for (SMethodDef m : indyType.methods()) {
-                                if (m.name().equals("bootstrapConstructor") && m.getParameters().size() == 3) {
-                                        List<SParameter> parameters = m.getParameters();
-                                        if (parameters.get(0).type().fullName().equals("java.lang.invoke.MethodHandles$Lookup")
-                                                &&
-                                                parameters.get(1).type().fullName().equals("java.lang.String")
-                                                &&
-                                                parameters.get(2).type().fullName().equals("java.lang.invoke.MethodType")) {
-                                                // bootstrap method found
-                                                indyMethod = m;
-                                                break;
-                                        }
-                                }
-                        }
-                        if (indyMethod == null)
-                                throw new LtBug("bootstrap method should exist. lt.lang.Dynamic.bootstrapConstructor(java.lang.invoke.MethodHandles.Lookup, java.lang.String, java.lang.invoke.MethodType)");
-                        constructBootstrapMethod = indyMethod;
-                }
-                return constructBootstrapMethod;
-        }
-
-        private SMethodDef callFunctionalObjectBootstrapMethod;
-
-        public SMethodDef getCallFunctionalObjectBootstrapMethod() throws SyntaxException {
-                if (callFunctionalObjectBootstrapMethod == null) {
-                        SClassDef indyType = (SClassDef) getTypeWithName("lt.lang.Dynamic", LineCol.SYNTHETIC);
-                        assert indyType != null;
-
-                        SMethodDef indyMethod = null;
-                        for (SMethodDef m : indyType.methods()) {
-                                if (m.name().equals("bootstrapCallFunctionalObject") && m.getParameters().size() == 3) {
-                                        List<SParameter> parameters = m.getParameters();
-                                        if (parameters.get(0).type().fullName().equals("java.lang.invoke.MethodHandles$Lookup")
-                                                &&
-                                                parameters.get(1).type().fullName().equals("java.lang.String")
-                                                &&
-                                                parameters.get(2).type().fullName().equals("java.lang.invoke.MethodType")) {
-                                                // bootstrap method found
-                                                indyMethod = m;
-                                                break;
-                                        }
-                                }
-                        }
-                        if (indyMethod == null)
-                                throw new LtBug("bootstrap method should exist. lt.lang.Dynamic.bootstrapCallFunctionalObject(java.lang.invoke.MethodHandles.Lookup, java.lang.String, java.lang.invoke.MethodType)");
-                        callFunctionalObjectBootstrapMethod = indyMethod;
-                }
-                return callFunctionalObjectBootstrapMethod;
         }
 
         /**
@@ -9075,11 +8920,11 @@ public class SemanticProcessor {
                 char[] chars = str.toCharArray();
                 SClassDef STRING = (SClassDef) getTypeWithName("java.lang.String", lineCol);
 
-                List<Value> elemsToConcat = new ArrayList<>();
+                List<Value> elemsToConcat = new ArrayList<Value>();
                 StringBuilder sb = new StringBuilder();
                 StringBuilder evalStr = new StringBuilder();
 
-                Stack<Object> evaluatingStack = new Stack<>();
+                Stack<Object> evaluatingStack = new Stack<Object>();
                 boolean isEvaluating = false;
                 Object flag = new Object();
                 for (int i = 0; i < chars.length; i++) {
@@ -9252,14 +9097,14 @@ public class SemanticProcessor {
                         SAnno a = new SAnno();
                         Class<?> annoCls = o.getClass().getInterfaces()[0];
                         a.setAnnoDef((SAnnoDef) getTypeWithName(annoCls.getName(), LineCol.SYNTHETIC));
-                        Map<SAnnoField, Value> map = new HashMap<>();
+                        Map<SAnnoField, Value> map = new HashMap<SAnnoField, Value>();
                         for (SAnnoField f : a.type().annoFields()) {
                                 try {
                                         Object obj = annoCls.getMethod(f.name()).invoke(o);
                                         Value v = parseValueFromObject(obj);
                                         v = checkAndCastAnnotationValues(v, LineCol.SYNTHETIC);
                                         map.put(f, v);
-                                } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                                } catch (Exception e) {
                                         throw new LtBug(e);
                                 }
                         }
@@ -9359,8 +9204,8 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public void recordAbstractMethodsForOverrideCheck(SClassDef c, List<SMethodDef> abstractMethods) throws SyntaxException {
-                List<SMethodDef> visitedMethods = new ArrayList<>();
-                Set<SInterfaceDef> visitedTypes = new HashSet<>();
+                List<SMethodDef> visitedMethods = new ArrayList<SMethodDef>();
+                Set<SInterfaceDef> visitedTypes = new HashSet<SInterfaceDef>();
                 recordAbstractMethodsForOverrideCheck_class(
                         c.parent(),
                         abstractMethods,
@@ -9458,15 +9303,15 @@ public class SemanticProcessor {
         public void checkOverride(STypeDef sTypeDef) throws SyntaxException {
                 if (sTypeDef instanceof SClassDef) {
                         for (SMethodDef m : ((SClassDef) sTypeDef).methods()) {
-                                checkOverride_class(m, ((SClassDef) sTypeDef).parent(), new HashSet<>());
+                                checkOverride_class(m, ((SClassDef) sTypeDef).parent(), new HashSet<STypeDef>());
                                 for (SInterfaceDef i : ((SClassDef) sTypeDef).superInterfaces()) {
-                                        checkOverride_interface(m, i, new HashSet<>());
+                                        checkOverride_interface(m, i, new HashSet<STypeDef>());
                                 }
                         }
                 } else if (sTypeDef instanceof SInterfaceDef) {
                         for (SMethodDef m : ((SInterfaceDef) sTypeDef).methods()) {
                                 for (SInterfaceDef i : ((SInterfaceDef) sTypeDef).superInterfaces()) {
-                                        checkOverride_interface(m, i, new HashSet<>());
+                                        checkOverride_interface(m, i, new HashSet<STypeDef>());
                                 }
                         }
                 } else {
@@ -9573,7 +9418,7 @@ public class SemanticProcessor {
                 return null;
         }
 
-        public Map<SAnno, AST.Anno> annotationRecorder = new HashMap<>();
+        public Map<SAnno, AST.Anno> annotationRecorder = new HashMap<SAnno, AST.Anno>();
 
         /**
          * parse the annotations<br>
@@ -9677,7 +9522,9 @@ public class SemanticProcessor {
 
                         parseAnnos(v.getAnnos(), param, imports, ElementType.PARAMETER,
                                 // the modifier may be field
-                                allowAccessModifier ? Collections.singletonList(ElementType.FIELD) : Collections.emptyList()
+                                allowAccessModifier
+                                        ? Collections.singletonList(ElementType.FIELD)
+                                        : Collections.<ElementType>emptyList()
                         );
 
                         invokable.getParameters().add(param);
@@ -9706,7 +9553,7 @@ public class SemanticProcessor {
                         parseFieldModifiers(fieldDef, d.modifiers, type instanceof SInterfaceDef, isStatic, false);
                         // annos
                         parseAnnos(d.annos, fieldDef, fileNameToImport.get(type.line_col().fileName),
-                                ElementType.FIELD, Collections.emptyList());
+                                ElementType.FIELD, Collections.<ElementType>emptyList());
 
                         type.fields().add(fieldDef);
                 }
@@ -9941,7 +9788,7 @@ public class SemanticProcessor {
                 }
 
                 // annos
-                parseAnnos(m.annos, methodDef, imports, ElementType.METHOD, Collections.emptyList());
+                parseAnnos(m.annos, methodDef, imports, ElementType.METHOD, Collections.<ElementType>emptyList());
 
                 if (isImplicit) {
                         checkAndAddImplicitAnno(methodDef);
@@ -9980,7 +9827,7 @@ public class SemanticProcessor {
                 }
 
                 if (null != lastMethod) {
-                        Map<SInvokable, Expression> invoke = new HashMap<>();
+                        Map<SInvokable, Expression> invoke = new HashMap<SInvokable, Expression>();
                         invoke.put(lastMethod, m.params.get(i).getInit());
                         defaultParamInvokable.put(methodDef, invoke);
                 }
@@ -10128,7 +9975,7 @@ public class SemanticProcessor {
                                                 SAnnoDef annoDef = (SAnnoDef) typeDef;
                                                 // parse anno fields
                                                 for (Method annoM : cls.getDeclaredMethods()) {
-                                                        assert annoM.getParameters().length == 0;
+                                                        assert annoM.getParameterTypes().length == 0;
                                                         SAnnoField annoField = new SAnnoField();
                                                         annoField.setName(annoM.getName());
                                                         annoField.setType(getTypeWithName(annoM.getReturnType().getName(), lineCol));
@@ -10167,7 +10014,7 @@ public class SemanticProcessor {
 
                                 // retrieve annotation keys and values
                                 for (Method m : aClass.getDeclaredMethods()) {
-                                        assert m.getParameterCount() == 0;
+                                        assert m.getParameterTypes().length == 0;
                                         try {
                                                 sAnno.alreadyCompiledAnnotationValueMap().put(m.getName(), m.invoke(a));
                                         } catch (Throwable e) {
@@ -10359,7 +10206,9 @@ public class SemanticProcessor {
                 if (!types.containsKey(type)) {
                         try {
                                 loadClass(type);
-                        } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                        } catch (ClassNotFoundException e) {
+                                return false;
+                        } catch (NoClassDefFoundError e) {
                                 return false;
                         }
                 }
