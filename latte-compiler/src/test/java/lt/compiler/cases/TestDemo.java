@@ -499,10 +499,6 @@ public class TestDemo {
                 assertEquals(2, apply.invoke(func1, 1));
                 assertEquals(2, func2.apply(1));
                 assertEquals(2, func3.apply(1));
-
-                Field listF = TestLambda.getDeclaredField("list");
-                List list = (List) listF.get(o);
-                assertEquals(Arrays.asList("1", "2", "3"), list);
         }
 
         @Test
@@ -796,8 +792,6 @@ public class TestDemo {
                 assertTrue(Interface_Have_Methods.isInterface());
                 Method i_am_an_abstract_method = Interface_Have_Methods.getMethod("i_am_an_abstract_method");
                 assertTrue(Modifier.isAbstract(i_am_an_abstract_method.getModifiers()));
-                Method i_am_a_default_method = Interface_Have_Methods.getMethod("i_am_a_default_method");
-                assertFalse(Modifier.isAbstract(i_am_a_default_method.getModifiers()));
                 // assertTrue(i_am_a_default_method.isDefault());
                 // it's not supported now
 
@@ -806,7 +800,6 @@ public class TestDemo {
                 assertEquals(Interface_Have_Methods, TesterForInterface_Have_Methods.getInterfaces()[0]);
                 Object TesterForInterface_Have_Methods_o = TesterForInterface_Have_Methods.newInstance();
                 assertEquals("abs method impl", i_am_an_abstract_method.invoke(TesterForInterface_Have_Methods_o));
-                assertEquals("default method", i_am_a_default_method.invoke(TesterForInterface_Have_Methods_o));
 
                 // I_Am_A_Function
                 Class<?> I_Am_A_Function = classLoader.loadClass("I_Am_A_Function");

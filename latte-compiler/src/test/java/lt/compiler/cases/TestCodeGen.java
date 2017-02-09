@@ -1287,7 +1287,7 @@ public class TestCodeGen {
                 TestLambdaFunc func = (TestLambdaFunc) TestLambdaLT.getDeclaredMethod("method").invoke(null);
                 assertEquals(3, func.apply(1));
 
-                assertEquals(3, lambda.getDeclaredFields().length);
+                assertEquals(2, lambda.getDeclaredFields().length);
         }
 
         @Test
@@ -1328,7 +1328,7 @@ public class TestCodeGen {
                 TestLambdaFunc func = (TestLambdaFunc) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(3, func.apply(1));
 
-                assertEquals(4, lambda.getDeclaredFields().length);
+                assertEquals(3, lambda.getDeclaredFields().length);
         }
 
         @Test
@@ -1370,7 +1370,7 @@ public class TestCodeGen {
                 Function1 func = (Function1) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(3, func.apply(1));
 
-                assertEquals(4, lambda.getDeclaredFields().length);
+                assertEquals(3, lambda.getDeclaredFields().length);
         }
 
         @Test
@@ -1410,7 +1410,7 @@ public class TestCodeGen {
                 Function3 func = (Function3) TestLambdaLT.getDeclaredMethod("method").invoke(TestLambdaLT.newInstance());
                 assertEquals(6, func.apply(1, 2, 3));
 
-                assertEquals(4, lambda.getDeclaredFields().length);
+                assertEquals(3, lambda.getDeclaredFields().length);
         }
 
         @Test
@@ -3130,7 +3130,7 @@ public class TestCodeGen {
                 Method method1 = cls.getMethod("method1");
                 Function0 lambda1 = (Function0) method1.invoke(null);
                 Class<?> lambdaClass1 = lambda1.getClass();
-                assertEquals(3, lambdaClass1.getDeclaredFields().length);
+                assertEquals(2, lambdaClass1.getDeclaredFields().length);
 
                 Field field_self = lambdaClass1.getField("self");
                 assertTrue(lambda1 == field_self.get(lambda1));
@@ -3141,7 +3141,7 @@ public class TestCodeGen {
                 Function0 lambda2 = (Function0) method2.invoke(o);
                 Class<?> lambdaClass2 = lambda2.getClass();
 
-                assertEquals(4, lambdaClass2.getDeclaredFields().length);
+                assertEquals(3, lambdaClass2.getDeclaredFields().length);
 
                 field_self = lambdaClass2.getField("self");
 
@@ -3171,9 +3171,9 @@ public class TestCodeGen {
                                 "        def method\n" +
                                 "            invoke(()->$ defaultMethod)\n" +
                                 "        def invoke(f:F)=f()\n" +
-                                "@FunctionalInterface\n" +
-                                "interface F\n" +
-                                "    def method\n" +
+                                "@FunctionalAbstractClass\n" +
+                                "abstract class F\n" +
+                                "    abstract method()=...\n" +
                                 "    def defaultMethod=1"
                         , "TestLambdaSelfChange");
                 Method method = cls.getMethod("method");

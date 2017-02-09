@@ -19,11 +19,13 @@ public class SimpleTest {
 
                 StringBuilder sb = new StringBuilder();
                 sb.append("" +
-                        "class X\n" +
-                        "    static unapply(ls)=ls\n" +
-                        "class hehe\n" +
-                        "    if X(a,b) <- [1,2]\n" +
-                        "        println(a)"
+                        "class TestListCastInvokeMethod\n" +
+                        "    static\n" +
+                        "        def method=Container(10, [1,2,3])\n" +
+                        "data class Bean\n" +
+                        "    public list = []\n" +
+                        "    def add(o)=list.add(o)\n" +
+                        "data class Container(i, x:Bean)"
                 );
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
@@ -35,7 +37,7 @@ public class SimpleTest {
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
-                byte[] b = list.get("hehe");
+                byte[] b = list.get("TestListCastInvokeMethod");
                 FileOutputStream fos = new FileOutputStream(new File("/Volumes/PROJECTS/openSource/LessTyping/hehe.class"));
                 fos.write(b);
                 fos.flush();

@@ -55,17 +55,6 @@ public class TestScript {
         }
 
         @Test
-        public void testStaticMethod() throws Throwable {
-                assertEquals(3,
-                        scriptCompiler.compile("yy", "" +
-                                "import lt::repl::TestStaticMethod\n" +
-                                "a = 2\n" +
-                                "return TestStaticMethod.x(a)"
-                        ).run().getResult()
-                );
-        }
-
-        @Test
         public void testInternalLambdaBug() throws Throwable {
                 String code = "" +
                         "[1, 2, 3, 4].stream.\n" +

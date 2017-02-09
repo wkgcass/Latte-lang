@@ -47,6 +47,12 @@ public class Evaluator {
         private final static String evalFileName = "eval";
         private final static String EvaluateClassName = "Evaluate";
 
+        private int evalCount = -1;
+
+        private String evalClassName() {
+                return EvaluateClassName + "$" + evalCount;
+        }
+
         private List<Entry> recordedEntries = new ArrayList<Entry>();
         private List<Import> imports = new ArrayList<Import>();
         private List<MethodDef> recordedMethods = new ArrayList<MethodDef>();
@@ -109,6 +115,7 @@ public class Evaluator {
         }
 
         public Entry eval(String stmt) throws Exception {
+                ++evalCount;
                 if (null == stmt || stmt.trim().isEmpty())
                         throw new IllegalArgumentException("the input string cannot be empty or null");
 
@@ -221,7 +228,7 @@ public class Evaluator {
                 }
 
                 ClassDef evalClass = new ClassDef(
-                        EvaluateClassName,
+                        evalClassName(),
                         Collections.<Modifier>emptySet(),
                         parameters,
                         null,
@@ -246,27 +253,15 @@ public class Evaluator {
                 Map<String, byte[]> byteCodes = codeGen.generate();
                 List<Class<?>> classes = new ArrayList<Class<?>>();
                 for (Map.Entry<String, byte[]> entry : byteCodes.entrySet()) {
-                        if (!entry.getKey().equals(EvaluateClassName)) {
-                                cl.byteCodes.put(entry.getKey(), entry.getValue());
-                        }
+                        cl.byteCodes.put(entry.getKey(), entry.getValue());
                 }
                 for (Map.Entry<String, byte[]> entry : byteCodes.entrySet()) {
-                        if (!entry.getKey().equals(EvaluateClassName)) {
-                                Class<?> c = cl.loadClass(entry.getKey());
+                        Class<?> c = cl.loadClass(entry.getKey());
+                        if (!entry.getKey().equals(evalClassName()))
                                 classes.add(c);
-                                c.getDeclaredFields(); // check the class format and throw exception
-                        }
+                        c.getDeclaredFields(); // check the class format and throw exception
                 }
-                final byte[] EvaluateBytes = byteCodes.get(EvaluateClassName);
-                ClassLoader classLoader = new ClassLoader(cl) {
-                        @Override
-                        protected Class<?> findClass(String name) throws ClassNotFoundException {
-                                if (name.equals(EvaluateClassName)) {
-                                        return defineClass(name, EvaluateBytes, 0, EvaluateBytes.length);
-                                } else throw new ClassNotFoundException(name);
-                        }
-                };
-                Class<?> cls = classLoader.loadClass(EvaluateClassName);
+                Class<?> cls = cl.loadClass(evalClassName());
                 Class<?>[] consParams = new Class[recordedEntries.size()];
                 Object[] args = new Object[recordedEntries.size()];
                 for (int i = 0; i < consParams.length; ++i) {

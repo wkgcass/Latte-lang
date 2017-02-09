@@ -28,10 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -286,16 +283,16 @@ public class TestEvaluator {
         @Test
         public void testJavaInteroperable() throws Exception {
                 List<Integer> list = new ArrayList<Integer>();
-                list.add(1);
-                list.add(2);
-                list.add(3);
                 list.add(4);
+                list.add(3);
                 list.add(5);
                 evaluator.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
                 evaluator.put("list", list);
                 Evaluator.Entry entry = evaluator.eval("" +
-                        "import java::util::stream::Collectors._\n" +
-                        "list.stream.filter{it > 2}.collect(toList())");
+                        "import java::util::Collections._\n" +
+                        "list2:List = list\n" +
+                        "sort(list2)\n" +
+                        "list");
                 List newList = (List) entry.result;
                 assertEquals(Arrays.asList(3, 4, 5), newList);
         }

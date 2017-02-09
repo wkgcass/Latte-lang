@@ -60,14 +60,10 @@ abstract class Func
 // here's how to use
 class TestLambda
     public func1:Func=(o)->o+1 // creates an instance of Func and it adds o with 1
-    public func2:java::util::function::Function=(o)->o+1 // uses jdk LambdaMetaFactory
-    public func3=(o)->o+1      // lt::lang::function::Function1
+    public func2:lt::lang::function::Function1=(o)->o+1 // specify the type
+    public func3=(o)->o+1      // implicitly use lt::lang::function::Function1
     // the type of the lambda is lt::lang::function::Function1
     // there are 27 functions from Function0 to Function26
     // taking parameters whose sizes range from 0 to 26
-    public list=[1,2,3]
-    list=list.stream().map(
-        (v)->v.toString()
-    ).collect(java::util::stream::Collectors.toList())
 // lambda is based on inner method
 // it creates an inner method and retreive MethodHandle of the method

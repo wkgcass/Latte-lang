@@ -987,7 +987,7 @@ public class Dynamic {
          * @throws Throwable exception
          */
         @SuppressWarnings("unused")
-        private static Object invoke(Class<?> targetClass, Object o, Object functionalObject, Class<?> invoker,
+        public static Object invoke(Class<?> targetClass, Object o, Object functionalObject, Class<?> invoker,
                                      String method, boolean[] primitives, Object[] args) throws Throwable {
                 return invoke(new InvocationState(), targetClass, o, functionalObject, invoker, method, primitives, args);
         }

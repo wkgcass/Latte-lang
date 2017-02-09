@@ -569,62 +569,6 @@ public class Ins {
         }
 
         /**
-         * invoke dynamic
-         */
-        @Deprecated
-        public static class InvokeDynamic extends Invoke {
-                private final List<Value> indyArgs = new ArrayList<Value>();
-                private final String methodName;
-                private final STypeDef returnType;
-                private int indyType;
-
-                /**
-                 * @param bootstrapMethod bootstrap method
-                 * @param methodName      name of the method to invoke
-                 * @param args            argument types
-                 * @param returnType      method return type
-                 * @param indyType        indy type
-                 * @param lineCol         file line column
-                 */
-                public InvokeDynamic(
-                        SInvokable bootstrapMethod,
-                        String methodName,
-                        List<Value> args,
-                        STypeDef returnType,
-                        int indyType,
-                        LineCol lineCol) {
-
-                        super(bootstrapMethod, lineCol);
-                        this.methodName = methodName;
-                        this.indyType = indyType;
-                        this.arguments().addAll(args);
-                        this.returnType = returnType;
-                }
-
-                @SuppressWarnings("unused")
-                public List<Value> indyArgs() {
-                        return indyArgs;
-                }
-
-                public int indyType() {
-                        return indyType;
-                }
-
-                public String methodName() {
-                        return methodName;
-                }
-
-                public STypeDef returnType() {
-                        return returnType;
-                }
-
-                @Override
-                public STypeDef type() {
-                        return returnType();
-                }
-        }
-
-        /**
          * invokeInterface
          */
         public static class InvokeInterface extends InvokeWithTarget {

@@ -1085,12 +1085,13 @@ public class TestSemantic {
 
                 SClassDef classDef = (SClassDef) it.next();
                 Instruction ins = classDef.constructors().get(0).statements().get(1);
-                assertTrue(ins instanceof Ins.InvokeDynamic);
-                Ins.InvokeDynamic invokeDynamic = (Ins.InvokeDynamic) ins;
-                assertEquals("get", invokeDynamic.methodName());
-                assertTrue(invokeDynamic.arguments().get(1) instanceof Ins.GetField); // i
+                assertTrue(ins instanceof Ins.InvokeStatic);
+                Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) ins;
+                assertEquals("get", ((StringConstantValue) invokeStatic.arguments().get(4)).getStr());
+                assertTrue(invokeStatic.arguments().get(1) instanceof Ins.GetField); // i
                 // Integer.valueOf(0)
-                assertEquals(new IntValue(0), invokeDynamic.arguments().get(3)); // [0]
+                Ins.ANewArray arr = ((Ins.ANewArray) invokeStatic.arguments().get(6));
+                assertEquals(new IntValue(0), ((Ins.InvokeStatic) arr.initValues().get(0)).arguments().get(0)); // [0]
         }
 
         @Test
@@ -1623,15 +1624,15 @@ public class TestSemantic {
                 assertTrue(i3 instanceof Ins.ExStore);
                 assertTrue(i4 instanceof Ins.TStore);
                 assertTrue(i5 instanceof Ins.IfEq);
-                assertTrue(i6 instanceof Ins.InvokeDynamic);
+                assertTrue(i6 instanceof Ins.InvokeStatic);
                 assertTrue(i7 instanceof Ins.Goto);
                 assertTrue(i8 instanceof Ins.Nop);
                 assertTrue(i9 instanceof Ins.IfEq);
-                assertTrue(i10 instanceof Ins.InvokeDynamic);
+                assertTrue(i10 instanceof Ins.InvokeStatic);
                 assertTrue(i11 instanceof Ins.Goto);
                 assertTrue(i12 instanceof Ins.Nop);
                 assertTrue(i13 instanceof Ins.IfEq);
-                assertTrue(i14 instanceof Ins.InvokeDynamic);
+                assertTrue(i14 instanceof Ins.InvokeStatic);
                 assertTrue(i15 instanceof Ins.Goto);
                 assertTrue(i16 instanceof Ins.Nop);
                 assertTrue(i17 instanceof Ins.Nop);
@@ -1800,17 +1801,26 @@ public class TestSemantic {
                 Instruction i0 = valuePack.instructions().get(1); // InvokeDynamic
                 Instruction i1 = valuePack.instructions().get(2); // InvokeDynamic
 
-                assertTrue(i0 instanceof Ins.InvokeDynamic);
+                assertTrue(i0 instanceof Ins.InvokeStatic);
                 assertTrue(i1 instanceof Ins.TLoad);
 
-                Ins.InvokeDynamic in0 = (Ins.InvokeDynamic) i0;
-                assertEquals("set", in0.methodName());
-                assertEquals(5, in0.arguments().size());
+                Ins.InvokeStatic in0 = (Ins.InvokeStatic) i0;
+                assertEquals("set", ((StringConstantValue) in0.arguments().get(4)).getStr());
+                assertEquals(7, in0.arguments().size());
                 assertTrue(in0.arguments().get(0) instanceof Ins.GetClass);
                 assertTrue(in0.arguments().get(1) instanceof Ins.GetField);
                 assertEquals(NullValue.get(), in0.arguments().get(2));
-                assertTrue(in0.arguments().get(3) instanceof IntValue);
-                assertTrue(in0.arguments().get(4) instanceof Ins.TLoad);
+                // Integer.valueOf(1)
+                assertTrue(
+                        ((Ins.InvokeStatic)
+                                ((Ins.ANewArray)
+                                        in0.arguments().get(6)).initValues().get(0)).arguments().get(0)
+                                instanceof IntValue);
+                // Integer.valueOf(?)
+                assertTrue(((Ins.InvokeStatic)
+                        ((Ins.ANewArray)
+                                in0.arguments().get(6)).initValues().get(1)).arguments().get(0)
+                        instanceof Ins.TLoad);
         }
 
         @Test
@@ -2074,7 +2084,7 @@ public class TestSemantic {
                 assertTrue(i3 instanceof Ins.ExStore);
                 assertTrue(i4 instanceof Ins.TStore);
                 assertTrue(i5 instanceof Ins.IfEq);
-                assertTrue(i6 instanceof Ins.InvokeDynamic);
+                assertTrue(i6 instanceof Ins.InvokeStatic);
                 assertTrue(i7 instanceof Ins.Goto);
                 assertTrue(i8 instanceof Ins.Nop);
                 assertTrue(i9 instanceof Ins.Nop);
@@ -2329,7 +2339,7 @@ public class TestSemantic {
                 assertTrue(v instanceof Ins.New);
                 Ins.New aNew = (Ins.New) v;
                 assertEquals("test.A$Latte$Lambda$0", aNew.constructor().declaringType().fullName());
-                assertEquals(3, aNew.args().size());
+                assertEquals(2, aNew.args().size());
         }
 
         @Test
@@ -2355,7 +2365,7 @@ public class TestSemantic {
                 assertTrue(v instanceof Ins.New);
                 Ins.New aNew = (Ins.New) v;
                 assertEquals("test.A$Latte$Lambda$0", aNew.constructor().declaringType().fullName());
-                assertEquals(3, aNew.args().size());
+                assertEquals(2, aNew.args().size());
         }
 
         @Test
@@ -2395,13 +2405,12 @@ public class TestSemantic {
                 Value v = ((Ins.PutField) i1).value();
                 assertTrue(v instanceof Ins.New);
                 Ins.New aNew = (Ins.New) v;
-                assertEquals(3, aNew.args().size());
+                assertEquals(2, aNew.args().size());
 
                 // lambda
                 assert lambda != null;
-                assertEquals("methodHandle", lambda.fields().get(0).name());
-                assertEquals("o", lambda.fields().get(1).name());
-                assertEquals("local", lambda.fields().get(2).name());
+                assertEquals("o", lambda.fields().get(0).name());
+                assertEquals("local", lambda.fields().get(1).name());
 
                 i1 = lambda.constructors().get(0).statements().get(1); // put field
                 Instruction i2 = lambda.constructors().get(0).statements().get(2); // put field
@@ -2412,17 +2421,10 @@ public class TestSemantic {
 
                 assertEquals("apply", lambda.methods().get(0).name());
                 assertEquals(1, lambda.methods().get(0).getParameters().size());
-                Instruction i0 = lambda.methods().get(0).statements().get(0); // tstore new LinkedList(local)
-                i1 = lambda.methods().get(0).statements().get(1); // invoke virtual (add x)
-                i2 = lambda.methods().get(0).statements().get(2); // invoke virtual (add 0,o)
-                i3 = lambda.methods().get(0).statements().get(3); // invoke virtual (add self)
-                Instruction i4 = lambda.methods().get(0).statements().get(4); // return(invoke virtual (tload))
+                Ins.TReturn i0 = (Ins.TReturn) lambda.methods().get(0).statements().get(0); // return
 
-                assertTrue(i0 instanceof Ins.TStore);
-                assertTrue(i1 instanceof Ins.InvokeVirtual);
-                assertTrue(i2 instanceof Ins.InvokeVirtual);
-                assertTrue(i3 instanceof Ins.InvokeVirtual);
-                assertTrue(i4 instanceof Ins.TReturn);
+                assertTrue(i0.value() instanceof Ins.InvokeVirtual);
+
         }
 
         @Test
@@ -2579,8 +2581,8 @@ public class TestSemantic {
 
                 SClassDef classDef = (SClassDef) it.next();
                 Instruction ins = classDef.constructors().get(0).statements().get(1);
-                assertTrue(ins instanceof Ins.InvokeDynamic);
-                assertEquals("assign", ((Ins.InvokeDynamic) ins).methodName());
+                assertTrue(ins instanceof Ins.InvokeStatic);
+                assertEquals("assign", ((StringConstantValue) ((Ins.InvokeStatic) ins).arguments().get(4)).getStr());
         }
 
         @Test
@@ -2628,11 +2630,11 @@ public class TestSemantic {
                 SClassDef classDef = (SClassDef) set.iterator().next();
                 SConstructorDef cons = classDef.constructors().get(0);
 
-                Ins.InvokeDynamic i2 = (Ins.InvokeDynamic) cons.statements().get(2);
-                Ins.InvokeDynamic i3 = (Ins.InvokeDynamic) cons.statements().get(3);
-                Ins.InvokeDynamic i4 = (Ins.InvokeDynamic) cons.statements().get(4);
-                Ins.InvokeDynamic i5 = (Ins.InvokeDynamic) cons.statements().get(5);
-                Ins.InvokeDynamic i6 = (Ins.InvokeDynamic) cons.statements().get(6);
+                Ins.InvokeStatic i2 = (Ins.InvokeStatic) cons.statements().get(2);
+                Ins.InvokeStatic i3 = (Ins.InvokeStatic) cons.statements().get(3);
+                Ins.InvokeStatic i4 = (Ins.InvokeStatic) cons.statements().get(4);
+                Ins.InvokeStatic i5 = (Ins.InvokeStatic) cons.statements().get(5);
+                Ins.InvokeStatic i6 = (Ins.InvokeStatic) cons.statements().get(6);
                 Ins.InvokeStatic i7 = (Ins.InvokeStatic) cons.statements().get(7);
 
                 assertTrue(i2.arguments().get(1) instanceof Ins.New);
@@ -2672,8 +2674,8 @@ public class TestSemantic {
                 assertEquals(0, ((Ins.New) p1.value()).args().size());
                 assertTrue(p2.value() instanceof Ins.New);
                 assertEquals(1, ((Ins.New) p2.value()).args().size());
-                assertTrue(p3.value() instanceof Ins.InvokeDynamic);
-                assertEquals(1, ((Ins.InvokeDynamic) p3.value()).arguments().size());
+                assertTrue(p3.value() instanceof Ins.InvokeStatic);
+                assertEquals(1, ((Ins.ANewArray) (((Ins.InvokeStatic) p3.value()).arguments().get(3))).initValues().size());
         }
 
         @Test
@@ -2715,9 +2717,10 @@ public class TestSemantic {
                 if (!classDef.fullName().equals("test.A")) classDef = (SClassDef) it.next();
                 SConstructorDef cons = classDef.constructors().get(0);
 
-                Ins.InvokeDynamic indy = (Ins.InvokeDynamic) cons.statements().get(2);
-                assertEquals(3, indy.arguments().size());
-                Ins.GetField getField = (Ins.GetField) indy.arguments().get(2);
+                Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) cons.statements().get(2);
+                Ins.ANewArray arr = (Ins.ANewArray) invokeStatic.arguments().get(6);
+                assertEquals(0, arr.initValues().size());
+                Ins.GetField getField = (Ins.GetField) invokeStatic.arguments().get(2);
                 assertEquals("a", getField.field().name());
         }
 
@@ -2738,10 +2741,11 @@ public class TestSemantic {
                 while (!classDef.fullName().equals("test.A")) classDef = (SClassDef) it.next();
                 SConstructorDef cons = classDef.constructors().get(0);
 
-                Ins.InvokeDynamic indy = (Ins.InvokeDynamic) cons.statements().get(2);
-                assertEquals(1, indy.arguments().size());
-                Ins.InvokeDynamic indy2 = (Ins.InvokeDynamic) indy.arguments().get(0);
-                Ins.GetField getField = (Ins.GetField) indy2.arguments().get(2);
+                Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) cons.statements().get(2);
+                Ins.ANewArray arr = (Ins.ANewArray) invokeStatic.arguments().get(2);
+                assertEquals(0, arr.initValues().size());
+                Ins.InvokeStatic invokeStatic2 = (Ins.InvokeStatic) invokeStatic.arguments().get(0);
+                Ins.GetField getField = (Ins.GetField) invokeStatic2.arguments().get(2);
                 assertEquals("a", getField.field().name());
         }
 

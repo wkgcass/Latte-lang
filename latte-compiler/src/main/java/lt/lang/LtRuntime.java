@@ -336,9 +336,11 @@ public class LtRuntime {
                                                 targetTypeCL = Thread.currentThread().getContextClassLoader();
                                         }
                                         @SuppressWarnings("unchecked")
-                                        Class<?> cls = ((java.util.List<Class<?>>) Utils.eval(
-                                                targetTypeCL,
-                                                sb.toString())).get(0);
+                                        List<Class<?>> ls = ((java.util.List<Class<?>>)
+                                                Utils.eval(
+                                                        targetTypeCL,
+                                                        sb.toString()));
+                                        Class<?> cls = ls.get(0);
                                         final Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
                                         Function1<Object, Object> func = new Function1<Object, Object>() {
                                                 @Override

@@ -1114,7 +1114,8 @@ public class SemanticProcessor {
                 // check annotation (@FunctionalInterface @FunctionalAbstractClass @Override @Implicit)
                 for (STypeDef typeDef : typeDefSet) {
                         for (SAnno anno : typeDef.annos()) {
-                                if (anno.type().fullName().equals("java.lang.FunctionalInterface")) {
+                                if (anno.type().fullName().equals("java.lang.FunctionalInterface")
+                                        || anno.type().fullName().equals("lt.lang.FunctionalInterface")) {
                                         final String msg = typeDef + " is not a functional interface";
                                         if (typeDef instanceof SInterfaceDef) {
                                                 if (!getMethodForLambda(typeDef, new SConstructorDef[1], new SMethodDef[1])) {
@@ -3870,6 +3871,34 @@ public class SemanticProcessor {
                                 instructions.add(invoke);
 
                                 return;
+                        } else if (isInvokeAtRuntime(invokeStatic)) {
+                                // invoke get(?)
+                                // list[?1]=?2
+                                // or
+                                // map[?1]=?2
+                                Ins.InvokeStatic invoke = (Ins.InvokeStatic) assignTo;
+                                if (((StringConstantValue) invoke.arguments().get(4)).getStr().equals("get")
+                                        && ((Ins.ANewArray) invoke.arguments().get(6)).initValues().size() > 0) {
+                                        // the method to invoke should be set
+                                        Ins.GetClass cls = (Ins.GetClass) invoke.arguments().get(0); // class
+                                        Value target = invoke.arguments().get(1);
+
+                                        // args
+                                        List<Value> list = new ArrayList<Value>();
+                                        list.addAll(((Ins.ANewArray) invoke.arguments().get(6)).initValues());
+                                        list.add(assignFrom);
+
+                                        instructions.add((Instruction) invokeMethodWithArgs(
+                                                lineCol,
+                                                cls.targetType(),
+                                                target,
+                                                "set",
+                                                list,
+                                                scope));
+                                        return;
+                                }
+                                err.SyntaxException("cannot assign", lineCol);
+                                // code won't reach here
                         }
                         err.SyntaxException("cannot assign", lineCol);
                         // code won't reach here
@@ -5487,8 +5516,7 @@ public class SemanticProcessor {
                 );
                 SMethodDef method = parseInnerMethod(methodDef, scope, true);
                 assert method != null;
-                method.modifiers().remove(SModifier.PRIVATE);
-                method.modifiers().add(SModifier.PUBLIC);
+                method.modifiers().remove(SModifier.PRIVATE); // it should be package access
                 methodToStatements.put(method, lambda.statements);
 
                 List<Value> args = new ArrayList<Value>();
@@ -5608,7 +5636,7 @@ public class SemanticProcessor {
                 if (!isStatic) {
                         f2 = new SFieldDef(LineCol.SYNTHETIC);
                         f2.setName("o");
-                        f2.setType(getTypeWithName("java.lang.Object", LineCol.SYNTHETIC));
+                        f2.setType(lambdaClassType);
                         sClassDef.fields().add(f2);
                         f2.setDeclaringType(sClassDef);
                 }
@@ -5666,7 +5694,7 @@ public class SemanticProcessor {
                 // p2
                 if (!isStatic) {
                         SParameter p2 = new SParameter();
-                        p2.setType(getObject_Class());
+                        p2.setType(lambdaClassType);
                         con.getParameters().add(p2);
                         conScope.putLeftValue("p2", p2);
                         con.statements().add(new Ins.PutField(
@@ -5709,20 +5737,24 @@ public class SemanticProcessor {
                 // the lambda USED to be using MethodHandle to invoke the method
                 // now it directly invokes that method
                 List<Value> methodArgs = new ArrayList<Value>();
+                // add local variables in list
                 for (int index = 0; index < localVarCount; ++index) {
                         Ins.InvokeInterface ii = new Ins.InvokeInterface(
-                                new Ins.GetField(f3, scope.getThis(), LineCol.SYNTHETIC),
+                                new Ins.GetField(f3, meScope.getThis(), LineCol.SYNTHETIC),
                                 getList_get(), LineCol.SYNTHETIC
                         );
                         ii.arguments().add(new IntValue(index));
                         Ins.CheckCast cc = new Ins.CheckCast(ii, innerMethod.getParameters().get(index).type(), LineCol.SYNTHETIC);
                         methodArgs.add(cc);
                 }
+                // add parameters
                 for (SParameter p : theMethod.getParameters()) {
                         methodArgs.add(new Ins.TLoad(
-                                p, scope, LineCol.SYNTHETIC
+                                p, meScope, LineCol.SYNTHETIC
                         ));
                 }
+                // add the functional object it self
+                methodArgs.add(new Ins.GetField(f4, meScope.getThis(), LineCol.SYNTHETIC));
                 Instruction theStmt;
                 if (isStatic) {
                         Ins.InvokeStatic is = new Ins.InvokeStatic(
@@ -5732,7 +5764,7 @@ public class SemanticProcessor {
                         theStmt = is;
                 } else {
                         Ins.InvokeVirtual iv = new Ins.InvokeVirtual(
-                                new Ins.GetField(f2, scope.getThis(), LineCol.SYNTHETIC),
+                                new Ins.GetField(f2, meScope.getThis(), LineCol.SYNTHETIC),
                                 innerMethod,
                                 LineCol.SYNTHETIC
                         );
@@ -7865,7 +7897,7 @@ public class SemanticProcessor {
          * @param classDef class definition
          * @param argList  argument list
          * @param lineCol  line col
-         * @return {@link lt.compiler.semantic.Ins.New} or {@link lt.compiler.semantic.Ins.InvokeDynamic}
+         * @return {@link lt.compiler.semantic.Ins.New} or {@link lt.compiler.semantic.Ins.InvokeStatic}
          * @throws SyntaxException exception
          */
         public Value constructingNewInst(SClassDef classDef, List<Value> argList, SemanticScope scope, LineCol lineCol) throws SyntaxException {
@@ -8009,7 +8041,7 @@ public class SemanticProcessor {
          */
         private Value packListValuesIntoObjectArray(List<Value> values) throws SyntaxException {
                 Ins.ANewArray aNewArray = new Ins.ANewArray(
-                        (SArrayTypeDef) getTypeWithName("[java.lang.Object;", LineCol.SYNTHETIC),
+                        (SArrayTypeDef) getTypeWithName("[Ljava.lang.Object;", LineCol.SYNTHETIC),
                         getTypeWithName("java.lang.Object", LineCol.SYNTHETIC),
                         new IntValue(values.size()));
                 for (Value v : values) {
@@ -8065,7 +8097,11 @@ public class SemanticProcessor {
                 );
                 is.arguments().add(new Ins.GetClass(targetClass, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                 is.arguments().add(new Ins.GetClass(invoker, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
-                is.arguments().add(packListValuesIntoBooleanArray(args));
+                List<Value> primitives = new ArrayList<Value>();
+                for (Value v : args) {
+                        primitives.add(new BoolValue(v.type() instanceof PrimitiveTypeDef));
+                }
+                is.arguments().add(packListValuesIntoBooleanArray(primitives));
                 is.arguments().add(packListValuesIntoObjectArray(args));
                 return is;
         }
@@ -8627,6 +8663,27 @@ public class SemanticProcessor {
                 return false;
         }
 
+        /**
+         * check whether the `target` is <code>invokeStatic {@link #DYNAMIC_CLASS_NAME}</code>
+         *
+         * @param target target
+         * @return true or false
+         */
+        public boolean isInvokeAtRuntime(Value target) {
+                if (target instanceof Ins.InvokeStatic) {
+                        Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) target;
+                        if (invokeStatic.invokable() instanceof SMethodDef) {
+                                SMethodDef m = (SMethodDef) invokeStatic.invokable();
+                                if (
+                                        (m.name().equals("invoke"))
+                                                && m.declaringType().fullName().equals(DYNAMIC_CLASS_NAME)
+                                        ) {
+                                        return true;
+                                }
+                        }
+                }
+                return false;
+        }
 
         // the following 3 SWAPs are used when choosing the best method to invoke
         /**
