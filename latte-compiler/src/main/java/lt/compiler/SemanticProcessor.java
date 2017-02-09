@@ -5603,6 +5603,7 @@ public class SemanticProcessor {
          * @param interfaceType    the interface type (or null if it's class)
          * @param isInterface      the type to extend/implement is interface
          * @param localVarCount    local variable count
+         * @param innerMethod      the inner method for the lambda to invoke
          * @return generated class (SClassDef form)
          * @throws SyntaxException compile error
          */
@@ -7906,6 +7907,7 @@ public class SemanticProcessor {
          *
          * @param classDef class definition
          * @param argList  argument list
+         * @param scope    current scope
          * @param lineCol  line col
          * @return {@link lt.compiler.semantic.Ins.New} or {@link lt.compiler.semantic.Ins.InvokeStatic}
          * @throws SyntaxException exception
@@ -8026,9 +8028,10 @@ public class SemanticProcessor {
         /**
          * call a functional object
          *
-         * @param object    the functional object
-         * @param arguments arguments
-         * @param lineCol   lineCol
+         * @param object      the functional object
+         * @param callerClass caller class
+         * @param arguments   arguments
+         * @param lineCol     lineCol
          * @return the invocation
          * @throws SyntaxException compiling error
          */
