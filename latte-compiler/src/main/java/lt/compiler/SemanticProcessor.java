@@ -1957,6 +1957,16 @@ public class SemanticProcessor {
                         }
                         return;
                 }
+                if (methodDef.declaringType() instanceof SInterfaceDef) {
+                        if (!statements.isEmpty()) {
+                                err.SyntaxException("default methods are not supported in interfaces", statements.get(0).line_col());
+                                return;
+                        }
+                }
+                if (methodDef.modifiers().contains(SModifier.STATIC) && methodDef.declaringType() instanceof SInterfaceDef) {
+                        err.SyntaxException("static methods are not allowed in interfaces", methodDef.line_col());
+                        return;
+                }
 
                 // fill in return
                 if (!methodDef.getReturnType().equals(VoidType.get())) {

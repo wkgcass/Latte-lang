@@ -2798,4 +2798,31 @@ public class TestSemantic {
                 STypeDef sTypeDef = getClass.targetType();
                 assertEquals("java.util.Map$Entry", sTypeDef.fullName());
         }
+
+        @Test
+        public void testInterfaceDefaultMethodFail() throws Exception {
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("test", "" +
+                        "interface Test\n" +
+                        "    def m = 1");
+                try {
+                        parse(map);
+                        fail();
+                } catch (SyntaxException ignore) {
+                }
+        }
+
+        @Test
+        public void testInterfaceStaticMethodFail() throws Exception {
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("test", "" +
+                        "interface Test\n" +
+                        "    static\n" +
+                        "        def m = 1");
+                try {
+                        parse(map);
+                        fail();
+                } catch (SyntaxException ignore) {
+                }
+        }
 }
