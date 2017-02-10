@@ -79,4 +79,9 @@ public class ElementStartNode extends Node {
         public String toString() {
                 return "NewLayer";
         }
+
+        @Override
+        public void remove() {
+                throw new UnsupportedOperationException();
+        }
 }

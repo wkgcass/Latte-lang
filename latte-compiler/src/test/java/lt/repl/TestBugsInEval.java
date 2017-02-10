@@ -193,7 +193,7 @@ public class TestBugsInEval {
         public void testInternalLambdaAndOtherStatements() throws Exception {
                 evaluator.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
                 assertEquals(2, evaluator.eval("" +
-                        "[1, 2, 3, 4].stream.filter{it > 2}\n" +
+                        "[1, 2, 3, 4].filter{it > 2}\n" +
                         "1 + 1").result);
         }
 

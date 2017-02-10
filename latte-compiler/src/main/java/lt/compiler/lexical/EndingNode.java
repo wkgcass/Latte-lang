@@ -63,4 +63,9 @@ public class EndingNode extends Node {
         public String toString() {
                 return (type == STRONG ? "," : "NewLine");
         }
+
+        @Override
+        public void remove() {
+                throw new UnsupportedOperationException();
+        }
 }

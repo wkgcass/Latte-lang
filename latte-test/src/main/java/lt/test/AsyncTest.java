@@ -24,7 +24,8 @@
 
 package lt.test;
 
-import java.util.function.Consumer;
+import lt.lang.Unit;
+import lt.lang.function.Function1;
 
 /**
  * the test context<br>
@@ -47,10 +48,10 @@ public class AsyncTest {
          * @param fun     the function to run. this function accepts one param `ass`, which contains many assertion templates.
          * @throws InterruptedException when the waiting thread is interrupted
          */
-        public static void run(int timeout, Consumer<Assert> fun) throws InterruptedException {
+        public static void run(int timeout, Function1<Unit, Assert> fun) throws Exception {
                 Context ctx = new Context(timeout);
                 Assert ass = new Assert(ctx);
-                fun.accept(ass);
+                fun.apply(ass);
                 ctx.startAndWait();
         }
 }

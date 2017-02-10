@@ -2321,9 +2321,9 @@ public class TestSemantic {
                 Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
-                        "import java::util::function::_\n" +
+                        "import lt::lang::function::_\n" +
                         "class A\n" +
-                        "    func:Function=(o)->\n" +
+                        "    func:Function1=(o)->\n" +
                         "        return 1");
                 Set<STypeDef> set = parse(map);
                 assertEquals(2, set.size());
@@ -2347,9 +2347,9 @@ public class TestSemantic {
                 Map<String, String> map = new HashMap<String, String>();
                 map.put("test", "" +
                         "package test\n" +
-                        "import java::util::function::_\n" +
+                        "import lt::lang::function::_\n" +
                         "class A(a)\n" +
-                        "    func:Function=(o)->\n" +
+                        "    func:Function1=(o)->\n" +
                         "        return 1");
                 Set<STypeDef> set = parse(map);
                 assertEquals(2, set.size());

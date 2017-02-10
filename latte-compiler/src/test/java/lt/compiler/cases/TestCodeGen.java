@@ -1378,7 +1378,6 @@ public class TestCodeGen {
         public void testLambdaMultipleArguments() throws Exception {
                 ErrorManager err = new ErrorManager(true);
                 IndentScanner lexicalProcessor = new IndentScanner("test.lt", new StringReader("" +
-                        "import java::util::function::_\n" +
                         "class TestLambdaMultipleArguments\n" +
                         "    method() = (a,b,c)->a+b+c"), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
@@ -1759,7 +1758,7 @@ public class TestCodeGen {
                                 "class TestFunctionalInterfaces\n" +
                                 "    static\n" +
                                 "        def method(list)\n" +
-                                "            return list.stream().map((e)->e.toString).collect(java::util::stream::Collectors.toList())",
+                                "            return list.map((e)->e.toString)",
                         "TestFunctionalInterfaces");
                 Method method = cls.getMethod("method", Object.class);
                 assertEquals(Arrays.asList("1", "2", "3"), method.invoke(null, Arrays.asList(1, 2, 3)));
@@ -2671,10 +2670,9 @@ public class TestCodeGen {
         public void testBraceInternalSyntaxLambda() throws Exception {
                 Class<?> cls = retrieveClass("" +
                                 "/// :scanner-brace\n" +
-                                "import java::util::stream::Collectors._\n" +
                                 "class TestBraceInternalSyntaxLambda {\n" +
                                 "    static {\n" +
-                                "        method()= [1, 2, 3, 4].stream.filter{it > 2}.map{it + 1}.collect(toList())" +
+                                "        method()= [1, 2, 3, 4].filter{it > 2}.map{it + 1}" +
                                 "    }\n" +
                                 "}"
                         , "TestBraceInternalSyntaxLambda");
@@ -2685,11 +2683,10 @@ public class TestCodeGen {
         @Test
         public void testIndentInternalSyntaxLambda() throws Exception {
                 Class<?> cls = retrieveClass("" +
-                                "import java::util::stream::Collectors._\n" +
                                 "class TestIndentInternalSyntaxLambda\n" +
                                 "    static\n" +
                                 "        method()=\n" +
-                                "        [1, 2, 3, 4].stream.filter{it > 2}.map{it + 1}.collect(toList())"
+                                "        [1, 2, 3, 4].filter{it > 2}.map{it + 1}"
                         , "TestIndentInternalSyntaxLambda");
                 Method method = cls.getMethod("method");
                 assertEquals(Arrays.asList(4, 5), method.invoke(null));

@@ -24,6 +24,8 @@
 
 package lt.lang.function;
 
+import lt.lang.FunctionalInterface;
+
 /**
  * function with 17 args
  */

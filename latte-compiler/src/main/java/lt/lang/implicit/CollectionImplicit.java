@@ -33,4 +33,9 @@ public class CollectionImplicit {
         public <K, V> RichMap cast(Map<K, V> map) {
                 return new RichMap<K, V>(map);
         }
+
+        @Implicit
+        public <T> RichIterable<T> cast(Iterable<T> i) {
+                return new RichIterable<T>(i);
+        }
 }

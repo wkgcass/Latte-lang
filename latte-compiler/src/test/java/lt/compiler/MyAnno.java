@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * test
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value = {ElementType.TYPE_PARAMETER, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE, ElementType.PARAMETER})
+@Target(value = {ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE, ElementType.PARAMETER})
 public @interface MyAnno {
         String str();
 

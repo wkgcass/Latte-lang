@@ -130,4 +130,9 @@ public abstract class LtIterator implements Iterator {
         public abstract boolean hasNext();
 
         public abstract Object next();
+
+        @Override
+        public void remove() {
+                throw new UnsupportedOperationException();
+        }
 }

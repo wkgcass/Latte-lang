@@ -80,4 +80,9 @@ public class Element extends Node {
         public String toString() {
                 return content;
         }
+
+        @Override
+        public void remove() {
+                throw new UnsupportedOperationException();
+        }
 }

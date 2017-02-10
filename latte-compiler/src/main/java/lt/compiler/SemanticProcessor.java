@@ -114,6 +114,7 @@ public class SemanticProcessor {
          * rt.jar file
          */
         private static JarFile rtJar;
+        private boolean alreadyWarnJar = false;
 
         /**
          * initialize the Processor
@@ -534,33 +535,83 @@ public class SemanticProcessor {
                 return url != null || packageExistsInClassPath(pkg, classLoader.getParent());
         }
 
-        public static boolean packageExistInRtJar(String pkg) {
+        public boolean packageExistInRtJar(String pkg) {
+                if (alreadyWarnJar) return true;
                 if (rtJar == null) {
-                        String binPath = System.getProperty("sun.boot.library.path");
-                        if (binPath == null) return true; // assume it's a valid import
-                        File binPathFile = new File(binPath);
-                        File[] libFileA = binPathFile.getParentFile().listFiles(
-                                new FileFilter() {
-                                        @Override
-                                        public boolean accept(File f) {
-                                                return f.getName().equals("lib");
-                                        }
-                                });
-                        if (libFileA == null || libFileA.length == 0) return true;
-                        File libFile = libFileA[0];
-                        File[] rtFileA = libFile.listFiles(
-                                new FileFilter() {
-                                        @Override
-                                        public boolean accept(File f) {
-                                                return f.getName().equals("rt.jar");
-                                        }
-                                });
-                        if (rtFileA == null || rtFileA.length == 0) return true;
+                        String homePath = System.getProperty("java.home");
+                        if (homePath == null) {
+                                err.warning("Cannot find java home via System.getProperty('java.home')");
+                                alreadyWarnJar = true;
+                                return true; // assume it's a valid import
+                        }
+                        File binPathFile = new File(homePath);
+                        File[] rtFileA = null;
+
+                        boolean found = false;
+
+                        // the file may be in $JAVA_HOME/../Contents/Classes/classes.jar
+                        // instead of $JAVA_HOME/lib/rt.jar
+
+                        // check for classes.jar
+                        File[] classesFileA = binPathFile.getParentFile().listFiles(new FileFilter() {
+                                @Override
+                                public boolean accept(File f) {
+                                        return f.getName().equals("Classes");
+                                }
+                        });
+                        if (classesFileA != null && classesFileA.length != 0) {
+                                File classesFile = classesFileA[0];
+                                rtFileA = classesFile.listFiles(
+                                        new FileFilter() {
+                                                @Override
+                                                public boolean accept(File f) {
+                                                        return f.getName().equals("classes.jar");
+                                                }
+                                        });
+                                found = true;
+                        }
+
+                        // not found
+                        // check rt.jar
+                        if (!found) {
+                                File[] libFileA = binPathFile.listFiles(
+                                        new FileFilter() {
+                                                @Override
+                                                public boolean accept(File f) {
+                                                        return f.getName().equals("lib");
+                                                }
+                                        });
+                                if (libFileA == null || libFileA.length == 0) {
+                                        err.warning(homePath + "/lib not exist");
+                                        alreadyWarnJar = true;
+                                        return true;
+                                }
+                                File libFile = libFileA[0];
+                                rtFileA = libFile.listFiles(
+                                        new FileFilter() {
+                                                @Override
+                                                public boolean accept(File f) {
+                                                        return f.getName().equals("rt.jar");
+                                                }
+                                        });
+                        }
+
+                        if (rtFileA == null || rtFileA.length == 0) {
+                                err.warning(homePath + "/lib/rt.jar not exist");
+                                alreadyWarnJar = true;
+                                return true;
+                        }
                         File rtFile = rtFileA[0];
-                        if (!rtFile.exists()) return true;
+                        if (!rtFile.exists()) {
+                                err.warning(homePath + "/lib/rt.jar not exist");
+                                alreadyWarnJar = true;
+                                return true;
+                        }
                         try {
                                 rtJar = new JarFile(rtFile);
                         } catch (IOException e) {
+                                err.warning("Occurred exception " + e + " when opening rt.jar");
+                                alreadyWarnJar = true;
                                 return true;
                         }
                 }

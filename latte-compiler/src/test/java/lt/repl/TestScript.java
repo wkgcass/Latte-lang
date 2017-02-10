@@ -57,7 +57,7 @@ public class TestScript {
         @Test
         public void testInternalLambdaBug() throws Throwable {
                 String code = "" +
-                        "[1, 2, 3, 4].stream.\n" +
+                        "[1, 2, 3, 4].\n" +
                         "filter {it > 2}.\n" +
                         "map {it + 1}\n" +
                         "\n" +
