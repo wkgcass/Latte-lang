@@ -511,9 +511,7 @@ public class TestBraceScanner {
                                 "i++\n" +
                                 "i--\n" +
                                 "++i\n" +
-                                "--i\n" +
-                                "x=:=y\n" +
-                                "x!:=y"), new Properties(), new ErrorManager(true));
+                                "--i"), new Properties(), new ErrorManager(true));
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
@@ -597,18 +595,6 @@ public class TestBraceScanner {
 
                 args.previous = new Element(args, "--", TokenType.SYMBOL);
                 args.previous = new Element(args, "i", TokenType.VALID_NAME);
-
-                args.previous = new EndingNode(args, EndingNode.WEAK);
-
-                args.previous = new Element(args, "x", TokenType.VALID_NAME);
-                args.previous = new Element(args, "=:=", TokenType.SYMBOL);
-                args.previous = new Element(args, "y", TokenType.VALID_NAME);
-
-                args.previous = new EndingNode(args, EndingNode.WEAK);
-
-                args.previous = new Element(args, "x", TokenType.VALID_NAME);
-                args.previous = new Element(args, "!:=", TokenType.SYMBOL);
-                args.previous = new Element(args, "y", TokenType.VALID_NAME);
 
                 assertEquals(root2, root);
         }

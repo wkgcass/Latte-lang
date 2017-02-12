@@ -6,7 +6,7 @@ a + b can be considered as a.add(b)
 here's all operators supported in Latte
 */
 class Num(public i)
-    equals(o):bool             // bind ==
+    equals(o):bool             // override equals(o)
         if o is null
             return false
         elseif o is type Num
@@ -22,8 +22,8 @@ class Num(public i)
     shiftLeft(o)=Num(i<<o)     // bind <<
     shiftRight(o)=Num(i>>o)    // bind >>
     unsignedShiftRight(o)=Num(i>>>o)// bind >>>
-    equal(o)=i==o              // bind =:=
-    notEqual(o)=i!=o           // bind !:=
+    eq(o)=i==o                 // bind ==
+    ne(o)=i!=o                 // bind !=
     def contains(o)            // bind (this in o)
         throw UnsupportedOperationException('contains')
     gt(o)=i>o                  // bind >
@@ -52,9 +52,9 @@ class TestNum
         testShiftLeft()=Num(1)<<2    // should be Num(4)
         testShiftRight()=Num(4)>>2   // should be Num(1)
         testUnsignedShiftRight()=Num(8)>>>2 // should be Num(2)
-        testEqual()=Num(1)=:=1       // should be true
-        testNotEqual()=Num(1)!:=2    // should be true
-        testEquals()=Num(1)==Num(1)  // should be true
+        testEqual()=Num(1)==1        // should be true
+        testNotEqual()=Num(1)!=2     // should be true
+        testEquals()=Num(1) is Num(1)// should be true
         testContains()=1 in Num(1)   // should throw exception
         testGt()=Num(1)>0            // should be true
         testGe()=Num(1)>=1           // should be true

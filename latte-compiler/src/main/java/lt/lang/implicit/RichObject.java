@@ -13,4 +13,12 @@ public class RichObject {
         public String add(String s) {
                 return o + s;
         }
+
+        public boolean eq(Object that) {
+                return o.equals(that);
+        }
+
+        public boolean ne(Object that) {
+                return !this.eq(that);
+        }
 }

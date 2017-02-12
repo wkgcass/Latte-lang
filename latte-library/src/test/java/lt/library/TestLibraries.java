@@ -107,49 +107,6 @@ public class TestLibraries {
         }
 
         @Test
-        public void testSQL() throws Exception {
-                Class<?> TestSQL = Class.forName("lt.dsl.sql.test.TestSQL");
-
-                Method testSelectString = TestSQL.getMethod("testSelectString");
-                assertEquals("select `User`.`id`, `User`.`name` from `User` where `User`.`id` > ? order by `User`.`id` desc limit ?,?",
-                        testSelectString.invoke(null));
-
-                Method testSelectAlias = TestSQL.getMethod("testSelectAlias");
-                assertEquals("select `User`.`id` as theId, `User`.`name` as theName from `User`",
-                        testSelectAlias.invoke(null));
-
-                Method testSelectWithSubQuery = TestSQL.getMethod("testSelectWithSubQuery");
-                assertEquals("select `User`.`id`, `User`.`name` from `User` where `User`.`id` <= " +
-                                "(select `User`.`id` from `User` limit ?) order by `User`.`id` desc",
-                        testSelectWithSubQuery.invoke(null));
-
-                Method testInsertString = TestSQL.getMethod("testInsertString");
-                assertEquals("insert into `User` (`id`, `name`) values (?, ?)",
-                        testInsertString.invoke(null));
-
-                Method testUpdateString = TestSQL.getMethod("testUpdateString");
-                assertEquals("update `User` set `User`.`id` = ? where `User`.`name` = ?",
-                        testUpdateString.invoke(null));
-
-                Method testDeleteString = TestSQL.getMethod("testDeleteString");
-                assertEquals("delete from `User` where `User`.`id` = ?",
-                        testDeleteString.invoke(null));
-
-                Method testAndOr = TestSQL.getMethod("testAndOr");
-                assertEquals("select User.name from User where (User.id > ? and User.name <> ?) or User.id < ?", testAndOr.invoke(null));
-
-                Method testAllQueries = TestSQL.getMethod("testAllQueries");
-                assertEquals(Arrays.asList(
-                        "select distinct User.name from User",
-                        "select count(User.name) from User",
-                        "select mid(User.name, 1) from User",
-                        "select mid(User.name, 1) as a from User",
-                        "select User.name from User union select User.name from User union select User.name from User",
-                        "select User.id into Tbl from User where User.name = ?"
-                ), testAllQueries.invoke(null));
-        }
-
-        @Test
         public void testAsync_waterfall() throws Exception {
                 Class<?> TestAsync = Class.forName("lt.async.test.TestAsync");
 

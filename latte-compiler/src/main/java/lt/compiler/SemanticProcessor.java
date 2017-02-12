@@ -6325,7 +6325,7 @@ public class SemanticProcessor {
          * parse value from two var op compare
          *
          * @param left         the value of the left of the operator
-         * @param compare_mode compare_mode {@link LtRuntime#COMPARE_MODE_EQ} {@link LtRuntime#COMPARE_MODE_GT} {@link LtRuntime#COMPARE_MODE_LT}
+         * @param compare_mode compare_mode {@link #COMPARE_MODE_EQ} {@link #COMPARE_MODE_GT} {@link #COMPARE_MODE_LT}
          * @param methodName   if requires method invocation, use this method to invoke
          * @param right        the value of the right of the operator
          * @param scope        current scope
@@ -6415,6 +6415,19 @@ public class SemanticProcessor {
         }
 
         /**
+         * if a &gt; b then return true.
+         */
+        public static final int COMPARE_MODE_GT = 1; // 0b001
+        /**
+         * if a == b then return true.
+         */
+        public static final int COMPARE_MODE_EQ = 2; // 0b010
+        /**
+         * if a &lt; b then return true.
+         */
+        public static final int COMPARE_MODE_LT = 4; // 0b100
+
+        /**
          * parse value from two variable operation<br>
          * invoke {@link #parseValueFromTwoVarOpILFD(Value, int, String, Value, SemanticScope, LineCol)}
          * and {@link #parseValueFromTwoVarOpCompare(Value, int, String, Value, SemanticScope, LineCol)}<br>
@@ -6442,29 +6455,29 @@ public class SemanticProcessor {
                         }
                         return invokeMethodWithArgs(lineCol, left.type(), left, "pow", arg, scope);
                 } else if (op.equals("*")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Imul, LtRuntime.multiply, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Imul, "multiply", right, scope, lineCol);
                 } else if (op.equals("/")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Idiv, LtRuntime.divide, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Idiv, "divide", right, scope, lineCol);
                 } else if (op.equals("%")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Irem, LtRuntime.remainder, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Irem, "remainder", right, scope, lineCol);
                 } else if (op.equals("+")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iadd, LtRuntime.add, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iadd, "add", right, scope, lineCol);
                 } else if (op.equals("-")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Isub, LtRuntime.subtract, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Isub, "subtract", right, scope, lineCol);
                 } else if (op.equals("<<")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishl, LtRuntime.shiftLeft, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishl, "shiftLeft", right, scope, lineCol);
                 } else if (op.equals(">>")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishr, LtRuntime.shiftRight, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ishr, "shiftRight", right, scope, lineCol);
                 } else if (op.equals(">>>")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iushr, LtRuntime.unsignedShiftRight, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iushr, "unsignedShiftRight", right, scope, lineCol);
                 } else if (op.equals(">")) {
-                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_GT, LtRuntime.gt, right, scope, lineCol);
+                        return parseValueFromTwoVarOpCompare(left, COMPARE_MODE_GT, "gt", right, scope, lineCol);
                 } else if (op.equals("<")) {
-                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT, LtRuntime.lt, right, scope, lineCol);
+                        return parseValueFromTwoVarOpCompare(left, COMPARE_MODE_LT, "lt", right, scope, lineCol);
                 } else if (op.equals(">=")) {
-                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_GT | LtRuntime.COMPARE_MODE_EQ, LtRuntime.ge, right, scope, lineCol);
+                        return parseValueFromTwoVarOpCompare(left, COMPARE_MODE_GT | COMPARE_MODE_EQ, "ge", right, scope, lineCol);
                 } else if (op.equals("<=")) {
-                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT | LtRuntime.COMPARE_MODE_EQ, LtRuntime.le, right, scope, lineCol);
+                        return parseValueFromTwoVarOpCompare(left, COMPARE_MODE_LT | COMPARE_MODE_EQ, "le", right, scope, lineCol);
                 } else if (op.equals("==")) {// null check
                         if (left.equals(NullValue.get()) || right.equals(NullValue.get())) {
                                 if (right.equals(NullValue.get())) {
@@ -6474,7 +6487,7 @@ public class SemanticProcessor {
                                 }
                                 return parseValueFromTwoVarOp(left, "is", right, scope, lineCol);
                         }
-                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
+                        return parseValueFromTwoVarOpCompare(left, COMPARE_MODE_EQ, "eq", right, scope, lineCol);
                 } else if (op.equals("!=")) {// null check
                         if (left.equals(NullValue.get()) || right.equals(NullValue.get())) {
                                 if (right.equals(NullValue.get())) {
@@ -6484,11 +6497,10 @@ public class SemanticProcessor {
                                 }
                                 return parseValueFromTwoVarOp(left, "not", right, scope, lineCol);
                         }
-                        Value eq = parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, "equals", right, scope, lineCol);
-                        return parseValueFromTwoVarOpILFD(eq, Ins.TwoVarOp.Ixor, null, new BoolValue(true), scope, lineCol);
+                        return parseValueFromTwoVarOpCompare(left, COMPARE_MODE_GT | COMPARE_MODE_LT, "ne", right, scope, lineCol);
                 } else if (op.equals("===")) {
                         if (left.type() instanceof PrimitiveTypeDef && right.type() instanceof PrimitiveTypeDef) {
-                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, null, right, scope, lineCol);
+                                return parseValueFromTwoVarOpCompare(left, COMPARE_MODE_EQ, null, right, scope, lineCol);
                         } else {
                                 if (left.type() instanceof PrimitiveTypeDef || right.type() instanceof PrimitiveTypeDef) {
                                         err.SyntaxException("reference type cannot compare to primitive type", lineCol);
@@ -6503,7 +6515,7 @@ public class SemanticProcessor {
                         }
                 } else if (op.equals("!==")) {
                         if (left.type() instanceof PrimitiveTypeDef && right.type() instanceof PrimitiveTypeDef) {
-                                return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_LT | LtRuntime.COMPARE_MODE_GT, null, right, scope, lineCol);
+                                return parseValueFromTwoVarOpCompare(left, COMPARE_MODE_LT | COMPARE_MODE_GT, null, right, scope, lineCol);
                         } else {
                                 if (left.type() instanceof PrimitiveTypeDef || right.type() instanceof PrimitiveTypeDef) {
                                         err.SyntaxException("reference type cannot compare to primitive type", lineCol);
@@ -6519,10 +6531,6 @@ public class SemanticProcessor {
                                         return parseValueFromTwoVarOpILFD(invokeStatic, Ins.TwoVarOp.Ixor, null, new BoolValue(true), scope, lineCol);
                                 }
                         }
-                } else if (op.equals("=:=")) {
-                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, LtRuntime.equal, right, scope, lineCol);
-                } else if (op.equals("!:=")) {
-                        return parseValueFromTwoVarOpCompare(left, LtRuntime.COMPARE_MODE_EQ, LtRuntime.notEqual, right, scope, lineCol);
                 } else if (op.equals("is")) {
                         if (right instanceof Ins.GetClass) {
                                 // is type XXX
@@ -6596,11 +6604,11 @@ public class SemanticProcessor {
                         }
                         return invokeMethodWithArgs(lineCol, right.type(), right, "contains", args, scope);
                 } else if (op.equals("&")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iand, LtRuntime.and, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Iand, "and", right, scope, lineCol);
                 } else if (op.equals("^")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ixor, LtRuntime.xor, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ixor, "xor", right, scope, lineCol);
                 } else if (op.equals("|")) {
-                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ior, LtRuntime.or, right, scope, lineCol);
+                        return parseValueFromTwoVarOpILFD(left, Ins.TwoVarOp.Ior, "or", right, scope, lineCol);
                 } else if (op.equals("&&") || op.equals("and")) {// logic and with short cut
                         return new Ins.LogicAnd(
                                 cast(BoolTypeDef.get(), left, scope.type(), lineCol),

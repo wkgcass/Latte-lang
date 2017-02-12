@@ -24,6 +24,7 @@
 
 package lt.lang;
 
+import lt.compiler.SemanticProcessor;
 import lt.lang.function.Function;
 import lt.lang.function.Function1;
 import lt.repl.ScriptCompiler;
@@ -44,74 +45,6 @@ import java.util.WeakHashMap;
  * <b>is</b> and <b>not</b> operator behavior, wrapping object for throwing, hashCode retrieving.
  */
 public class LtRuntime {
-        /**
-         * multiply
-         */
-        public static final String multiply = "multiply";
-        /**
-         * divide
-         */
-        public static final String divide = "divide";
-        /**
-         * remainder
-         */
-        public static final String remainder = "remainder";
-        /**
-         * add
-         */
-        public static final String add = "add";
-        /**
-         * subtract
-         */
-        public static final String subtract = "subtract";
-        /**
-         * shiftLeft
-         */
-        public static final String shiftLeft = "shiftLeft";
-        /**
-         * shiftRight
-         */
-        public static final String shiftRight = "shiftRight";
-        /**
-         * unsignedShiftRight
-         */
-        public static final String unsignedShiftRight = "unsignedShiftRight";
-        /**
-         * gt
-         */
-        public static final String gt = "gt";
-        /**
-         * lt
-         */
-        public static final String lt = "lt";
-        /**
-         * ge
-         */
-        public static final String ge = "ge";
-        /**
-         * le
-         */
-        public static final String le = "le";
-        /**
-         * equal
-         */
-        public static final String equal = "equal";
-        /**
-         * notEqual
-         */
-        public static final String notEqual = "notEqual";
-        /**
-         * and
-         */
-        public static final String and = "and";
-        /**
-         * xor
-         */
-        public static final String xor = "xor";
-        /**
-         * or
-         */
-        public static final String or = "or";
         /**
          * the lambda function map. maps "required class" to "create the required object"
          */
@@ -685,32 +618,25 @@ public class LtRuntime {
         }
 
         /**
-         * if a &gt; b then return true.
-         */
-        public static final int COMPARE_MODE_GT = 1; // 0b001
-        /**
-         * if a == b then return true.
-         */
-        public static final int COMPARE_MODE_EQ = 2; // 0b010
-        /**
-         * if a &lt; b then return true.
-         */
-        public static final int COMPARE_MODE_LT = 4; // 0b100
-
-        /**
          * change compare result into boolean
          *
          * @param result compare result.
-         * @param mode   {@link #COMPARE_MODE_EQ} {@link #COMPARE_MODE_GT} {@link #COMPARE_MODE_LT}, can be linked with + or | operator
+         * @param mode   {@link SemanticProcessor#COMPARE_MODE_EQ}
+         *               {@link SemanticProcessor#COMPARE_MODE_GT}
+         *               {@link SemanticProcessor#COMPARE_MODE_LT},
+         *               can be linked with + or | operator
          * @return boolean value
          */
         public static boolean compare(int result, int mode) {
                 // mode is EQ
-                if ((mode & COMPARE_MODE_EQ) == COMPARE_MODE_EQ && result == 0) return true;
+                if ((mode & SemanticProcessor.COMPARE_MODE_EQ) == SemanticProcessor.COMPARE_MODE_EQ && result == 0)
+                        return true;
                 // mode is GT
-                if ((mode & COMPARE_MODE_GT) == COMPARE_MODE_GT && result > 0) return true;
+                if ((mode & SemanticProcessor.COMPARE_MODE_GT) == SemanticProcessor.COMPARE_MODE_GT && result > 0)
+                        return true;
                 // mode is LT
-                if ((mode & COMPARE_MODE_LT) == COMPARE_MODE_LT && result < 0) return true;
+                if ((mode & SemanticProcessor.COMPARE_MODE_LT) == SemanticProcessor.COMPARE_MODE_LT && result < 0)
+                        return true;
                 // otherwise
                 return false;
         }
