@@ -26,7 +26,7 @@ Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about L
 * Operator Binding
 * DSL
 * Data Class
-* Pre-Processing define/undef
+* Pattern Matching
 * Inner Method
 * Lambda and High-Order Function
 * JSON Literal
@@ -36,11 +36,11 @@ Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about L
 * Latte Maven Plugin
 * many other features
 
-`Latte` is based on java 8. It's compiled to JVM byte code, and can collaborate with any java library.
+`Latte` is based on java 6. It's compiled to JVM byte code, and can collaborate with any java library.
 
 #How to build
 
-`JDK 8` is the only thing required.
+`JDK 1.6` or higher is the only thing required.
 
 The project is managed by `Maven`, you can use `Maven 3` to build automatically
 
@@ -222,7 +222,7 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 * 运算符绑定
 * DSL
 * Data Class
-* 预处理 define/undef
+* 模式匹配
 * 内部方法
 * Lambda 和 高阶函数
 * JSON 字面量
@@ -232,11 +232,11 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 * Latte Maven Plugin
 * 许多其它特性
 
-`Latte`基于java8。它被编译到JVM字节码，可以与任何Java类库完美互通。
+`Latte`基于java6。它被编译到JVM字节码，可以与任何Java类库完美互通。
 
 #如何构建工程
 
-环境仅仅需要 `JDK 8`
+环境仅仅需要 `JDK 1.6` 或更高
 
 本工程使用 `Maven` 进行管理，所以您也可以使用 `Maven 3` 进行自动Build
 
