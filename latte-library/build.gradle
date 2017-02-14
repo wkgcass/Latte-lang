@@ -1,0 +1,61 @@
+def VERSION = '0.0.7-ALPHA'
+
+group 'org.latte-lang'
+version VERSION
+
+buildscript {
+    def VERSION_ = '0.0.7-ALPHA'
+
+    repositories {
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'org.latte-lang:latte-gradle-plugin:' + VERSION_
+        classpath 'org.latte-lang:latte-class-recorder:' + VERSION_
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'latte'
+apply plugin: LatteBuild
+apply plugin: 'org.latte-lang.class-recorder'
+
+recordConfig {
+    directory = 'classes/main'
+    file = 'lib-classes.txt'
+}
+
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+sourceCompatibility = 1.6
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'org.latte-lang', name: 'latte-compiler', version: VERSION
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            mavenLocal()
+        }
+    }
+}
+
+class LatteBuild implements Plugin<Project> {
+    @Override
+    void apply(Project project) {
+        def latteBuild = project.task('latteBuild')
+        project.tasks['install'].dependsOn project.tasks['test']
+        latteBuild.dependsOn project.tasks['install']
+    }
+}

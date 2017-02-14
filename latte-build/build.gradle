@@ -1,0 +1,44 @@
+class CONSTS {
+    static def VERSION = '0.0.7-ALPHA'
+}
+
+group 'org.latte-lang'
+version CONSTS.VERSION
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: LatteBuild
+
+mainClassName = 'lt.repl.REPL'
+applicationName = 'latte'
+
+sourceCompatibility = 1.6
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+configurations {
+    provided
+}
+
+sourceSets {
+    main.compileClasspath += configurations.provided
+    test.compileClasspath += configurations.provided
+    test.runtimeClasspath += configurations.provided
+}
+
+repositories {
+    mavenLocal()
+}
+
+dependencies {
+    compile group: 'org.latte-lang', name: 'latte-compiler', version: CONSTS.VERSION
+    compile group: 'org.latte-lang', name: 'latte-library', version: CONSTS.VERSION
+    provided group: 'jline', name: 'jline', version: '2.14.2'
+}
+
+class LatteBuild implements Plugin<Project> {
+    @Override
+    void apply(Project project) {
+        def latteBuild = project.task('latteBuild')
+        latteBuild.dependsOn project.tasks['assemble']
+    }
+}

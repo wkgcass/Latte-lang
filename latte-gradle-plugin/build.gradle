@@ -1,0 +1,40 @@
+def VERSION = '0.0.7-ALPHA'
+
+group 'org.latte-lang'
+version VERSION
+
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: LatteBuild
+
+compileGroovy {
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
+    options.encoding = "UTF-8"
+}
+
+repositories {
+    mavenLocal()
+}
+
+dependencies {
+    compile group: 'org.latte-lang', name: 'latte-compiler', version: VERSION
+    compile gradleApi()
+    compile localGroovy()
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            mavenLocal()
+        }
+    }
+}
+
+class LatteBuild implements Plugin<Project> {
+    @Override
+    void apply(Project project) {
+        def latteBuild = project.task('latteBuild')
+        latteBuild.dependsOn project.tasks['install']
+    }
+}
