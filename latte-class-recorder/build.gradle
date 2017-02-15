@@ -1,5 +1,7 @@
+def VERSION = System.getenv('LATTE_VERSION')
+
 group 'org.latte-lang'
-version '0.0.7-ALPHA'
+version VERSION
 
 apply plugin: 'groovy'
 apply plugin: 'maven'
@@ -33,5 +35,9 @@ class LatteBuild implements Plugin<Project> {
     void apply(Project project) {
         def latteBuild = project.task('latteBuild')
         latteBuild.dependsOn project.tasks['install']
+
+        project.task('latteTest') // do nothing
+
+        project.task('latteDeploy') // do nothing
     }
 }

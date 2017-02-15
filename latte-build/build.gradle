@@ -1,12 +1,11 @@
-class CONSTS {
-    static def VERSION = '0.0.7-ALPHA'
-}
+def VERSION = System.getenv('LATTE_VERSION')
 
 group 'org.latte-lang'
-version CONSTS.VERSION
+version VERSION
 
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'maven'
 apply plugin: LatteBuild
 
 mainClassName = 'lt.repl.REPL'
@@ -29,9 +28,22 @@ repositories {
     mavenLocal()
 }
 
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            def deploy_user = System.getenv('DEPLOY_USER')
+            def deploy_pass = System.getenv('DEPLOY_PASS')
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: deploy_user, password: deploy_pass)
+            }
+        }
+    }
+}
+
 dependencies {
-    compile group: 'org.latte-lang', name: 'latte-compiler', version: CONSTS.VERSION
-    compile group: 'org.latte-lang', name: 'latte-library', version: CONSTS.VERSION
+    compile group: 'org.latte-lang', name: 'latte-compiler', version: VERSION
+    compile group: 'org.latte-lang', name: 'latte-library', version: VERSION
     provided group: 'jline', name: 'jline', version: '2.14.2'
 }
 
@@ -40,5 +52,10 @@ class LatteBuild implements Plugin<Project> {
     void apply(Project project) {
         def latteBuild = project.task('latteBuild')
         latteBuild.dependsOn project.tasks['assemble']
+
+        project.task('latteTest') // do nothing
+
+        def latteDeploy = project.task('latteDeploy')
+        latteDeploy.dependsOn project.tasks['uploadArchives']
     }
 }

@@ -1,20 +1,22 @@
+def VERSION = System.getenv('LATTE_VERSION')
+
 group 'org.latte-lang'
-version '0.0.7-ALPHA'
+version VERSION
 
 buildscript {
-    def VERSION = '0.0.7-ALPHA'
+    def VERSION_ = System.getenv('LATTE_VERSION')
 
     repositories {
         mavenLocal()
     }
     dependencies {
-        classpath 'org.latte-lang:latte-class-recorder:' + VERSION
+        classpath 'org.latte-lang:latte-class-recorder:' + VERSION_
     }
 }
 
 apply plugin: 'java'
-apply plugin: 'maven'
 apply plugin: 'org.latte-lang.class-recorder'
+apply plugin: 'maven'
 apply plugin: LatteBuild
 
 recordConfig {
@@ -27,24 +29,29 @@ sourceCompatibility = 1.6
 
 repositories {
     mavenLocal()
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            mavenLocal()
-        }
-    }
-}
-
 test {
     useJUnit()
     exclude 'lt/**'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            def deploy_user = System.getenv('DEPLOY_USER')
+            def deploy_pass = System.getenv('DEPLOY_PASS')
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: deploy_user, password: deploy_pass)
+            }
+        }
+    }
 }
 
 class LatteBuild implements Plugin<Project> {
@@ -53,5 +60,11 @@ class LatteBuild implements Plugin<Project> {
         def latteBuild = project.task('latteBuild')
         project.tasks['install'].dependsOn project.tasks['test']
         latteBuild.dependsOn project.tasks['install']
+
+        def latteTest = project.task('latteTest')
+        latteTest.dependsOn project.tasks['test']
+
+        def latteDeploy = project.task('latteDeploy')
+        latteDeploy.dependsOn project.tasks['uploadArchives']
     }
 }
