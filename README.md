@@ -4,9 +4,6 @@
 
 Latte is a JVM language. It's highly readable and extensible.
 
-Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about Latte.
-
-[Syntax Specification (deprecated)](https://github.com/wkgcass/Latte-lang/blob/master/ltls-deprecated.md)  
 [Syntax Mannual (NEW)](https://github.com/wkgcass/Latte-lang/blob/master/mannual-zh.md)  
 [Latte WebSite](http://latte-lang.org/)
 
@@ -15,9 +12,9 @@ Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about L
 [atom-latte-lang-highlighting](https://atom.io/packages/Atom-Latte-lang-Highlighting)  
 [atom-latte-lang-ide](https://atom.io/packages/atom-latte-lang-ide)
 
-`Maven` Plugin :
+`Gradle` Plugin :
 
-[latte-maven-plugin](#mvn-plugin)
+[latte-gradle-plugin](#gradle-plugin)
 
 ##中文版戳[这里](#readme-ch)
 
@@ -33,7 +30,7 @@ Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about L
 * Regular Expression
 * Read Eval Print Loop
 * Compiling to JavaScript
-* Latte Maven Plugin
+* Latte Gradle Plugin
 * many other features
 
 `Latte` is based on java 6. It's compiled to JVM byte code, and can collaborate with any java library.
@@ -42,19 +39,20 @@ Click [here](http://latte-lang.org/index.html#theVideo) to watch a video about L
 
 `JDK 1.6` or higher is the only thing required.
 
-The project is managed by `Maven`, you can use `Maven 3` to build automatically
+The project is managed by `Gradle`, you can use `Gradle 2.14` (or higher) to build automatically  
+A build script is also provided.
 
 clone the repository, and run
 
-	mvn clean package
+	./build.py
 
-You will get two shell scripts (`latte` and `latte.bat`). The shell scripts can help you run the `repl`.
+You will get a shell scripts (`latte` or `latte.bat`). The shell scripts can help you run the `repl`.
 
 run:
 
 	./latte
 
-then the [REPL](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/java/lt/repl/REPL.java) starts
+then the [REPL](https://github.com/wkgcass/Latte-lang/blob/master/latte-build/src/main/java/lt/repl/REPL.java) starts
 
 	Welcome to Latte lang
 	Type in expressions and double Enter to have them evaluated.
@@ -62,12 +60,13 @@ then the [REPL](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler
 	for syntax help, please visit https://github.com/wkgcass/Latte-lang/
 
     lt> 1+1
-    |
+      |
     res0 : java.lang.Integer = 2
 
     lt>
 
 #Compile `lt` Files
+
 There are two ways of compiling `lt` files
 
 * use program command
@@ -100,11 +99,11 @@ or:
 
 	usually `filesInDirectory('...', regex)` is used, e.g.
 
-		compiler compile filesInDirectory('...', //.*\.lt//)
+		compiler compile filesInDirectory('...', '.\*\\.lt'.r)
 
 	these method invocations can be chained up
 
-		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...', //.*\.lt//)
+		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...', '.\*\\.lt'.r)
 
 	You can write a `script` to configure the settings. Check [build.lts.template](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/resources/build.lts.template) for more info.
 
@@ -121,38 +120,39 @@ or:
 
 	then use `script run` or `script run ['string array']` to run the script
 
-<h1 id='mvn-plugin'>Maven Plugin</h1>
-A plugin for `Maven 3` is provided, which helps you compile latte source codes or run latte scripts.
+<h1 id='gradle-plugin'>Gradle Plugin</h1>
+
+A plugin for `Gradle` is provided, which helps you compile latte source codes.
 
 ###How to use
+
 ###step1
+
 add the plugin configuration:
 
-```xml
-<plugin>
-	<groupId>org.latte-lang</groupId>
-	<artifactId>latte-maven-plugin</artifactId>
-	<version>LATEST</version>
-	<executions>
-		<execution>
-			<id>compile</id>
-			<phase>compile</phase>
-			<goals>
-				<goal>compile</goal>
-			</goals>
-		</execution>
-		<execution>
-			<id>test-compile</id>
-			<phase>test-compile</phase>
-			<goals>
-				<goal>test-compile</goal>
-			</goals>
-		</execution>
-	</executions>
-</plugin>
+```groovy
+buildscript {
+    dependencies {
+        classpath 'org.latte-lang:latte-gradle-plugin:$VERSION'
+    }
+}
+
+apply plugin: 'latte'
+
+latteConfig {
+    src = 'latte'
+    testSrc = 'latte'
+    mainSourceSet = 'main'
+    testSourceSet = 'test'
+    afterJava = true
+    afterGroovy = false
+    fastFail = false
+}
 ```
 
-Not all executions are required. For example, you can omit the `test-compile` execution if the project only contains `main` source code.
+> all configurations are optional
+
+The plugin adds `compileLatte` and `compileTestLatte` tasks, where `compileLatte` is before `classes` task, and `compileTestLatte` is before `testClasses` task
 
 ###step2
 create a folder named `latte` in the same parent directory. The directory tree should be:
@@ -160,50 +160,35 @@ create a folder named `latte` in the same parent directory. The directory tree s
 	src
 	├── main
 	│   ├── java
-	│   │   └── *.java    ; java source
+	│   │   └── \*.java    ; java source
 	│   ├── latte
-	│   │   └── *.lt      ; latte source
+	│   │   └── \*.lt      ; latte source
 	│   └── resources
-	│       │── *.lts     ; latte scripts
+	│       │── \*.lts     ; latte scripts
 	│       └── other resources
 	└── test
 	    ├── java
-	    │   └── *.java
+	    │   └── \*.java
 	    ├── latte
-	    │   └── *.lt
+	    │   └── \*.lt
 	    └── resources
-	        ├── *.lts
+	        ├── \*.lts
 	        └── other resources
 
 ###step3
 run
 
-	mvn clean package
-
-###step4
-you can also run latte scripts with the `latte-maven-plugin`.
-
-run
-
-	mvn clean latte:run -Dscript=<the script in classpath>
-
-The `run` goal is bond to `test` phase, so all classes would be compiled and tested before executing the script.
-
->Note that the plugin ends as soon as the script main thread finishes. If you are running multiple thread application, a loop which blocks current thread should be explicitly given.  
->Or use api of the multiple thread application to block the thread, e.g. `jettyServer.join()`.
+	gradle clean jar
 
 #Syntax
-For Language Syntax Help, please visit the [Specification](https://github.com/wkgcass/Latte-lang/blob/master/ltls-deprecated.md) (However it's deprecated. You can still refer to it since the basic syntax changes are very few)
 
-or visit the [Latte WebSite](http://latte-lang.org/)
+visit the [Latte WebSite](http://latte-lang.org/)
 
-or read the chinese version [mannual](https://github.com/wkgcass/Latte-lang/blob/master/mannual-zh.md)
+or read the [mannual](https://github.com/wkgcass/Latte-lang/blob/master/mannual-zh.md)
 
 <h1 id='readme-ch'>中文版 Chinese Version README</h1>
 
 Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
-
-点击 [这里](http://latte-lang.org/index.html#theVideo) 观看有关Latte的视频。
 
 [语法规则](https://github.com/wkgcass/Latte-lang/blob/master/mannual-zh.md)  
 [Latte 主页](http://latte-lang.org/)
@@ -213,9 +198,9 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 [atom-latte-lang-highlighting](https://atom.io/packages/Atom-Latte-lang-Highlighting)  
 [atom-latte-lang-ide](https://atom.io/packages/atom-latte-lang-ide)
 
-`Maven` Plugin :
+`Gradle` Plugin :
 
-[latte-maven-plugin](#mvn-plugin-ch)
+[latte-gradle-plugin](#gradle-plugin-ch)
 
 ###Latte 支持如下功能
 
@@ -229,7 +214,7 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 * 正则表达式
 * Read Eval Print Loop
 * 编译到JavaScript
-* Latte Maven Plugin
+* Latte Gradle Plugin
 * 许多其它特性
 
 `Latte`基于java6。它被编译到JVM字节码，可以与任何Java类库完美互通。
@@ -238,19 +223,20 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
 环境仅仅需要 `JDK 1.6` 或更高
 
-本工程使用 `Maven` 进行管理，所以您也可以使用 `Maven 3` 进行自动Build
+本工程使用 `Gradle` 进行管理，所以您也可以使用 `Gradle` 进行自动Build  
+此外还提供了一个Build脚本
 
 clone这个仓库,然后执行
 
-	mvn clean package
+	./build.py
 
-你将会获取两个shell脚本 (`latte` 和 `latte.bat`), shell脚本可以快捷地开启`repl`.
+你将会获取一个shell脚本 (`latte` 或 `latte.bat`), shell脚本可以快捷地开启`repl`.
 
 执行:
 
 	./latte
 
-接着, [REPL](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/java/lt/repl/REPL.java) 将开始运行
+接着, [REPL](https://github.com/wkgcass/Latte-lang/blob/master/latte-build/src/main/java/lt/repl/REPL.java) 将开始运行
 
 	Welcome to Latte lang
 	Type in expressions and double Enter to have them evaluated.
@@ -258,7 +244,7 @@ clone这个仓库,然后执行
 	for syntax help, please visit https://github.com/wkgcass/Latte-lang/
 
     lt> 1+1
-    |
+      |
     res0 : java.lang.Integer = 2
 
     lt>
@@ -295,15 +281,16 @@ clone这个仓库,然后执行
 
 	通常来说会使用 `filesInDirectory('...', regex)`, e.g.
 
-		compiler compile filesInDirectory('/Users/me/src', //.*\.lt//)
+		compiler compile filesInDirectory('/Users/me/src', '.\*\\.lt'.r)
 
 	这些方法调用可以被串联起来
 
-		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...', //.*\.lt//)
+		Compiler() + '...cp...' >> '...output...' compile filesInDirectory('...source...', '.\*\\.lt'.r)
 
 	您可以编写一个脚本 `script` 来配置这些属性。查看 [build.lts.template](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/resources/build.lts.template) 以获取更多信息。
 
 #Scripts
+
 * 你可以直接运行脚本
 
 		latte -s script-file-path script-arguments...
@@ -315,38 +302,39 @@ clone这个仓库,然后执行
 
 	然后使用 `script run` 或者 `script run ['string array']` 来运行这个脚本
 
-<h1 id='mvn-plugin-ch'>Maven 插件</h1>
-提供了一个`Maven 3`的插件， 这个插件可以用来编译和运行`latte`源文件和脚本（script）。
+<h1 id='gradle-plugin-ch'>Gradle 插件</h1>
+
+提供了一个`Gradle`的插件， 这个插件可以用来编译和运行`latte`源文件和脚本（script）。
 
 ###如何使用
-###step1
-添加如下maven plugin配置：
 
-```xml
-<plugin>
-	<groupId>org.latte-lang</groupId>
-	<artifactId>latte-maven-plugin</artifactId>
-	<version>LATEST</version>
-	<executions>
-		<execution>
-			<id>compile</id>
-			<phase>compile</phase>
-			<goals>
-				<goal>compile</goal>
-			</goals>
-		</execution>
-		<execution>
-			<id>test-compile</id>
-			<phase>test-compile</phase>
-			<goals>
-				<goal>test-compile</goal>
-			</goals>
-		</execution>
-	</executions>
-</plugin>
+###step1
+
+添加如下gradle plugin配置：
+
+```groovy
+buildscript {
+    dependencies {
+        classpath 'org.latte-lang:latte-gradle-plugin:$VERSION'
+    }
+}
+
+apply plugin: 'latte'
+
+latteConfig {
+    src = 'latte'
+    testSrc = 'latte'
+    mainSourceSet = 'main'
+    testSourceSet = 'test'
+    afterJava = true
+    afterGroovy = false
+    fastFail = false
+}
 ```
 
-并不是所有`execution`都是必须的。比如说，如果工程内只有`main`，你就可以省略`test-compile`。
+> 所有的配置项都是可选的
+
+插件添加了 `compileLatte` 和 `compileTestLatte` 任务。`compileLatte` 在 `classes` 任务之前, `compileTestLatte` 在 `testClasses` 任务之前
 
 ###step2
 在同一个上级目录中创建名称为`latte`的目录。目录结构树应当为：
@@ -354,38 +342,28 @@ clone这个仓库,然后执行
 	src
 	├── main
 	│   ├── java
-	│   │   └── *.java    ; java source
+	│   │   └── \*.java    ; java source
 	│   ├── latte
-	│   │   └── *.lt      ; latte source
+	│   │   └── \*.lt      ; latte source
 	│   └── resources
-	│       │── *.lts     ; latte scripts
+	│       │── \*.lts     ; latte scripts
 	│       └── other resources
 	└── test
 	    ├── java
-	    │   └── *.java
+	    │   └── \*.java
 	    ├── latte
-	    │   └── *.lt
+	    │   └── \*.lt
 	    └── resources
-	        ├── *.lts
+	        ├── \*.lts
 	        └── other resources
 
 ###step3
 运行
 
-	mvn clean package
-
-###step4
-你可以使用 `latte-maven-plugin` 来执行脚本。
-run
-
-	mvn clean latte:run -Dscript=<the script in classpath>
-
-`run` goal 绑定在 `test` 阶段，所以在执行前，所有的类都会被编译并测试。
-
->请注意该插件在脚本主线程结束时结束。如果你运行了一个多线程应用，请务必加上一个阻塞线程的循环。  
->或者使用多线程应用提供的api来阻塞现场，比如说 `jettyServer.join()`
+	gradle clean jar
 
 # 语法
+
 您可以从这两个地方获取语法规则
 
 [语法规则](https://github.com/wkgcass/Latte-lang/blob/master/mannual-zh.md)
