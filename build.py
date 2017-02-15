@@ -9,7 +9,7 @@ import zipfile
 import platform
 import getpass
 
-GRADLE_CMD = ['gradle']
+GRADLE_CMD = 'gradle'
 ACTION = 'build'
 BUILD_MODULES = ['latte-class-recorder', 'latte-compiler', 'latte-gradle-plugin', 'latte-library', 'latte-build']
 VERSION = ''
@@ -21,6 +21,7 @@ OS = ''
 JAVA_MIN_VERSION = 1.6
 GRADLE_MIN_VERSION = 2.14
 PACK_ZIP_DIR = 'latte-build/build/distributions/'
+VERSION_FILE = 'latte-build/build/resources/main/version'
 
 def log(s):
     print s
@@ -47,7 +48,7 @@ def javaVersion():
 
 def gradleVersion():
     try:
-        ps = Popen((GRADLE_CMD[0] + ' --version').split(' '), stdout=PIPE, stderr=PIPE)
+        ps = Popen((GRADLE_CMD + ' --version').split(' '), stdout=PIPE, stderr=PIPE)
     except:
         return 0
     lines = ps.stdout.readlines()
@@ -76,14 +77,14 @@ def check():
     # check gradle version
     gVer = gradleVersion()
     if gVer == 0:
-        log('Gradle not found [' + GRADLE_CMD[0] + ']')
+        log('Gradle not found [' + GRADLE_CMD + ']')
         return False
     if gVer < GRADLE_MIN_VERSION:
         log('Gradle version is %s, but %s or higher required' % (str(gVer), str(GRADLE_MIN_VERSION)))
         return False
 
     # get version
-    versionFile = open('version', 'r')
+    versionFile = open(VERSION_FILE, 'r')
     version = versionFile.read().strip()
     versionFile.close()
     global VERSION
@@ -113,7 +114,7 @@ def execute(cmd):
 
 def buildModule(module):
     log('--- Start to build module [%s] ---' % (module))
-    return execute('cd %s\n%s clean latteBuild' % (module, GRADLE_CMD[0]))
+    return execute('cd %s\n%s clean latteBuild' % (module, GRADLE_CMD))
 
 def build():
     for m in BUILD_MODULES:
@@ -185,15 +186,14 @@ def buildStart():
         log('           Build Failed            ')
         log('===================================')
 
-def testModule(module, gradle):
+def testModule(module):
     log('--- Start to test module [%s] ---' % (module))
-    return execute('cd %s\n%s clean latteTest' % (module, gradle))
+    return execute('cd %s\n%s clean latteTest' % (module, GRADLE_CMD))
 
 def test():
-    for gradle in GRADLE_CMD:
-        for m in BUILD_MODULES:
-            if not testModule(m, gradle):
-                return False
+    for m in BUILD_MODULES:
+        if not testModule(m):
+            return False
     return True
 
 def testStart():
@@ -215,7 +215,7 @@ def testStart():
 
 def deployModule(module):
     log('--- Start to build module [%s] ---' % (module))
-    return execute('cd %s\n%s clean latteDeploy' % (module, GRADLE_CMD[0]))
+    return execute('cd %s\n%s clean latteDeploy' % (module, GRADLE_CMD))
 
 def deploy():
     for m in BUILD_MODULES:
@@ -259,7 +259,7 @@ def extractArgs():
         if cmd == '--gradle' or cmd == '-g':
             assertNotLast(sys.argv, index)
             index = index + 1
-            GRADLE_CMD = sys.argv[index].split(',')
+            GRADLE_CMD = sys.argv[index]
 
         elif cmd == '--action' or cmd == '-a':
             assertNotLast(sys.argv, index)
@@ -277,7 +277,7 @@ def extractArgs():
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and ((sys.argv[1] == '-h') or (sys.argv[1] == '--help')):
-        log('''./build.py [-g|--gradle gradle-command-name1,name2,...]
+        log('''./build.py [-g|--gradle gradle-command-name]
            [-a|--action build|deploy|test]
            [-m|--modules module-name1,module-name2,...]''')
         exit()

@@ -219,7 +219,7 @@ public class REPL {
                                 "-version Show current version\n");
 
                 } else if (command.equals("-v") || command.equals("-version")) {
-                        System.out.println("Latte-lang 0.0.5-ALPHA");
+                        System.out.println("Latte-lang " + VersionRetriever.version());
 
                 } else if (command.equals("-s")) {// run scripts
                         // -s ?

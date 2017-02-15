@@ -5,6 +5,7 @@ version VERSION
 
 apply plugin: 'groovy'
 apply plugin: 'maven'
+apply plugin: 'signing'
 apply plugin: LatteBuild
 
 compileGroovy {
@@ -26,14 +27,68 @@ dependencies {
 uploadArchives {
     repositories {
         mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
             def deploy_user = System.getenv('DEPLOY_USER')
             def deploy_pass = System.getenv('DEPLOY_PASS')
 
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
                 authentication(userName: deploy_user, password: deploy_pass)
             }
+
+            pom.project {
+                name 'latte-gradle-plugin'
+                packaging 'jar'
+                description 'The latte-lang gradle plugin, which helps compile latte sources in a gradle project.'
+                url 'http://latte-lang.org'
+                scm {
+                    url 'https://github.com/wkgcass/Latte-lang'
+                    connection 'scm:git:https://github.com/wkgcass/Latte-lang.git'
+                    developerConnection 'scm:git:https://github.com/wkgcass/Latte-lang.git'
+                }
+                licenses {
+                    license {
+                        name 'MIT LICENSE'
+                        url 'https://github.com/wkgcass/Latte-lang/blob/master/LICENSE/'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'wkgcass'
+                        email 'wkgcass@hotmail.com'
+                    }
+                }
+            }
         }
     }
+}
+
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+javadoc {
+    options {
+        encoding 'UTF-8'
+        charSet 'UTF-8'
+    }
+}
+
+signing {
+    sign configurations.archives
 }
 
 class LatteBuild implements Plugin<Project> {

@@ -5343,7 +5343,7 @@ public class SemanticProcessor {
         }
 
         /**
-         * get interfaces defined in package {@link lt.lang.function}
+         * get interfaces defined in package `lt.lang.function`
          *
          * @param argCount argument count
          * @param lineCol  line-col
