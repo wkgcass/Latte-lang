@@ -12,7 +12,6 @@ import getpass
 GRADLE_CMD = 'gradle'
 ACTION = 'build'
 BUILD_MODULES = ['latte-class-recorder', 'latte-compiler', 'latte-gradle-plugin', 'latte-library', 'latte-build']
-VERSION = ''
 DEPLOY_USER = ''
 DEPLOY_PASS = ''
 
@@ -21,7 +20,7 @@ OS = ''
 JAVA_MIN_VERSION = 1.6
 GRADLE_MIN_VERSION = 2.14
 PACK_ZIP_DIR = 'latte-build/build/distributions/'
-VERSION_FILE = 'latte-build/build/resources/main/version'
+VERSION_FILE = 'latte-build/src/main/resources/version'
 
 def log(s):
     print s
@@ -87,9 +86,7 @@ def check():
     versionFile = open(VERSION_FILE, 'r')
     version = versionFile.read().strip()
     versionFile.close()
-    global VERSION
-    VERSION = version
-    log('--- current version is [%s] ---' % (VERSION))
+    log('--- current version is [%s] ---' % (version))
 
     # os
     system = platform.system()
@@ -103,7 +100,7 @@ def execute(cmd):
     exportStr = 'export'
     if OS == 'windows':
         exportStr = 'set'
-    env = {'LATTE_VERSION': VERSION}
+    env = {}
     if DEPLOY_USER and DEPLOY_PASS:
         env['DEPLOY_USER'] = DEPLOY_USER
         env['DEPLOY_PASS'] = DEPLOY_PASS

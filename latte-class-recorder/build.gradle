@@ -1,4 +1,7 @@
-def VERSION = System.getenv('LATTE_VERSION')
+def VERSION_FILE = file('../latte-build/src/main/resources/version')
+BufferedReader br = new BufferedReader(new FileReader(VERSION_FILE))
+def VERSION = br.readLine().trim()
+br.close()
 
 group 'org.latte-lang'
 version VERSION
