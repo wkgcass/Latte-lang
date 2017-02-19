@@ -36,6 +36,7 @@ import java.util.*;
 public class CodeGenerator {
         private final Set<STypeDef> types;
         private final Map<String, STypeDef> typeDefMap;
+        private static final int VERSION = Opcodes.V1_6;
 
         /**
          * create the code generator with types to generate
@@ -167,6 +168,8 @@ public class CodeGenerator {
                         List<SInterfaceDef> superInterfaces;      // super interface
                         String fileName = type.line_col().fileName; // file name
 
+                        classWriter.visitSource(fileName, fileName);
+
                         if (type instanceof SClassDef) {
                                 modifiers = ((SClassDef) type).modifiers();
                                 staticIns = ((SClassDef) type).staticStatements();
@@ -176,23 +179,27 @@ public class CodeGenerator {
                                 methods = ((SClassDef) type).methods();
                                 superInterfaces = ((SClassDef) type).superInterfaces();
                                 superClass = ((SClassDef) type).parent();
-                        } else {
+                        } else if (type instanceof SInterfaceDef) {
                                 modifiers = ((SInterfaceDef) type).modifiers();
                                 staticIns = ((SInterfaceDef) type).staticStatements();
                                 exceptionTables = ((SInterfaceDef) type).staticExceptionTable();
                                 fields = ((SInterfaceDef) type).fields();
                                 methods = ((SInterfaceDef) type).methods();
                                 superInterfaces = ((SInterfaceDef) type).superInterfaces();
+                        } else {
+                                // generate annotation
+                                generateAnnotation(classWriter, (SAnnoDef) type);
+                                classWriter.visitEnd();
+                                result.put(type.fullName(), classWriter.toByteArray());
+                                continue;
                         }
-
-                        classWriter.visitSource(fileName, fileName);
 
                         String[] interfaces = new String[superInterfaces.size()];
                         for (int i = 0; i < interfaces.length; ++i) {
                                 interfaces[i] = typeToInternalName(superInterfaces.get(i));
                         }
 
-                        classWriter.visit(Opcodes.V1_6, acc(modifiers) | (type instanceof SClassDef ? 0 : Opcodes.ACC_INTERFACE),
+                        classWriter.visit(VERSION, acc(modifiers) | (type instanceof SClassDef ? 0 : Opcodes.ACC_INTERFACE),
                                 typeToInternalName(type), null, superClass == null ? "java/lang/Object" : typeToInternalName(superClass), interfaces);
 
                         // annotations
@@ -213,6 +220,34 @@ public class CodeGenerator {
                         result.put(type.fullName(), classWriter.toByteArray());
                 }
                 return result;
+        }
+
+        private void generateAnnotation(ClassWriter classWriter, SAnnoDef sAnnoDef) {
+                classWriter.visit(VERSION,
+                        Opcodes.ACC_INTERFACE | Opcodes.ACC_ANNOTATION | Opcodes.ACC_ABSTRACT | Opcodes.ACC_PUBLIC,
+                        typeToInternalName(sAnnoDef), null, "java/lang/Object",
+                        new String[]{"java/lang/annotation/Annotation"});
+
+                // annontations
+                for (SAnno anno : sAnnoDef.annos()) {
+                        AnnotationVisitor annotationVisitor = classWriter.visitAnnotation(typeToDesc(anno.type()),
+                                annotationIsVisible(anno));
+                        buildAnnotation(annotationVisitor, anno);
+                }
+
+                // annotation fields (which are generated as methods on jvm)
+                for (SAnnoField f : sAnnoDef.annoFields()) {
+                        int acc = Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT;
+                        MethodVisitor methodVisitor = classWriter.visitMethod(
+                                acc, f.name(), methodDesc(f.type(), Collections.<STypeDef>emptyList()),
+                                null, new String[0]
+                        );
+                        if (f.defaultValue() != null) {
+                                AnnotationVisitor annotationVisitor = methodVisitor.visitAnnotationDefault();
+                                buildAnnotationValue(annotationVisitor, f.name(), f.defaultValue());
+                        }
+                        methodVisitor.visitEnd();
+                }
         }
 
         /**
@@ -1712,6 +1747,36 @@ public class CodeGenerator {
                 return false;
         }
 
+        private void buildAnnotationValue(AnnotationVisitor annotationVisitor, String name, Value v) {
+                if (v instanceof EnumValue) {
+                        annotationVisitor.visitEnum(
+                                name,
+                                "L" + (v.type().fullName().replace(".", "/")) + ";",
+                                ((EnumValue) v).enumStr());
+                } else if (v instanceof SArrayValue && !(((SArrayValue) v).type().type() instanceof PrimitiveTypeDef)) {
+                        AnnotationVisitor visitor = annotationVisitor.visitArray(name);
+                        for (Value arrValue : ((SArrayValue) v).values()) {
+                                if (arrValue instanceof EnumValue) {
+                                        visitor.visitEnum(null,
+                                                "L" + (arrValue.type().fullName().replace(".", "/")) + ";",
+                                                ((EnumValue) arrValue).enumStr());
+                                } else if (arrValue instanceof SAnno) {
+                                        AnnotationVisitor annoVisitor = visitor.visitAnnotation(null, typeToDesc(arrValue.type()));
+                                        buildAnnotation(annoVisitor, (SAnno) arrValue);
+                                } else {
+                                        visitor.visit(null, parseValueIntoASMObject(arrValue));
+                                }
+                        }
+                        visitor.visitEnd();
+                } else if (v instanceof SAnno) {
+                        AnnotationVisitor visitor = annotationVisitor.visitAnnotation(name, typeToDesc(v.type()));
+                        buildAnnotation(visitor, (SAnno) v);
+                } else {
+                        // primitives
+                        annotationVisitor.visit(name, parseValueIntoASMObject(v));
+                }
+        }
+
         /**
          * build annotation.
          *
@@ -1723,33 +1788,7 @@ public class CodeGenerator {
                         String name = entry.getKey().name();
                         Value v = entry.getValue();
 
-                        if (v instanceof EnumValue) {
-                                annotationVisitor.visitEnum(
-                                        name,
-                                        "L" + (v.type().fullName().replace(".", "/")) + ";",
-                                        ((EnumValue) v).enumStr());
-                        } else if (v instanceof SArrayValue && !(((SArrayValue) v).type().type() instanceof PrimitiveTypeDef)) {
-                                AnnotationVisitor visitor = annotationVisitor.visitArray(name);
-                                for (Value arrValue : ((SArrayValue) v).values()) {
-                                        if (arrValue instanceof EnumValue) {
-                                                visitor.visitEnum(null,
-                                                        "L" + (arrValue.type().fullName().replace(".", "/")) + ";",
-                                                        ((EnumValue) arrValue).enumStr());
-                                        } else if (arrValue instanceof SAnno) {
-                                                AnnotationVisitor annoVisitor = visitor.visitAnnotation(null, typeToDesc(arrValue.type()));
-                                                buildAnnotation(annoVisitor, (SAnno) arrValue);
-                                        } else {
-                                                visitor.visit(null, parseValueIntoASMObject(arrValue));
-                                        }
-                                }
-                                visitor.visitEnd();
-                        } else if (v instanceof SAnno) {
-                                AnnotationVisitor visitor = annotationVisitor.visitAnnotation(name, typeToDesc(v.type()));
-                                buildAnnotation(visitor, (SAnno) v);
-                        } else {
-                                // primitives
-                                annotationVisitor.visit(name, parseValueIntoASMObject(v));
-                        }
+                        buildAnnotationValue(annotationVisitor, name, v);
                 }
                 annotationVisitor.visitEnd();
         }

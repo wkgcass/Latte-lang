@@ -45,6 +45,7 @@ import lt.dependencies.asm.MethodVisitor;
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
 import java.lang.reflect.*;
 import java.net.URL;
 import java.util.*;
@@ -81,6 +82,10 @@ public class SemanticProcessor {
          * full name to {@link ObjectDef} from {@link Parser}
          */
         public Map<String, ObjectDef> originalObjects = new HashMap<String, ObjectDef>();
+        /**
+         * full name to {@link AnnotationDef} from {@link Parser}
+         */
+        public Map<String, AnnotationDef> originalAnnotations = new HashMap<String, AnnotationDef>();
         /**
          * {@link SMethodDef} to it's containing statements
          */
@@ -203,6 +208,7 @@ public class SemanticProcessor {
                 Map<String, List<InterfaceDef>> fileNameToInterfaceDef = new HashMap<String, List<InterfaceDef>>();
                 Map<String, List<FunDef>> fileNameToFunctions = new HashMap<String, List<FunDef>>();
                 Map<String, List<ObjectDef>> fileNameToObjectDef = new HashMap<String, List<ObjectDef>>();
+                Map<String, List<AnnotationDef>> fileNameToAnnotationDef = new HashMap<String, List<AnnotationDef>>();
                 Map<String, String> fileNameToPackageName = new HashMap<String, String>();
                 // record types and packages
                 for (String fileName : mapOfStatements.keySet()) {
@@ -219,6 +225,8 @@ public class SemanticProcessor {
                         List<FunDef> funDefs = new ArrayList<FunDef>();
                         // object definition
                         List<ObjectDef> objectDefs = new ArrayList<ObjectDef>();
+                        // annotation definition
+                        List<AnnotationDef> annotationDefs = new ArrayList<AnnotationDef>();
 
                         // put into map
                         fileNameToImport.put(fileName, imports);
@@ -226,6 +234,7 @@ public class SemanticProcessor {
                         fileNameToInterfaceDef.put(fileName, interfaceDefs);
                         fileNameToFunctions.put(fileName, funDefs);
                         fileNameToObjectDef.put(fileName, objectDefs);
+                        fileNameToAnnotationDef.put(fileName, annotationDefs);
 
                         // package
                         String pkg; // if no package, then it's an empty string, otherwise, it's 'packageName.' with dot at the end
@@ -237,12 +246,12 @@ public class SemanticProcessor {
                                 } else {
                                         pkg = "";
                                         select_import_class_interface_fun_object(
-                                                statement, imports, classDefs, interfaceDefs, funDefs, objectDefs);
+                                                statement, imports, classDefs, interfaceDefs, funDefs, objectDefs, annotationDefs);
                                 }
                                 while (statementIterator.hasNext()) {
                                         Statement stmt = statementIterator.next();
                                         select_import_class_interface_fun_object(
-                                                stmt, imports, classDefs, interfaceDefs, funDefs, objectDefs);
+                                                stmt, imports, classDefs, interfaceDefs, funDefs, objectDefs, annotationDefs);
                                 }
                         } else continue;
 
@@ -280,6 +289,8 @@ public class SemanticProcessor {
                         String pkg = fileNameToPackageName.get(fileName);
                         // object definition
                         List<ObjectDef> objectDefs = fileNameToObjectDef.get(fileName);
+                        // annotation definition
+                        List<AnnotationDef> annotationDefs = fileNameToAnnotationDef.get(fileName);
 
                         // check importing same simple name
                         Set<String> importSimpleNames = new HashSet<String>();
@@ -405,6 +416,22 @@ public class SemanticProcessor {
                                 originalObjects.put(className, o);
                                 typeDefSet.add(sClassDef);
                         }
+                        for (AnnotationDef a : annotationDefs) {
+                                String annoName = pkg + a.name;
+                                // check occurrence
+                                if (typeExists(annoName)) {
+                                        err.SyntaxException("duplicate type names " + annoName, a.line_col());
+                                        return null;
+                                }
+
+                                SAnnoDef sAnnoDef = new SAnnoDef();
+                                sAnnoDef.setPkg(pkg);
+                                sAnnoDef.setFullName(annoName);
+
+                                types.put(annoName, sAnnoDef);
+                                originalAnnotations.put(annoName, a);
+                                typeDefSet.add(sAnnoDef);
+                        }
 
                         // all classes occurred in the parsing process will be inside `types` map or is already defined
                 }
@@ -435,14 +462,16 @@ public class SemanticProcessor {
 
                 step2(fileNameToClassDef, fileNameToInterfaceDef,
                         fileNameToFunctions, fileNameToPackageName,
-                        fileNameToObjectDef);
+                        fileNameToObjectDef, fileNameToAnnotationDef);
                 step3(fileNameToPackageName, fileNameToFunctions);
                 // ensures that @ImplicitImports and @StaticImports are loaded
                 getTypeWithName("lt.lang.ImplicitImports", LineCol.SYNTHETIC);
                 getTypeWithName("lt.lang.StaticImports", LineCol.SYNTHETIC);
+                getTypeWithName("java.lang.annotation.Retention", LineCol.SYNTHETIC);
                 step4();
                 addImportImplicit();
                 addImportStatic();
+                addRetention();
 
                 return typeDefSet;
         }
@@ -484,6 +513,7 @@ public class SemanticProcessor {
                 }
                 if (annoField == null) throw new LtBug("lt.lang.ImplicitImports#implicitImports should exist");
                 for (STypeDef sTypeDef : typeDefSet) {
+                        if (sTypeDef instanceof SAnnoDef) continue;
                         // filter
                         if (sTypeDef.line_col().fileName == null || !fileNameToImport.containsKey(sTypeDef.line_col().fileName)) {
                                 continue;
@@ -543,6 +573,7 @@ public class SemanticProcessor {
                 }
                 if (annoField == null) throw new LtBug("lt.lang.StaticImports#staticImports should exist");
                 for (STypeDef sTypeDef : typeDefSet) {
+                        if (sTypeDef instanceof SAnnoDef) continue;
                         // filter
                         if (sTypeDef.line_col().fileName == null || !fileNameToImport.containsKey(sTypeDef.line_col().fileName)) {
                                 continue;
@@ -586,6 +617,37 @@ public class SemanticProcessor {
 
                         // add value into anno
                         importStatic.values().put(annoField, arrayValue);
+                }
+        }
+
+        private void addRetention() throws SyntaxException {
+                SAnnoDef RetentionType = (SAnnoDef) getTypeWithName("java.lang.annotation.Retention", LineCol.SYNTHETIC);
+                SAnnoField value = null;
+                EnumValue enumValue = new EnumValue();
+                enumValue.setType(getTypeWithName("java.lang.annotation.RetentionPolicy", LineCol.SYNTHETIC));
+                enumValue.setEnumStr("RUNTIME");
+
+                for (SAnnoField af : RetentionType.annoFields()) {
+                        if (af.name().equals("value")) {
+                                value = af;
+                                break;
+                        }
+                }
+                assert value != null;
+                out:
+                for (STypeDef sTypeDef : typeDefSet) {
+                        if (!(sTypeDef instanceof SAnnoDef)) continue;
+                        SAnnoDef sAnnoDef = (SAnnoDef) sTypeDef;
+                        for (SAnno anno : sAnnoDef.annos()) {
+                                if (anno.type().equals(RetentionType)) {
+                                        continue out;
+                                }
+                        }
+                        SAnno anno = new SAnno();
+                        anno.setAnnoDef(RetentionType);
+                        anno.setPresent(sAnnoDef);
+                        anno.values().put(value, enumValue);
+                        sAnnoDef.annos().add(anno);
                 }
         }
 
@@ -705,7 +767,8 @@ public class SemanticProcessor {
                           Map<String, List<InterfaceDef>> fileNameToInterfaceDef,
                           Map<String, List<FunDef>> fileNameToFunctions,
                           Map<String, String> fileNameToPackageName,
-                          Map<String, List<ObjectDef>> fileNameToObjectDefs) throws SyntaxException {
+                          Map<String, List<ObjectDef>> fileNameToObjectDefs,
+                          Map<String, List<AnnotationDef>> fileNameToAnnotationDefs) throws SyntaxException {
                 for (String fileName : mapOfStatements.keySet()) {
                         List<Import> imports = fileNameToImport.get(fileName);
                         List<ClassDef> classDefs = fileNameToClassDef.get(fileName);
@@ -713,6 +776,7 @@ public class SemanticProcessor {
                         List<FunDef> funDefs = fileNameToFunctions.get(fileName);
                         String pkg = fileNameToPackageName.get(fileName);
                         List<ObjectDef> objectDefs = fileNameToObjectDefs.get(fileName);
+                        List<AnnotationDef> annotationDefs = fileNameToAnnotationDefs.get(fileName);
 
                         for (ClassDef classDef : classDefs) {
                                 SClassDef sClassDef = (SClassDef) types.get(pkg + classDef.name);
@@ -958,6 +1022,58 @@ public class SemanticProcessor {
                                 // fields methods
                                 parseFieldsAndMethodsForClass(sClassDef, objectDef.statements, imports);
                         }
+                        for (AnnotationDef annotationDef : annotationDefs) {
+                                SAnnoDef sAnnoDef = (SAnnoDef) types.get(pkg + annotationDef.name);
+
+                                // annos
+                                parseAnnos(annotationDef.annos, sAnnoDef, imports, ElementType.ANNOTATION_TYPE,
+                                        Collections.<ElementType>emptyList());
+
+                                // annotation fields
+                                parseAnnotationFields(sAnnoDef, annotationDef.stmts, imports);
+                        }
+                }
+        }
+
+        private void assertToBeAnnotationField(STypeDef type) throws SyntaxException {
+                if (type instanceof PrimitiveTypeDef) return;
+                if (type.fullName().equals("java.lang.Class")) return;
+                if (getTypeWithName(Enum.class.getName(), LineCol.SYNTHETIC).isAssignableFrom(type)) return;
+                if (type instanceof SArrayTypeDef) assertToBeAnnotationField(((SArrayTypeDef) type).type());
+                err.SyntaxException(type + " cannot be type of annotation fields", type.line_col());
+        }
+
+        /**
+         * fill annotation fields into the annotation, but values are not parsed
+         *
+         * @param sAnnoDef the annotation def
+         * @param stmts    statements in annotation
+         * @param imports  imports
+         * @throws SyntaxException compiling error
+         */
+        public void parseAnnotationFields(SAnnoDef sAnnoDef, List<Statement> stmts, List<Import> imports) throws SyntaxException {
+                for (Statement stmt : stmts) {
+                        if (stmt instanceof VariableDef) {
+                                VariableDef v = (VariableDef) stmt;
+                                if (!v.getModifiers().isEmpty()) {
+                                        err.SyntaxException("modifiers cannot present on annotation fields", v.line_col());
+                                }
+                                if (!v.getAnnos().isEmpty()) {
+                                        err.SyntaxException("annotations cannot present on annotation fields", v.line_col());
+                                }
+                                if (v.getType() == null) {
+                                        err.SyntaxException("annotation fields should have a type", v.line_col());
+                                }
+                                STypeDef type = getTypeWithAccess(v.getType(), imports);
+                                assertToBeAnnotationField(type);
+                                SAnnoField f = new SAnnoField();
+                                f.setName(v.getName());
+                                f.setType(type);
+                                f.setDeclaringType(sAnnoDef);
+                                sAnnoDef.annoFields().add(f);
+                        } else {
+                                err.SyntaxException("only variable definition can exist in annotation", stmt.line_col());
+                        }
                 }
         }
 
@@ -1152,12 +1268,13 @@ public class SemanticProcessor {
                         } else if (sTypeDef instanceof SInterfaceDef) {
                                 SInterfaceDef i = (SInterfaceDef) sTypeDef;
                                 checkInterfaceCircularInheritance(i, i.superInterfaces(), new ArrayList<SInterfaceDef>());
-                        } else {
+                        } else if (!(sTypeDef instanceof SAnnoDef)) {
                                 throw new LtBug("wrong STypeDefType " + sTypeDef.getClass());
                         }
                 }
                 // check override and overload with super methods
                 for (STypeDef sTypeDef : typeDefSet) {
+                        if (sTypeDef instanceof SAnnoDef) continue;
                         checkOverrideAllMethods(sTypeDef);
                 }
 
@@ -1225,6 +1342,7 @@ public class SemanticProcessor {
 
                 // check annotation (@FunctionalInterface @FunctionalAbstractClass @Override @Implicit)
                 for (STypeDef typeDef : typeDefSet) {
+                        if (typeDef instanceof SAnnoDef) continue;
                         for (SAnno anno : typeDef.annos()) {
                                 if (anno.type().fullName().equals("java.lang.FunctionalInterface")
                                         || anno.type().fullName().equals("lt.lang.FunctionalInterface")) {
@@ -1315,29 +1433,54 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public void step4() throws SyntaxException {
-                for (STypeDef typeDef : types.values()) {
+                // anno def
+                for (STypeDef typeDef : typeDefSet) {
                         if (typeDef instanceof SAnnoDef) {
                                 SAnnoDef annoDef = (SAnnoDef) typeDef;
-                                Class<?> cls;
+                                AnnotationDef astAnnoDef = originalAnnotations.get(annoDef.fullName());
+                                for (SAnnoField f : annoDef.annoFields()) {
+                                        for (Statement stmt : astAnnoDef.stmts) {
+                                                if (stmt instanceof VariableDef
+                                                        &&
+                                                        ((VariableDef) stmt).getName().equals(f.name())) {
+
+                                                        Expression exp = ((VariableDef) stmt).getInit();
+                                                        if (exp != null) {
+                                                                Value value = parseValueFromExpression(exp, null, null);
+                                                                f.setDefaultValue(value);
+                                                        }
+                                                }
+                                        }
+                                }
+                        }
+                }
+                // anno value
+                for (STypeDef typeDef : types.values()) {
+                        if (typeDef instanceof SAnnoDef) {
+                                boolean isCompiledAnnotation = true;
+                                SAnnoDef annoDef = (SAnnoDef) typeDef;
+                                Class<?> cls = null;
                                 try {
                                         cls = loadClass(annoDef.fullName());
                                 } catch (ClassNotFoundException e) {
-                                        throw new LtBug(e);
+                                        isCompiledAnnotation = false;
                                 }
                                 // parse field default values
-                                for (SAnnoField f : annoDef.annoFields()) {
-                                        try {
-                                                Method annoM = cls.getDeclaredMethod(f.name());
+                                if (isCompiledAnnotation) {
+                                        for (SAnnoField f : annoDef.annoFields()) {
                                                 try {
-                                                        Object o = annoM.getDefaultValue();
-                                                        if (null != o) {
-                                                                Value value = parseValueFromObject(o);
-                                                                f.setDefaultValue(value);
+                                                        Method annoM = cls.getDeclaredMethod(f.name());
+                                                        try {
+                                                                Object o = annoM.getDefaultValue();
+                                                                if (null != o) {
+                                                                        Value value = parseValueFromObject(o);
+                                                                        f.setDefaultValue(value);
+                                                                }
+                                                        } catch (TypeNotPresentException ignore) {
                                                         }
-                                                } catch (TypeNotPresentException ignore) {
+                                                } catch (NoSuchMethodException e) {
+                                                        throw new LtBug(e);
                                                 }
-                                        } catch (NoSuchMethodException e) {
-                                                throw new LtBug(e);
                                         }
                                 }
                                 // parse annotations presented on this type
@@ -1552,7 +1695,9 @@ public class SemanticProcessor {
                                                         true);
                                         }
                                 }
-                        } else throw new LtBug("wrong STypeDefType " + sTypeDef.getClass());
+                        } else if (!(sTypeDef instanceof SAnnoDef)) {
+                                throw new LtBug("wrong STypeDefType " + sTypeDef.getClass());
+                        }
                 }
         }
 
@@ -10035,12 +10180,13 @@ public class SemanticProcessor {
         /**
          * get Import/ClassDef/InterfaceDef/FunDef from Statement object
          *
-         * @param stmt          the statement
-         * @param imports       import list
-         * @param classDefs     classDef list
-         * @param interfaceDefs interfaceDef list
-         * @param funDefs       functionDef list
-         * @param objectDefs    objectDef list
+         * @param stmt           the statement
+         * @param imports        import list
+         * @param classDefs      classDef list
+         * @param interfaceDefs  interfaceDef list
+         * @param funDefs        functionDef list
+         * @param objectDefs     objectDef list
+         * @param annotationDefs annotationDef list
          * @throws UnexpectedTokenException the statement is not import/class/interface
          */
         public void select_import_class_interface_fun_object(Statement stmt,
@@ -10048,7 +10194,8 @@ public class SemanticProcessor {
                                                              List<ClassDef> classDefs,
                                                              List<InterfaceDef> interfaceDefs,
                                                              List<FunDef> funDefs,
-                                                             List<ObjectDef> objectDefs) throws UnexpectedTokenException {
+                                                             List<ObjectDef> objectDefs,
+                                                             List<AnnotationDef> annotationDefs) throws UnexpectedTokenException {
                 if (stmt instanceof Import) {
                         imports.add((Import) stmt);
                 } else if (stmt instanceof ClassDef) {
@@ -10059,6 +10206,8 @@ public class SemanticProcessor {
                         funDefs.add((FunDef) stmt);
                 } else if (stmt instanceof ObjectDef) {
                         objectDefs.add((ObjectDef) stmt);
+                } else if (stmt instanceof AnnotationDef) {
+                        annotationDefs.add((AnnotationDef) stmt);
                 } else {
                         err.UnexpectedTokenException("class/interface/object definition or import", stmt.toString(), stmt.line_col());
                         // code won't reach here

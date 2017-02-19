@@ -2825,4 +2825,21 @@ public class TestSemantic {
                 } catch (SyntaxException ignore) {
                 }
         }
+
+        @Test
+        public void testSAnnoDef() throws Exception {
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("test", "" +
+                        "annotation A\n" +
+                        "    a:int = 1");
+                Set<STypeDef> sTypeDefs = parse(map);
+                assertEquals(1, sTypeDefs.size());
+                SAnnoDef sAnnoDef = (SAnnoDef) sTypeDefs.iterator().next();
+                assertEquals("A", sAnnoDef.fullName());
+                assertEquals(1, sAnnoDef.annoFields().size());
+                SAnnoField f = sAnnoDef.annoFields().get(0);
+                assertEquals("a", f.name());
+                assertEquals(IntTypeDef.get(), f.type());
+                assertEquals(new IntValue(1), f.defaultValue());
+        }
 }

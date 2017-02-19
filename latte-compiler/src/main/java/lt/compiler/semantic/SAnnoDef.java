@@ -27,6 +27,7 @@ package lt.compiler.semantic;
 import lt.compiler.LineCol;
 import lt.compiler.LtBug;
 import lt.compiler.SyntaxException;
+import lt.compiler.semantic.builtin.EnumValue;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
@@ -71,7 +72,31 @@ public class SAnnoDef extends STypeDef {
                         }
                         return true;
                 } catch (ClassNotFoundException e) {
-                        throw new LtBug(e);
+                        // annotation not compiled yet
+                        // check manually
+                        SAnno targetAnno = null;
+                        for (SAnno anno : annos()) {
+                                if (anno.type().fullName().equals(Target.class.getName())) {
+                                        targetAnno = anno;
+                                        break;
+                                }
+                        }
+                        if (null == targetAnno) return true;
+                        SAnnoField valueAnnoF = null;
+                        for (SAnnoField f : targetAnno.type().annoFields()) {
+                                if (f.name().equals("value")) {
+                                        valueAnnoF = f;
+                                        break;
+                                }
+                        }
+                        if (valueAnnoF == null) throw new LtBug("it should not be null");
+                        SArrayValue arrV = (SArrayValue) targetAnno.values().get(valueAnnoF);
+                        for (Value v : arrV.values()) {
+                                if (v instanceof EnumValue && v.type().fullName().equals(ElementType.class.getName())) {
+                                        if (type.name().equals(((EnumValue) v).enumStr())) return true;
+                                }
+                        }
+                        return false;
                 }
         }
 

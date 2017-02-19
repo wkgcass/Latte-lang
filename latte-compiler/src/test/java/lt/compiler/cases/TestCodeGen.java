@@ -44,6 +44,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.math.BigInteger;
 import java.util.*;
@@ -3833,5 +3834,42 @@ public class TestCodeGen {
                 assertEquals(2, si.staticImports().length);
                 Method method = cls.getMethod("method");
                 assertEquals(Arrays.asList(1, 2, 3), method.invoke(null));
+        }
+
+        @Test
+        public void testAnnotationType() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "annotation TestAnnotationType\n" +
+                                "    a:int = 1"
+                        , "TestAnnotationType");
+                assertTrue(cls.isAnnotation());
+                cls.getMethod("a");
+        }
+
+        @Test
+        public void testDefineAnnotationPresent() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "annotation A\n" +
+                                "    a:int = 1\n" +
+                                "    b:long\n" +
+                                "@A(b=1)\n" +
+                                "class TestDefineAnnotationPresent\n"
+                        , "TestDefineAnnotationPresent");
+                Annotation[] annotations = cls.getAnnotations();
+                assertEquals(3, annotations.length);
+                Annotation annotation = null;
+                for (Annotation a : annotations) {
+                        if (a.getClass().getInterfaces()[0].getName().equals("A")) {
+                                annotation = a;
+                                break;
+                        }
+                }
+                if (annotation == null) {
+                        fail("annotation should not be null");
+                }
+                Method a = annotation.getClass().getMethod("a");
+                Method b = annotation.getClass().getMethod("b");
+                assertEquals(1, a.invoke(annotation));
+                assertEquals(1L, b.invoke(annotation));
         }
 }

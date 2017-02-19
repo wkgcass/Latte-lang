@@ -2699,4 +2699,58 @@ public class TestParser {
                         )
                 ), stmts);
         }
+
+        @Test
+        public void testAnnotationDef() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "annotation A\n" +
+                        "    a = 1\n" +
+                        "@Retention(RetentionPolicy.RUNTIME)\n" +
+                        "@Target(ElementType.TYPE)\n" +
+                        "annotation B\n"
+                );
+                VariableDef v = new VariableDef("a", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
+                v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
+                assertEquals(Arrays.asList(
+                        new AnnotationDef(
+                                "A",
+                                Collections.<AST.Anno>emptySet(),
+                                Collections.<Statement>singletonList(v),
+                                LineCol.SYNTHETIC
+                        ),
+                        new AnnotationDef(
+                                "B",
+                                new HashSet<AST.Anno>(
+                                        Arrays.asList(
+                                                new AST.Anno(
+                                                        new AST.Access(null, "Retention", LineCol.SYNTHETIC),
+                                                        Collections.singletonList(
+                                                                new AST.Assignment(
+                                                                        new AST.Access(null, "value", LineCol.SYNTHETIC),
+                                                                        "=",
+                                                                        new AST.Access(new AST.Access(null, "RetentionPolicy", LineCol.SYNTHETIC), "RUNTIME", LineCol.SYNTHETIC),
+                                                                        LineCol.SYNTHETIC
+                                                                )
+                                                        ),
+                                                        LineCol.SYNTHETIC
+                                                ),
+                                                new AST.Anno(
+                                                        new AST.Access(null, "Target", LineCol.SYNTHETIC),
+                                                        Collections.singletonList(
+                                                                new AST.Assignment(
+                                                                        new AST.Access(null, "value", LineCol.SYNTHETIC),
+                                                                        "=",
+                                                                        new AST.Access(new AST.Access(null, "ElementType", LineCol.SYNTHETIC), "TYPE", LineCol.SYNTHETIC),
+                                                                        LineCol.SYNTHETIC
+                                                                )
+                                                        ),
+                                                        LineCol.SYNTHETIC
+                                                )
+                                        )
+                                ),
+                                Collections.<Statement>emptyList(),
+                                LineCol.SYNTHETIC
+                        )
+                ), stmts);
+        }
 }

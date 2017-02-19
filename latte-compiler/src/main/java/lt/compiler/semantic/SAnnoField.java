@@ -31,7 +31,6 @@ import lt.compiler.LineCol;
  */
 public class SAnnoField extends SMethodDef {
         private String name;
-        private STypeDef type;
         private Value defaultValue;
 
         public SAnnoField() {
@@ -47,7 +46,7 @@ public class SAnnoField extends SMethodDef {
         }
 
         public void setType(STypeDef type) {
-                this.type = type;
+                setReturnType(type);
         }
 
         public String name() {
@@ -55,7 +54,7 @@ public class SAnnoField extends SMethodDef {
         }
 
         public STypeDef type() {
-                return type;
+                return getReturnType();
         }
 
         public Value defaultValue() {
@@ -65,7 +64,7 @@ public class SAnnoField extends SMethodDef {
         @Override
         public String toString() {
                 StringBuilder sb = new StringBuilder();
-                sb.append(type.fullName()).append(" ").append(name).append("()");
+                sb.append(getReturnType().fullName()).append(" ").append(name).append("()");
                 if (defaultValue != null) {
                         sb.append(" default ").append(defaultValue).append(";");
                 }

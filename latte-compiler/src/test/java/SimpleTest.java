@@ -13,6 +13,10 @@ import java.util.Set;
 /**
  * Created by wkgcass on 16/6/4.
  */
+public @interface SimpleTest {
+        String value() default "a";
+}
+/*
 public class SimpleTest {
         public static void main(String[] args) throws Exception {
                 ErrorManager err = new ErrorManager(true);
@@ -49,3 +53,4 @@ public class SimpleTest {
                 return a == b;
         }
 }
+*/

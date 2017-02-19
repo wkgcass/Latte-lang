@@ -406,6 +406,9 @@ public class Parser {
                                         return parse_object();
                                 } else if (content.equals("fun")) {
                                         return parse_fun();
+                                } else if (content.equals("annotation")) {
+                                        modifiersIsEmpty();
+                                        return parse_annotation();
                                 } else if (content.equals("try")) {
                                         annosIsEmpty();
                                         modifiersIsEmpty();
@@ -510,6 +513,35 @@ public class Parser {
                         nextNode(true);
                         return parse_statement();
                 }
+        }
+
+        /**
+         * parse annotation type def
+         *
+         * @return annotation type def
+         * @throws SyntaxException compiling error
+         */
+        private AnnotationDef parse_annotation() throws SyntaxException {
+                LineCol lineCol = current.getLineCol();
+                Set<AST.Anno> annos = getAndClear(this.annos);
+                nextNode(false);
+                if (current.getTokenType() != TokenType.VALID_NAME) {
+                        err.UnexpectedTokenException("annotation type name", current.toString(), current.getLineCol());
+                        throw new ParseFail();
+                }
+                String name = ((Element) current).getContent();
+                nextNode(true);
+                List<Statement> stmts;
+                if (current == null || current instanceof EndingNode) {
+                        stmts = Collections.emptyList();
+                } else if (current instanceof ElementStartNode) {
+                        stmts = parseElemStart((ElementStartNode) current, false, Collections.<String>emptySet(), false);
+                } else {
+                        err.UnexpectedTokenException(current.toString(), current.getLineCol());
+                        err.debug("assume it has empty statements");
+                        stmts = Collections.emptyList();
+                }
+                return new AnnotationDef(name, annos, stmts, lineCol);
         }
 
         /**

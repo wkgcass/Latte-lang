@@ -209,7 +209,7 @@ for item in list
 或者
 
 ```swift
-for i in 0.:list.size
+for i in 0 until list.size
     println(list[i])
 ```
 
@@ -230,14 +230,14 @@ while i < list.size
 检查x是否在范围中
 
 ```kotlin
-if x in 1..y-1
+if x in 1 to y-1
     print("OK")
 ```
 
 从1到5进行循环
 
 ```swift
-for x in 1..5
+for x in 1 to 5
     print(x)
 ```
 
@@ -1543,7 +1543,7 @@ c = a + b           /* 19/28 */
 | a\[0, 1\] | a.get(0, 1)   |
 
 > `+a` 这种用法在Latte中不对`+`做任何处理，当做`a`  
-> 上面的`a[0, 1]`用法，如果a是一个数组，则相当于java的`a[0][1]`  
+> 上面的`a[0, 1]`用法，如果a是一个二维数组，则相当于java的`a[0][1]`  
 > Latte对所有对象均可隐式转换到`RichObject`，在其中提供了`==`和`!=`的绑定，其中会调用对象的`equals`方法
 
 Latte的运算符优先级和Java完全一致，而Latte特有的运算符优先级如下：
@@ -1566,6 +1566,18 @@ Latte的运算符优先级和Java完全一致，而Latte特有的运算符优先
 | --a    | a = a - 1 , return a             |
 
 > 其中`?=`的`?`代表任何二元运算符
+
+---
+
+Latte中，和普通的方法调用不同，运算符前不需要附加`.`，也不需要对参数包裹括号。但是因为Latte的运算符和方法调用是一回事，所以为了一致性，普通方法调用也可以将方法名看作运算符来书写：
+
+```scala
+list isEmpty // list.isEmpty()
+map put "Feb", 2 // map.put("Feb", 2)
+.println o // println(o)
+```
+
+使用逗号分隔多个参数。使用`.`表示直接调用方法（而不是在某个对象或者某个类上调用）。
 
 <h2 id="p5-5">5.5 异常</h2>
 
@@ -1591,7 +1603,24 @@ finally
 
 <h2 id="p5-6">5.6 注解</h2>
 
-Latte不支持定义注解，但是可以正常使用注解。Latte的注解使用方式和Java一致
+Latte使用`annotation`关键字定义注解
+
+```kotlin
+annotation Anno
+    a:int = 1
+    b:long
+```
+
+Latte中的注解默认为运行时可见的（而Java中默认不可见）。  
+可以使用`java::lang::annotation::Retention`注解重新规定可见性。  
+同时默认为可以标注在所有地方（和Java一样）。  
+可以使用`java::lang::annotation::Target`注解重新规定标注位置。
+
+> 因为annotation是一个关键字，所以导入包时需要用 点号 包围 `annotation`这个单词。
+
+---
+
+Latte的注解使用方式和Java一致
 
 ```kotlin
 class PrintSelf
@@ -1609,7 +1638,7 @@ class PrintSelf
 
 ```java
 @Value1('value')
-@Value2(key='value')
+@Value2(value='value')
 ```
 
 <h2 id="p5-7">5.7 过程(Procedure)</h2>
