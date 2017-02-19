@@ -2233,29 +2233,6 @@ public class TestCodeGen {
         }
 
         @Test
-        public void testCall() throws Exception {
-                Class<?> cls = retrieveClass(
-                        "" +
-                                "import java::util::Arrays\n" +
-                                "class C\n" +
-                                "    static\n" +
-                                "        def call(o,m:String,b:[]bool,args:[]Object)\n" +
-                                "            return '' + (o==null) +\n" +
-                                "            m +\n" +
-                                "            Arrays.toString(b) +\n" +
-                                "            Arrays.toString(args)\n" +
-                                "class TestCall\n" +
-                                "    static\n" +
-                                "        def method()\n" +
-                                "            c=C\n" +
-                                "            return c.go(1,1.2,'abc')"
-                        , "TestCall"
-                );
-                // whether o == null , method name , is primitive , arguments
-                assertEquals("falsego[true, true, false][1, 1.2, abc]", cls.getMethod("method").invoke(null));
-        }
-
-        @Test
         public void testHandlingVoidValues() throws Exception {
                 Class<?> cls = retrieveClass(
                         "" +

@@ -2604,4 +2604,99 @@ public class TestParser {
                         )
                 );
         }
+
+        @Test
+        public void testDotStartInvocation() throws Exception {
+                List<Statement> stmts = parse("" +
+                        ".a 1\n" +
+                        ".a .b 1\n" +
+                        ".a .b .c\n" +
+                        ".a + .b // it's a(+b())\n" +
+                        ".a 1,2,3\n" +
+                        ".a .b 1,2,3");
+                assertEquals(Arrays.asList(
+                        new AST.Invocation(
+                                new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                Collections.<Expression>singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)),
+                                false,
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Invocation(
+                                new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                Collections.<Expression>singletonList(
+                                        new AST.Invocation(
+                                                new AST.Access(null, "b", LineCol.SYNTHETIC),
+                                                Collections.<Expression>singletonList(new NumberLiteral("1", LineCol.SYNTHETIC)),
+                                                false,
+                                                LineCol.SYNTHETIC
+                                        )
+                                ),
+                                false,
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Invocation(
+                                new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                Collections.<Expression>singletonList(
+                                        new AST.Invocation(
+                                                new AST.Access(null, "b", LineCol.SYNTHETIC),
+                                                Collections.<Expression>singletonList(
+                                                        new AST.Invocation(
+                                                                new AST.Access(null, "c", LineCol.SYNTHETIC),
+                                                                Collections.<Expression>emptyList(),
+                                                                false,
+                                                                LineCol.SYNTHETIC
+                                                        )
+                                                ),
+                                                false,
+                                                LineCol.SYNTHETIC
+                                        )
+                                ),
+                                false,
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Invocation(
+                                new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                Collections.<Expression>singletonList(
+                                        new UnaryOneVariableOperation("+",
+                                                new AST.Invocation(
+                                                        new AST.Access(null, "b", LineCol.SYNTHETIC),
+
+                                                        Collections.<Expression>emptyList(),
+                                                        false,
+                                                        LineCol.SYNTHETIC
+                                                ),
+                                                LineCol.SYNTHETIC)
+                                ),
+                                false,
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Invocation(
+                                new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                Arrays.<Expression>asList(
+                                        new NumberLiteral("1", LineCol.SYNTHETIC),
+                                        new NumberLiteral("2", LineCol.SYNTHETIC),
+                                        new NumberLiteral("3", LineCol.SYNTHETIC)
+                                ),
+                                false,
+                                LineCol.SYNTHETIC
+                        ),
+                        new AST.Invocation(
+                                new AST.Access(null, "a", LineCol.SYNTHETIC),
+                                Collections.<Expression>singletonList(
+                                        new AST.Invocation(
+                                                new AST.Access(null, "b", LineCol.SYNTHETIC),
+                                                Arrays.<Expression>asList(
+                                                        new NumberLiteral("1", LineCol.SYNTHETIC),
+                                                        new NumberLiteral("2", LineCol.SYNTHETIC),
+                                                        new NumberLiteral("3", LineCol.SYNTHETIC)
+                                                ),
+                                                false,
+                                                LineCol.SYNTHETIC
+                                        )
+                                ),
+                                false,
+                                LineCol.SYNTHETIC
+                        )
+                ), stmts);
+        }
 }

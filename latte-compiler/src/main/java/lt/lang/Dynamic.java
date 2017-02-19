@@ -676,12 +676,7 @@ public class Dynamic {
 
                 if (candidates.isEmpty()) {
                         StringBuilder sb = new StringBuilder().append(targetType.getName()).append("(");
-                        boolean isFirst = true;
-                        for (Object arg : args) {
-                                if (isFirst) isFirst = false;
-                                else sb.append(", ");
-                                sb.append(arg == null ? "null" : arg.getClass().getName());
-                        }
+                        buildErrorMessageArgsPart(sb, args);
                         sb.append(")");
                         throw new LtRuntimeException("cannot find constructor " + sb.toString());
                 } else {
@@ -844,31 +839,6 @@ public class Dynamic {
 
                 invocationState.methodFound = false; // method still not found
 
-                // call anything
-                // call(Object,String,[]bool,[]Object)
-                Method call = null;
-                try {
-                        Class<?> cc = targetClass;
-                        if (o != null) {
-                                cc = o.getClass();
-                        }
-                        call = cc.getMethod("call", Object.class, String.class, boolean[].class, Object[].class);
-                        if (Modifier.isStatic(call.getModifiers()) && !call.getReturnType().equals(void.class)) {
-                                invocationState.methodFound = true;
-                        }
-                } catch (NoSuchMethodException ignore) {
-                        ec.add("Method " + targetClass.getName() + "#call(Object,String,[]bool,[]Object) not found");
-                }
-
-                if (invocationState.methodFound) {
-                        assert call != null;
-                        try {
-                                return call.invoke(null, o, method, primitives, args);
-                        } catch (InvocationTargetException e) {
-                                throw e.getTargetException();
-                        }
-                }
-
                 // dynamically get field `o.methodName`
                 // if it's not `null` and not `Unit` then invoke the retrieved object
                 if (!invocationState.fromField) {
@@ -897,12 +867,7 @@ public class Dynamic {
                                 ? targetClass.getName()
                                 : o.getClass().getName()
                 ).append("#").append(method).append("(");
-                boolean isFirst = true;
-                for (Object arg : args) {
-                        if (isFirst) isFirst = false;
-                        else sb.append(", ");
-                        sb.append(arg == null ? "null" : arg.getClass().getName());
-                }
+                buildErrorMessageArgsPart(sb, args);
                 sb.append(")");
                 ec.throwIfNotEmpty("Cannot find method to invoke: " + sb.toString(), new Function1<Throwable, String>() {
                         @Override
@@ -912,6 +877,15 @@ public class Dynamic {
                 });
                 // code won't reach here
                 throw new LtBug("code won't reach here");
+        }
+
+        private static void buildErrorMessageArgsPart(StringBuilder sb, Object[] args) {
+                boolean isFirst = true;
+                for (Object arg : args) {
+                        if (isFirst) isFirst = false;
+                        else sb.append(", ");
+                        sb.append(arg == null ? "null" : arg.getClass().getName());
+                }
         }
 
         /**
@@ -925,8 +899,8 @@ public class Dynamic {
          */
         @SuppressWarnings("unused")
         public static Object callFunctionalObject(Object functionalObject,
-                                                   Class<?> callerClass,
-                                                   Object[] args) throws Throwable {
+                                                  Class<?> callerClass,
+                                                  Object[] args) throws Throwable {
                 return callFunctionalObject(new InvocationState(), functionalObject, callerClass, args);
         }
 
@@ -941,9 +915,9 @@ public class Dynamic {
          * @throws Throwable exception when calling the functional object.
          */
         public static Object callFunctionalObject(InvocationState invocationState,
-                                                   Object functionalObject,
-                                                   Class<?> callerClass,
-                                                   Object[] args) throws Throwable {
+                                                  Object functionalObject,
+                                                  Class<?> callerClass,
+                                                  Object[] args) throws Throwable {
                 if (functionalObject == null) throw new NullPointerException();
 
                 // check whether it's a functional object
@@ -988,7 +962,7 @@ public class Dynamic {
          */
         @SuppressWarnings("unused")
         public static Object invoke(Class<?> targetClass, Object o, Object functionalObject, Class<?> invoker,
-                                     String method, boolean[] primitives, Object[] args) throws Throwable {
+                                    String method, boolean[] primitives, Object[] args) throws Throwable {
                 return invoke(new InvocationState(), targetClass, o, functionalObject, invoker, method, primitives, args);
         }
 }

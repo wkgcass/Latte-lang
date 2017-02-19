@@ -1815,7 +1815,11 @@ public class Parser {
                                                         annosIsEmpty();
                                                         modifiersIsEmpty();
 
-                                                        parse_access(true);
+                                                        if (parsedExps.isEmpty()) {
+                                                                parse_dot_start_invocation();
+                                                        } else {
+                                                                parse_access(true);
+                                                        }
 
                                                 } else if (isOneVariableOperatorPreWithoutCheckingExps(content)) {
                                                         annosIsEmpty();
@@ -2093,6 +2097,40 @@ public class Parser {
                         }
                 }
                 // else
+        }
+
+        /**
+         * parse invocation which starts with a dot
+         *
+         * @throws SyntaxException compile error
+         */
+        private void parse_dot_start_invocation() throws SyntaxException {
+                LineCol lineCol = current.getLineCol();
+                nextNode(false);
+                if (current.getTokenType() != TokenType.VALID_NAME) {
+                        err.UnexpectedTokenException("valid name", current.toString(), current.getLineCol());
+                        throw new ParseFail();
+                }
+                String name = ((Element) current).getContent();
+                nextNode(true);
+                if (current == null || current instanceof EndingNode || (isParsingMap && ((Element) current).getContent().equals(":"))) {
+                        // .op
+                        parsedExps.push(new AST.Invocation(new AST.Access(null, name, lineCol),
+                                Collections.<Expression>emptyList(), false, lineCol));
+                        return;
+                }
+
+                List<Expression> args = new ArrayList<Expression>();
+                // .op exp
+                args.add(get_exp(false));
+
+                while (current instanceof EndingNode && ((EndingNode) current).getType() == EndingNode.STRONG) {
+                        nextNode(true);
+                        if (current != null && !(current instanceof EndingNode)) {
+                                args.add(get_exp(false));
+                        }
+                }
+                parsedExps.push(new AST.Invocation(new AST.Access(null, name, lineCol), args, false, lineCol));
         }
 
         /**
