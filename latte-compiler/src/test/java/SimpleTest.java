@@ -15,18 +15,16 @@ import java.util.Set;
  */
 public class SimpleTest {
         public static void main(String[] args) throws Exception {
-                /*
                 ErrorManager err = new ErrorManager(true);
 
                 StringBuilder sb = new StringBuilder();
                 sb.append("" +
-                        "class TestListCastInvokeMethod\n" +
+                        "import java::util::Collections._\n" +
+                        "class TestImportStaticAnno\n" +
                         "    static\n" +
-                        "        def method=Container(10, [1,2,3])\n" +
-                        "data class Bean\n" +
-                        "    public list = []\n" +
-                        "    def add(o)=list.add(o)\n" +
-                        "data class Container(i, x:Bean)"
+                        "        list = [1,3,2]\n" +
+                        "        sort(list)\n" +
+                        "        list"
                 );
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
@@ -38,13 +36,11 @@ public class SimpleTest {
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
-                byte[] b = list.get("TestListCastInvokeMethod");
+                byte[] b = list.get("TestImportStaticAnno");
                 FileOutputStream fos = new FileOutputStream(new File("/Volumes/PROJECTS/openSource/LessTyping/hehe.class"));
                 fos.write(b);
                 fos.flush();
                 fos.close();
-                */
-                System.out.println(System.getProperty("os.name"));
         }
 
         public static boolean test() {

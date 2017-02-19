@@ -718,6 +718,7 @@ public class Dynamic {
          * @param method           method name
          * @param primitives       whether the argument is primitive
          * @param args             the arguments
+         * @param canInvokeImport  the method is invoked directly by the method's name, which could be invoking an import static method
          * @return the method result (void methods' results are <tt>Unit</tt>)
          * @throws Throwable exception
          */
@@ -728,18 +729,15 @@ public class Dynamic {
                                     Class<?> invoker,
                                     String method,
                                     boolean[] primitives,
-                                    Object[] args) throws Throwable {
+                                    Object[] args,
+                                    boolean canInvokeImport) throws Throwable {
 
                 if (primitives.length != args.length) throw new LtBug("primitives.length should equal to args.length");
                 Method methodToInvoke = findMethod(invoker, targetClass, o, method, primitives, args);
                 // method found ?
                 if (null != methodToInvoke) {
-                        methodToInvoke.setAccessible(true);
-
                         try {
-                                Object res = methodToInvoke.invoke(o, args);
-                                if (methodToInvoke.getReturnType() == void.class) return Unit.get();
-                                else return res;
+                                return invokeMethod(methodToInvoke, o, args);
                         } catch (InvocationTargetException e) {
                                 throw e.getTargetException();
                         }
@@ -760,7 +758,7 @@ public class Dynamic {
                                         as[i - 1] = args[i];
                                 }
 
-                                return invoke(invocationState, targetClass, res, null, invoker, "get", bs, as);
+                                return invoke(invocationState, targetClass, res, null, invoker, "get", bs, as, canInvokeImport);
                         } else if (method.equals("set") && args.length >= 2 && args[0] instanceof Integer) {
                                 if (args.length == 2) {
                                         Array.set(o, (Integer) args[0], args[1]);
@@ -775,7 +773,7 @@ public class Dynamic {
                                                 as[i - 1] = args[i];
                                         }
 
-                                        return invoke(invocationState, targetClass, elem, null, invoker, "set", bs, as);
+                                        return invoke(invocationState, targetClass, elem, null, invoker, "set", bs, as, canInvokeImport);
                                 }
                         } else {
                                 ec.add("Target is array but method is not get(int)");
@@ -806,8 +804,7 @@ public class Dynamic {
                                                                         // invoke method
                                                                         m.setAccessible(true);
                                                                         Object castInstance = m.invoke(implicitInstance, o);
-                                                                        foundMethod.setAccessible(true);
-                                                                        return foundMethod.invoke(castInstance, args);
+                                                                        return invokeMethod(foundMethod, castInstance, args);
                                                                 }
                                                         }
                                                 }
@@ -818,7 +815,7 @@ public class Dynamic {
                         }
 
                         if (method.equals("set")) {
-                                return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args);
+                                return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args, canInvokeImport);
                         } else {
                                 ec.add("Is not set/put transform");
                         }
@@ -841,7 +838,7 @@ public class Dynamic {
 
                 // dynamically get field `o.methodName`
                 // if it's not `null` and not `Unit` then invoke the retrieved object
-                if (!invocationState.fromField) {
+                if (!invocationState.fromField && o != null) {
                         Object result = null;
                         boolean fieldFound = false;
                         try {
@@ -856,6 +853,19 @@ public class Dynamic {
                                         return callFunctionalObject(result, invoker, args);
                                 } else {
                                         ec.add("Field " + targetClass.getName() + "#" + method + " is null or Unit");
+                                }
+                        }
+                }
+
+                // check import static
+                if (canInvokeImport) {
+                        if (invoker.isAnnotationPresent(StaticImports.class)) {
+                                StaticImports si = invoker.getAnnotation(StaticImports.class);
+                                Class<?>[] classes = si.staticImports();
+                                for (Class<?> cls : classes) {
+                                        Method m = findMethod(invoker, cls, null, method, primitives, args);
+                                        if (m == null) continue;
+                                        return invokeMethod(m, null, args);
                                 }
                         }
                 }
@@ -877,6 +887,13 @@ public class Dynamic {
                 });
                 // code won't reach here
                 throw new LtBug("code won't reach here");
+        }
+
+        private static Object invokeMethod(Method m, Object target, Object[] args) throws InvocationTargetException, IllegalAccessException {
+                m.setAccessible(true);
+                Object res = m.invoke(target, args);
+                if (m.getReturnType().equals(void.class)) return Unit.get();
+                return res;
         }
 
         private static void buildErrorMessageArgsPart(StringBuilder sb, Object[] args) {
@@ -930,7 +947,7 @@ public class Dynamic {
                 } else {
                         // try to invoke apply(...) on this object
                         return invoke(invocationState,
-                                functionalObject.getClass(), functionalObject, null, callerClass, "apply", new boolean[args.length], args);
+                                functionalObject.getClass(), functionalObject, null, callerClass, "apply", new boolean[args.length], args, false);
                 }
 
                 // continue processing `theMethodToInvoke`
@@ -962,7 +979,7 @@ public class Dynamic {
          */
         @SuppressWarnings("unused")
         public static Object invoke(Class<?> targetClass, Object o, Object functionalObject, Class<?> invoker,
-                                    String method, boolean[] primitives, Object[] args) throws Throwable {
-                return invoke(new InvocationState(), targetClass, o, functionalObject, invoker, method, primitives, args);
+                                    String method, boolean[] primitives, Object[] args, boolean canInvokeImport) throws Throwable {
+                return invoke(new InvocationState(), targetClass, o, functionalObject, invoker, method, primitives, args, canInvokeImport);
         }
 }

@@ -437,10 +437,12 @@ public class SemanticProcessor {
                         fileNameToFunctions, fileNameToPackageName,
                         fileNameToObjectDef);
                 step3(fileNameToPackageName, fileNameToFunctions);
-                // ensures that @ImplicitImports is loaded
+                // ensures that @ImplicitImports and @StaticImports are loaded
                 getTypeWithName("lt.lang.ImplicitImports", LineCol.SYNTHETIC);
+                getTypeWithName("lt.lang.StaticImports", LineCol.SYNTHETIC);
                 step4();
                 addImportImplicit();
+                addImportStatic();
 
                 return typeDefSet;
         }
@@ -525,6 +527,65 @@ public class SemanticProcessor {
 
                         // add value into anno
                         importImplicit.values().put(annoField, arrayValue);
+                }
+        }
+
+        private void addImportStatic() throws SyntaxException {
+                SAnnoDef StaticImports = (SAnnoDef) getTypeWithName("lt.lang.StaticImports", LineCol.SYNTHETIC);
+                SArrayTypeDef classArrayTypeDef = (SArrayTypeDef) getTypeWithName("[Ljava.lang.Class;", LineCol.SYNTHETIC);
+                SClassDef classTypeDef = (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC);
+                SAnnoField annoField = null;
+                for (SAnnoField f : StaticImports.annoFields()) {
+                        if (f.name().equals("staticImports")) {
+                                annoField = f;
+                                break;
+                        }
+                }
+                if (annoField == null) throw new LtBug("lt.lang.StaticImports#staticImports should exist");
+                for (STypeDef sTypeDef : typeDefSet) {
+                        // filter
+                        if (sTypeDef.line_col().fileName == null || !fileNameToImport.containsKey(sTypeDef.line_col().fileName)) {
+                                continue;
+                        }
+                        int count = 0;
+                        for (SAnno anno : sTypeDef.annos()) {
+                                if (anno.type().fullName().equals("lt.lang.StaticImports")) {
+                                        ++count;
+                                }
+                        }
+                        boolean alreadyExists = count > 0;
+                        if (alreadyExists) continue;
+                        List<Import> imports = fileNameToImport.get(sTypeDef.line_col().fileName);
+                        List<Ins.GetClass> valueList = new ArrayList<Ins.GetClass>();
+                        Set<Ins.GetClass> tmpSet = new HashSet<Ins.GetClass>(); // distinct
+                        for (Import i : imports) {
+                                if (i.importAll && i.pkg == null) {
+                                        Ins.GetClass getC = new Ins.GetClass(getTypeWithAccess(i.access, Collections.<Import>emptyList()), classTypeDef);
+                                        if (!getC.targetType().equals(sTypeDef)) {
+                                                if (tmpSet.add(getC)) {
+                                                        valueList.add(getC);
+                                                }
+                                        }
+                                }
+                        }
+                        if (valueList.isEmpty()) continue;
+
+                        // build the annotation instance
+                        SAnno importStatic = new SAnno();
+                        importStatic.setAnnoDef(StaticImports);
+                        importStatic.setPresent(sTypeDef);
+                        sTypeDef.annos().add(importStatic);
+
+                        // build the array instance
+                        SArrayValue arrayValue = new SArrayValue();
+                        arrayValue.setDimension(1);
+                        arrayValue.setType(classArrayTypeDef);
+
+                        Value[] valueArray = new Value[valueList.size()];
+                        arrayValue.setValues(valueList.toArray(valueArray));
+
+                        // add value into anno
+                        importStatic.values().put(annoField, arrayValue);
                 }
         }
 
@@ -6154,7 +6215,7 @@ public class SemanticProcessor {
                                 NullValue.get(),
                                 scope.type(),
                                 methodName,
-                                args,
+                                args, false,
                                 lineCol
                         );
                 } else {
@@ -8060,7 +8121,7 @@ public class SemanticProcessor {
                 if (DYNAMIC_invoke == null) {
                         SClassDef DYNAMIC = getDynamicClass();
                         for (SMethodDef m : DYNAMIC.methods()) {
-                                if (m.name().equals("invoke") && m.getParameters().size() == 7) {
+                                if (m.name().equals("invoke") && m.getParameters().size() == 8) {
                                         DYNAMIC_invoke = m;
                                         break;
                                 }
@@ -8142,7 +8203,7 @@ public class SemanticProcessor {
         }
 
         private Ins.InvokeStatic invoke_Dynamic_invoke(STypeDef targetClass, Value o, Value functionalObject,
-                                                       STypeDef invoker, String method, List<Value> args,
+                                                       STypeDef invoker, String method, List<Value> args, boolean canInvokeImport,
                                                        LineCol lineCol) throws SyntaxException {
                 Ins.InvokeStatic is = new Ins.InvokeStatic(
                         getDYNAMIC_invoke(), lineCol
@@ -8158,6 +8219,7 @@ public class SemanticProcessor {
                 }
                 is.arguments().add(packListValuesIntoBooleanArray(primitives));
                 is.arguments().add(packListValuesIntoObjectArray(args));
+                is.arguments().add(new BoolValue(canInvokeImport));
                 return is;
         }
 
@@ -8473,7 +8535,7 @@ public class SemanticProcessor {
                                                                         : new Ins.GetStatic(field, invocation.line_col()),
                                                                 scope.type(),
                                                                 access.name,
-                                                                argList,
+                                                                argList, false,
                                                                 invocation.line_col()
                                                         );
                                                 }
@@ -8568,7 +8630,7 @@ public class SemanticProcessor {
                                 }
                         }
 
-                        return invoke_Dynamic_invoke(targetClass, o, functionalObject, scope.type(), access.name, argList, invocation.line_col());
+                        return invoke_Dynamic_invoke(targetClass, o, functionalObject, scope.type(), access.name, argList, access.exp == null, invocation.line_col());
                 } else {
                         SMethodDef methodToInvoke;
                         boolean invokeInnerMethod = false;

@@ -3817,4 +3817,21 @@ public class TestCodeGen {
                 method = cls.getMethod("method14");
                 assertEquals('a', method.invoke(null));
         }
+
+        @Test
+        public void testImportStaticAnno() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import java::util::Collections._\n" +
+                                "class TestImportStaticAnno\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            list = [1,3,2]\n" +
+                                "            sort(list)\n" +
+                                "            list"
+                        , "TestImportStaticAnno");
+                StaticImports si = cls.getAnnotation(StaticImports.class);
+                assertEquals(2, si.staticImports().length);
+                Method method = cls.getMethod("method");
+                assertEquals(Arrays.asList(1, 2, 3), method.invoke(null));
+        }
 }

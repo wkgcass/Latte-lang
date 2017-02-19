@@ -332,7 +332,7 @@ public class TestSemantic {
                 SClassDef classDef = (SClassDef) set.iterator().next();
                 assertEquals("test.A", classDef.fullName());
                 assertTrue(classDef.modifiers().contains(SModifier.PUBLIC));
-                assertEquals(2, classDef.annos().size()); // @MyAnno and @ImplicitImports
+                assertEquals(3, classDef.annos().size()); // @MyAnno and @ImplicitImports
 
                 SAnno anno = classDef.annos().get(0);
                 assertEquals(2, anno.type().annoFields().size());
@@ -355,7 +355,7 @@ public class TestSemantic {
                 assertEquals(1, set.size());
 
                 SClassDef classDef = (SClassDef) set.iterator().next();
-                assertEquals(2, classDef.annos().size()); // @AnnotationTest, @ImplicitImports
+                assertEquals(3, classDef.annos().size()); // @AnnotationTest, @ImplicitImports
 
                 SAnno anno = classDef.annos().get(0);
                 SAnnoDef annoDef = anno.type();
@@ -1806,7 +1806,7 @@ public class TestSemantic {
 
                 Ins.InvokeStatic in0 = (Ins.InvokeStatic) i0;
                 assertEquals("set", ((StringConstantValue) in0.arguments().get(4)).getStr());
-                assertEquals(7, in0.arguments().size());
+                assertEquals(8, in0.arguments().size());
                 assertTrue(in0.arguments().get(0) instanceof Ins.GetClass);
                 assertTrue(in0.arguments().get(1) instanceof Ins.GetField);
                 assertEquals(NullValue.get(), in0.arguments().get(2));
