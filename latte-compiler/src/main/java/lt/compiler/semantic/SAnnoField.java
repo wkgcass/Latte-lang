@@ -32,6 +32,7 @@ import lt.compiler.LineCol;
 public class SAnnoField extends SMethodDef {
         private String name;
         private Value defaultValue;
+        private boolean bDefaultValue; // assume it has default value, but the value will be filled later
 
         public SAnnoField() {
                 super(LineCol.SYNTHETIC);
@@ -59,6 +60,14 @@ public class SAnnoField extends SMethodDef {
 
         public Value defaultValue() {
                 return defaultValue;
+        }
+
+        public void doesHaveDefaultValue() {
+                bDefaultValue = true;
+        }
+
+        public boolean hasDefaultValue() {
+                return defaultValue() != null || bDefaultValue;
         }
 
         @Override

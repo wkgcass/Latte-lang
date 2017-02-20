@@ -45,7 +45,6 @@ import lt.dependencies.asm.MethodVisitor;
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
 import java.lang.reflect.*;
 import java.net.URL;
 import java.util.*;
@@ -1037,9 +1036,14 @@ public class SemanticProcessor {
 
         private void assertToBeAnnotationField(STypeDef type) throws SyntaxException {
                 if (type instanceof PrimitiveTypeDef) return;
+                if (type.fullName().equals("java.lang.String")) return;
                 if (type.fullName().equals("java.lang.Class")) return;
                 if (getTypeWithName(Enum.class.getName(), LineCol.SYNTHETIC).isAssignableFrom(type)) return;
-                if (type instanceof SArrayTypeDef) assertToBeAnnotationField(((SArrayTypeDef) type).type());
+                if (type instanceof SArrayTypeDef && ((SArrayTypeDef) type).dimension() == 1) {
+                        assertToBeAnnotationField(((SArrayTypeDef) type).type());
+                        return;
+                }
+                if (type instanceof SAnnoDef) return;
                 err.SyntaxException(type + " cannot be type of annotation fields", type.line_col());
         }
 
@@ -1425,15 +1429,8 @@ public class SemanticProcessor {
                 }
         }
 
-        /**
-         * ========step 4========
-         * first parse anno types
-         * the annotations presented on these anno types will also be parsed
-         *
-         * @throws SyntaxException exception
-         */
-        public void step4() throws SyntaxException {
-                // anno def
+        private void checkAndFillAnnotations() throws SyntaxException {
+                // not compiled annotations
                 for (STypeDef typeDef : typeDefSet) {
                         if (typeDef instanceof SAnnoDef) {
                                 SAnnoDef annoDef = (SAnnoDef) typeDef;
@@ -1446,15 +1443,16 @@ public class SemanticProcessor {
 
                                                         Expression exp = ((VariableDef) stmt).getInit();
                                                         if (exp != null) {
-                                                                Value value = parseValueFromExpression(exp, null, null);
-                                                                f.setDefaultValue(value);
+                                                                // do fill
+                                                                f.doesHaveDefaultValue();
                                                         }
                                                 }
                                         }
                                 }
                         }
                 }
-                // anno value
+                // compiled annotations
+                // fill the values directly
                 for (STypeDef typeDef : types.values()) {
                         if (typeDef instanceof SAnnoDef) {
                                 boolean isCompiledAnnotation = true;
@@ -1483,10 +1481,83 @@ public class SemanticProcessor {
                                                 }
                                         }
                                 }
-                                // parse annotations presented on this type
+                        }
+                }
+                // fill true value to not compiled annotations
+                for (STypeDef typeDef : typeDefSet) {
+                        if (typeDef instanceof SAnnoDef) {
+                                SAnnoDef annoDef = (SAnnoDef) typeDef;
+                                AnnotationDef astAnnoDef = originalAnnotations.get(annoDef.fullName());
+                                for (SAnnoField f : annoDef.annoFields()) {
+                                        for (Statement stmt : astAnnoDef.stmts) {
+                                                if (stmt instanceof VariableDef
+                                                        &&
+                                                        ((VariableDef) stmt).getName().equals(f.name())) {
+
+                                                        Expression exp = ((VariableDef) stmt).getInit();
+                                                        if (exp != null) {
+                                                                Value value = transformIntoAnnoValidValue(
+                                                                        parseValueFromExpression(exp, f.type(), null),
+                                                                        exp.line_col());
+                                                                f.setDefaultValue(value);
+                                                        }
+                                                }
+                                        }
+                                }
+                        }
+                }
+                // parse annotations presented on this type
+                for (STypeDef typeDef : types.values()) {
+                        if (typeDef instanceof SAnnoDef) {
+                                SAnnoDef annoDef = (SAnnoDef) typeDef;
                                 parseAnnoValues(annoDef.annos());
                         }
                 }
+        }
+
+        private Value transformIntoAnnoValidValue(Value value, LineCol lineCol) throws SyntaxException {
+                if (value.type() instanceof PrimitiveTypeDef) return value;
+                if (value instanceof StringConstantValue) return value;
+                if (value instanceof Ins.GetClass) return value;
+                if (value instanceof SAnno) return value;
+                if (value instanceof Ins.GetStatic) {
+                        // enum
+                        EnumValue enumValue = new EnumValue();
+                        enumValue.setType(((Ins.GetStatic) value).field().declaringType());
+                        enumValue.setEnumStr(((Ins.GetStatic) value).field().name());
+                        return enumValue;
+                }
+                if (value instanceof Ins.NewArray) {
+                        // array
+                        SArrayValue sArrayValue = new SArrayValue();
+                        sArrayValue.setDimension(1);
+                        List<Value> values = ((Ins.NewArray) value).initValues();
+                        sArrayValue.setValues(values.toArray(new Value[values.size()]));
+                        sArrayValue.setType((SArrayTypeDef) value.type());
+                        return sArrayValue;
+                }
+                if (value instanceof Ins.ANewArray) {
+                        // ref array
+                        SArrayValue sArrayValue = new SArrayValue();
+                        sArrayValue.setDimension(1);
+                        List<Value> values = ((Ins.ANewArray) value).initValues();
+                        sArrayValue.setValues(values.toArray(new Value[values.size()]));
+                        sArrayValue.setType((SArrayTypeDef) value.type());
+                        return sArrayValue;
+                }
+                err.SyntaxException("cannot resolve valid value for annotation field", lineCol);
+                return null;
+        }
+
+        /**
+         * ========step 4========
+         * first parse anno types
+         * the annotations presented on these anno types will also be parsed
+         *
+         * @throws SyntaxException exception
+         */
+        public void step4() throws SyntaxException {
+                checkAndFillAnnotations();
                 // then
                 // foreach typeDefSet, parse their statements
                 List<STypeDef> typeDefList = new ArrayList<STypeDef>(typeDefSet);
@@ -2426,7 +2497,7 @@ public class SemanticProcessor {
                                         }
                                 }
                                 // not found, check defaultValue
-                                if (f.defaultValue() == null) {
+                                if (!f.hasDefaultValue()) {
                                         err.SyntaxException(f.name() + " is missing",
                                                 anno == null ? LineCol.SYNTHETIC : anno.line_col());
                                         return;
