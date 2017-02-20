@@ -24,7 +24,7 @@ public abstract class AbstractScanner implements Scanner {
          *                            +-[a]-[+]-[b]
          * </pre>
          */
-        public final Set<String> LAYER = new HashSet<String>(Collections.singletonList("->"));
+        public final Set<String> LAYER = new HashSet<String>(Arrays.asList("->", "=>"));
         /**
          * the input should be split when meets these tokens
          */

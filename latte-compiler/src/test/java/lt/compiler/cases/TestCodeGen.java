@@ -3618,10 +3618,10 @@ public class TestCodeGen {
                                 "class TestSimplePatternMatching\n" +
                                 "    static\n" +
                                 "        def method(o) = o match\n" +
-                                "            case _:java::util::List -> 'type ' + o\n" +
-                                "            case 2 -> 'value'\n" +
-                                "            case x:String -> 'define ' + x\n" +
-                                "            case _ -> 'default'"
+                                "            case _:java::util::List => 'type ' + o\n" +
+                                "            case 2 => 'value'\n" +
+                                "            case x:String => 'define ' + x\n" +
+                                "            case _ => 'default'"
                         , "TestSimplePatternMatching");
                 Method method = cls.getMethod("method", Object.class);
                 assertEquals("type [1, 2, 3]", method.invoke(null, Arrays.asList(1, 2, 3)));
@@ -3636,8 +3636,8 @@ public class TestCodeGen {
                                 "class TestDestructPatternMatching\n" +
                                 "    static\n" +
                                 "        def method(o) = o match\n" +
-                                "            case A(a,b,c) -> [a,b,c]\n" +
-                                "            case B(a,b:Integer) -> [a,b]\n" +
+                                "            case A(a,b,c) => [a,b,c]\n" +
+                                "            case B(a,b:Integer) => [a,b]\n" +
                                 "        def getClassA = type A\n" +
                                 "        def getClassB = type B\n" +
                                 "data class A(a,b,c)\n" +
@@ -3661,7 +3661,7 @@ public class TestCodeGen {
                                 "        def method\n" +
                                 "            val beanA = A(1,\"a\", B([], [\"x\" : \"y\"], A(9,8,7)))\n" +
                                 "            beanA match\n" +
-                                "                case A(1,b:String,B(_:java::util::List, c, A(_,_:Integer,d))) ->\n" +
+                                "                case A(1,b:String,B(_:java::util::List, c, A(_,_:Integer,d))) =>\n" +
                                 "                    [b,c,d]\n" +
                                 "data class A(a,b,c)\n" +
                                 "data class B(a,b,c)"
@@ -3871,5 +3871,31 @@ public class TestCodeGen {
                 Method b = annotation.getClass().getMethod("b");
                 assertEquals(1, a.invoke(annotation));
                 assertEquals(1L, b.invoke(annotation));
+        }
+
+        @Test
+        public void testPatternMatchingWithIf() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestPatternMatchingWithIf\n" +
+                                "    static\n" +
+                                "        def getClassA = type A\n" +
+                                "        def method(o) = o match\n" +
+                                "            case A(a,b) if a > b => 1\n" +
+                                "            case A(a,b) if a < b => 2\n" +
+                                "            case _ => 3\n" +
+                                "data class A(a,b)"
+                        , "TestPatternMatchingWithIf");
+                Method method = cls.getMethod("method", Object.class);
+                Method getClassA = cls.getMethod("getClassA");
+                Class<?> classA = (Class<?>) getClassA.invoke(null);
+                Constructor<?> cons = classA.getConstructor(Object.class, Object.class);
+
+                Object a1 = cons.newInstance(2, 1);
+                Object a2 = cons.newInstance(1, 2);
+                Object a3 = cons.newInstance(1, 1);
+
+                assertEquals(1, method.invoke(null, a1));
+                assertEquals(2, method.invoke(null, a2));
+                assertEquals(3, method.invoke(null, a3));
         }
 }

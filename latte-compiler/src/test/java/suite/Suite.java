@@ -61,7 +61,8 @@ import org.junit.runner.RunWith;
         TestScannerLayerControl.class,
         TestSemanticError.class,
         TestSynchronized.class,
-        TestPrimitiveOperators.class
+        TestPrimitiveOperators.class,
+        TestDefineAnnotations.class
 })
 public class Suite extends TestSuite {
 }

@@ -50,8 +50,8 @@ public class BraceScanner extends AbstractScanner {
         }
 
         private void init() {
-                LAYER.remove("->");
-                SPLIT_X.add("->");
+                SPLIT_X.addAll(LAYER);
+                LAYER.clear();
 
                 Set<String> set = new HashSet<String>();
                 set.addAll(LAYER);

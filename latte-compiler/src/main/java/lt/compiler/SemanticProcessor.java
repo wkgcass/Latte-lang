@@ -5006,7 +5006,7 @@ public class SemanticProcessor {
                 // def patternMatching${hashCode}${count}
                 List<MethodDef> patternMethods = new ArrayList<MethodDef>();
                 int index = -1;
-                for (AST.Pattern ignore : pm.patternsToStatements.keySet()) {
+                for (AST.PatternCondition ignore : pm.patternsToStatements.keySet()) {
                         ++index;
                         MethodDef methodDef = new MethodDef(
                                 "patternMatching$" + Integer.toHexString(Math.abs(pm.hashCode())) + "$" + index,
@@ -5027,7 +5027,7 @@ public class SemanticProcessor {
 
                 // parse these methods
                 index = -1;
-                for (Map.Entry<AST.Pattern, List<Statement>> patternListEntry : pm.patternsToStatements.entrySet()) {
+                for (Map.Entry<AST.PatternCondition, List<Statement>> patternListEntry : pm.patternsToStatements.entrySet()) {
                         ++index;
                         MethodDef currentMethod = patternMethods.get(index);
                         MethodDef nextMethod = null;
@@ -5260,11 +5260,11 @@ public class SemanticProcessor {
                 }
         }
 
-        private void parsePatternMatchingMethod(Map.Entry<AST.Pattern, List<Statement>> patternListEntry,
+        private void parsePatternMatchingMethod(Map.Entry<AST.PatternCondition, List<Statement>> patternListEntry,
                                                 MethodDef currentMethod,
                                                 MethodDef nextMethod,
                                                 String fileName) throws SyntaxException {
-                AST.Pattern p = patternListEntry.getKey();
+                AST.PatternCondition p = patternListEntry.getKey();
                 List<Statement> statements = patternListEntry.getValue();
 
                 AST.If.IfPair anElse;
@@ -5305,9 +5305,20 @@ public class SemanticProcessor {
                                 ),
                                 LineCol.SYNTHETIC_WITH_FILE(fileName));
                 }
+                // statements should be packed into `if condition` if the condition exists
+                if (p.condition != null) {
+                        statements = Collections.<Statement>singletonList(
+                                new AST.If(
+                                        Arrays.asList(
+                                                new AST.If.IfPair(p.condition, statements, p.condition.line_col()),
+                                                anElse
+                                        ), LineCol.SYNTHETIC_WITH_FILE(fileName)
+                                )
+                        );
+                }
 
                 PatternMatchingParser patternMatchingParser;
-                switch (p.patternType) {
+                switch (p.pattern.patternType) {
                         case DEFAULT:
                                 patternMatchingParser = new PatternMatchingDefaultParser();
                                 break;
@@ -5324,10 +5335,10 @@ public class SemanticProcessor {
                                 patternMatchingParser = new PatternMatchingDestructParser(-1);
                                 break;
                         default:
-                                throw new LtBug("unknown pattern matching type " + p.patternType);
+                                throw new LtBug("unknown pattern matching type " + p.pattern.patternType);
                 }
                 currentMethod.body.addAll(patternMatchingParser.parse(
-                        p, statements, anElse, "**", fileName
+                        p.pattern, statements, anElse, "**", fileName
                 ));
         }
 

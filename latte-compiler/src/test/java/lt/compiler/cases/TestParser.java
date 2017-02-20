@@ -2481,25 +2481,25 @@ public class TestParser {
                 List<Statement> stmts = parse("" +
                         "a = 1\n" +
                         "list match\n" +
-                        "    case _      -> ...\n" +
-                        "    case x      -> ...\n" +
-                        "    case a      -> ...\n" +
-                        "    case true   -> ...\n" +
-                        "    case 123    -> ...\n" +
-                        "    case 'abc'  -> ...\n" +
-                        "    case _:List -> ...\n"
+                        "    case _      => ...\n" +
+                        "    case x      => ...\n" +
+                        "    case a      => ...\n" +
+                        "    case true   => ...\n" +
+                        "    case 123    => ...\n" +
+                        "    case 'abc'  => ...\n" +
+                        "    case _:List => ...\n"
                 );
                 VariableDef v = new VariableDef("a", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
-                LinkedHashMap<AST.Pattern, List<Statement>> linkedHashMap = new LinkedHashMap<AST.Pattern, List<Statement>>();
+                LinkedHashMap<AST.PatternCondition, List<Statement>> linkedHashMap = new LinkedHashMap<AST.PatternCondition, List<Statement>>();
                 List<Statement> stmt = Collections.<Statement>singletonList(new AST.Pass(LineCol.SYNTHETIC));
-                linkedHashMap.put(AST.Pattern_Default.get(), stmt);
-                linkedHashMap.put(new AST.Pattern_Define("x", null), stmt);
-                linkedHashMap.put(new AST.Pattern_Value(new AST.Access(null, "a", LineCol.SYNTHETIC)), stmt);
-                linkedHashMap.put(new AST.Pattern_Value(new BoolLiteral("true", LineCol.SYNTHETIC)), stmt);
-                linkedHashMap.put(new AST.Pattern_Value(new NumberLiteral("123", LineCol.SYNTHETIC)), stmt);
-                linkedHashMap.put(new AST.Pattern_Value(new StringLiteral("'abc'", LineCol.SYNTHETIC)), stmt);
-                linkedHashMap.put(new AST.Pattern_Type(new AST.Access(null, "List", LineCol.SYNTHETIC)), stmt);
+                linkedHashMap.put(new AST.PatternCondition(AST.Pattern_Default.get(), null), stmt);
+                linkedHashMap.put(new AST.PatternCondition(new AST.Pattern_Define("x", null), null), stmt);
+                linkedHashMap.put(new AST.PatternCondition(new AST.Pattern_Value(new AST.Access(null, "a", LineCol.SYNTHETIC)), null), stmt);
+                linkedHashMap.put(new AST.PatternCondition(new AST.Pattern_Value(new BoolLiteral("true", LineCol.SYNTHETIC)), null), stmt);
+                linkedHashMap.put(new AST.PatternCondition(new AST.Pattern_Value(new NumberLiteral("123", LineCol.SYNTHETIC)), null), stmt);
+                linkedHashMap.put(new AST.PatternCondition(new AST.Pattern_Value(new StringLiteral("'abc'", LineCol.SYNTHETIC)), null), stmt);
+                linkedHashMap.put(new AST.PatternCondition(new AST.Pattern_Type(new AST.Access(null, "List", LineCol.SYNTHETIC)), null), stmt);
                 assertEquals(
                         Arrays.asList(
                                 v,
@@ -2518,54 +2518,71 @@ public class TestParser {
                 List<Statement> stmts = parse("" +
                         "a = 1\n" +
                         "list match\n" +
-                        "    case List(a,b,c) -> ...\n" +
-                        "    case A(x) -> ...\n" +
-                        "    case B(1) -> ...\n" +
-                        "    case C(_, _:X) -> ...\n" +
-                        "    case D(x:L) -> ...\n" +
-                        "    case E() -> ...\n"
+                        "    case List(a,b,c) => ...\n" +
+                        "    case A(x) => ...\n" +
+                        "    case B(1) => ...\n" +
+                        "    case C(_, _:X) => ...\n" +
+                        "    case D(x:L) => ...\n" +
+                        "    case E() => ...\n" +
+                        "    case F(x) if x > 10 => ..."
                 );
                 VariableDef v = new VariableDef("a", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
                 v.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
-                LinkedHashMap<AST.Pattern, List<Statement>> map = new LinkedHashMap<AST.Pattern, List<Statement>>();
+                LinkedHashMap<AST.PatternCondition, List<Statement>> map = new LinkedHashMap<AST.PatternCondition, List<Statement>>();
                 List<Statement> stmt = Collections.<Statement>singletonList(new AST.Pass(LineCol.SYNTHETIC));
-                map.put(new AST.Pattern_Destruct(
-                        new AST.Access(null, "List", LineCol.SYNTHETIC),
-                        Arrays.asList(
-                                new AST.Pattern_Value(new AST.Access(null, "a", LineCol.SYNTHETIC)),
-                                new AST.Pattern_Define("b", null),
-                                new AST.Pattern_Define("c", null)
-                        )
-                ), stmt);
-                map.put(new AST.Pattern_Destruct(
-                        new AST.Access(null, "A", LineCol.SYNTHETIC),
-                        Collections.<AST.Pattern>singletonList(
-                                new AST.Pattern_Define("x", null)
-                        )
-                ), stmt);
-                map.put(new AST.Pattern_Destruct(
-                        new AST.Access(null, "B", LineCol.SYNTHETIC),
-                        Collections.<AST.Pattern>singletonList(
-                                new AST.Pattern_Value(new NumberLiteral("1", LineCol.SYNTHETIC))
-                        )
-                ), stmt);
-                map.put(new AST.Pattern_Destruct(
-                        new AST.Access(null, "C", LineCol.SYNTHETIC),
-                        Arrays.asList(
-                                AST.Pattern_Default.get(),
-                                new AST.Pattern_Type(new AST.Access(null, "X", LineCol.SYNTHETIC))
-                        )
-                ), stmt);
-                map.put(new AST.Pattern_Destruct(
-                        new AST.Access(null, "D", LineCol.SYNTHETIC),
-                        Collections.<AST.Pattern>singletonList(
-                                new AST.Pattern_Define("x", new AST.Access(null, "L", LineCol.SYNTHETIC))
-                        )
-                ), stmt);
-                map.put(new AST.Pattern_Destruct(
-                        new AST.Access(null, "E", LineCol.SYNTHETIC),
-                        Collections.<AST.Pattern>emptyList()
-                ), stmt);
+                map.put(new AST.PatternCondition(
+                        new AST.Pattern_Destruct(
+                                new AST.Access(null, "List", LineCol.SYNTHETIC),
+                                Arrays.asList(
+                                        new AST.Pattern_Value(new AST.Access(null, "a", LineCol.SYNTHETIC)),
+                                        new AST.Pattern_Define("b", null),
+                                        new AST.Pattern_Define("c", null)
+                                )
+                        ), null), stmt);
+                map.put(new AST.PatternCondition(
+                        new AST.Pattern_Destruct(
+                                new AST.Access(null, "A", LineCol.SYNTHETIC),
+                                Collections.<AST.Pattern>singletonList(
+                                        new AST.Pattern_Define("x", null)
+                                )
+                        ), null), stmt);
+                map.put(new AST.PatternCondition(
+                        new AST.Pattern_Destruct(
+                                new AST.Access(null, "B", LineCol.SYNTHETIC),
+                                Collections.<AST.Pattern>singletonList(
+                                        new AST.Pattern_Value(new NumberLiteral("1", LineCol.SYNTHETIC))
+                                )
+                        ), null), stmt);
+                map.put(new AST.PatternCondition(
+                        new AST.Pattern_Destruct(
+                                new AST.Access(null, "C", LineCol.SYNTHETIC),
+                                Arrays.asList(
+                                        AST.Pattern_Default.get(),
+                                        new AST.Pattern_Type(new AST.Access(null, "X", LineCol.SYNTHETIC))
+                                )
+                        ), null), stmt);
+                map.put(new AST.PatternCondition(
+                        new AST.Pattern_Destruct(
+                                new AST.Access(null, "D", LineCol.SYNTHETIC),
+                                Collections.<AST.Pattern>singletonList(
+                                        new AST.Pattern_Define("x", new AST.Access(null, "L", LineCol.SYNTHETIC))
+                                )
+                        ), null), stmt);
+                map.put(new AST.PatternCondition(
+                        new AST.Pattern_Destruct(
+                                new AST.Access(null, "E", LineCol.SYNTHETIC),
+                                Collections.<AST.Pattern>emptyList()
+                        ), null), stmt);
+                map.put(new AST.PatternCondition(
+                        new AST.Pattern_Destruct(
+                                new AST.Access(null, "F", LineCol.SYNTHETIC),
+                                Collections.<AST.Pattern>singletonList(
+                                        new AST.Pattern_Define("x", null)
+                                )
+                        ),
+                        new TwoVariableOperation(">",
+                                new AST.Access(null, "x", LineCol.SYNTHETIC),
+                                new NumberLiteral("10", LineCol.SYNTHETIC), LineCol.SYNTHETIC)), stmt);
 
                 assertEquals(Arrays.asList(
                         v,
@@ -2582,24 +2599,24 @@ public class TestParser {
                         parse("" +
                                 "a = 1\n" +
                                 "list match\n" +
-                                "    case _      -> ...\n" +
-                                "    case x      -> ...\n" +
-                                "    case a      -> ...\n" +
-                                "    case true   -> ...\n" +
-                                "    case 123    -> ...\n" +
-                                "    case 'abc'  -> ...\n" +
-                                "    case _:List -> ..."
+                                "    case _      => ...\n" +
+                                "    case x      => ...\n" +
+                                "    case a      => ...\n" +
+                                "    case true   => ...\n" +
+                                "    case 123    => ...\n" +
+                                "    case 'abc'  => ...\n" +
+                                "    case _:List => ..."
                         ),
                         parseBrace("" +
                                 "a = 1\n" +
                                 "list match {\n" +
-                                "    case _      -> ...\n" +
-                                "    case x      -> ...\n" +
-                                "    case a      -> {...}\n" +
-                                "    case true   -> ...\n" +
-                                "    case 123    -> ...\n" +
-                                "    case 'abc'  -> ...\n" +
-                                "    case _:List -> ...\n" +
+                                "    case _      => ...\n" +
+                                "    case x      => ...\n" +
+                                "    case a      => {...}\n" +
+                                "    case true   => ...\n" +
+                                "    case 123    => ...\n" +
+                                "    case 'abc'  => ...\n" +
+                                "    case _:List => ...\n" +
                                 "}"
                         )
                 );

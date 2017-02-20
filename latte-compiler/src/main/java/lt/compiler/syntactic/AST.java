@@ -576,15 +576,50 @@ public class AST {
                 TYPE, VALUE, DESTRUCT, DEFAULT, DEFINE
         }
 
+        public static class PatternCondition {
+                public final Pattern pattern;
+                public final Expression condition;
+
+                public PatternCondition(Pattern pattern, Expression condition) {
+                        this.pattern = pattern;
+                        this.condition = condition;
+                }
+
+                @Override
+                public boolean equals(Object o) {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+
+                        PatternCondition that = (PatternCondition) o;
+
+                        if (!pattern.equals(that.pattern)) return false;
+                        //
+                        return condition != null ? condition.equals(that.condition) : that.condition == null;
+
+                }
+
+                @Override
+                public int hashCode() {
+                        int result = pattern.hashCode();
+                        result = 31 * result + (condition != null ? condition.hashCode() : 0);
+                        return result;
+                }
+
+                @Override
+                public String toString() {
+                        return "(" + pattern + " if " + condition + ")";
+                }
+        }
+
         /**
          * pattern matching
          */
         public static class PatternMatching implements Expression {
                 public final Expression expToMatch;
-                public final LinkedHashMap<Pattern, List<Statement>> patternsToStatements;
+                public final LinkedHashMap<PatternCondition, List<Statement>> patternsToStatements;
                 private final LineCol lineCol;
 
-                public PatternMatching(Expression expToMatch, LinkedHashMap<Pattern, List<Statement>> patternsToStatements, LineCol lineCol) {
+                public PatternMatching(Expression expToMatch, LinkedHashMap<PatternCondition, List<Statement>> patternsToStatements, LineCol lineCol) {
                         this.expToMatch = expToMatch;
                         this.patternsToStatements = patternsToStatements;
                         this.lineCol = lineCol;

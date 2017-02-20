@@ -450,7 +450,7 @@ public class Parser {
                                         if (!(current.next() instanceof Element)) {
                                                 return new AST.Return(null, lineCol);
                                         } else {
-                                                Expression e = next_exp(false);
+                                                Expression e = next_exp(false, true);
                                                 return new AST.Return(e, lineCol);
                                         }
                                 }
@@ -648,7 +648,7 @@ public class Parser {
         private AST.While parse_while() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
 
-                Expression condition = next_exp(true); // the boolean expression
+                Expression condition = next_exp(true, true); // the boolean expression
 
                 List<Statement> body;
                 if (current instanceof ElementStartNode) {
@@ -699,7 +699,7 @@ public class Parser {
                         nextNode(false);
                         expecting("while", current.previous(), current, err);
 
-                        Expression condition = next_exp(true); // the boolean expression
+                        Expression condition = next_exp(true, true); // the boolean expression
 
                         return new AST.While(condition, statements, true, lineCol);
                 }
@@ -731,7 +731,7 @@ public class Parser {
                         nextNode(false);
                 }
 
-                Expression stmt = next_exp(false);
+                Expression stmt = next_exp(false, true);
 
                 if (stmt instanceof AST.Access) {
                         // import should firstly be parsed into Access
@@ -839,7 +839,7 @@ public class Parser {
                 Set<AST.Anno> storeCurrentAnnos = new HashSet<AST.Anno>(annos);
                 annos.clear();
 
-                Expression e = next_exp(false); // annotation
+                Expression e = next_exp(false, true); // annotation
                 // might be Invocation
                 // might be Access
 
@@ -900,7 +900,7 @@ public class Parser {
         private AST.Throw parse_throw() throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
 
-                Expression exp = next_exp(false);
+                Expression exp = next_exp(false, true);
 
                 return new AST.Throw(exp, lineCol);
         }
@@ -1070,7 +1070,7 @@ public class Parser {
                                         nextNode(false);
                                         while (true) {
                                                 if (current.getTokenType() == TokenType.VALID_NAME) {
-                                                        Expression e = get_exp(true);
+                                                        Expression e = get_exp(true, true);
 
                                                         if (e instanceof AST.Access) {
                                                                 accesses.add((AST.Access) e);
@@ -1227,7 +1227,7 @@ public class Parser {
                                 nextNode(false);
                                 while (true) {
                                         if (current.getTokenType() == TokenType.VALID_NAME) {
-                                                Expression e = get_exp(true);
+                                                Expression e = get_exp(true, true);
 
                                                 if (e instanceof AST.Access) {
                                                         accesses.add((AST.Access) e);
@@ -1361,7 +1361,7 @@ public class Parser {
                 nextNode(false); // in
                 expecting("in", current.previous(), current, err);
 
-                Expression exp = next_exp(true); // expression
+                Expression exp = next_exp(true, true); // expression
 
                 List<Statement> statements = null;
                 if (current instanceof ElementStartNode) {
@@ -1433,7 +1433,7 @@ public class Parser {
                                         err.SyntaxException("if-else statement had already reached 'else' but got " + content + " instead", current.getLineCol());
                                         err.debug("ignore this if branch");
                                 } else {
-                                        condition = get_exp(true);
+                                        condition = get_exp(true, true);
                                 }
                         }
 
@@ -1645,7 +1645,7 @@ public class Parser {
                                         Collections.<Statement>emptyList(),
                                         lineCol);
                         } else {
-                                Expression exp = next_exp(false);
+                                Expression exp = next_exp(false, true);
 
                                 return new MethodDef(methodName, modifiers, returnType, variableList, annos,
                                         Collections.<Statement>singletonList(
@@ -1787,7 +1787,7 @@ public class Parser {
                                                         modifiersIsEmpty();
                                                         nextNode(false);
                                                         lineCol = current.getLineCol();
-                                                        Expression exp = get_exp(false);
+                                                        Expression exp = get_exp(false, true);
                                                         parsedExps.push(new AST.Require(exp, lineCol));
                                                         parse_expression();
 
@@ -1799,7 +1799,7 @@ public class Parser {
                                                         // new
                                                         lineCol = current.getLineCol();
 
-                                                        Expression next = next_exp(false);
+                                                        Expression next = next_exp(false, true);
                                                         AST.New aNew;
                                                         if (next instanceof AST.Invocation) {
                                                                 if (((AST.Invocation) next).invokeWithNames) {
@@ -1925,7 +1925,7 @@ public class Parser {
                                                         if (parsedExps.isEmpty()) {
                                                                 // #generator
                                                                 //     ...
-                                                                Expression theType = next_exp(true);
+                                                                Expression theType = next_exp(true, true);
                                                                 if (theType instanceof AST.Access) {
                                                                         List<Statement> ast;
                                                                         if (current instanceof ElementStartNode) {
@@ -1950,7 +1950,7 @@ public class Parser {
                                                                 AST.Access generator = (AST.Access) exp;
                                                                 parsedExps.push(
                                                                         new AST.GeneratorSpec(generator,
-                                                                                Collections.<Statement>singletonList(next_exp(false)), lineCol));
+                                                                                Collections.<Statement>singletonList(next_exp(false, true)), lineCol));
                                                         }
 
                                                 } else if (isDestructingWithoutType((Element) current)) {
@@ -2057,6 +2057,9 @@ public class Parser {
                                                                         parse_expression();
                                                                 }
                                                         }
+                                                } else if (isPatternMatchingSymbol(content)) {
+                                                        // do nothing
+                                                        return;
                                                 } else {
                                                         err.UnexpectedTokenException(content, current.getLineCol());
                                                         err.debug("ignore the token");
@@ -2154,12 +2157,12 @@ public class Parser {
 
                 List<Expression> args = new ArrayList<Expression>();
                 // .op exp
-                args.add(get_exp(false));
+                args.add(get_exp(false, true));
 
                 while (current instanceof EndingNode && ((EndingNode) current).getType() == EndingNode.STRONG) {
                         nextNode(true);
                         if (current != null && !(current instanceof EndingNode)) {
-                                args.add(get_exp(false));
+                                args.add(get_exp(false, true));
                         }
                 }
                 parsedExps.push(new AST.Invocation(new AST.Access(null, name, lineCol), args, false, lineCol));
@@ -2178,7 +2181,7 @@ public class Parser {
                         // <-
                         LineCol lineCol = current.getLineCol();
 
-                        Expression exp = next_exp(false);
+                        Expression exp = next_exp(false, true);
                         parsedExps.push(new AST.Destruct(
                                 theModifiers,
                                 theAnnos,
@@ -2193,7 +2196,7 @@ public class Parser {
                         // <-
                         LineCol lineCol = current.getLineCol();
 
-                        Expression exp = next_exp(false);
+                        Expression exp = next_exp(false, true);
 
                         List<AST.Pattern> patterns = parse_destructing_withoutType$patterns(esn);
                         parsedExps.push(new AST.Destruct(
@@ -2257,7 +2260,7 @@ public class Parser {
                 parsedExpsNotEmpty(current);
                 Expression expToMatch = parsedExps.pop();
                 nextNode(false);
-                LinkedHashMap<AST.Pattern, List<Statement>> resultMap = new LinkedHashMap<AST.Pattern, List<Statement>>();
+                LinkedHashMap<AST.PatternCondition, List<Statement>> resultMap = new LinkedHashMap<AST.PatternCondition, List<Statement>>();
                 if (current instanceof ElementStartNode) {
                         ElementStartNode startNode = (ElementStartNode) current;
                         Node switchLayerStart = current;
@@ -2269,7 +2272,13 @@ public class Parser {
                                 if (current instanceof Element && ((Element) current).getContent().equals("case")) {
                                         nextNode(false);
                                         AST.Pattern pattern = parse_pattern_matching_$_parse_pattern(false);
-                                        expecting("->", current.previous(), current, err);
+                                        // check whether is `if`
+                                        Expression matchCondition = null;
+                                        if (current instanceof Element && ((Element) current).getContent().equals("if")) {
+                                                nextNode(false);
+                                                matchCondition = get_exp(false, true);
+                                        }
+                                        expecting("=>", current.previous(), current, err);
                                         nextNode(false);
                                         List<Statement> stmts;
                                         if (current instanceof ElementStartNode) {
@@ -2278,12 +2287,11 @@ public class Parser {
                                         } else if (current instanceof Element) {
                                                 // one line statement
                                                 stmts = Collections.singletonList(parse_statement());
-                                                resultMap.put(pattern, stmts);
                                         } else {
                                                 err.UnexpectedTokenException("statements when the pattern matches", current.toString(), current.getLineCol());
                                                 throw new ParseFail();
                                         }
-                                        resultMap.put(pattern, stmts);
+                                        resultMap.put(new AST.PatternCondition(pattern, matchCondition), stmts);
                                         nextNode(true);
                                         if (current instanceof EndingNode) {
                                                 nextNode(true);
@@ -2339,7 +2347,8 @@ public class Parser {
                         condition1 = (current.next() == null || current.next() instanceof EndingNode
                                 || ((current.next() instanceof Element) && ((Element) current.next()).getContent().equals(",")));
                 } else {
-                        condition1 = ((Element) current.next()).getContent().equals("->");
+                        condition1 = ((Element) current.next()).getContent().equals("=>")
+                                || ((Element) current.next()).getContent().equals("if");
                 }
                 if (condition1) {
                         AST.Pattern subPattern;
@@ -2400,7 +2409,7 @@ public class Parser {
                         if (type == null) {
                                 // not type
                                 // try exp
-                                Expression exp = next_exp(true);
+                                Expression exp = next_exp(true, true);
                                 return new AST.Pattern_Value(exp);
                         } else {
                                 // type specified
@@ -2468,7 +2477,7 @@ public class Parser {
                                 // =
                                 expecting("=", current.previous(), current, err);
                                 return new MethodDef(name, modSet, null, Collections.<VariableDef>emptyList(), annoSet,
-                                        Collections.<Statement>singletonList(next_exp(false)), lineCol);
+                                        Collections.<Statement>singletonList(next_exp(false, true)), lineCol);
                         }
                         // :
                         nextNode(false);
@@ -2481,7 +2490,7 @@ public class Parser {
                                         parseElemStart((ElementStartNode) current, true, Collections.<String>emptySet(), false), lineCol);
                         } else if (current instanceof Element && ((Element) current).getContent().equals("=")) {
                                 return new MethodDef(name, modSet, type, Collections.<VariableDef>emptyList(), annoSet,
-                                        Collections.<Statement>singletonList(next_exp(false)), lineCol);
+                                        Collections.<Statement>singletonList(next_exp(false, true)), lineCol);
                         } else {
                                 err.UnexpectedTokenException("end of definition or method body", current.toString(), current.getLineCol());
                                 err.debug("assume it's empty body");
@@ -2523,7 +2532,7 @@ public class Parser {
                         // e.g. a op b
                         last2VarOps.push(op);
                         List<Expression> opArgs = new ArrayList<Expression>();
-                        opArgs.add(get_exp(false));
+                        opArgs.add(get_exp(false, false));
 
                         while (current instanceof EndingNode && ((EndingNode) current).getType() == EndingNode.STRONG) {
                                 // take out all var op from stack
@@ -2533,7 +2542,7 @@ public class Parser {
 
                                 isParsingOperatorLikeInvocation = true;
 
-                                opArgs.add(get_exp(false));
+                                opArgs.add(get_exp(false, false));
 
                                 isParsingOperatorLikeInvocation = false;
 
@@ -2800,7 +2809,7 @@ public class Parser {
                         nextNode(true);
                 } else {
                         stmts = new ArrayList<Statement>();
-                        stmts.add(get_exp(false));
+                        stmts.add(get_exp(false, true));
                 }
 
                 AST.Lambda l = new AST.Lambda(variableDefList, stmts, lineCol);
@@ -2863,7 +2872,7 @@ public class Parser {
                         return;
                 }
                 last2VarOps.push(op);
-                Expression e2 = next_exp(false);
+                Expression e2 = next_exp(false, false);
 
                 TwoVariableOperation tvo = new TwoVariableOperation(op, e1, e2, lineCol);
                 parsedExps.push(tvo);
@@ -2904,7 +2913,7 @@ public class Parser {
                 last1VarUnaryOps.push(op);
 
                 // get exp
-                Expression e = next_exp(false);
+                Expression e = next_exp(false, false);
 
                 UnaryOneVariableOperation uovo = new UnaryOneVariableOperation(op, e, opNode.getLineCol());
                 parsedExps.push(uovo);
@@ -2994,9 +3003,9 @@ public class Parser {
          * @return expression
          * @throws SyntaxException compiling error
          */
-        private Expression next_exp(boolean expectingStartNode) throws SyntaxException {
+        private Expression next_exp(boolean expectingStartNode, boolean clearVarOpStack) throws SyntaxException {
                 nextNode(false);
-                return get_exp(expectingStartNode);
+                return get_exp(expectingStartNode, clearVarOpStack);
         }
 
         /**
@@ -3006,12 +3015,15 @@ public class Parser {
          * @return expression
          * @throws SyntaxException compiling error
          */
-        private Expression get_exp(boolean expectingStartNode) throws SyntaxException {
+        private Expression get_exp(boolean expectingStartNode, boolean clearVarOpStack) throws SyntaxException {
                 // set expecting start node
                 if (expectingStartNode) {
                         this.expectingStartNode = true;
                 }
                 parse_expression();
+                if (clearVarOpStack) {
+                        last2VarOps.clear();
+                }
                 // reset expecting start node
                 if (expectingStartNode) {
                         this.expectingStartNode = false;
@@ -3084,27 +3096,27 @@ public class Parser {
                                 modifiers.clear();
                                 usedVarNames.add(access.name);
 
-                                Expression e = next_exp(false);
+                                Expression e = next_exp(false, true);
 
                                 def.setInit(e);
                                 parsedExps.push(def);
 
                         } else {
-                                Expression e = next_exp(false);
+                                Expression e = next_exp(false, true);
                                 AST.Assignment a = new AST.Assignment((AST.Access) exp, op, e, lineCol);
 
                                 parsedExps.push(a);
                         }
                 } else if (exp instanceof AST.Index) {
                         AST.Index index = (AST.Index) exp;
-                        Expression e = next_exp(false);
+                        Expression e = next_exp(false, true);
                         AST.Assignment a = new AST.Assignment(new AST.Access(index, null, index.line_col()), op, e, lineCol);
 
                         parsedExps.push(a);
                 } else if (exp instanceof VariableDef) {
                         VariableDef def = (VariableDef) exp;
 
-                        Expression e = next_exp(false);
+                        Expression e = next_exp(false, true);
                         def.setInit(e);
 
                         parsedExps.push(def);

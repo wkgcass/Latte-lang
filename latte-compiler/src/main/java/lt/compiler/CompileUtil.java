@@ -467,6 +467,10 @@ public class CompileUtil {
                 return str.equals("<-");
         }
 
+        public static boolean isPatternMatchingSymbol(String str) {
+                return str.equals("=>");
+        }
+
         public static boolean isDestructing(Element e) {
                 if (e.getTokenType() != TokenType.VALID_NAME) return false;
                 while (true) {
@@ -570,6 +574,7 @@ public class CompileUtil {
                         || isOneVariableOperatorPreMustCheckExps(str)
                         || isOneVariableOperatorPreWithoutCheckingExps(str)
                         || isAssign(str)
-                        || isDestructing(str);
+                        || isDestructing(str)
+                        || isPatternMatchingSymbol(str);
         }
 }

@@ -303,8 +303,9 @@ val (x,y) = Bean(1,2)
 
 ```scala
 o match
-    case Bean(a,b) -> ...
-    case _ -> ...
+    case Bean(a,b) => ...
+    case People(name, age) if age > 20 => ...
+    case _ => ...
 ```
 
 详见[5.10 解构](#p5-10)
@@ -1768,15 +1769,18 @@ else
 
 ```scala
 def doMatch(o) = o match
-    case 1 -> ... /* 根据值匹配 */
-    case b:Apple -> ... /* 检查类型并定义一个新的变量 */
-    case _:Banana -> ... /* 根据类型匹配 */
-    case Bean(x,y) -> ... /* 根据解构匹配 */
-    case Bean(1, Bean(x, _:Integer)) -> ... /* 多重模式 */
-    case _ -> ... /* 匹配所有（默认行为） */
+    case 1 => ... /* 根据值匹配 */
+    case b:Apple => ... /* 检查类型并定义一个新的变量 */
+    case _:Banana => ... /* 根据类型匹配 */
+    case Bean(x,y) => ... /* 根据解构匹配 */
+    case Bean(1, Bean(x, _:Integer)) => ... /* 多重模式 */
+    case Bean(x,y) if x > 0 => ... /* 解构后再做判断 */
+    case _ => ... /* 匹配所有（默认行为） */
 ```
 
 模式匹配会从上到下依次尝试匹配。如果匹配成功则进入该分支执行语句，最终返回一个值（也可能返回`Unit`）。如果匹配失败，则会抛出`lt::lang::MatchError`。
+
+任何匹配模式都可以添加if语句，仅当if判断成立时才会进入执行。
 
 <h1 id="p6">6. Java交互</h1>
 
