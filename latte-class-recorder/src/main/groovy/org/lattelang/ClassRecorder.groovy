@@ -31,7 +31,7 @@ class ClassRecorderPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         def ext = project.extensions.create('recordConfig', ClassRecorderExtension)
-        def task = project.task('recordClass') << {
+        def task = project.task('recordClass').doLast { t ->
             def path = project.buildDir.absolutePath
             ClassRecorder.apply(path + '/' + ext.directory, ext.file)
         }

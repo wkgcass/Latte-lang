@@ -98,11 +98,11 @@ class LatteGradlePlugin implements Plugin<Project> {
     void apply(Project project) {
         def ext = project.extensions.create('latteConfig', LatteGradlePluginExtension)
 
-        def compileLatte = project.task('compileLatte') << {
+        def compileLatte = project.task('compileLatte').doLast { t ->
             compile(project, ext.mainSourceSet, ext.src, ext.fastFail, false)
         }
 
-        def compileTestLatte = project.tasks.create('compileTestLatte') << {
+        def compileTestLatte = project.tasks.create('compileTestLatte').doLast { t ->
             compile(project, ext.testSourceSet, ext.testSrc, ext.fastFail, true)
         }
 
