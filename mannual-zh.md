@@ -38,11 +38,11 @@
 
 <h1 id="p1">1. 起步</h1>
 
-`Latte-lang`是一种JVM语言，基于JDK 1.8。它支持Java的所有语义，能够与Java完美互通，并提供比Java更多的函数式特性。
+`Latte-lang`是一种JVM语言，基于JDK 1.6。它支持Java的所有语义，能够与Java完美互通，并提供比Java更多的函数式特性。
 
 <h2 id="p1-1">1.1 基础语法</h2>
 
-Latte-lang（后文简称Latte）借鉴了主流语言的语法特征。如果您熟悉`Java 8`，或者了解过`Kotlin`,`Scala`,`Python`,`JavaScript`,`Swift`中的一到两种，那么阅读`Latte-lang`代码是很轻松的。
+Latte-lang（后文简称Latte）借鉴了主流语言的语法特征。如果您熟悉`Java`，或者了解过`Kotlin`,`Scala`,`Python`,`JavaScript`,`Swift`中的一到两种，那么阅读`Latte-lang`代码是很轻松的。
 
 > 对Latte影响最大的语言应该是Kotlin和Scala
 
@@ -794,16 +794,14 @@ class TestStatic
 
 <h2 id="p3-2">3.2 接口</h2>
 
-Latte接口遵循Java8的接口定义。使用`interface`关键字:
+Latte接口遵循Java的接口定义。使用`interface`关键字:
 
 ```kotlin
 interface MyInterface
     foo()=...
-    bar()
-        return 123
 ```
 
-定义了`abstract`方法`foo()`和默认方法`bar()`。
+定义了`abstract`方法`foo()`。
 
 让一个类实现接口，也使用类型符号`:`。
 
@@ -823,7 +821,7 @@ interface MyInterface
     FLAG = 1
 ```
 
-接口也可以拥有`static`方法（和Java8一样）
+接口也可以拥有`static`方法（和Java一样）
 
 ```js
 interface TestStaticMethod
