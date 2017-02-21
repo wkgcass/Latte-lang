@@ -139,11 +139,20 @@ buildscript {
 
 apply plugin: 'latte'
 
+sourceSets {
+    main {
+        java
+        latte.srcDirs = ['src/main/latte']
+        resources
+    }
+    test {
+        java
+        latte
+        resources
+    }
+}
+
 latteConfig {
-    src = 'latte'
-    testSrc = 'latte'
-    mainSourceSet = 'main'
-    testSourceSet = 'test'
     afterJava = true
     afterGroovy = false
     fastFail = false
@@ -321,11 +330,20 @@ buildscript {
 
 apply plugin: 'latte'
 
+sourceSets {
+    main {
+        java
+        latte.srcDirs = ['src/main/latte']
+        resources
+    }
+    test {
+        java
+        latte
+        resources
+    }
+}
+
 latteConfig {
-    src = 'latte'
-    testSrc = 'latte'
-    mainSourceSet = 'main'
-    testSourceSet = 'test'
     afterJava = true
     afterGroovy = false
     fastFail = false

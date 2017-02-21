@@ -57,7 +57,9 @@ class ClassRecorder {
      */
     private static void doScanPath(String scanPath, String outputFile) throws Exception {
         StringBuilder sb = new StringBuilder();
-        scanPathRecursive(new File(scanPath), sb, scanPath.length() + 1);
+        File scanPathFile = new File(scanPath);
+        if (!scanPathFile.exists()) return;
+        scanPathRecursive(scanPathFile, sb, scanPath.length() + 1);
         File f = new File(outputFile);
         if (!f.exists()) {
             if (!f.createNewFile()) throw new IOException("cannot create file " + outputFile);

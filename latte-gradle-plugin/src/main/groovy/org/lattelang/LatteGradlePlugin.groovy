@@ -27,11 +27,33 @@ package org.lattelang
 import lt.compiler.SyntaxException
 import lt.lang.Utils
 import lt.repl.Compiler
+import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.FileTreeElement
+import org.gradle.api.internal.file.SourceDirectorySetFactory
+import org.gradle.api.internal.plugins.DslObject
+import org.gradle.api.internal.tasks.DefaultSourceSet
 import org.gradle.api.logging.Logger
+import org.gradle.api.plugins.JavaBasePlugin
+import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.specs.Spec
+import org.gradle.api.tasks.SourceSet
+
+import javax.inject.Inject
 
 class LatteGradlePlugin implements Plugin<Project> {
+
+    private static File[] filterSourceDirs(Object[] srcDirs, boolean fastFail) {
+        List<File> list = new ArrayList<>()
+        for (Object x : srcDirs) {
+            File f = (File) x;
+            if (checkSourceDir(f, fastFail)) {
+                list.add(f)
+            }
+        }
+        return list.toArray(new File[list.size()])
+    }
 
     private static boolean checkSourceDir(File sourceDir, boolean fastFail) {
         if (sourceDir.exists()) {
@@ -56,13 +78,16 @@ class LatteGradlePlugin implements Plugin<Project> {
         }
     }
 
-    private static void doCompile(Logger logger, ClassLoader cl, File sourceDir, File outputDir, boolean fastFail) {
-        Map<String, File> fileMap = Utils.filesInDirectory(sourceDir, '.*\\.lt', true)
+    private static void doCompile(Logger logger, ClassLoader cl, File[] sourceDirs, File outputDir, boolean fastFail) {
+        Map<String, File> fileMap = new HashMap<>()
+        for (File dir : sourceDirs) {
+            fileMap.putAll(Utils.filesInDirectory(dir, '.*\\.(lt|latte)', true))
+        }
         Compiler compiler = new Compiler(cl)
         compiler.config.fastFail = fastFail
         compiler.config.result.outputDir = outputDir
 
-        logger.info("Compiling latte source files from [" + sourceDir.absolutePath + "] to [" + outputDir.absolutePath + "]")
+        logger.println("Compiling latte source files from " + Arrays.toString(sourceDirs) + " to [" + outputDir.absolutePath + "]")
         try {
             compiler.compile(fileMap)
         } catch (SyntaxException e) {
@@ -74,15 +99,19 @@ class LatteGradlePlugin implements Plugin<Project> {
     }
 
     private
-    static void compile(Project project, String sourceSetName, String latteSrcName, boolean fastFail, boolean isTest) {
-        File sourceDir = new File(project.projectDir.absolutePath + '/src/' + sourceSetName + '/' + latteSrcName)
+    static void compile(Project project, boolean fastFail, boolean isTest) {
+        def mainSrc = project.sourceSets.main.latte.srcDirs
+        def testSrc = project.sourceSets.test.latte.srcDirs
+
         File mainOutputDir = new File(project.buildDir.absolutePath + '/classes/main')
         File testOutputDir = new File(project.buildDir.absolutePath + '/classes/test')
 
+        def theSourceDirs = isTest ? testSrc : mainSrc
         File theOutputDir = isTest ? testOutputDir : mainOutputDir
 
-        if (checkSourceDir(sourceDir, fastFail) && checkOutputDir(theOutputDir)) {
-            Collection<URL> compileURLs = project.sourceSets[sourceSetName].compileClasspath.files.collect {
+        File[] sourceDirs = filterSourceDirs(theSourceDirs.toArray(theSourceDirs.size()), false)
+        if (sourceDirs.length > 0 && checkOutputDir(theOutputDir)) {
+            Collection<URL> compileURLs = project.sourceSets[isTest ? 'test' : 'main'].compileClasspath.files.collect {
                 it.toURI().toURL()
             }
             if (isTest) {
@@ -90,20 +119,35 @@ class LatteGradlePlugin implements Plugin<Project> {
             }
             compileURLs.add(mainOutputDir.toURI().toURL())
             ClassLoader classpath = LoaderUtil.loadClassesIn(compileURLs)
-            doCompile(project.logger, classpath, sourceDir, theOutputDir, fastFail)
+            doCompile(project.logger, classpath, sourceDirs, theOutputDir, fastFail)
         }
+    }
+
+    private Project project;
+    private final SourceDirectorySetFactory sourceDirectorySetFactory;
+
+    @Inject
+    public LatteGradlePlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
+        this.sourceDirectorySetFactory = sourceDirectorySetFactory;
     }
 
     @Override
     void apply(Project project) {
-        def ext = project.extensions.create('latteConfig', LatteGradlePluginExtension)
+        this.project = project
+        project.getPluginManager().apply(JavaBasePlugin)
 
+        configureSourceSetDefaults()
+        registerExtensionAndTasks()
+    }
+
+    private void registerExtensionAndTasks() {
+        def ext = project.extensions.create('latteConfig', LatteGradlePluginExtension)
         def compileLatte = project.task('compileLatte').doLast { t ->
-            compile(project, ext.mainSourceSet, ext.src, ext.fastFail, false)
+            compile(project, ext.fastFail, false)
         }
 
         def compileTestLatte = project.tasks.create('compileTestLatte').doLast { t ->
-            compile(project, ext.testSourceSet, ext.testSrc, ext.fastFail, true)
+            compile(project, ext.fastFail, true)
         }
 
         // dependencies
@@ -120,13 +164,27 @@ class LatteGradlePlugin implements Plugin<Project> {
         project.tasks['classes'].dependsOn compileLatte
         project.tasks['testClasses'].dependsOn compileTestLatte
     }
+
+    private void configureSourceSetDefaults() {
+        project.getConvention().getPlugin(JavaPluginConvention).getSourceSets().all(new Action<SourceSet>() {
+            public void execute(SourceSet sourceSet) {
+                final DefaultLatteSourceSet groovySourceSet = new DefaultLatteSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), sourceDirectorySetFactory);
+                new DslObject(sourceSet).getConvention().getPlugins().put("groovy", groovySourceSet);
+
+                groovySourceSet.getLatte().srcDir("src/" + sourceSet.getName() + "/latte");
+                sourceSet.getResources().getFilter().exclude(new Spec<FileTreeElement>() {
+                    public boolean isSatisfiedBy(FileTreeElement element) {
+                        return groovySourceSet.getLatte().contains(element.getFile());
+                    }
+                });
+                sourceSet.getAllJava().source(groovySourceSet.getLatte());
+                sourceSet.getAllSource().source(groovySourceSet.getLatte());
+            }
+        });
+    }
 }
 
 class LatteGradlePluginExtension {
-    String src = 'latte'
-    String testSrc = 'latte'
-    String mainSourceSet = 'main'
-    String testSourceSet = 'test'
     boolean afterJava = true
     boolean afterGroovy = false
     boolean fastFail = false
