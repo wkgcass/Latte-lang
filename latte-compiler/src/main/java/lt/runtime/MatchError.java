@@ -1,4 +1,4 @@
-package lt.lang;
+package lt.runtime;
 
 /**
  * thrown when nothing matches in a pattern matching

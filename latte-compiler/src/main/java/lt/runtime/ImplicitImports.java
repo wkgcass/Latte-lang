@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package lt.lang;
+package lt.runtime;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -30,9 +30,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * represents that the class is a singleton class
+ * records the implicit import classes
  */
-@Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface LatteObject {
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ImplicitImports {
+        Class<?>[] implicitImports();
 }

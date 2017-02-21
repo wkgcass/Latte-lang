@@ -22,18 +22,30 @@
  * SOFTWARE.
  */
 
-package lt.lang;
+package lt.generator;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import lt.compiler.*;
+import lt.compiler.syntactic.Statement;
+import lt.generator.SourceGenerator;
+
+import java.util.List;
 
 /**
- * records the implicit import classes
+ * the generator that save all init params to fields.
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface ImplicitImports {
-        Class<?>[] implicitImports();
+public abstract class AbstractSourceGenerator implements SourceGenerator {
+        protected List<Statement> ast;
+        protected SemanticProcessor processor;
+        protected SemanticScope scope;
+        protected LineCol lineCol;
+        protected ErrorManager err;
+
+        @Override
+        public void init(List<Statement> ast, SemanticProcessor processor, SemanticScope scope, LineCol lineCol, ErrorManager err) throws SyntaxException {
+                this.ast = ast;
+                this.processor = processor;
+                this.scope = scope;
+                this.lineCol = lineCol;
+                this.err = err;
+        }
 }

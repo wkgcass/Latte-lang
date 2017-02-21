@@ -1,6 +1,6 @@
 package lt.lang.implicit;
 
-import lt.lang.LtRuntime;
+import lt.runtime.LtRuntime;
 
 import java.util.regex.Pattern;
 

@@ -22,24 +22,17 @@
  * SOFTWARE.
  */
 
-package lt.lang;
+package lt.runtime;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * runtime exception thrown by Latte-lang.
+ * mark the class as a latte function
  */
-public class LtRuntimeException extends RuntimeException {
-        public LtRuntimeException() {
-        }
-
-        public LtRuntimeException(String message) {
-                super(message);
-        }
-
-        public LtRuntimeException(String message, Throwable cause) {
-                super(message, cause);
-        }
-
-        public LtRuntimeException(Throwable cause) {
-                super(cause);
-        }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface LatteFun {
 }

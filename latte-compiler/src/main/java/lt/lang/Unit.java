@@ -24,6 +24,8 @@
 
 package lt.lang;
 
+import lt.runtime.LatteObject;
+
 /**
  * the unit object
  */

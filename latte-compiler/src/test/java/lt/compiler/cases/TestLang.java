@@ -24,7 +24,7 @@
 
 package lt.compiler.cases;
 
-import lt.lang.LtRuntime;
+import lt.runtime.LtRuntime;
 import lt.util.RangeList;
 import org.junit.Test;
 

@@ -22,9 +22,12 @@
  * SOFTWARE.
  */
 
-package lt.lang;
+package lt.runtime;
 
 import lt.compiler.LtBug;
+import lt.lang.FunctionalAbstractClass;
+import lt.lang.FunctionalInterface;
+import lt.lang.Unit;
 import lt.lang.function.Function;
 import lt.lang.function.Function1;
 

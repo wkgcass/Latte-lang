@@ -1,7 +1,7 @@
 package lt.lang.implicit;
 
-import lt.lang.Implicit;
-import lt.lang.LatteObject;
+import lt.runtime.Implicit;
+import lt.runtime.LatteObject;
 
 /**
  * implicit casts for string

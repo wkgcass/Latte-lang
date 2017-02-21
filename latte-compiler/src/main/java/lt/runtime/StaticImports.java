@@ -22,15 +22,18 @@
  * SOFTWARE.
  */
 
-package lt.lang;
+package lt.runtime;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * a wrapper containing required object
+ * record the static imports
  */
-public class Wrapper extends RuntimeException {
-        public final Object object;
-
-        public Wrapper(Object object) {
-                this.object = object;
-        }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface StaticImports {
+        Class<?>[] staticImports();
 }

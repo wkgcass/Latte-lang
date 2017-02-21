@@ -34,11 +34,12 @@ import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.literal.NumberLiteral;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
 import lt.generator.SourceGenerator;
-import lt.lang.*;
+import lt.lang.Unit;
 import lt.lang.function.Function0;
 import lt.lang.function.Function1;
 import lt.lang.function.Function3;
 import lt.repl.ScriptCompiler;
+import lt.runtime.*;
 import lt.util.RangeList;
 import org.junit.Test;
 

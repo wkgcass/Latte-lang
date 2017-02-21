@@ -1,4 +1,4 @@
-package lt.lang;
+package lt.runtime;
 
 import lt.lang.function.Function1;
 

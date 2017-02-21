@@ -27,7 +27,7 @@ package lt.repl;
 import lt.compiler.*;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
-import lt.lang.LtRuntimeException;
+import lt.runtime.LtRuntimeException;
 import org.junit.Before;
 import org.junit.Test;
 

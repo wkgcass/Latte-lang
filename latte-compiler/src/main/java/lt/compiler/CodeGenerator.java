@@ -741,8 +741,8 @@ public class CodeGenerator {
                                                 if (
                                                         theMethod.name().equals("getField")
                                                                 &&
-                                                                theMethod.declaringType().fullName().equals("lt.lang.LtRuntime")) {
-                                                        // lt.lang.LtRuntime.getField
+                                                                theMethod.declaringType().fullName().equals("lt.runtime.LtRuntime")) {
+                                                        // lt.runtime.LtRuntime.getField
                                                         buildLastStmt = false;
                                                 } else if (
                                                         theMethod.name().equals("get")

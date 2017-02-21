@@ -25,7 +25,7 @@
 package org.lattelang
 
 import lt.compiler.SyntaxException
-import lt.lang.Utils
+import lt.util.Utils
 import lt.repl.Compiler
 import org.gradle.api.Action
 import org.gradle.api.Plugin

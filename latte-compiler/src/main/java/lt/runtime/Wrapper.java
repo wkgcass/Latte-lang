@@ -22,17 +22,15 @@
  * SOFTWARE.
  */
 
-package lt.lang;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package lt.runtime;
 
 /**
- * mark the class as implicit cast
+ * a wrapper containing required object
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface Implicit {
+public class Wrapper extends RuntimeException {
+        public final Object object;
+
+        public Wrapper(Object object) {
+                this.object = object;
+        }
 }

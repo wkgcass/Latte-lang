@@ -30,7 +30,7 @@ import lt.compiler.Scanner;
 import lt.compiler.lexical.ElementStartNode;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
-import lt.lang.Wrapper;
+import lt.runtime.Wrapper;
 
 import java.io.*;
 import java.net.URL;
@@ -448,7 +448,7 @@ public class Compiler {
          * @param fileNameToCode a map containing fileName to source_code/File/InputStream/Reader
          * @return the retrieved class loader
          * @throws Exception the exception occurred when compiling,
-         *                   or lt.lang.Wrapper whose object field is a List of {@link lt.compiler.ErrorManager.CompilingError}
+         *                   or lt.runtime.Wrapper whose object field is a List of {@link lt.compiler.ErrorManager.CompilingError}
          */
         public ClassLoader compile(Map<String, ?> fileNameToCode) throws Exception {
                 // validate and transform compile input

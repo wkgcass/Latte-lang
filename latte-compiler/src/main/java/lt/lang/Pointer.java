@@ -24,6 +24,8 @@
 
 package lt.lang;
 
+import lt.runtime.LtRuntime;
+
 /**
  * the pointer object.
  * use p[] to access/modify the contained value.

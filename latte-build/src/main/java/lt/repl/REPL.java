@@ -25,7 +25,7 @@
 package lt.repl;
 
 import lt.compiler.SyntaxException;
-import lt.lang.Utils;
+import lt.util.Utils;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -305,7 +305,7 @@ public class REPL {
                         compiler.config.classpath = classPaths;
 
                         try {
-                                compiler.compile(Utils.filesInDirectory(sourceDir, ".*\\.lt", recursive));
+                                compiler.compile(Utils.filesInDirectory(sourceDir, ".*\\.(lt|latte)", recursive));
                         } catch (Exception e) {
                                 if (e instanceof SyntaxException) {
                                         System.err.println("[ERROR] " + e.getMessage());

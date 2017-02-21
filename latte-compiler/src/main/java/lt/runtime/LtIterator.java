@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package lt.lang;
+package lt.runtime;
 
 import java.lang.reflect.Array;
 import java.util.Enumeration;

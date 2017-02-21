@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package lt.lang;
+package lt.util;
 
 import lt.repl.Evaluator;
 import lt.repl.ClassPathLoader;
