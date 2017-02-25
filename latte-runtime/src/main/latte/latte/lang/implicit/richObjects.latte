@@ -1,0 +1,578 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package lt::lang::`implicit`
+
+import lt::runtime::LtRuntime
+
+/**
+ * rich Bool
+ */
+class RichBool(b:bool)
+    def logicNot():bool = !b
+
+    /*
+     * ============
+     *     add
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *     and
+     * ============
+     */
+
+     def `and`(b:bool):bool = this.b & b
+
+     def `and`(o):bool = this.b & !!o
+
+    /*
+     * ============
+     *     or
+     * ============
+     */
+
+     def `or`(b:bool):bool = this.b | b
+
+     def `or`(o):bool = this.b | !!o
+
+    /*
+     * ============
+     *    divide
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *      ge
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *      gt
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *      le
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *      lt
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *   multiply
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *   remainder
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *   shiftLeft
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *  shiftRight
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *   subtract
+     * ============
+     */
+
+    // none
+
+    /*
+     * ====================
+     *  unsignedShiftRight
+     * ====================
+     */
+
+    // none
+
+    /*
+     * ============
+     *     xor
+     * ============
+     */
+
+     def xor(b:bool):bool = this.b ^ b
+
+/**
+ * rich Byte
+ */
+class RichByte(byteBox:Byte)
+    val b:byte = byteBox
+
+    def `not`():int = ~b
+
+    def negate():int = -b
+
+    def logicNot():bool = !b
+
+    /*
+     * ============
+     *     add
+     * ============
+     */
+
+    def add(i:int):int = this.b + i
+
+    def add(b:byte):int = this.b + b
+
+    def add(s:short):int = this.b + s
+
+    def add(c:char):int = this.b + c
+
+    def add(l:long):long = this.b + l
+
+    def add(f:float):float = this.b + f
+
+    def add(d:double):double = this.b + d
+
+    /*
+     * ============
+     *     and
+     * ============
+     */
+
+    def `and`(i:int):int = this.b & i
+
+    def `and`(b:byte):int = this.b & b
+
+    def `and`(s:short):int = this.b & s
+
+    def `and`(c:char):int = this.b & c
+
+    def `and`(l:long):long = this.b & l
+
+    def `and`(b:bool):bool = !!this.b & b
+
+    /*
+     * ============
+     *     or
+     * ============
+     */
+
+    def `or`(i:int):int = this.b | i
+
+    def `or`(b:byte):int = this.b | b
+
+    def `or`(s:short):int = this.b | s
+
+    def `or`(c:char):int = this.b | c
+
+    def `or`(l:long):long = this.b | l
+
+    def `or`(b:bool):bool = !!this.b | b
+
+    /*
+     * ============
+     *    divide
+     * ============
+     */
+
+    def divide(i:int):int = this.b / i
+
+    def divide(b:byte):int = this.b / b
+
+    def divide(s:short):int = this.b / s
+
+    def divide(c:char):int = this.b / c
+
+    def divide(l:long):long = this.b / l
+
+    def divide(f:float):float = this.b / f
+
+    def divide(d:double):double = this.b / d
+
+    /*
+     * ============
+     *      ge
+     * ============
+     */
+
+    def ge(i:int):bool = this.b >= i
+
+    def ge(b:byte):bool = this.b >= b
+
+    def ge(s:short):bool = this.b >= s
+
+    def ge(c:char):bool = this.b >= c
+
+    def ge(l:long):bool = this.b >= l
+
+    def ge(f:float):bool = this.b >= f
+
+    def ge(d:double):bool = this.b >= d
+
+    /*
+     * ============
+     *      gt
+     * ============
+     */
+
+    def gt(i:int):bool = this.b > i
+
+    def gt(b:byte):bool = this.b > b
+
+    def gt(s:short):bool = this.b > s
+
+    def gt(c:char):bool = this.b > c
+
+    def gt(l:long):bool = this.b > l
+
+    def gt(f:float):bool = this.b > f
+
+    def gt(d:double):bool = this.b > d
+
+    /*
+     * ============
+     *      le
+     * ============
+     */
+
+    def le(i:int):bool = this.b <= i
+
+    def le(b:byte):bool = this.b <= b
+
+    def le(s:short):bool = this.b <= s
+
+    def le(c:char):bool = this.b <= c
+
+    def le(l:long):bool = this.b <= l
+
+    def le(f:float):bool = this.b <= f
+
+    def le(d:double):bool = this.b <= d
+
+    /*
+     * ============
+     *      lt
+     * ============
+     */
+
+    def lt(i:int):bool = this.b < i
+
+        public boolean lt(Integer i) {
+                return this.b < i;
+        }
+
+        public boolean lt(Byte b) {
+                return this.b < b;
+        }
+
+        public boolean lt(Short s) {
+                return b < s;
+        }
+
+        public boolean lt(Character c) {
+                return b < c;
+        }
+
+        public boolean lt(Long l) {
+                return b < l;
+        }
+
+        public boolean lt(Float f) {
+                return b < f;
+        }
+
+        public boolean lt(Double d) {
+                return b < d;
+        }
+
+        /*
+         * ============
+         *   multiply
+         * ============
+         */
+
+        public int multiply(Integer i) {
+                return this.b * i;
+        }
+
+        public int multiply(Byte b) {
+                return this.b * b;
+        }
+
+        public int multiply(Short s) {
+                return b * s;
+        }
+
+        public int multiply(Character c) {
+                return b * c;
+        }
+
+        public long multiply(Long l) {
+                return b * l;
+        }
+
+        public float multiply(Float f) {
+                return b * f;
+        }
+
+        public double multiply(Double d) {
+                return b * d;
+        }
+
+        /*
+         * ============
+         *   remainder
+         * ============
+         */
+
+        public int remainder(Integer i) {
+                return this.b % i;
+        }
+
+        public int remainder(Byte b) {
+                return this.b % b;
+        }
+
+        public int remainder(Short s) {
+                return b % s;
+        }
+
+        public int remainder(Character c) {
+                return b % c;
+        }
+
+        public long remainder(Long l) {
+                return b % l;
+        }
+
+        /*
+         * ============
+         *   shiftLeft
+         * ============
+         */
+
+        public int shiftLeft(Integer i) {
+                return this.b << i;
+        }
+
+        public int shiftLeft(Byte b) {
+                return this.b << b;
+        }
+
+        public int shiftLeft(Short s) {
+                return b << s;
+        }
+
+        public int shiftLeft(Character c) {
+                return b << c;
+        }
+
+        public int shiftLeft(Long l) {
+                return b << l;
+        }
+
+        /*
+         * ============
+         *  shiftRight
+         * ============
+         */
+
+        public int shiftRight(Integer i) {
+                return this.b >> i;
+        }
+
+        public int shiftRight(Byte b) {
+                return this.b >> b;
+        }
+
+        public int shiftRight(Short s) {
+                return b >> s;
+        }
+
+        public int shiftRight(Character c) {
+                return b >> c;
+        }
+
+        public int shiftRight(Long l) {
+                return b >> l;
+        }
+
+        /*
+         * ============
+         *   subtract
+         * ============
+         */
+
+        public int subtract(Integer i) {
+                return this.b - i;
+        }
+
+        public int subtract(Byte b) {
+                return this.b - b;
+        }
+
+        public int subtract(Short s) {
+                return b - s;
+        }
+
+        public int subtract(Character c) {
+                return b - c;
+        }
+
+        public long subtract(Long l) {
+                return b - l;
+        }
+
+        public float subtract(Float f) {
+                return b - f;
+        }
+
+        public double subtract(Double d) {
+                return b - d;
+        }
+
+        /*
+         * ====================
+         *  unsignedShiftRight
+         * ====================
+         */
+
+        public int unsignedShiftRight(Integer i) {
+                return this.b >>> i;
+        }
+
+        public int unsignedShiftRight(Byte b) {
+                return this.b >>> b;
+        }
+
+        public int unsignedShiftRight(Short s) {
+                return b >>> s;
+        }
+
+        public int unsignedShiftRight(Character c) {
+                return b >>> c;
+        }
+
+        public int unsignedShiftRight(Long l) {
+                return b >>> l;
+        }
+
+        /*
+         * ============
+         *     xor
+         * ============
+         */
+
+        public int xor(Integer i) {
+                return this.b ^ i;
+        }
+
+        public int xor(Byte b) {
+                return this.b ^ b;
+        }
+
+        public int xor(Short s) {
+                return b ^ s;
+        }
+
+        public int xor(Character c) {
+                return b ^ c;
+        }
+
+        public long xor(Long l) {
+                return b ^ l;
+        }
+
+        public boolean xor(Boolean b) throws Throwable {
+                return LtRuntime.castToBool(this.b) ^ b;
+        }
+
+        /*
+         * ============
+         *     pow
+         * ============
+         */
+
+        public double pow(Integer i) {
+                return Math.pow(b, i);
+        }
+
+        public double pow(Long l) {
+                return Math.pow(b, l);
+        }
+
+        public double pow(Float f) {
+                return Math.pow(b, f);
+        }
+
+        public double pow(Double d) {
+                return Math.pow(b, d);
+        }
+
+        public double pow(Byte b) {
+                return Math.pow(this.b, b);
+        }
+
+        public double pow(Short s) {
+                return Math.pow(b, s);
+        }
+
+        public double pow(Character c) {
+                return Math.pow(b, c);
+        }
+}

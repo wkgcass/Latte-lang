@@ -1407,6 +1407,9 @@ public class Parser {
                                 } else {
                                         break;
                                 }
+                        } else if (current instanceof EndingNode) {
+                                // current is endingNode and next is not element
+                                break;
                         }
                         Expression condition = null;
                         String content = ((Element) current).getContent();

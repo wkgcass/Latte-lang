@@ -1,0 +1,61 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package lt::runtime
+
+import lt::lang::function::Function1
+import java.util.List
+
+/**
+ * exception container
+ */
+class ExceptionContainer
+    private exceptionMsgList = []
+
+    def add(msg:String):Unit = exceptionMsgList + msg
+
+    /**
+     * throw if the exception message list is not empty
+     *
+     * @param msg head message
+     * @param f   the function accepts a string of message and return an exception
+     * @throws Throwable throwable
+     */
+    throwIfNotEmpty(msg:String, f:Function1)
+        if ! exceptionMsgList { return }
+        sb = StringBuilder()
+        sb append msg
+        count = 0
+        for tMsg in exceptionMsgList
+            lines = tMsg split '\\n'
+            isFirst = true
+            for line in lines
+                sb append '\n\t'
+                if isFirst
+                    isFirst = false
+                    sb append ++count append "." append " "
+                if line.trim
+                    sb append line
+
+            throw f.apply(sb.toString())

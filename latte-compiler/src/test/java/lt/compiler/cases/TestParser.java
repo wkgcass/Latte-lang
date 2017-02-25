@@ -2778,4 +2778,12 @@ public class TestParser {
                         new AST.Procedure(Collections.<Statement>emptyList(), LineCol.SYNTHETIC)
                 ), stmts);
         }
+
+        @Test
+        public void testIfBrace() throws Exception {
+                // compile success
+                parse("" +
+                        "if i { continue }\n" +
+                        "a");
+        }
 }

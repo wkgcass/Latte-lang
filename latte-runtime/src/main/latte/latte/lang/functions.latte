@@ -1,0 +1,240 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package lt::lang::function
+
+import java::io::Serializable
+import lt.lang.FunctionalInterface;
+
+/**
+ * function
+ */
+interface Function : Serializable
+
+// the following interfaces are generated with this script:
+
+// for i in 0 to 26
+//    .println '/*'
+//    .println ' * function with ${i} args'
+//    .println ' */'
+//    .println '@FunctionalInterface'
+//    .println 'interface Function${i} : Function'
+//    .print '    def apply('
+//    if i
+//        for j in 0 to i - 1
+//            c = (j + ('a' as int)) as char
+//            if j != 0
+//                .print ','
+//            .print c
+//    .println ')'
+//    .println
+
+/*
+ * function with 0 args
+ */
+@FunctionalInterface
+interface Function0 : Function
+    def apply()
+
+/*
+ * function with 1 args
+ */
+@FunctionalInterface
+interface Function1 : Function
+    def apply(a)
+
+/*
+ * function with 2 args
+ */
+@FunctionalInterface
+interface Function2 : Function
+    def apply(a,b)
+
+/*
+ * function with 3 args
+ */
+@FunctionalInterface
+interface Function3 : Function
+    def apply(a,b,c)
+
+/*
+ * function with 4 args
+ */
+@FunctionalInterface
+interface Function4 : Function
+    def apply(a,b,c,d)
+
+/*
+ * function with 5 args
+ */
+@FunctionalInterface
+interface Function5 : Function
+    def apply(a,b,c,d,e)
+
+/*
+ * function with 6 args
+ */
+@FunctionalInterface
+interface Function6 : Function
+    def apply(a,b,c,d,e,f)
+
+/*
+ * function with 7 args
+ */
+@FunctionalInterface
+interface Function7 : Function
+    def apply(a,b,c,d,e,f,g)
+
+/*
+ * function with 8 args
+ */
+@FunctionalInterface
+interface Function8 : Function
+    def apply(a,b,c,d,e,f,g,h)
+
+/*
+ * function with 9 args
+ */
+@FunctionalInterface
+interface Function9 : Function
+    def apply(a,b,c,d,e,f,g,h,i)
+
+/*
+ * function with 10 args
+ */
+@FunctionalInterface
+interface Function10 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j)
+
+/*
+ * function with 11 args
+ */
+@FunctionalInterface
+interface Function11 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k)
+
+/*
+ * function with 12 args
+ */
+@FunctionalInterface
+interface Function12 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l)
+
+/*
+ * function with 13 args
+ */
+@FunctionalInterface
+interface Function13 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m)
+
+/*
+ * function with 14 args
+ */
+@FunctionalInterface
+interface Function14 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n)
+
+/*
+ * function with 15 args
+ */
+@FunctionalInterface
+interface Function15 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o)
+
+/*
+ * function with 16 args
+ */
+@FunctionalInterface
+interface Function16 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)
+
+/*
+ * function with 17 args
+ */
+@FunctionalInterface
+interface Function17 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q)
+
+/*
+ * function with 18 args
+ */
+@FunctionalInterface
+interface Function18 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)
+
+/*
+ * function with 19 args
+ */
+@FunctionalInterface
+interface Function19 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s)
+
+/*
+ * function with 20 args
+ */
+@FunctionalInterface
+interface Function20 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)
+
+/*
+ * function with 21 args
+ */
+@FunctionalInterface
+interface Function21 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u)
+
+/*
+ * function with 22 args
+ */
+@FunctionalInterface
+interface Function22 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v)
+
+/*
+ * function with 23 args
+ */
+@FunctionalInterface
+interface Function23 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w)
+
+/*
+ * function with 24 args
+ */
+@FunctionalInterface
+interface Function24 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x)
+
+/*
+ * function with 25 args
+ */
+@FunctionalInterface
+interface Function25 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y)
+
+/*
+ * function with 26 args
+ */
+@FunctionalInterface
+interface Function26 : Function
+    def apply(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z)
