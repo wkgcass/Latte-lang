@@ -3,6 +3,8 @@ BufferedReader br = new BufferedReader(new FileReader(VERSION_FILE))
 def VERSION = br.readLine().trim()
 br.close()
 
+def ACTION = System.getenv("BUILD_ACTION")
+
 group 'org.latte-lang'
 version VERSION
 
@@ -21,9 +23,12 @@ buildscript {
 }
 
 apply plugin: 'java'
+apply plugin: 'idea'
 apply plugin: 'org.latte-lang.class-recorder'
 apply plugin: 'maven'
-apply plugin: 'signing'
+if ('deploy' == ACTION) {
+    apply plugin: 'signing'
+}
 apply plugin: LatteBuild
 
 recordConfig {
@@ -111,8 +116,10 @@ javadoc {
     }
 }
 
-signing {
-    sign configurations.archives
+if ('deploy' == ACTION) {
+    signing {
+        sign configurations.archives
+    }
 }
 
 class LatteBuild implements Plugin<Project> {

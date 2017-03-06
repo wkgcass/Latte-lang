@@ -101,6 +101,7 @@ def execute(cmd):
     if OS == 'windows':
         exportStr = 'set'
     env = {}
+    env['BUILD_ACTION'] = ACTION
     if DEPLOY_USER and DEPLOY_PASS:
         env['DEPLOY_USER'] = DEPLOY_USER
         env['DEPLOY_PASS'] = DEPLOY_PASS
