@@ -18,8 +18,8 @@ DEPLOY_PASS = ''
 
 OS = ''
 
-JAVA_MIN_VERSION = 1.6
-GRADLE_MIN_VERSION = 2.14
+JAVA_MIN_VERSION = '1.6'
+GRADLE_MIN_VERSION = '2.12'
 PACK_ZIP_DIR = 'latte-build/build/distributions/'
 VERSION_FILE = 'latte-build/src/main/resources/version'
 
@@ -30,56 +30,68 @@ def javaVersion():
     try:
         ps = Popen('java -version'.split(' '), stdout=PIPE, stderr=PIPE)
     except:
-        return 0
+        return ''
     lines = ps.stderr.readlines()
     if len(lines) == 0:
-        return 0
+        return ''
     ver = lines[0].strip()
     starter = 'java version \"'
     if ver[0:len(starter)] == starter:
         ver = ver[len(starter):-1]
         while '_' in ver:
             ver = ver[0:ver.find('_')]
-        if '.' in ver and ver.find('.', 2) != -1:
-            ver = ver[0:ver.find('.', 2)]
-        return float(ver)
+        return ver
     else:
-        return 0
+        return ''
 
 def gradleVersion():
     try:
         ps = Popen((GRADLE_CMD + ' --version').split(' '), stdout=PIPE, stderr=PIPE)
     except:
-        return 0
+        return ''
     lines = ps.stdout.readlines()
     if len(lines) < 3:
-        return 0
+        return ''
     ver = lines[2].strip()
     starter = 'Gradle '
     if ver[0:len(starter)] == starter:
-        ver = ver[len(starter):-1]
-        if '.' in ver and ver.find('.', 2) != -1:
-            ver = ver[0:ver.find('.', 2)]
-        return float(ver)
+        ver = ver[len(starter):]
+        return ver
     else:
-        return 0
+        return ''
+
+def compareVersionLt(a, b):
+    aa = a.split('.')
+    bb = b.split('.')
+    i = 0
+    while i < len(aa) and i < len(bb):
+        ia = int(aa[i])
+        ib = int(bb[i])
+        i += 1
+        if ia > ib:
+            return False
+        elif ia == ib:
+            continue
+        else:
+            return True
+    return False
 
 def check():
     # check java version
     jVer = javaVersion()
-    if jVer == 0:
+    if jVer == '':
         log('Java not found')
         return False
-    if jVer < JAVA_MIN_VERSION:
+    if compareVersionLt(jVer, JAVA_MIN_VERSION):
         log('Java version is %s, but %s or higher required' % (str(jVer), str(JAVA_MIN_VERSION)))
         return False
 
     # check gradle version
     gVer = gradleVersion()
-    if gVer == 0:
+    if gVer == '':
         log('Gradle not found [' + GRADLE_CMD + ']')
         return False
-    if gVer < GRADLE_MIN_VERSION:
+    if compareVersionLt(gVer, GRADLE_MIN_VERSION):
         log('Gradle version is %s, but %s or higher required' % (str(gVer), str(GRADLE_MIN_VERSION)))
         return False
 

@@ -39,7 +39,7 @@ Latte is a JVM language. It's highly readable and extensible.
 
 `JDK 1.6` or higher is the only thing required.
 
-The project is managed by `Gradle`, you can use `Gradle 2.14` (or higher) to build automatically  
+The project is managed by `Gradle`, you can use `Gradle 2.12` (or higher) to build automatically  
 A build script is also provided.
 
 clone the repository, and run
@@ -232,7 +232,7 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
 环境仅仅需要 `JDK 1.6` 或更高
 
-本工程使用 `Gradle` 进行管理，所以您也可以使用 `Gradle` 进行自动Build  
+本工程使用 `Gradle` 进行管理，所以您也可以使用 `Gradle 2.12`(或更高) 进行自动Build  
 此外还提供了一个Build脚本
 
 clone这个仓库,然后执行
