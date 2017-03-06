@@ -1,6 +1,7 @@
 package lt.compiler.cases;
 
 import lt.compiler.*;
+import lt.compiler.semantic.SModifier;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 import org.junit.Test;
@@ -92,28 +93,26 @@ public class TestDefineAnnotations {
                                 "class TestAnno"
                         , "TestAnno");
                 Annotation annoA = getAnno(cls, "A");
-                assertEquals("@lt.compiler.AnnotationTest(" +
-                                "f=100.0, " +
-                                "d=100.0, " +
-                                "e=PUBLIC, " +
-                                "cls=class java.lang.String, " +
-                                "b=100, " +
-                                "c=a, " +
-                                "l=100, " +
-                                "i=100, " +
-                                "bo=true, " +
-                                "str=str, " +
-                                "s=100, " +
-                                "anno=@lt.compiler.MyAnno(" +
-                                /**/"i=100, " +
-                                /**/"str=a" +
-                                "), " +
-                                "clsArr=[" +
-                                /**/"class java.lang.Class, " +
-                                /**/"class java.lang.String], " +
-                                /**/"strArr=[a, b]" +
-                                ")",
-                        annoA.getClass().getMethod("a").invoke(annoA).toString());
+
+                annoA = (Annotation) annoA.getClass().getMethod("a").invoke(annoA);
+                assertEquals(100f, annoA.getClass().getMethod("f").invoke(annoA));
+                assertEquals(100d, annoA.getClass().getMethod("d").invoke(annoA));
+                assertEquals(SModifier.PUBLIC, annoA.getClass().getMethod("e").invoke(annoA));
+                assertEquals(String.class, annoA.getClass().getMethod("cls").invoke(annoA));
+                assertEquals((byte) 100, annoA.getClass().getMethod("b").invoke(annoA));
+                assertEquals('a', annoA.getClass().getMethod("c").invoke(annoA));
+                assertEquals(100L, annoA.getClass().getMethod("l").invoke(annoA));
+                assertEquals(100, annoA.getClass().getMethod("i").invoke(annoA));
+                assertEquals(true, annoA.getClass().getMethod("bo").invoke(annoA));
+                assertEquals("str", annoA.getClass().getMethod("str").invoke(annoA));
+                assertEquals((short) 100, annoA.getClass().getMethod("s").invoke(annoA));
+                Annotation anno = (Annotation) annoA.getClass().getMethod("anno").invoke(annoA);
+                assertEquals(100, anno.getClass().getMethod("i").invoke(anno));
+                assertEquals("a", anno.getClass().getMethod("str").invoke(anno));
+                Class<?>[] clsArr = (Class<?>[]) annoA.getClass().getMethod("clsArr").invoke(annoA);
+                assertArrayEquals(new Class[]{Class.class, String.class}, clsArr);
+                String[] strArr = (String[]) annoA.getClass().getMethod("strArr").invoke(annoA);
+                assertArrayEquals(new String[]{"a", "b"}, strArr);
         }
 
         @Test
@@ -134,17 +133,26 @@ public class TestDefineAnnotations {
                                 "class TestArrayPrimitives"
                         , "TestArrayPrimitives");
                 Annotation annoA = getAnno(cls, "A");
-                assertEquals("@A(" +
-                                "f=[1.0, 2.0, 3.0], " +
-                                "aByte=[1, 2, 3], " +
-                                "d=[1.0, 2.0, 3.0], " +
-                                "aShort=[1, 2, 3], " +
-                                "cls=[class java.lang.Object, class java.lang.Integer], " +
-                                "str=[xx, yy, zz], " +
-                                "aChar=[a, b, c], " +
-                                "l=[1, 2, 3], " +
-                                "aBool=[true, false, true], " +
-                                "i=[1, 2, 3])",
-                        annoA.toString());
+                float[] f = (float[]) annoA.getClass().getMethod("f").invoke(annoA);
+                byte[] aByte = (byte[]) annoA.getClass().getMethod("aByte").invoke(annoA);
+                double[] d = (double[]) annoA.getClass().getMethod("d").invoke(annoA);
+                short[] aShort = (short[]) annoA.getClass().getMethod("aShort").invoke(annoA);
+                Class<?>[] clsX = (Class<?>[]) annoA.getClass().getMethod("cls").invoke(annoA);
+                String[] str = (String[]) annoA.getClass().getMethod("str").invoke(annoA);
+                char[] aChar = (char[]) annoA.getClass().getMethod("aChar").invoke(annoA);
+                long[] l = (long[]) annoA.getClass().getMethod("l").invoke(annoA);
+                boolean[] aBool = (boolean[]) annoA.getClass().getMethod("aBool").invoke(annoA);
+                int[] i = (int[]) annoA.getClass().getMethod("i").invoke(annoA);
+
+                assertArrayEquals(new float[]{1f, 2f, 3f}, f, 0);
+                assertArrayEquals(new byte[]{1, 2, 3}, aByte);
+                assertArrayEquals(new double[]{1d, 2d, 3d}, d, 0);
+                assertArrayEquals(new short[]{1, 2, 3}, aShort);
+                assertArrayEquals(new Class[]{Object.class, Integer.class}, clsX);
+                assertArrayEquals(new String[]{"xx", "yy", "zz"}, str);
+                assertArrayEquals(new char[]{'a', 'b', 'c'}, aChar);
+                assertArrayEquals(new long[]{1, 2, 3}, l);
+                assertArrayEquals(new boolean[]{true, false, true}, aBool);
+                assertArrayEquals(new int[]{1, 2, 3}, i);
         }
 }

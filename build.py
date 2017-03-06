@@ -11,6 +11,7 @@ import getpass
 
 GRADLE_CMD = 'gradle'
 ACTION = 'build'
+ALLOWED_ACTIONS = ['build', 'test', 'deploy']
 BUILD_MODULES = ['latte-class-recorder', 'latte-compiler', 'latte-gradle-plugin', 'latte-library', 'latte-build']
 DEPLOY_USER = ''
 DEPLOY_PASS = ''
@@ -167,76 +168,40 @@ def scripts():
         log('Create shortcut script failed')
         return False
 
-def buildStart():
-    log('===================================')
-    log('            Build Start            ')
-    log('===================================')
-    startTime = time.time()
-    res = check() and build() and scripts()
-    endTime = time.time()
-    if res:
-        log('===================================')
-        log('          Build Successful         ')
-        log('===================================')
-        log('Total time: %.3f secs' % (endTime - startTime))
-    else:
-        log('===================================')
-        log('           Build Failed            ')
-        log('===================================')
-
-def testModule(module):
-    log('--- Start to test module [%s] ---' % (module))
-    return execute('cd %s\n%s clean latteTest' % (module, GRADLE_CMD))
-
-def test():
-    for m in BUILD_MODULES:
-        if not testModule(m):
-            return False
-    return True
-
-def testStart():
-    log('===================================')
-    log('            Test Start             ')
-    log('===================================')
-    startTime = time.time()
-    res = check() and test()
-    endTime = time.time()
-    if res:
-        log('===================================')
-        log('          Test Successful          ')
-        log('===================================')
-        log('Total time: %.3f secs' % (endTime - startTime))
-    else:
-        log('===================================')
-        log('            Test Failed            ')
-        log('===================================')
-
-def deployModule(module):
+def performModule(module):
     log('--- Start to build module [%s] ---' % (module))
-    return execute('cd %s\n%s clean latteDeploy' % (module, GRADLE_CMD))
+    return execute('cd %s\n%s clean latte%s' % (module, GRADLE_CMD, ACTION))
 
-def deploy():
+def perform():
     for m in BUILD_MODULES:
-        if not deployModule(m):
+        if not performModule(m):
             return False
     return True
 
-def deployStart():
-    log('===================================')
-    log('           Deploy Start            ')
-    log('===================================')
+def start():
+    if ACTION == 'deploy':
+        DEPLOY_USER = raw_input('user: ')
+        DEPLOY_PASS = getpass.getpass('pass: ')
+
+    log('============================')
+    log( ACTION + ' Start')
+    log('============================')
     startTime = time.time()
-    res = check() and deploy()
+
+    res = check() and perform()
+    if ACTION == 'build':
+        scripts()
+
     endTime = time.time()
     if res:
-        log('===================================')
-        log('         Deploy Successful         ')
-        log('===================================')
+        log('============================')
+        log( ACTION + ' Successful')
+        log('============================')
         log('Total time: %.3f secs' % (endTime - startTime))
     else:
-        log('===================================')
-        log('           Deploy Failed           ')
-        log('===================================')
+        log('============================')
+        log( ACTION + ' Failed')
+        log('============================')
 
 def assertNotLast(argv, i):
     if len(argv) > i + 1:
@@ -276,19 +241,14 @@ def extractArgs():
 if __name__ == "__main__":
     if len(sys.argv) == 2 and ((sys.argv[1] == '-h') or (sys.argv[1] == '--help')):
         log('''./build.py [-g|--gradle gradle-command-name]
-           [-a|--action build|deploy|test]
-           [-m|--modules module-name1,module-name2,...]''')
+           [-a|--action %s]
+           [-m|--modules module-name1,module-name2,...]''' % ('|'.join(ALLOWED_ACTIONS)))
         exit()
     try:
         extractArgs()
-        if ACTION == 'build':
-            buildStart()
-        elif ACTION == 'deploy':
-            DEPLOY_USER = raw_input('user: ')
-            DEPLOY_PASS = getpass.getpass('pass: ')
-            deployStart()
-        elif ACTION == 'test':
-            testStart()
+        if ACTION in ALLOWED_ACTIONS:
+            ACTION = ACTION[0:1].upper() + ACTION[1:]
+            start()
         else:
             log('Unknown action [' + ACTION + ']')
     except Exception, e:
