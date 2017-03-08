@@ -22,34 +22,4 @@
  * SOFTWARE.
  */
 
-package lt::lang
-
-import java::lang::annotation::ElementType
-import java::lang::annotation::Target
-
-/**
- * mark the type as <tt>FunctionalAbstractClass</tt>.
- * a <tt>functional abstract class</tt> has exactly one abstract method,
- * and must have a public constructor with no parameters<br>
- * <pre>
- * ; C1 is a functional abstract class
- * class C1
- *     abs method()=...
- *
- * ; C2 is not a functional abstract class, because it doesn't have public zero-parameter constructor
- * class C2(param)
- *     abs method()=...
- *
- * ; C3 is not a functional abstract class, because it has more than one unimplemented method
- * class C3:java::util::List
- * </pre>
- */
-@Target([ElementType.TYPE])
-annotation FunctionalAbstractClass
-
-/**
- * functional interface<br>
- * same meaning as jdk 1.8 FunctionalInterface
- */
-@Target([ElementType.TYPE])
-annotation FunctionalInterface
+package lt::lang::`implicit`

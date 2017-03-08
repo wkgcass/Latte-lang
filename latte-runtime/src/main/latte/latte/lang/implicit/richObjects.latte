@@ -25,6 +25,8 @@
 package lt::lang::`implicit`
 
 import lt::runtime::LtRuntime
+import java::util::regex::Pattern
+import lt::util::RangeList
 
 /**
  * rich Bool
@@ -48,7 +50,7 @@ class RichBool(b:bool)
 
      def `and`(b:bool):bool = this.b & b
 
-     def `and`(o):bool = this.b & !!o
+     def `and`(o):bool = this.b & (o as bool)
 
     /*
      * ============
@@ -58,7 +60,7 @@ class RichBool(b:bool)
 
      def `or`(b:bool):bool = this.b | b
 
-     def `or`(o):bool = this.b | !!o
+     def `or`(o):bool = this.b | (o as bool)
 
     /*
      * ============
@@ -204,7 +206,7 @@ class RichByte(byteBox:Byte)
 
     def `and`(l:long):long = this.b & l
 
-    def `and`(b:bool):bool = !!this.b & b
+    def `and`(b:bool):bool = (this.b as bool) & b
 
     /*
      * ============
@@ -222,7 +224,7 @@ class RichByte(byteBox:Byte)
 
     def `or`(l:long):long = this.b | l
 
-    def `or`(b:bool):bool = !!this.b | b
+    def `or`(b:bool):bool = (this.b as bool) | b
 
     /*
      * ============
@@ -312,267 +314,1922 @@ class RichByte(byteBox:Byte)
 
     def lt(i:int):bool = this.b < i
 
-        public boolean lt(Integer i) {
-                return this.b < i;
-        }
+    def lt(b:byte):bool = this.b < b
 
-        public boolean lt(Byte b) {
-                return this.b < b;
-        }
+    def lt(s:short):bool = this.b < s
 
-        public boolean lt(Short s) {
-                return b < s;
-        }
+    def lt(c:char):bool = this.b < c
 
-        public boolean lt(Character c) {
-                return b < c;
-        }
+    def lt(l:long):bool = this.b < l
 
-        public boolean lt(Long l) {
-                return b < l;
-        }
+    def lt(f:float):bool = this.b < f
 
-        public boolean lt(Float f) {
-                return b < f;
-        }
+    def lt(d:double):bool = this.b < d
 
-        public boolean lt(Double d) {
-                return b < d;
-        }
+    /*
+     * ============
+     *   multiply
+     * ============
+     */
 
-        /*
-         * ============
-         *   multiply
-         * ============
-         */
+    def multiply(i:int):int = this.b * i
 
-        public int multiply(Integer i) {
-                return this.b * i;
-        }
+    def multiply(b:byte):int = this.b * b
 
-        public int multiply(Byte b) {
-                return this.b * b;
-        }
+    def multiply(s:short):int = this.b * s
 
-        public int multiply(Short s) {
-                return b * s;
-        }
+    def multiply(c:char):int = this.b * c
 
-        public int multiply(Character c) {
-                return b * c;
-        }
+    def multiply(l:long):long = this.b * l
 
-        public long multiply(Long l) {
-                return b * l;
-        }
+    def multiply(f:float):float = this.b * f
 
-        public float multiply(Float f) {
-                return b * f;
-        }
+    def multiply(d:double):double = this.b * d
 
-        public double multiply(Double d) {
-                return b * d;
-        }
+    /*
+     * ============
+     *   remainder
+     * ============
+     */
 
-        /*
-         * ============
-         *   remainder
-         * ============
-         */
+    def remainder(i:int):int = this.b % i
 
-        public int remainder(Integer i) {
-                return this.b % i;
-        }
+    def remainder(b:byte):int = this.b % b
 
-        public int remainder(Byte b) {
-                return this.b % b;
-        }
+    def remainder(s:short):int = this.b % s
 
-        public int remainder(Short s) {
-                return b % s;
-        }
+    def remainder(c:char):int = this.b % c
 
-        public int remainder(Character c) {
-                return b % c;
-        }
+    def remainder(l:long):long = this.b % l
 
-        public long remainder(Long l) {
-                return b % l;
-        }
+    /*
+     * ============
+     *   shiftLeft
+     * ============
+     */
 
-        /*
-         * ============
-         *   shiftLeft
-         * ============
-         */
+    def shiftLeft(i:int):int = this.b << i
 
-        public int shiftLeft(Integer i) {
-                return this.b << i;
-        }
+    def shiftLeft(b:byte):int = this.b << b
 
-        public int shiftLeft(Byte b) {
-                return this.b << b;
-        }
+    def shiftLeft(s:short):int = this.b << s
 
-        public int shiftLeft(Short s) {
-                return b << s;
-        }
+    def shiftLeft(c:char):int = this.b << c
 
-        public int shiftLeft(Character c) {
-                return b << c;
-        }
+    def shiftLeft(l:long):long = this.b << l
 
-        public int shiftLeft(Long l) {
-                return b << l;
-        }
+    /*
+     * ============
+     *  shiftRight
+     * ============
+     */
 
-        /*
-         * ============
-         *  shiftRight
-         * ============
-         */
+    def shiftRight(i:int):int = this.b >> i
 
-        public int shiftRight(Integer i) {
-                return this.b >> i;
-        }
+    def shiftRight(b:byte):int = this.b >> b
 
-        public int shiftRight(Byte b) {
-                return this.b >> b;
-        }
+    def shiftRight(s:short):int = this.b >> s
 
-        public int shiftRight(Short s) {
-                return b >> s;
-        }
+    def shiftRight(c:char):int = this.b >> c
 
-        public int shiftRight(Character c) {
-                return b >> c;
-        }
+    def shiftRight(l:long):long = this.b >> l
 
-        public int shiftRight(Long l) {
-                return b >> l;
-        }
+    /*
+     * ============
+     *   subtract
+     * ============
+     */
 
-        /*
-         * ============
-         *   subtract
-         * ============
-         */
+    def subtract(i:int):int = this.b - i
 
-        public int subtract(Integer i) {
-                return this.b - i;
-        }
+    def subtract(b:byte):int = this.b - b
 
-        public int subtract(Byte b) {
-                return this.b - b;
-        }
+    def subtract(s:short):int = this.b - s
 
-        public int subtract(Short s) {
-                return b - s;
-        }
+    def subtract(c:char):int = this.b - c
 
-        public int subtract(Character c) {
-                return b - c;
-        }
+    def subtract(l:long):long = this.b - l
 
-        public long subtract(Long l) {
-                return b - l;
-        }
+    def subtract(f:float):float = this.b - f
 
-        public float subtract(Float f) {
-                return b - f;
-        }
+    def subtract(d:double):double = this.b - d
 
-        public double subtract(Double d) {
-                return b - d;
-        }
+    /*
+     * ====================
+     *  unsignedShiftRight
+     * ====================
+     */
 
-        /*
-         * ====================
-         *  unsignedShiftRight
-         * ====================
-         */
+    def unsignedShiftRight(i:int):int = this.b >>> i
 
-        public int unsignedShiftRight(Integer i) {
-                return this.b >>> i;
-        }
+    def unsignedShiftRight(b:byte):int = this.b >>> b
 
-        public int unsignedShiftRight(Byte b) {
-                return this.b >>> b;
-        }
+    def unsignedShiftRight(s:short):int = this.b >>> s
 
-        public int unsignedShiftRight(Short s) {
-                return b >>> s;
-        }
+    def unsignedShiftRight(c:char):int = this.b >>> c
 
-        public int unsignedShiftRight(Character c) {
-                return b >>> c;
-        }
+    def unsignedShiftRight(l:long):long = this.b >>> l
 
-        public int unsignedShiftRight(Long l) {
-                return b >>> l;
-        }
+    /*
+     * ============
+     *     xor
+     * ============
+     */
 
-        /*
-         * ============
-         *     xor
-         * ============
-         */
+    def xor(i:int):int = this.b >>> i
 
-        public int xor(Integer i) {
-                return this.b ^ i;
-        }
+    def xor(b:byte):int = this.b >>> b
 
-        public int xor(Byte b) {
-                return this.b ^ b;
-        }
+    def xor(s:short):int = this.b >>> s
 
-        public int xor(Short s) {
-                return b ^ s;
-        }
+    def xor(c:char):int = this.b >>> c
 
-        public int xor(Character c) {
-                return b ^ c;
-        }
+    def xor(l:long):long = this.b >>> l
 
-        public long xor(Long l) {
-                return b ^ l;
-        }
+    def xor(b:bool):bool = (this.b as bool) ^ b
 
-        public boolean xor(Boolean b) throws Throwable {
-                return LtRuntime.castToBool(this.b) ^ b;
-        }
+    /*
+     * ============
+     *     pow
+     * ============
+     */
 
-        /*
-         * ============
-         *     pow
-         * ============
-         */
+    def pow(i:int):double = Math.pow(this.b as double, i as double)
 
-        public double pow(Integer i) {
-                return Math.pow(b, i);
-        }
+    def pow(l:long):double = Math.pow(this.b as double, l as double)
 
-        public double pow(Long l) {
-                return Math.pow(b, l);
-        }
+    def pow(f:float):double = Math.pow(this.b as double, f as double)
 
-        public double pow(Float f) {
-                return Math.pow(b, f);
-        }
+    def pow(d:double):double = Math.pow(this.b as double, d as double)
 
-        public double pow(Double d) {
-                return Math.pow(b, d);
-        }
+    def pow(b:byte):double = Math.pow(this.b as double, b as double)
 
-        public double pow(Byte b) {
-                return Math.pow(this.b, b);
-        }
+    def pow(s:short):double = Math.pow(this.b as double, s as double)
 
-        public double pow(Short s) {
-                return Math.pow(b, s);
-        }
+    def pow(c:char):double = Math.pow(this.b as double, c as double)
 
-        public double pow(Character c) {
-                return Math.pow(b, c);
-        }
-}
+/**
+ * rich Char
+ */
+class RichChar(charBox:Character)
+    val c:char = charBox
+
+    def `not`():int = ~c
+
+    def negate():int = -c
+
+    def logicNot():bool = !c
+
+    /*
+     * ============
+     *     add
+     * ============
+     */
+
+    def add(i:int):int = this.c + i
+
+    def add(b:byte):int = this.c + b
+
+    def add(s:short):int = this.c + s
+
+    def add(c:char):int = this.c + c
+
+    def add(l:long):long = this.c + l
+
+    def add(f:float):float = this.c + f
+
+    def add(d:double):double = this.c + d
+
+    /*
+     * ============
+     *     and
+     * ============
+     */
+
+    def `and`(i:int):int = this.c & i
+
+    def `and`(b:byte):int = this.c & b
+
+    def `and`(s:short):int = this.c & s
+
+    def `and`(c:char):int = this.c & c
+
+    def `and`(l:long):long = this.c & l
+
+    def `and`(b:bool):bool = (this.c as bool) & b
+
+    /*
+     * ============
+     *     or
+     * ============
+     */
+
+    def `or`(i:int):int = this.c | i
+
+    def `or`(b:byte):int = this.c | b
+
+    def `or`(s:short):int = this.c | s
+
+    def `or`(c:char):int = this.c | c
+
+    def `or`(l:long):long = this.c | l
+
+    def `or`(b:bool):bool = (this.c as bool) | b
+
+    /*
+     * ============
+     *    divide
+     * ============
+     */
+
+    def divide(i:int):int = this.c / i
+
+    def divide(b:byte):int = this.c / b
+
+    def divide(s:short):int = this.c / s
+
+    def divide(c:char):int = this.c / c
+
+    def divide(l:long):long = this.c / l
+
+    def divide(f:float):float = this.c / f
+
+    def divide(d:double):double = this.c / d
+
+    /*
+     * ============
+     *      ge
+     * ============
+     */
+
+    def ge(i:int):bool = this.c >= i
+
+    def ge(b:byte):bool = this.c >= b
+
+    def ge(s:short):bool = this.c >= s
+
+    def ge(c:char):bool = this.c >= c
+
+    def ge(l:long):bool = this.c >= l
+
+    def ge(f:float):bool = this.c >= f
+
+    def ge(d:double):bool = this.c >= d
+
+    /*
+     * ============
+     *      gt
+     * ============
+     */
+
+    def gt(i:int):bool = this.c > i
+
+    def gt(b:byte):bool = this.c > b
+
+    def gt(s:short):bool = this.c > s
+
+    def gt(c:char):bool = this.c > c
+
+    def gt(l:long):bool = this.c > l
+
+    def gt(f:float):bool = this.c > f
+
+    def gt(d:double):bool = this.c > d
+
+    /*
+     * ============
+     *      le
+     * ============
+     */
+
+    def le(i:int):bool = this.c <= i
+
+    def le(b:byte):bool = this.c <= b
+
+    def le(s:short):bool = this.c <= s
+
+    def le(c:char):bool = this.c <= c
+
+    def le(l:long):bool = this.c <= l
+
+    def le(f:float):bool = this.c <= f
+
+    def le(d:double):bool = this.c <= d
+
+    /*
+     * ============
+     *      lt
+     * ============
+     */
+
+    def lt(i:int):bool = this.c < i
+
+    def lt(b:byte):bool = this.c < b
+
+    def lt(s:short):bool = this.c < s
+
+    def lt(c:char):bool = this.c < c
+
+    def lt(l:long):bool = this.c < l
+
+    def lt(f:float):bool = this.c < f
+
+    def lt(d:double):bool = this.c < d
+
+    /*
+     * ============
+     *   multiply
+     * ============
+     */
+
+    def multiply(i:int):int = this.c * i
+
+    def multiply(b:byte):int = this.c * b
+
+    def multiply(s:short):int = this.c * s
+
+    def multiply(c:char):int = this.c * c
+
+    def multiply(l:long):long = this.c * l
+
+    def multiply(f:float):float = this.c * f
+
+    def multiply(d:double):double = this.c * d
+
+    /*
+     * ============
+     *   remainder
+     * ============
+     */
+
+    def remainder(i:int):int = this.c % i
+
+    def remainder(b:byte):int = this.c % b
+
+    def remainder(s:short):int = this.c % s
+
+    def remainder(c:char):int = this.c % c
+
+    def remainder(l:long):long = this.c % l
+
+    /*
+     * ============
+     *   shiftLeft
+     * ============
+     */
+
+    def shiftLeft(i:int):int = this.c << i
+
+    def shiftLeft(b:byte):int = this.c << b
+
+    def shiftLeft(s:short):int = this.c << s
+
+    def shiftLeft(c:char):int = this.c << c
+
+    def shiftLeft(l:long):long = this.c << l
+
+    /*
+     * ============
+     *  shiftRight
+     * ============
+     */
+
+    def shiftRight(i:int):int = this.c >> i
+
+    def shiftRight(b:byte):int = this.c >> b
+
+    def shiftRight(s:short):int = this.c >> s
+
+    def shiftRight(c:char):int = this.c >> c
+
+    def shiftRight(l:long):long = this.c >> l
+
+    /*
+     * ============
+     *   subtract
+     * ============
+     */
+
+    def subtract(i:int):int = this.c - i
+
+    def subtract(b:byte):int = this.c - b
+
+    def subtract(s:short):int = this.c - s
+
+    def subtract(c:char):int = this.c - c
+
+    def subtract(l:long):long = this.c - l
+
+    def subtract(f:float):float = this.c - f
+
+    def subtract(d:double):double = this.c - d
+
+    /*
+     * ====================
+     *  unsignedShiftRight
+     * ====================
+     */
+
+    def unsignedShiftRight(i:int):int = this.c >>> i
+
+    def unsignedShiftRight(b:byte):int = this.c >>> b
+
+    def unsignedShiftRight(s:short):int = this.c >>> s
+
+    def unsignedShiftRight(c:char):int = this.c >>> c
+
+    def unsignedShiftRight(l:long):long = this.c >>> l
+
+    /*
+     * ============
+     *     xor
+     * ============
+     */
+
+    def xor(i:int):int = this.c >>> i
+
+    def xor(b:byte):int = this.c >>> b
+
+    def xor(s:short):int = this.c >>> s
+
+    def xor(c:char):int = this.c >>> c
+
+    def xor(l:long):long = this.c >>> l
+
+    def xor(b:bool):bool = (this.c as bool) ^ b
+
+    /*
+     * ============
+     *     pow
+     * ============
+     */
+
+    def pow(i:int):double = Math.pow(this.c as double, i as double)
+
+    def pow(l:long):double = Math.pow(this.c as double, l as double)
+
+    def pow(f:float):double = Math.pow(this.c as double, f as double)
+
+    def pow(d:double):double = Math.pow(this.c as double, d as double)
+
+    def pow(b:byte):double = Math.pow(this.c as double, b as double)
+
+    def pow(s:short):double = Math.pow(this.c as double, s as double)
+
+    def pow(c:char):double = Math.pow(this.c as double, c as double)
+
+/**
+ * rich Double
+ */
+class RichDouble(doubleBox:Double)
+    val d:double = doubleBox
+
+    def negate():double = -d
+
+    def logicNot():bool = !d
+
+    /*
+     * ============
+     *     add
+     * ============
+     */
+
+    def add(i:int):double = this.d + 1
+
+    def add(b:byte):double = this.d + b
+
+    def add(s:short):double = this.d + s
+
+    def add(c:char):double = this.d + c
+
+    def add(l:long):double = this.d + l
+
+    def add(f:float):double = this.d + f
+
+    def add(d:double):double = this.d + d
+
+    /*
+     * ============
+     *     and
+     * ============
+     */
+
+    def `and`(b:bool):bool = (this.d as bool) & b
+
+    /*
+     * ============
+     *     or
+     * ============
+     */
+
+    def `or`(b:bool):bool = (this.d as bool) | b
+
+    /*
+     * ============
+     *    divide
+     * ============
+     */
+
+    def divide(i:int):double = this.d / i
+
+    def divide(b:byte):double = this.d / b
+
+    def divide(s:short):double = this.d / s
+
+    def divide(c:char):double = this.d / c
+
+    def divide(l:long):double = this.d / l
+
+    def divide(f:float):double = this.d / f
+
+    def divide(d:double):double = this.d / d
+
+    /*
+     * ============
+     *      ge
+     * ============
+     */
+
+    def ge(i:int):bool = this.d >= i
+
+    def ge(b:byte):bool = this.d >= b
+
+    def ge(s:short):bool = this.d >= s
+
+    def ge(c:char):bool = this.d >= c
+
+    def ge(l:long):bool = this.d >= l
+
+    def ge(f:float):bool = this.d >= f
+
+    def ge(d:double):bool = this.d >= d
+
+    /*
+     * ============
+     *      gt
+     * ============
+     */
+
+    def gt(i:int):bool = this.d > i
+
+    def gt(b:byte):bool = this.d > b
+
+    def gt(s:short):bool = this.d > s
+
+    def gt(c:char):bool = this.d > c
+
+    def gt(l:long):bool = this.d > l
+
+    def gt(f:float):bool = this.d > f
+
+    def gt(d:double):bool = this.d > d
+
+    /*
+     * ============
+     *      le
+     * ============
+     */
+
+    def le(i:int):bool = this.d <= i
+
+    def le(b:byte):bool = this.d <= b
+
+    def le(s:short):bool = this.d <= s
+
+    def le(c:char):bool = this.d <= c
+
+    def le(l:long):bool = this.d <= l
+
+    def le(f:float):bool = this.d <= f
+
+    def le(d:double):bool = this.d <= d
+
+    /*
+     * ============
+     *      lt
+     * ============
+     */
+
+    def lt(i:int):bool = this.d < i
+
+    def lt(b:byte):bool = this.d < b
+
+    def lt(s:short):bool = this.d < s
+
+    def lt(c:char):bool = this.d < c
+
+    def lt(l:long):bool = this.d < l
+
+    def lt(f:float):bool = this.d < f
+
+    def lt(d:double):bool = this.d < d
+
+    /*
+     * ============
+     *   multiply
+     * ============
+     */
+
+    def multiply(i:int):double = this.d * i
+
+    def multiply(b:byte):double = this.d * b
+
+    def multiply(s:short):double = this.d * s
+
+    def multiply(c:char):double = this.d & c
+
+    def multiply(l:long):double = this.d * l
+
+    def multiply(f:float):double = this.d * f
+
+    def multiply(d:double):double = this.d * d
+
+    /*
+     * ============
+     *   remainder
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *   shiftLeft
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *  shiftRight
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *   subtract
+     * ============
+     */
+
+    def subtract(i:int):double = this.d - i
+
+    def subtract(b:byte):double = this.d - b
+
+    def subtract(s:short):double = this.d = s
+
+    def subtract(c:char):double = this.d - c
+
+    def subtract(l:long):double = this.d - l
+
+    def subtract(f:float):double = this.d - f
+
+    def subtract(d:double):double = this.d - d
+
+    /*
+     * ====================
+     *  unsignedShiftRight
+     * ====================
+     */
+
+    // none
+
+    /*
+     * ============
+     *     xor
+     * ============
+     */
+
+    def xor(b:bool):bool = (d as bool) ^ b
+
+    /*
+     * ============
+     *     pow
+     * ============
+     */
+
+    def pow(i:int):double = Math.pow(this.d, i as double)
+
+    def pow(l:long):double = Math.pow(this.d, l as double)
+
+    def pow(f:float):double = Math.pow(this.d, f as double)
+
+    def pow(d:double):double = Math.pow(this.d, d)
+
+    def pow(b:byte):double = Math.pow(this.d, b as double)
+
+    def pow(s:short):double = Math.pow(this.d, s as double)
+
+    def pow(c:char):double = Math.pow(this.d, c as double)
+
+/**
+ * rich float
+ */
+class RichFloat(aFloat:float)
+    val f : float = aFloat
+
+    def negate():float = -f
+
+    def logicNot():bool = !f
+
+    /*
+     * ============
+     *     add
+     * ============
+     */
+
+    def add(i:int):float = this.f + 1
+
+    def add(b:byte):float = this.f + b
+
+    def add(s:short):float = this.f + s
+
+    def add(c:char):float = this.f + c
+
+    def add(l:long):float = this.f + l
+
+    def add(f:float):float = this.f + f
+
+    def add(d:double):double = this.f + d
+
+    /*
+     * ============
+     *     and
+     * ============
+     */
+
+    def `and`(b:bool):bool = (this.f as bool) & b
+
+    /*
+     * ============
+     *     or
+     * ============
+     */
+
+    def `or`(b:bool):bool = (this.f as bool) | b
+
+    /*
+     * ============
+     *    divide
+     * ============
+     */
+
+    def divide(i:int):float = this.f / i
+
+    def divide(b:byte):float = this.f / b
+
+    def divide(s:short):float = this.f / s
+
+    def divide(c:char):float = this.f / c
+
+    def divide(l:long):float = this.f / l
+
+    def divide(f:float):float = this.f / f
+
+    def divide(d:double):double = this.f / d
+
+    /*
+     * ============
+     *      ge
+     * ============
+     */
+
+    def ge(i:int):bool = this.f >= i
+
+    def ge(b:byte):bool = this.f >= b
+
+    def ge(s:short):bool = this.f >= s
+
+    def ge(c:char):bool = this.f >= c
+
+    def ge(l:long):bool = this.f >= l
+
+    def ge(f:float):bool = this.f >= f
+
+    def ge(d:double):bool = this.f >= d
+
+    /*
+     * ============
+     *      gt
+     * ============
+     */
+
+    def gt(i:int):bool = this.f > i
+
+    def gt(b:byte):bool = this.f > b
+
+    def gt(s:short):bool = this.f > s
+
+    def gt(c:char):bool = this.f > c
+
+    def gt(l:long):bool = this.f > l
+
+    def gt(f:float):bool = this.f > f
+
+    def gt(d:double):bool = this.f > d
+
+    /*
+     * ============
+     *      le
+     * ============
+     */
+
+    def le(i:int):bool = this.f <= i
+
+    def le(b:byte):bool = this.f <= b
+
+    def le(s:short):bool = this.f <= s
+
+    def le(c:char):bool = this.f <= c
+
+    def le(l:long):bool = this.f <= l
+
+    def le(f:float):bool = this.f <= f
+
+    def le(d:double):bool = this.f <= d
+
+    /*
+     * ============
+     *      lt
+     * ============
+     */
+
+    def lt(i:int):bool = this.f < i
+
+    def lt(b:byte):bool = this.f < b
+
+    def lt(s:short):bool = this.f < s
+
+    def lt(c:char):bool = this.f < c
+
+    def lt(l:long):bool = this.f < l
+
+    def lt(f:float):bool = this.f < f
+
+    def lt(d:double):bool = this.f < d
+
+    /*
+     * ============
+     *   multiply
+     * ============
+     */
+
+    def multiply(i:int):float = this.f * i
+
+    def multiply(b:byte):float = this.f * b
+
+    def multiply(s:short):float = this.f * s
+
+    def multiply(c:char):float = this.f & c
+
+    def multiply(l:long):float = this.f * l
+
+    def multiply(f:float):float = this.f * f
+
+    def multiply(d:double):float = this.f * d
+
+    /*
+     * ============
+     *   remainder
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *   shiftLeft
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *  shiftRight
+     * ============
+     */
+
+    // none
+
+    /*
+     * ============
+     *   subtract
+     * ============
+     */
+
+    def subtract(i:int):float = this.f - i
+
+    def subtract(b:byte):float = this.f - b
+
+    def subtract(s:short):float = this.f = s
+
+    def subtract(c:char):float = this.f - c
+
+    def subtract(l:long):float = this.f - l
+
+    def subtract(f:float):float = this.f - f
+
+    def subtract(d:double):double = this.f - d
+
+    /*
+     * ====================
+     *  unsignedShiftRight
+     * ====================
+     */
+
+    // none
+
+    /*
+     * ============
+     *     xor
+     * ============
+     */
+
+    def xor(b:bool):bool = (f as bool) ^ b
+
+    /*
+     * ============
+     *     pow
+     * ============
+     */
+
+    def pow(i:int):double = Math.pow(this.f as double, i as double)
+
+    def pow(l:long):double = Math.pow(this.f as double, l as double)
+
+    def pow(f:float):double = Math.pow(this.f as double, f as double)
+
+    def pow(d:double):double = Math.pow(this.f as double, d)
+
+    def pow(b:byte):double = Math.pow(this.f as double, b as double)
+
+    def pow(s:short):double = Math.pow(this.f as double, s as double)
+
+    def pow(c:char):double = Math.pow(this.f as double, c as double)
+
+/**
+ * rich Integer
+ */
+class RichInt(anInt : Integer) {
+    val i : int = anInt
+    def `not`():int = ~i
+
+    def negate():int = -i
+
+    def logicNot():bool = !i
+
+    /*
+     * ============
+     *     add
+     * ============
+     */
+
+    def add(i:int):int = this.i + i
+
+    def add(b:byte):int = this.i + b
+
+    def add(s:short):int = this.i + s
+
+    def add(c:char):int = this.i + c
+
+    def add(l:long):long = this.i + l
+
+    def add(f:float):float = this.i + f
+
+    def add(d:double):double = this.i + d
+
+    /*
+     * ============
+     *     and
+     * ============
+     */
+
+    def `and`(i:int):int = this.i & i
+
+    def `and`(b:byte):int = this.i & b
+
+    def `and`(s:short):int = this.i & s
+
+    def `and`(c:char):int = this.i & c
+
+    def `and`(l:long):long = this.i & l
+
+    def `and`(b:bool):bool = (this.i as bool) & b
+
+    /*
+     * ============
+     *     or
+     * ============
+     */
+
+    def `or`(i:int):int = this.i | i
+
+    def `or`(b:byte):int = this.i | b
+
+    def `or`(s:short):int = this.i | s
+
+    def `or`(c:char):int = this.i | c
+
+    def `or`(l:long):long = this.i | l
+
+    def `or`(b:bool):bool = (this.i as bool) | b
+
+    /*
+     * ============
+     *    divide
+     * ============
+     */
+
+    def divide(i:int):int = this.i / i
+
+    def divide(b:byte):int = this.i / b
+
+    def divide(s:short):int = this.i / s
+
+    def divide(c:char):int = this.i / c
+
+    def divide(l:long):long = this.i / l
+
+    def divide(f:float):float = this.i / f
+
+    def divide(d:double):double = this.i / d
+
+    /*
+     * ============
+     *      ge
+     * ============
+     */
+
+    def ge(i:int):bool = this.i >= i
+
+    def ge(b:byte):bool = this.i >= b
+
+    def ge(s:short):bool = this.i >= s
+
+    def ge(c:char):bool = this.i >= c
+
+    def ge(l:long):bool = this.i >= l
+
+    def ge(f:float):bool = this.i >= f
+
+    def ge(d:double):bool = this.i >= d
+
+    /*
+     * ============
+     *      gt
+     * ============
+     */
+
+    def gt(i:int):bool = this.i > i
+
+    def gt(b:byte):bool = this.i > b
+
+    def gt(s:short):bool = this.i > s
+
+    def gt(c:char):bool = this.i > c
+
+    def gt(l:long):bool = this.i > l
+
+    def gt(f:float):bool = this.i > f
+
+    def gt(d:double):bool = this.i > d
+
+    /*
+     * ============
+     *      le
+     * ============
+     */
+
+    def le(i:int):bool = this.i <= i
+
+    def le(b:byte):bool = this.i <= b
+
+    def le(s:short):bool = this.i <= s
+
+    def le(c:char):bool = this.i <= c
+
+    def le(l:long):bool = this.i <= l
+
+    def le(f:float):bool = this.i <= f
+
+    def le(d:double):bool = this.i <= d
+
+    /*
+     * ============
+     *      lt
+     * ============
+     */
+
+    def lt(i:int):bool = this.i < i
+
+    def lt(b:byte):bool = this.i < b
+
+    def lt(s:short):bool = this.i < s
+
+    def lt(c:char):bool = this.i < c
+
+    def lt(l:long):bool = this.i < l
+
+    def lt(f:float):bool = this.i < f
+
+    def lt(d:double):bool = this.i < d
+
+    /*
+     * ============
+     *   multiply
+     * ============
+     */
+
+    def multiply(i:int):int = this.i * i
+
+    def multiply(b:byte):int = this.i * b
+
+    def multiply(s:short):int = this.i * s
+
+    def multiply(c:char):int = this.i * c
+
+    def multiply(l:long):long = this.i * l
+
+    def multiply(f:float):float = this.i * f
+
+    def multiply(d:double):double = this.i * d
+
+    /*
+     * ============
+     *   remainder
+     * ============
+     */
+
+    def remainder(i:int):int = this.i % i
+
+    def remainder(b:byte):int = this.i % b
+
+    def remainder(s:short):int = this.i % s
+
+    def remainder(c:char):int = this.i % c
+
+    def remainder(l:long):long = this.i % l
+
+    /*
+     * ============
+     *   shiftLeft
+     * ============
+     */
+
+    def shiftLeft(i:int):int = this.i << i
+
+    def shiftLeft(b:byte):int = this.i << b
+
+    def shiftLeft(s:short):int = this.i << s
+
+    def shiftLeft(c:char):int = this.i << c
+
+    def shiftLeft(l:long):long = this.i << l
+
+    /*
+     * ============
+     *  shiftRight
+     * ============
+     */
+
+    def shiftRight(i:int):int = this.i >> i
+
+    def shiftRight(b:byte):int = this.i >> b
+
+    def shiftRight(s:short):int = this.i >> s
+
+    def shiftRight(c:char):int = this.i >> c
+
+    def shiftRight(l:long):long = this.i >> l
+
+    /*
+     * ============
+     *   subtract
+     * ============
+     */
+
+    def subtract(i:int):int = this.i - i
+
+    def subtract(b:byte):int = this.i - b
+
+    def subtract(s:short):int = this.i - s
+
+    def subtract(c:char):int = this.i - c
+
+    def subtract(l:long):long = this.i - l
+
+    def subtract(f:float):float = this.i - f
+
+    def subtract(d:double):double = this.i - d
+
+    /*
+     * ====================
+     *  unsignedShiftRight
+     * ====================
+     */
+
+    def unsignedShiftRight(i:int):int = this.i >>> i
+
+    def unsignedShiftRight(b:byte):int = this.i >>> b
+
+    def unsignedShiftRight(s:short):int = this.i >>> s
+
+    def unsignedShiftRight(c:char):int = this.i >>> c
+
+    def unsignedShiftRight(l:long):long = this.i >>> l
+
+    /*
+     * ============
+     *     xor
+     * ============
+     */
+
+    def xor(i:int):int = this.i >>> i
+
+    def xor(b:byte):int = this.i >>> b
+
+    def xor(s:short):int = this.i >>> s
+
+    def xor(c:char):int = this.i >>> c
+
+    def xor(l:long):long = this.i >>> l
+
+    def xor(b:bool):bool = (this.i as bool) ^ b
+
+    /*
+     * ============
+     *     pow
+     * ============
+     */
+
+    def pow(i:int):double = Math.pow(this.i as double, i as double)
+
+    def pow(l:long):double = Math.pow(this.i as double, l as double)
+
+    def pow(f:float):double = Math.pow(this.i as double, f as double)
+
+    def pow(d:double):double = Math.pow(this.i as double, d as double)
+
+    def pow(b:byte):double = Math.pow(this.i as double, b as double)
+
+    def pow(s:short):double = Math.pow(this.i as double, s as double)
+
+    def pow(c:char):double = Math.pow(this.i as double, c as double)
+
+    /*
+     * =========
+     *   range
+     * =========
+     */
+    def to(i:int):RangeList = RangeList(this.i, i, true)
+
+    def until(i:int):RangeList = RangeList(this.i, i, false)
+
+/**
+ * rich Long
+ */
+class RichLong(longBox:Long)
+    val l:long = longBox
+
+    def `not`():long = ~l
+
+    def negate():long = -l
+
+    def logicNot():long = !l
+
+    /*
+     * ============
+     *     add
+     * ============
+     */
+
+    def add(i:int):long = this.l + i
+
+    def add(b:byte):long = this.l + b
+
+    def add(s:short):long = this.l + s
+
+    def add(c:char):long = this.l + c
+
+    def add(l:long):long = this.l + l
+
+    def add(f:float):float = this.l + f
+
+    def add(d:double):double = this.l + d
+
+    /*
+     * ============
+     *     and
+     * ============
+     */
+
+    def `and`(i:int):long = this.l & i
+
+    def `and`(b:byte):long = this.l & b
+
+    def `and`(s:short):long = this.l & s
+
+    def `and`(c:char):long = this.l & c
+
+    def `and`(l:long):long = this.l & l
+
+    def `and`(b:bool):bool = (this.l as bool) & b
+
+    /*
+     * ============
+     *     or
+     * ============
+     */
+
+    def `or`(i:int):long = this.l | i
+
+    def `or`(b:byte):long = this.l | b
+
+    def `or`(s:short):long = this.l | s
+
+    def `or`(c:char):long = this.l | c
+
+    def `or`(l:long):long = this.l | l
+
+    def `or`(b:bool):bool = (this.l as bool) | b
+
+    /*
+     * ============
+     *    divide
+     * ============
+     */
+
+    def divide(i:int):long = this.l / i
+
+    def divide(b:byte):long = this.l / b
+
+    def divide(s:short):long = this.l / s
+
+    def divide(c:char):long = this.l / c
+
+    def divide(l:long):long = this.l / l
+
+    def divide(f:float):float = this.l / f
+
+    def divide(d:double):double = this.l / d
+
+    /*
+     * ============
+     *      ge
+     * ============
+     */
+
+    def ge(i:int):bool = this.l >= i
+
+    def ge(b:byte):bool = this.l >= b
+
+    def ge(s:short):bool = this.l >= s
+
+    def ge(c:char):bool = this.l >= c
+
+    def ge(l:long):bool = this.l >= l
+
+    def ge(f:float):bool = this.l >= f
+
+    def ge(d:double):bool = this.l >= d
+
+    /*
+     * ============
+     *      gt
+     * ============
+     */
+
+    def gt(i:int):bool = this.l > i
+
+    def gt(b:byte):bool = this.l > b
+
+    def gt(s:short):bool = this.l > s
+
+    def gt(c:char):bool = this.l > c
+
+    def gt(l:long):bool = this.l > l
+
+    def gt(f:float):bool = this.l > f
+
+    def gt(d:double):bool = this.l > d
+
+    /*
+     * ============
+     *      le
+     * ============
+     */
+
+    def le(i:int):bool = this.l <= i
+
+    def le(b:byte):bool = this.l <= b
+
+    def le(s:short):bool = this.l <= s
+
+    def le(c:char):bool = this.l <= c
+
+    def le(l:long):bool = this.l <= l
+
+    def le(f:float):bool = this.l <= f
+
+    def le(d:double):bool = this.l <= d
+
+    /*
+     * ============
+     *      lt
+     * ============
+     */
+
+    def lt(i:int):bool = this.l < i
+
+    def lt(b:byte):bool = this.l < b
+
+    def lt(s:short):bool = this.l < s
+
+    def lt(c:char):bool = this.l < c
+
+    def lt(l:long):bool = this.l < l
+
+    def lt(f:float):bool = this.l < f
+
+    def lt(d:double):bool = this.l < d
+
+    /*
+     * ============
+     *   multiply
+     * ============
+     */
+
+    def multiply(i:int):long = this.l * i
+
+    def multiply(b:byte):long = this.l * b
+
+    def multiply(s:short):long = this.l * s
+
+    def multiply(c:char):long = this.l * c
+
+    def multiply(l:long):long = this.l * l
+
+    def multiply(f:float):float = this.l * f
+
+    def multiply(d:double):double = this.l * d
+
+    /*
+     * ============
+     *   remainder
+     * ============
+     */
+
+    def remainder(i:int):long = this.l % i
+
+    def remainder(b:byte):long = this.l % b
+
+    def remainder(s:short):long = this.l % s
+
+    def remainder(c:char):long = this.l % c
+
+    def remainder(l:long):long = this.l % l
+
+    /*
+     * ============
+     *   shiftLeft
+     * ============
+     */
+
+    def shiftLeft(i:int):long = this.l << i
+
+    def shiftLeft(b:byte):long = this.l << b
+
+    def shiftLeft(s:short):long = this.l << s
+
+    def shiftLeft(c:char):long = this.l << c
+
+    def shiftLeft(l:long):long = this.l << l
+
+    /*
+     * ============
+     *  shiftRight
+     * ============
+     */
+
+    def shiftRight(i:int):long = this.l >> i
+
+    def shiftRight(b:byte):long = this.l >> b
+
+    def shiftRight(s:short):long = this.l >> s
+
+    def shiftRight(c:char):long = this.l >> c
+
+    def shiftRight(l:long):long = this.l >> l
+
+    /*
+     * ============
+     *   subtract
+     * ============
+     */
+
+    def subtract(i:int):long = this.l - i
+
+    def subtract(b:byte):long = this.l - b
+
+    def subtract(s:short):long = this.l - s
+
+    def subtract(c:char):long = this.l - c
+
+    def subtract(l:long):long = this.l - l
+
+    def subtract(f:float):float = this.l - f
+
+    def subtract(d:double):double = this.l - d
+
+    /*
+     * ====================
+     *  unsignedShiftRight
+     * ====================
+     */
+
+    def unsignedShiftRight(i:int):long = this.l >>> i
+
+    def unsignedShiftRight(b:byte):long = this.l >>> b
+
+    def unsignedShiftRight(s:short):long = this.l >>> s
+
+    def unsignedShiftRight(c:char):long = this.l >>> c
+
+    def unsignedShiftRight(l:long):long = this.l >>> l
+
+    /*
+     * ============
+     *     xor
+     * ============
+     */
+
+    def xor(i:int):long = this.l >>> i
+
+    def xor(b:byte):long = this.l >>> b
+
+    def xor(s:short):long = this.l >>> s
+
+    def xor(c:char):long = this.l >>> c
+
+    def xor(l:long):long = this.l >>> l
+
+    def xor(b:bool):bool = (this.l as bool) ^ b
+
+    /*
+     * ============
+     *     pow
+     * ============
+     */
+
+    def pow(i:int):double = Math.pow(this.l as double, i as double)
+
+    def pow(l:long):double = Math.pow(this.l as double, l as double)
+
+    def pow(f:float):double = Math.pow(this.l as double, f as double)
+
+    def pow(d:double):double = Math.pow(this.l as double, d as double)
+
+    def pow(b:byte):double = Math.pow(this.l as double, b as double)
+
+    def pow(s:short):double = Math.pow(this.l as double, s as double)
+
+    def pow(c:char):double = Math.pow(this.l as double, c as double)
+
+/**
+ * rich Object
+ */
+class RichObject(val o)
+    def add(s:String):String
+        sb = StringBuilder()
+        sb append o append s
+        sb toString
+
+    def eq(that):bool = o.equals(that)
+
+    def ne(that):bool = !this.eq(that)
+
+/**
+ * rich Short
+ */
+class RichShort(shortBox:Short)
+    val s:short = shortBox
+
+    def `not`():int = ~s
+
+    def negate():int = -s
+
+    def logicNot():bool = !s
+
+    /*
+     * ============
+     *     add
+     * ============
+     */
+
+    def add(i:int):int = this.s + i
+
+    def add(b:byte):int = this.s + b
+
+    def add(s:short):int = this.s + s
+
+    def add(c:char):int = this.s + c
+
+    def add(l:long):long = this.s + l
+
+    def add(f:float):float = this.s + f
+
+    def add(d:double):double = this.s + d
+
+    /*
+     * ============
+     *     and
+     * ============
+     */
+
+    def `and`(i:int):int = this.s & i
+
+    def `and`(b:byte):int = this.s & b
+
+    def `and`(s:short):int = this.s & s
+
+    def `and`(c:char):int = this.s & c
+
+    def `and`(l:long):long = this.s & l
+
+    def `and`(b:bool):bool = (this.s as bool) & b
+
+    /*
+     * ============
+     *     or
+     * ============
+     */
+
+    def `or`(i:int):int = this.s | i
+
+    def `or`(b:byte):int = this.s | b
+
+    def `or`(s:short):int = this.s | s
+
+    def `or`(c:char):int = this.s | c
+
+    def `or`(l:long):long = this.s | l
+
+    def `or`(b:bool):bool = (this.s as bool) | b
+
+    /*
+     * ============
+     *    divide
+     * ============
+     */
+
+    def divide(i:int):int = this.s / i
+
+    def divide(b:byte):int = this.s / b
+
+    def divide(s:short):int = this.s / s
+
+    def divide(c:char):int = this.s / c
+
+    def divide(l:long):long = this.s / l
+
+    def divide(f:float):float = this.s / f
+
+    def divide(d:double):double = this.s / d
+
+    /*
+     * ============
+     *      ge
+     * ============
+     */
+
+    def ge(i:int):bool = this.s >= i
+
+    def ge(b:byte):bool = this.s >= b
+
+    def ge(s:short):bool = this.s >= s
+
+    def ge(c:char):bool = this.s >= c
+
+    def ge(l:long):bool = this.s >= l
+
+    def ge(f:float):bool = this.s >= f
+
+    def ge(d:double):bool = this.s >= d
+
+    /*
+     * ============
+     *      gt
+     * ============
+     */
+
+    def gt(i:int):bool = this.s > i
+
+    def gt(b:byte):bool = this.s > b
+
+    def gt(s:short):bool = this.s > s
+
+    def gt(c:char):bool = this.s > c
+
+    def gt(l:long):bool = this.s > l
+
+    def gt(f:float):bool = this.s > f
+
+    def gt(d:double):bool = this.s > d
+
+    /*
+     * ============
+     *      le
+     * ============
+     */
+
+    def le(i:int):bool = this.s <= i
+
+    def le(b:byte):bool = this.s <= b
+
+    def le(s:short):bool = this.s <= s
+
+    def le(c:char):bool = this.s <= c
+
+    def le(l:long):bool = this.s <= l
+
+    def le(f:float):bool = this.s <= f
+
+    def le(d:double):bool = this.s <= d
+
+    /*
+     * ============
+     *      lt
+     * ============
+     */
+
+    def lt(i:int):bool = this.s < i
+
+    def lt(b:byte):bool = this.s < b
+
+    def lt(s:short):bool = this.s < s
+
+    def lt(c:char):bool = this.s < c
+
+    def lt(l:long):bool = this.s < l
+
+    def lt(f:float):bool = this.s < f
+
+    def lt(d:double):bool = this.s < d
+
+    /*
+     * ============
+     *   multiply
+     * ============
+     */
+
+    def multiply(i:int):int = this.s * i
+
+    def multiply(b:byte):int = this.s * b
+
+    def multiply(s:short):int = this.s * s
+
+    def multiply(c:char):int = this.s * c
+
+    def multiply(l:long):long = this.s * l
+
+    def multiply(f:float):float = this.s * f
+
+    def multiply(d:double):double = this.s * d
+
+    /*
+     * ============
+     *   remainder
+     * ============
+     */
+
+    def remainder(i:int):int = this.s % i
+
+    def remainder(b:byte):int = this.s % b
+
+    def remainder(s:short):int = this.s % s
+
+    def remainder(c:char):int = this.s % c
+
+    def remainder(l:long):long = this.s % l
+
+    /*
+     * ============
+     *   shiftLeft
+     * ============
+     */
+
+    def shiftLeft(i:int):int = this.s << i
+
+    def shiftLeft(b:byte):int = this.s << b
+
+    def shiftLeft(s:short):int = this.s << s
+
+    def shiftLeft(c:char):int = this.s << c
+
+    def shiftLeft(l:long):long = this.s << l
+
+    /*
+     * ============
+     *  shiftRight
+     * ============
+     */
+
+    def shiftRight(i:int):int = this.s >> i
+
+    def shiftRight(b:byte):int = this.s >> b
+
+    def shiftRight(s:short):int = this.s >> s
+
+    def shiftRight(c:char):int = this.s >> c
+
+    def shiftRight(l:long):long = this.s >> l
+
+    /*
+     * ============
+     *   subtract
+     * ============
+     */
+
+    def subtract(i:int):int = this.s - i
+
+    def subtract(b:byte):int = this.s - b
+
+    def subtract(s:short):int = this.s - s
+
+    def subtract(c:char):int = this.s - c
+
+    def subtract(l:long):long = this.s - l
+
+    def subtract(f:float):float = this.s - f
+
+    def subtract(d:double):double = this.s - d
+
+    /*
+     * ====================
+     *  unsignedShiftRight
+     * ====================
+     */
+
+    def unsignedShiftRight(i:int):int = this.s >>> i
+
+    def unsignedShiftRight(b:byte):int = this.s >>> b
+
+    def unsignedShiftRight(s:short):int = this.s >>> s
+
+    def unsignedShiftRight(c:char):int = this.s >>> c
+
+    def unsignedShiftRight(l:long):long = this.s >>> l
+
+    /*
+     * ============
+     *     xor
+     * ============
+     */
+
+    def xor(i:int):int = this.s >>> i
+
+    def xor(b:byte):int = this.s >>> b
+
+    def xor(s:short):int = this.s >>> s
+
+    def xor(c:char):int = this.s >>> c
+
+    def xor(l:long):long = this.s >>> l
+
+    def xor(b:bool):bool = (this.s as bool) ^ b
+
+    /*
+     * ============
+     *     pow
+     * ============
+     */
+
+    def pow(i:int):double = Math.pow(this.s as double, i as double)
+
+    def pow(l:long):double = Math.pow(this.s as double, l as double)
+
+    def pow(f:float):double = Math.pow(this.s as double, f as double)
+
+    def pow(d:double):double = Math.pow(this.s as double, d as double)
+
+    def pow(b:byte):double = Math.pow(this.s as double, b as double)
+
+    def pow(s:short):double = Math.pow(this.s as double, s as double)
+
+    def pow(c:char):double = Math.pow(this.s as double, c as double)
+
+/**
+ * rich String
+ */
+class RichString(val s:String)
+    def add(o):String
+        sb = StringBuilder()
+        sb append s append o
+        sb toString
+
+    def r():Pattern = Pattern.compile(s)
+
+    def r(flags:int):Pattern = Pattern.compile(s, flags)

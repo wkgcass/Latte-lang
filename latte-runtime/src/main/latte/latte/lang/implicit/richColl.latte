@@ -1,0 +1,188 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package lt::lang::`implicit`::collection
+
+import lt::lang::function::Function1
+
+import java::util::_
+import java::util::Collections._
+
+/**
+ * rich iterator
+ */
+class RichIterable(val iterable:Iterable)
+    def forEach(f:Function1):Unit
+        for e in iterable { f(e) }
+
+    def each(f:Function1):Unit = forEach(f)
+
+    def filter(f:Function1):List
+        list = []
+        for e in iterable { if f(e) { list + e }}
+        list
+
+    def map(f:Function1):List
+        list = []
+        for e in iterable { list + f(e) }
+        list
+
+/**
+ * rich list
+ */
+class RichList(val list:List)
+    /**
+     * concat one element and return a new List.
+     * the current list will not be modified
+     *
+     * @param elem the element to concat
+     * @return a new List containing elements in current list and the given element
+     */
+    def concat(elem):List
+        if elem is type Collection
+            return concat(elem as Collection)
+        newList = LinkedList(list)
+        newList + elem
+        newList
+
+    /**
+     * concat all elements and return a new List.
+     * the current list will not be modified
+     *
+     * @param collection elements to concat
+     * @return a new List containing elements in both current list and the given list
+     */
+    def concat(collection:Collection):List
+        newList = LinkedList(list)
+        newList.addAll(collection)
+        newList
+
+    /**
+     * put all elements into a string, the string is separated by the given separator
+     *
+     * @param separator separator
+     * @return a string containing all elements and separated by the separator
+     */
+     def join(separator:String):String
+        sb:StringBuilder = StringBuilder()
+        isFirst:bool = true
+        for e in list
+            if isFirst { isFirst = false } else { sb append separator }
+            sb append e
+        sb toString
+
+    /**
+     * reverse the elements' sequence<br>
+     * the method will modify the current List and won't generate a new List
+     *
+     * @return the original List object, also known as <code>this</code>
+     */
+    def reverse():List
+        Collections.reverse(list)
+        list
+
+    /**
+     * remove and return the first element
+     *
+     * @return the removed value
+     */
+    def shift() = list.remove(0)
+
+    /**
+     * select elements from current list
+     *
+     * @param fromIndex low endpoint (inclusive) of the subList (negative number means size()-fromIndex)
+     * @param toIndex   high endpoint (exclusive) of the subList (negative number means size()-toIndex)
+     * @return a List containing selected elements
+     */
+    def slice(fromIndex:int, toIndex:int):List
+        size:int = list.size()
+        if fromIndex < 0 { fromIndex = size - fromIndex }
+        if toIndex < 0 { toIndex = size - toIndex }
+        LinkedList(list.subList(fromIndex, toIndex))
+
+    /**
+     * select elements from current list
+     *
+     * @param fromIndex the subList starts at this position
+     * @return a List containing selected elements
+     */
+    def slice(fromIndex:int):List = slice(fromIndex, list.size())
+
+    /**
+     * insert one element to the head of the List
+     *
+     * @param element the element to insert
+     * @return the original List object, also known as <code>this</code>
+     */
+    def unshift(element):List
+        if element is type Collection { return unshift(element as Collection) }
+        list add 0, element
+        list
+
+    /**
+     * insert all elements to the head of the List
+     *
+     * @param elements elements to be inserted
+     * @return the original List object, also known as <code>this</code>
+     */
+    def unshift(elements:Collection):List
+        list addAll 0, elements
+        list
+
+    /**
+     * Returns the number of elements in this list.
+     *
+     * @return the number of elements in this list
+     */
+    def length():int = list.size()
+
+    /**
+     * create an immutable list with all current elements contained
+     *
+     * @return an immutable list
+     */
+    def immutable():List = Collections.unmodifiableList(list)
+
+/**
+ * rich map
+ */
+class RichMap(map:Map)
+    /**
+     * create an immutable map with all current entries contained
+     *
+     * @return an immutable map
+     */
+    def immutable():Map = Collections.unmodifiableMap(map)
+
+/**
+ * rich set
+ */
+class RichSet(set:Set)
+    /**
+     * get an immutable set with all current elements contained
+     *
+     * @return an immutable set
+     */
+    def immutable():Set = Collections.unmodifiableSet(set)

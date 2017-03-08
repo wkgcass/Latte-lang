@@ -48,7 +48,7 @@ class ExceptionContainer
         sb append msg
         count = 0
         for tMsg in exceptionMsgList
-            lines = tMsg split '\\n'
+            lines = tMsg split '\n'
             isFirst = true
             for line in lines
                 sb append '\n\t'

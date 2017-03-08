@@ -36,25 +36,25 @@ annotation Implicit
 /**
  * records the implicit import classes
  */
-@Target(ElementType.TYPE)
+@Target([ElementType.TYPE])
 annotation ImplicitImports
     implicitImports : []Class
 
 /**
  * mark the class as a latte function
  */
-@Target(ElementType.TYPE)
+@Target([ElementType.TYPE])
 annotation LatteFun
 
 /**
  * represents that the class is a singleton class
  */
-@Target(ElementType.TYPE)
+@Target([ElementType.TYPE])
 annotation LatteObject
 
 /**
  * record the static imports
  */
-@Target(ElementType.TYPE)
+@Target([ElementType.TYPE])
 annotation StaticImports
     staticImports : []Class
