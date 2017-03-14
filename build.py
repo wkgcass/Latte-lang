@@ -16,8 +16,6 @@ BUILD_MODULES = ['latte-class-recorder', 'latte-compiler', 'latte-gradle-plugin'
 DEPLOY_USER = ''
 DEPLOY_PASS = ''
 
-OS = ''
-
 JAVA_MIN_VERSION = '1.6'
 GRADLE_MIN_VERSION = '2.12'
 PACK_ZIP_DIR = 'latte-build/build/distributions/'
@@ -101,18 +99,10 @@ def check():
     versionFile.close()
     log('--- current version is [%s] ---' % (version))
 
-    # os
-    system = platform.system()
-    log('--- current os is [%s] ---' % (system))
-    global OS
-    OS = system
-
     return True
 
 def execute(cmd):
     exportStr = 'export'
-    if OS == 'windows':
-        exportStr = 'set'
     env = {}
     env['BUILD_ACTION'] = ACTION
     if DEPLOY_USER and DEPLOY_PASS:
@@ -131,10 +121,6 @@ def build():
     for m in BUILD_MODULES:
         if not buildModule(m):
             return False
-    return True
-
-def winLink(script):
-    # TODO windows link
     return True
 
 def unixLink(script):
@@ -166,15 +152,8 @@ def scripts():
 
     # link the scripts
     script = 'build/' + zipF[0:-4] + '/bin/latte'
-    system = platform.system()
 
-    linkMethod = None
-    if system == 'windows':
-        linkMethod = winLink
-    else:
-        linkMethod = unixLink
-
-    if linkMethod(script):
+    if unixLink(script):
         return True
     else:
         log('Create shortcut script failed')

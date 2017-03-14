@@ -46,7 +46,10 @@ clone the repository, and run
 
 	./build.py
 
-You will get a shell scripts (`latte` or `latte.bat`). The shell scripts can help you run the `repl`.
+You will get a shell scripts. The shell scripts can help you run the `repl`.
+
+>The build script does not support windows. Please follow the order (latte-[class-recorder | compiler | gradle-plugin | library | build]) to run `gradle clean latteBuild` in each directory, then extract `build/distributions/latte-${version}.zip` in module `latte-build`, the shell script is in the `bin` directory.
+
 
 run:
 
@@ -239,7 +242,9 @@ clone这个仓库,然后执行
 
 	./build.py
 
-你将会获取一个shell脚本 (`latte` 或 `latte.bat`), shell脚本可以快捷地开启`repl`.
+你将会获取一个shell脚本, shell脚本可以快捷地开启`repl`.
+
+>构建脚本不支持windows，请按latte-[class-recorder | compiler | gradle-plugin | library | build]顺序依次进入目录执行`gradle clean latteBuild`，并解压`latte-build`模块的`build/distributions/latte-${version}.zip`，其中的bin目录为shell脚本。
 
 执行:
 
