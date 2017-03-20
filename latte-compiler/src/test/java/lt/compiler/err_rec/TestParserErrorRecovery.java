@@ -640,21 +640,15 @@ public class TestParserErrorRecovery {
                 List<Statement> statements = parse("" +
                                 "method()()\n" +
                 /*       ^!!!! it's NO longer a syntax error */
-                                "method(())\n" +
-                /*              ^syntax */
                                 "method(class C, a)"
                 /*              ^syntax */
                         , err);
 
-                assertEquals(2, err.errorList.size());
+                assertEquals(1, err.errorList.size());
 
                 assertEquals(2, err.errorList.get(0).lineCol.line);
-                assertEquals(9, err.errorList.get(0).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(0).type);
-
-                assertEquals(3, err.errorList.get(1).lineCol.line);
-                assertEquals(8, err.errorList.get(1).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(1).type);
+                assertEquals(8, err.errorList.get(0).lineCol.column);
+                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(0).type);
 
                 assertEquals(
                         Arrays.asList(
@@ -664,11 +658,6 @@ public class TestParserErrorRecovery {
                                                 Collections.<Expression>emptyList(),
                                                 false, LineCol.SYNTHETIC
                                         ),
-                                        Collections.<Expression>emptyList(),
-                                        false, LineCol.SYNTHETIC
-                                ),
-                                new AST.Invocation(
-                                        new AST.Access(null, "method", LineCol.SYNTHETIC),
                                         Collections.<Expression>emptyList(),
                                         false, LineCol.SYNTHETIC
                                 ),

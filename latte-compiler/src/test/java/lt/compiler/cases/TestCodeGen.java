@@ -3899,4 +3899,32 @@ public class TestCodeGen {
                 assertEquals(2, method.invoke(null, a2));
                 assertEquals(3, method.invoke(null, a3));
         }
+
+        @Test
+        public void testNullAddString() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestNullAddString\n" +
+                                "    static\n" +
+                                "        def method=null + 'abc'"
+                        , "TestNullAddString");
+                assertEquals("nullabc", cls.getMethod("method").invoke(null));
+
+                cls = retrieveClass("" +
+                                "class TestNullAddString2\n" +
+                                "    static\n" +
+                                "        def add(i:int)=i\n" +
+                                "        def method1 = .add 'abc'\n" +
+                                "        def method2\n" +
+                                "            o:X = null\n" +
+                                "            o + 'abc'\n" +
+                                "class X"
+                        , "TestNullAddString2");
+                try {
+                        cls.getMethod("method1").invoke(null);
+                        fail();
+                } catch (InvocationTargetException ignore) {
+                        assertTrue(ignore.getTargetException() instanceof LtRuntimeException);
+                }
+                assertEquals("nullabc", cls.getMethod("method2").invoke(null));
+        }
 }

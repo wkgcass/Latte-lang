@@ -170,7 +170,7 @@ def perform():
     return True
 
 def start():
-    if ACTION == 'deploy':
+    if ACTION == 'Deploy':
         DEPLOY_USER = raw_input('user: ')
         DEPLOY_PASS = getpass.getpass('pass: ')
 
@@ -180,7 +180,7 @@ def start():
     startTime = time.time()
 
     res = check() and perform()
-    if ACTION == 'build':
+    if ACTION == 'Build':
         scripts()
 
     endTime = time.time()

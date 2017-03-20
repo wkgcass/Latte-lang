@@ -716,6 +716,7 @@ public class Dynamic {
          * @param invocationState  invocationState
          * @param targetClass      the method is in this class
          * @param o                invoke the method on the object (or null if invoke static)
+         * @param isStatic         whether the invocation is static
          * @param functionalObject the object to invoke functional method on if method not found
          * @param invoker          from which class invokes the method
          * @param method           method name
@@ -728,6 +729,7 @@ public class Dynamic {
         public static Object invoke(InvocationState invocationState,
                                     Class<?> targetClass,
                                     Object o,
+                                    boolean isStatic,
                                     Object functionalObject,
                                     Class<?> invoker,
                                     String method,
@@ -761,7 +763,7 @@ public class Dynamic {
                                         as[i - 1] = args[i];
                                 }
 
-                                return invoke(invocationState, targetClass, res, null, invoker, "get", bs, as, canInvokeImport);
+                                return invoke(invocationState, targetClass, res, isStatic, null, invoker, "get", bs, as, canInvokeImport);
                         } else if (method.equals("set") && args.length >= 2 && args[0] instanceof Integer) {
                                 if (args.length == 2) {
                                         Array.set(o, (Integer) args[0], args[1]);
@@ -776,13 +778,17 @@ public class Dynamic {
                                                 as[i - 1] = args[i];
                                         }
 
-                                        return invoke(invocationState, targetClass, elem, null, invoker, "set", bs, as, canInvokeImport);
+                                        return invoke(invocationState, targetClass, elem, isStatic, null, invoker, "set", bs, as, canInvokeImport);
                                 }
                         } else {
                                 ec.add("Target is array but method is not get(int)");
                                 ec.add("Target is array but method is not set(int, ...)");
                         }
                 } else {
+                        // null string append
+                        if (!isStatic && o == null && method.equals("add") && args.length == 1 && args[0] instanceof String) {
+                                return "null" + args[0];
+                        }
                         // implicit cast
                         if (o != null && invoker.isAnnotationPresent(ImplicitImports.class)) {
                                 Class<?>[] implicitClasses = invoker.getAnnotation(ImplicitImports.class).implicitImports();
@@ -818,7 +824,7 @@ public class Dynamic {
                         }
 
                         if (method.equals("set")) {
-                                return invoke(invocationState, targetClass, o, functionalObject, invoker, "put", primitives, args, canInvokeImport);
+                                return invoke(invocationState, targetClass, o, isStatic, functionalObject, invoker, "put", primitives, args, canInvokeImport);
                         } else {
                                 ec.add("Is not set/put transform");
                         }
@@ -950,7 +956,7 @@ public class Dynamic {
                 } else {
                         // try to invoke apply(...) on this object
                         return invoke(invocationState,
-                                functionalObject.getClass(), functionalObject, null, callerClass, "apply", new boolean[args.length], args, false);
+                                functionalObject.getClass(), functionalObject, false, null, callerClass, "apply", new boolean[args.length], args, false);
                 }
 
                 // continue processing `theMethodToInvoke`
@@ -971,7 +977,8 @@ public class Dynamic {
          * invoke a method.
          *
          * @param targetClass      the method is in this class
-         * @param o                invoke the method on the object (or null if invoke static)
+         * @param o                invoke the method on the object (or null if invoke static)\
+         * @param isStatic         whether the invocation is static
          * @param functionalObject the object to invoke functional method on if method not found
          * @param invoker          from which class invokes the method
          * @param method           method name
@@ -981,8 +988,8 @@ public class Dynamic {
          * @throws Throwable exception
          */
         @SuppressWarnings("unused")
-        public static Object invoke(Class<?> targetClass, Object o, Object functionalObject, Class<?> invoker,
+        public static Object invoke(Class<?> targetClass, Object o, boolean isStatic, Object functionalObject, Class<?> invoker,
                                     String method, boolean[] primitives, Object[] args, boolean canInvokeImport) throws Throwable {
-                return invoke(new InvocationState(), targetClass, o, functionalObject, invoker, method, primitives, args, canInvokeImport);
+                return invoke(new InvocationState(), targetClass, o, isStatic, functionalObject, invoker, method, primitives, args, canInvokeImport);
         }
 }

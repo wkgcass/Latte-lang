@@ -2770,4 +2770,12 @@ public class TestParser {
                         )
                 ), stmts);
         }
+
+        @Test
+        public void testEmptyProcedure() throws Exception {
+                List<Statement> stmts = parse("()");
+                assertEquals(Collections.singletonList(
+                        new AST.Procedure(Collections.<Statement>emptyList(), LineCol.SYNTHETIC)
+                ), stmts);
+        }
 }

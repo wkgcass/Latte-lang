@@ -1087,10 +1087,10 @@ public class TestSemantic {
                 Instruction ins = classDef.constructors().get(0).statements().get(1);
                 assertTrue(ins instanceof Ins.InvokeStatic);
                 Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) ins;
-                assertEquals("get", ((StringConstantValue) invokeStatic.arguments().get(4)).getStr());
+                assertEquals("get", ((StringConstantValue) invokeStatic.arguments().get(5)).getStr());
                 assertTrue(invokeStatic.arguments().get(1) instanceof Ins.GetField); // i
                 // Integer.valueOf(0)
-                Ins.ANewArray arr = ((Ins.ANewArray) invokeStatic.arguments().get(6));
+                Ins.ANewArray arr = ((Ins.ANewArray) invokeStatic.arguments().get(7));
                 assertEquals(new IntValue(0), ((Ins.InvokeStatic) arr.initValues().get(0)).arguments().get(0)); // [0]
         }
 
@@ -1805,21 +1805,21 @@ public class TestSemantic {
                 assertTrue(i1 instanceof Ins.TLoad);
 
                 Ins.InvokeStatic in0 = (Ins.InvokeStatic) i0;
-                assertEquals("set", ((StringConstantValue) in0.arguments().get(4)).getStr());
-                assertEquals(8, in0.arguments().size());
+                assertEquals("set", ((StringConstantValue) in0.arguments().get(5)).getStr());
+                assertEquals(9, in0.arguments().size());
                 assertTrue(in0.arguments().get(0) instanceof Ins.GetClass);
                 assertTrue(in0.arguments().get(1) instanceof Ins.GetField);
-                assertEquals(NullValue.get(), in0.arguments().get(2));
+                assertEquals(NullValue.get(), in0.arguments().get(3));
                 // Integer.valueOf(1)
                 assertTrue(
                         ((Ins.InvokeStatic)
                                 ((Ins.ANewArray)
-                                        in0.arguments().get(6)).initValues().get(0)).arguments().get(0)
+                                        in0.arguments().get(7)).initValues().get(0)).arguments().get(0)
                                 instanceof IntValue);
                 // Integer.valueOf(?)
                 assertTrue(((Ins.InvokeStatic)
                         ((Ins.ANewArray)
-                                in0.arguments().get(6)).initValues().get(1)).arguments().get(0)
+                                in0.arguments().get(7)).initValues().get(1)).arguments().get(0)
                         instanceof Ins.TLoad);
         }
 
@@ -2582,7 +2582,7 @@ public class TestSemantic {
                 SClassDef classDef = (SClassDef) it.next();
                 Instruction ins = classDef.constructors().get(0).statements().get(1);
                 assertTrue(ins instanceof Ins.InvokeStatic);
-                assertEquals("assign", ((StringConstantValue) ((Ins.InvokeStatic) ins).arguments().get(4)).getStr());
+                assertEquals("assign", ((StringConstantValue) ((Ins.InvokeStatic) ins).arguments().get(5)).getStr());
         }
 
         @Test
@@ -2718,9 +2718,9 @@ public class TestSemantic {
                 SConstructorDef cons = classDef.constructors().get(0);
 
                 Ins.InvokeStatic invokeStatic = (Ins.InvokeStatic) cons.statements().get(2);
-                Ins.ANewArray arr = (Ins.ANewArray) invokeStatic.arguments().get(6);
+                Ins.ANewArray arr = (Ins.ANewArray) invokeStatic.arguments().get(7);
                 assertEquals(0, arr.initValues().size());
-                Ins.GetField getField = (Ins.GetField) invokeStatic.arguments().get(2);
+                Ins.GetField getField = (Ins.GetField) invokeStatic.arguments().get(3);
                 assertEquals("a", getField.field().name());
         }
 
@@ -2745,7 +2745,7 @@ public class TestSemantic {
                 Ins.ANewArray arr = (Ins.ANewArray) invokeStatic.arguments().get(2);
                 assertEquals(0, arr.initValues().size());
                 Ins.InvokeStatic invokeStatic2 = (Ins.InvokeStatic) invokeStatic.arguments().get(0);
-                Ins.GetField getField = (Ins.GetField) invokeStatic2.arguments().get(2);
+                Ins.GetField getField = (Ins.GetField) invokeStatic2.arguments().get(3);
                 assertEquals("a", getField.field().name());
         }
 

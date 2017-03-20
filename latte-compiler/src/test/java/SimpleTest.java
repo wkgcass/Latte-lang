@@ -13,8 +13,10 @@ import java.util.Set;
 /**
  * Created by wkgcass on 16/6/4.
  */
-public @interface SimpleTest {
-        String value() default "a";
+public class SimpleTest {
+        public static void main(String[] args) {
+                System.out.println(null + "a");
+        }
 }
 /*
 public class SimpleTest {

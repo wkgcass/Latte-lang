@@ -1977,7 +1977,7 @@ public class Parser {
                                                                                         false, invocationExp.line_col());
                                                                                 parsedExps.push(invocation);
                                                                         } else {
-                                                                                err.SyntaxException("it should be the method to invoke", parsedExps.empty() ? current.getLineCol() : parsedExps.peek().line_col());
+                                                                                parsedExps.push(new AST.Procedure(Collections.<Statement>emptyList(), current.getLineCol()));
                                                                         }
 
                                                                         nextNode(true);

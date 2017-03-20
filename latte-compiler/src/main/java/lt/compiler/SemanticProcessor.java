@@ -61,6 +61,16 @@ public class SemanticProcessor {
 
         public static final String DYNAMIC_CLASS_NAME = Dynamic.class.getName();
 
+        public static final int INDEX_invoke_targetClass = 0;
+        public static final int INDEX_invoke_o = 1;
+        public static final int INDEX_invoke_isStatic = 2;
+        public static final int INDEX_invoke_functionalObject = 3;
+        public static final int INDEX_invoke_invoker = 4;
+        public static final int INDEX_invoke_method = 5;
+        public static final int INDEX_invoke_primitives = 6;
+        public static final int INDEX_invoke_args = 7;
+        public static final int INDEX_invoke_canInvokeImport = 8;
+
         /**
          * Map&lt;FileName, List of statements&gt;
          */
@@ -4216,15 +4226,15 @@ public class SemanticProcessor {
                                 // or
                                 // map[?1]=?2
                                 Ins.InvokeStatic invoke = (Ins.InvokeStatic) assignTo;
-                                if (((StringConstantValue) invoke.arguments().get(4)).getStr().equals("get")
-                                        && ((Ins.ANewArray) invoke.arguments().get(6)).initValues().size() > 0) {
+                                if (((StringConstantValue) invoke.arguments().get(INDEX_invoke_method)).getStr().equals("get")
+                                        && ((Ins.ANewArray) invoke.arguments().get(INDEX_invoke_args)).initValues().size() > 0) {
                                         // the method to invoke should be set
                                         Ins.GetClass cls = (Ins.GetClass) invoke.arguments().get(0); // class
                                         Value target = invoke.arguments().get(1);
 
                                         // args
                                         List<Value> list = new ArrayList<Value>();
-                                        list.addAll(((Ins.ANewArray) invoke.arguments().get(6)).initValues());
+                                        list.addAll(((Ins.ANewArray) invoke.arguments().get(INDEX_invoke_args)).initValues());
                                         list.add(assignFrom);
 
                                         instructions.add((Instruction) invokeMethodWithArgs(
@@ -6440,6 +6450,7 @@ public class SemanticProcessor {
                         return invoke_Dynamic_invoke(
                                 targetType,
                                 invokeOn,
+                                false,
                                 NullValue.get(),
                                 scope.type(),
                                 methodName,
@@ -8349,7 +8360,7 @@ public class SemanticProcessor {
                 if (DYNAMIC_invoke == null) {
                         SClassDef DYNAMIC = getDynamicClass();
                         for (SMethodDef m : DYNAMIC.methods()) {
-                                if (m.name().equals("invoke") && m.getParameters().size() == 8) {
+                                if (m.name().equals("invoke") && m.getParameters().size() == 9) {
                                         DYNAMIC_invoke = m;
                                         break;
                                 }
@@ -8430,7 +8441,7 @@ public class SemanticProcessor {
                 return newArray;
         }
 
-        private Ins.InvokeStatic invoke_Dynamic_invoke(STypeDef targetClass, Value o, Value functionalObject,
+        private Ins.InvokeStatic invoke_Dynamic_invoke(STypeDef targetClass, Value o, boolean isStatic, Value functionalObject,
                                                        STypeDef invoker, String method, List<Value> args, boolean canInvokeImport,
                                                        LineCol lineCol) throws SyntaxException {
                 Ins.InvokeStatic is = new Ins.InvokeStatic(
@@ -8438,6 +8449,7 @@ public class SemanticProcessor {
                 );
                 is.arguments().add(new Ins.GetClass(targetClass, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                 is.arguments().add(o);
+                is.arguments().add(new BoolValue(isStatic));
                 is.arguments().add(functionalObject);
                 is.arguments().add(new Ins.GetClass(invoker, (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                 is.arguments().add(new StringConstantValue(method));
@@ -8758,6 +8770,7 @@ public class SemanticProcessor {
 
                                                         return invoke_Dynamic_invoke(
                                                                 type, NullValue.get(),
+                                                                true,
                                                                 field == null
                                                                         ? NullValue.get()
                                                                         : new Ins.GetStatic(field, invocation.line_col()),
@@ -8858,7 +8871,7 @@ public class SemanticProcessor {
                                 }
                         }
 
-                        return invoke_Dynamic_invoke(targetClass, o, functionalObject, scope.type(), access.name, argList, access.exp == null, invocation.line_col());
+                        return invoke_Dynamic_invoke(targetClass, o, scope.getThis() == null, functionalObject, scope.type(), access.name, argList, access.exp == null, invocation.line_col());
                 } else {
                         SMethodDef methodToInvoke;
                         boolean invokeInnerMethod = false;

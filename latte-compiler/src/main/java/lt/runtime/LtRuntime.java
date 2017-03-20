@@ -215,7 +215,7 @@ public class LtRuntime {
                         }
                         if (targetNewInstance != null) {
                                 for (Object item : list) {
-                                        Dynamic.invoke(new Dynamic.InvocationState(), targetType, targetNewInstance, null,
+                                        Dynamic.invoke(new Dynamic.InvocationState(), targetType, targetNewInstance, false, null,
                                                 LtRuntime.class, "add", new boolean[]{false}, new Object[]{item}, false);
                                 }
                                 return targetNewInstance;
@@ -468,7 +468,7 @@ public class LtRuntime {
 
                 // try to find `fieldName()`
                 try {
-                        return Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, fieldName, new boolean[0], new Object[0], false);
+                        return Dynamic.invoke(invocationState, o.getClass(), o, false, null, callerClass, fieldName, new boolean[0], new Object[0], false);
                 } catch (Throwable t) {
                         throwNonRuntime(invocationState, t);
                         ec.add("Cannot invoke method " + o.getClass().getName() + "#" + fieldName + "()\n\t" + t.getMessage());
@@ -477,7 +477,7 @@ public class LtRuntime {
                 String getter = null;
                 try {
                         getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-                        return Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, getter, new boolean[0], new Object[0], false);
+                        return Dynamic.invoke(invocationState, o.getClass(), o, false, null, callerClass, getter, new boolean[0], new Object[0], false);
                 } catch (Throwable t) {
                         throwNonRuntime(invocationState, t);
                         assert getter != null;
@@ -488,7 +488,7 @@ public class LtRuntime {
                         try {
                                 int i = Integer.parseInt(fieldName.substring(1));
                                 try {
-                                        return Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, "get", new boolean[]{true}, new Object[]{i}, false);
+                                        return Dynamic.invoke(invocationState, o.getClass(), o, false, null, callerClass, "get", new boolean[]{true}, new Object[]{i}, false);
                                 } catch (Throwable t) {
                                         throwNonRuntime(invocationState, t);
                                         ec.add("Cannot invoke method " + o.getClass().getName() + "#get(" + i + ")\n\t" + t.getMessage());
@@ -499,7 +499,7 @@ public class LtRuntime {
                 }
                 // try to find `get(fieldName)`
                 try {
-                        return Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, "get", new boolean[]{false}, new Object[]{fieldName}, false);
+                        return Dynamic.invoke(invocationState, o.getClass(), o, false, null, callerClass, "get", new boolean[]{false}, new Object[]{fieldName}, false);
                 } catch (Throwable t) {
                         throwNonRuntime(invocationState, t);
                         ec.add("Cannot invoke method " + o.getClass().getName() + "#get(" + fieldName + ")\n\t" + t.getMessage());
@@ -561,7 +561,7 @@ public class LtRuntime {
         /**
          * put field.<br>
          * if field not found , then the method would try to invoke set(fieldName, value)<br>
-         * the method calls {@link Dynamic#invoke(Class, Object, Object, Class, String, boolean[], Object[], boolean)}, and <code>set(fieldName,value)</code> may be changed to <code>put(fieldName, value)</code>
+         * the method calls {@link Dynamic#invoke(Class, Object, boolean, Object, Class, String, boolean[], Object[], boolean)}, and <code>set(fieldName,value)</code> may be changed to <code>put(fieldName, value)</code>
          *
          * @param o           object
          * @param fieldName   field name
@@ -594,7 +594,7 @@ public class LtRuntime {
                 String setter = null;
                 try {
                         setter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-                        Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass, setter, new boolean[]{false}, new Object[]{value}, false);
+                        Dynamic.invoke(invocationState, o.getClass(), o, false, null, callerClass, setter, new boolean[]{false}, new Object[]{value}, false);
                 } catch (Throwable t) {
                         throwNonRuntime(invocationState, t);
                         assert setter != null;
@@ -602,7 +602,7 @@ public class LtRuntime {
                         // try to find `set(fieldName,value)`
                         // invoke dynamic would try to find set then try to find put
                         try {
-                                Dynamic.invoke(invocationState, o.getClass(), o, null, callerClass,
+                                Dynamic.invoke(invocationState, o.getClass(), o, false, null, callerClass,
                                         "set",
                                         new boolean[]{false, false},
                                         new Object[]{fieldName, value}, false);
