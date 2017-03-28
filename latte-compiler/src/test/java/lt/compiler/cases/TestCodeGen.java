@@ -3927,4 +3927,38 @@ public class TestCodeGen {
                 }
                 assertEquals("nullabc", cls.getMethod("method2").invoke(null));
         }
+
+        @Test
+        public void testClone() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestClone\n" +
+                                "    static\n" +
+                                "        def method(o)=o.clone()\n" +
+                                "        def getX(a)=X(a)\n" +
+                                "data class X(a)"
+                        , "TestClone");
+                Method getX = cls.getMethod("getX", Object.class);
+                Method method = cls.getMethod("method", Object.class);
+                Object x = getX.invoke(null, 1);
+                Object y = method.invoke(null, x);
+                assertFalse(x == y);
+                assertTrue(x.equals(y));
+        }
+
+        @Test
+        public void testSerialize() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import java::io::_\n" +
+                                "class TestSerialize\n" +
+                                "    static\n" +
+                                "        def method\n" +
+                                "            baos = ByteArrayOutputStream()\n" +
+                                "            ObjectOutputStream(baos).writeObject(X(1))\n" +
+                                "            bytes = baos.toByteArray()\n" +
+                                "            lt::LatteObjectOutputStream((type TestSerialize).classLoader, ByteArrayInputStream(bytes)).readObject()\n" +
+                                "data class X(a)"
+                        , "TestSerialize");
+                Method method = cls.getMethod("method");
+                assertEquals("X(a=1)", method.invoke(null).toString());
+        }
 }

@@ -95,7 +95,7 @@ def check():
 
     # get version
     versionFile = open(VERSION_FILE, 'r')
-    version = versionFile.read().strip()
+    version = versionFile.readline().strip()
     versionFile.close()
     log('--- current version is [%s] ---' % (version))
 

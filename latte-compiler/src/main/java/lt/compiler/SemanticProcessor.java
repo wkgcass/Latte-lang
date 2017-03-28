@@ -766,11 +766,12 @@ public class SemanticProcessor {
          * build fields,methods,constructors,parameters,parent-classes,super-interfaces,annotations.
          * but no details (annotation's values|method statements|constructor statements won't be parsed)
          *
-         * @param fileNameToClassDef     file name to class defintion
-         * @param fileNameToInterfaceDef file name to interface definition
-         * @param fileNameToPackageName  file name to package name
-         * @param fileNameToFunctions    file name to function def
-         * @param fileNameToObjectDefs   file name to object def
+         * @param fileNameToClassDef       file name to class defintion
+         * @param fileNameToInterfaceDef   file name to interface definition
+         * @param fileNameToPackageName    file name to package name
+         * @param fileNameToFunctions      file name to function def
+         * @param fileNameToObjectDefs     file name to object def
+         * @param fileNameToAnnotationDefs file name to annotation def
          * @throws SyntaxException exception
          */
         public void step2(Map<String, List<ClassDef>> fileNameToClassDef,
@@ -1887,6 +1888,27 @@ public class SemanticProcessor {
                                 return;
                         }
                 }
+
+                // implement Cloneable and Serializable
+                cls.superInterfaces().add((SInterfaceDef) getTypeWithName(Cloneable.class.getName(), LineCol.SYNTHETIC));
+                cls.superInterfaces().add((SInterfaceDef) getTypeWithName(Serializable.class.getName(), LineCol.SYNTHETIC));
+                // add clone()=super.clone()
+                SMethodDef methodClone = new SMethodDef(LineCol.SYNTHETIC);
+                methodClone.setName("clone");
+                methodClone.setDeclaringType(cls);
+                cls.methods().add(methodClone);
+                methodClone.setReturnType(getObject_Class());
+                methodClone.modifiers().add(SModifier.PUBLIC);
+                SMethodDef Object_clone = null;
+                for (SMethodDef m : getObject_Class().methods()) {
+                        if (m.name().equals("clone")) {
+                                Object_clone = m;
+                                break;
+                        }
+                }
+                assert Object_clone != null;
+                Ins.InvokeSpecial invokeObjectClone = new Ins.InvokeSpecial(new Ins.This(cls), Object_clone, LineCol.SYNTHETIC);
+                methodClone.statements().add(new Ins.TReturn(invokeObjectClone, LineCol.SYNTHETIC));
 
                 Map<SFieldDef, SMethodDef> setters = new HashMap<SFieldDef, SMethodDef>();
                 Map<SFieldDef, SMethodDef> getters = new HashMap<SFieldDef, SMethodDef>();
@@ -8244,6 +8266,10 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public void findMethodFromTypeWithArguments(LineCol lineCol, String name, List<Value> argList, STypeDef invokeOn, STypeDef sTypeDef, int mode, List<SMethodDef> matchedMethods, boolean checkSuper) throws SyntaxException {
+                if (name.equals("clone") && sTypeDef.fullName().equals("java.lang.Object")) {
+                        // ignore any invocation on `Object#clone` at compile time
+                        return;
+                }
                 if (sTypeDef instanceof SClassDef) {
                         findMethodFromClassWithArguments(name, argList, invokeOn, (SClassDef) sTypeDef, mode, matchedMethods, checkSuper);
                 } else if (sTypeDef instanceof SInterfaceDef) {

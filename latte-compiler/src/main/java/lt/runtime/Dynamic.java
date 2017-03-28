@@ -984,6 +984,7 @@ public class Dynamic {
          * @param method           method name
          * @param primitives       whether the argument is primitive
          * @param args             the arguments
+         * @param canInvokeImport  whether the invocation is allowed to invoke methods from import static
          * @return the method result (void methods' results are <tt>Unit</tt>)
          * @throws Throwable exception
          */
