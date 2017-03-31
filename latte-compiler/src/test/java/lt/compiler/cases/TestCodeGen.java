@@ -3961,4 +3961,16 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method");
                 assertEquals("X(a=1)", method.invoke(null).toString());
         }
+
+        @Test
+        public void testArrayAsArg() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "import java::util::_\n" +
+                                "class TestArrayAsArg\n" +
+                                "    static\n" +
+                                "        def method(o)=Arrays.asList(o)"
+                        , "TestArrayAsArg");
+                Method method = cls.getMethod("method", Object.class);
+                assertEquals(Arrays.asList(1, 2, 3), method.invoke(null, (Object) new Object[]{1, 2, 3}));
+        }
 }

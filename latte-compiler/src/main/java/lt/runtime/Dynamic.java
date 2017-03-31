@@ -511,6 +511,9 @@ public class Dynamic {
          * @return cast steps - 0 means no cast
          */
         private static int bfsSearch(Class<?> current, Class<?> required) {
+                if (current.isArray() && required.isArray()) {
+                        return bfsSearch(current.getComponentType(), required.getComponentType());
+                }
                 Set<Class<?>> visited = new HashSet<Class<?>>();
                 Queue<Class<?>> queue = new ArrayDeque<Class<?>>();
                 List<Class<?>> ready = new LinkedList<Class<?>>();
