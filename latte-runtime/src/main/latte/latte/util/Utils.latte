@@ -1,0 +1,148 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 KuiGang Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package lt::util
+
+import lt::repl::Evaluator
+import lt::repl::ClassPathLoader
+
+import java::io::_
+import java::util::LinkedHashMap
+import java::util::Map
+import java::util::regex::Pattern
+
+/**
+ * automatically import static this class
+ */
+private class Utils
+    static
+        /**
+         * print the object and new line
+         *
+         * @param o the object to print
+         */
+        def println(o):Unit
+            if o is type []char
+                System.out.println(o as []char)
+            else
+                System.out.println(o)
+
+        /**
+         * print the char array and new line
+         *
+         * @param o the char array to print
+         */
+        println(o:[]char):Unit = System.out.println(o)
+
+        /**
+         * print a new line
+         */
+        println():Unit = System.out.println()
+
+        /**
+         * print the object
+         *
+         * @param o the object to print
+         */
+        print(o):Unit
+            if o is type []char
+                System.out.print(o as []char)
+            else
+                System.out.print(o)
+
+        /**
+         * evaluate the expression
+         *
+         * @param e expression or statement
+         * @return if the input defines types, then the result is a list of {@link Class} objects.
+         * otherwise, it's the evaluated result object.
+         */
+        eval(e:String) = eval(ClassLoader.getSystemClassLoader(), e)
+
+        /**
+         * evaluate the expression
+         *
+         * @param loader the classloader
+         * @param e      expression or statement
+         * @return if the input defines types, then the result is a list of {@link Class} objects.
+         * otherwise, it's the evaluated result object.
+         * @throws Exception exception
+         */
+        def eval(loader:ClassLoader, e:String)
+            evaluator = Evaluator(ClassPathLoader(loader))
+            evaluator.eval(e).result
+
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
+         * @param dir         the base directory
+         * @param regex       file pattern
+         * @param recursively scan the children directories
+         * @return a map.
+         */
+        filesInDirectory(dir:String, regex:String, recursively:bool=false):Map = filesInDirectory(new File(dir), regex, recursively)
+
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
+         * @param dir         the base directory
+         * @param regex       file pattern
+         * @param recursively scan the children directories
+         * @return a map.
+         */
+        filesInDirectory(dir:String, regex:Pattern, recursively:bool=false):Map = filesInDirectory(new File(dir), regex, recursively)
+
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
+         * @param dir         the base directory
+         * @param regex       file pattern
+         * @param recursively scan the children directories
+         * @return a map.
+         */
+        filesInDirectory(dir:File, regex:String, recursively:bool=false):Map = filesInDirectory(dir, Pattern.compile(regex), recursively)
+
+        /**
+         * get files in the directory. the result would be a fileName =&gt; File map.
+         *
+         * @param dir         the base directory
+         * @param regex       file name pattern
+         * @param recursively scan the children directories
+         * @return a map.
+         */
+        def filesInDirectory(dir:File, regex:Pattern, recursively:bool=false):Map
+            if dir == null { throw NullPointerException('dir is null') }
+            map = {}
+            if dir.isDirectory
+                listFiles = dir.listFiles()
+                if listFiles != null
+                    for f in listFiles
+                        if f.isFile()
+                            if regex.matcher(f.name).matches()
+                                map[f.name] = f
+                        elseif f.isDirectory() and recursively
+                            files = filesInDirectory(f, regex, true)
+                            map putAll files
+            else { throw IllegalArgumentException(dir + ' is not a directory') }
+            return map

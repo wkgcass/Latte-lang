@@ -23,3 +23,45 @@
  */
 
 package lt::lang::`implicit`
+
+import lt::runtime::Implicit
+import lt::runtime::LatteObject
+import lt::lang::`implicit`::collection::_
+
+import java::util::List
+import java::util::Map
+import java::util::Set
+
+/**
+ * implicit casts on collections
+ */
+implicit object CollectionImplicit
+    implicit cast(list:List):RichList = RichList(list)
+    implicit cast(set:Set):RichSet = RichSet(set)
+    implicit cast(map:Map):RichMap = RichMap(map)
+    implicit cast(i:Iterable):RichIterable = RichIterable(i)
+
+/**
+ * implicit casts for object
+ */
+implicit object ObjectImplicit
+    implicit cast(s)=RichObject(s)
+
+/**
+ * implicit casts for primitives
+ */
+implicit object PrimitivesImplicit
+    implicit cast(b:Boolean):RichBool = RichBool(b)
+    implicit cast(b:Byte):RichByte = RichByte(b)
+    implicit cast(c:Character):RichChar = RichChar(c)
+    implicit cast(d:Double):RichDouble = RichDouble(d)
+    implicit cast(f:Float):RichFloat = RichFloat(f)
+    implicit cast(i:Integer):RichInt = RichInt(i)
+    implicit cast(l:Long):RichLong = RichLong(l)
+    implicit cast(s:Short):RichShort = RichShort(s)
+
+/**
+ * implicit casts for string
+ */
+implicit object StringImplicit
+    cast(s:String):RichString = RichString(s)

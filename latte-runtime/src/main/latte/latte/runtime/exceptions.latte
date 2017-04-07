@@ -28,3 +28,8 @@ package lt::runtime
  * a wrapper containing required object
  */
 class Wrapper(public val object) : RuntimeException
+
+/**
+ * thrown when nothing matches in a pattern matching
+ */
+class MatchError : Error
