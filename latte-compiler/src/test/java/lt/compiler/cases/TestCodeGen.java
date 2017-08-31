@@ -3973,4 +3973,16 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method", Object.class);
                 assertEquals(Arrays.asList(1, 2, 3), method.invoke(null, (Object) new Object[]{1, 2, 3}));
         }
+
+        @Test
+        public void testStringIndexAccess() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestStringIndexAccess\n" +
+                                "    static\n" +
+                                "        def method(s:String, index:int)=s[index]\n"
+                        , "TestStringIndexAccess");
+                Method method = cls.getMethod("method", String.class, int.class);
+                assertEquals('h', method.invoke(null, "helloworld", 0));
+                assertEquals('w', method.invoke(null, "helloworld", 5));
+        }
 }

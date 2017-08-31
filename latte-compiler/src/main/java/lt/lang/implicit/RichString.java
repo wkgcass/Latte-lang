@@ -7,9 +7,11 @@ import java.util.regex.Pattern;
  */
 public class RichString {
         private String s;
+        private char[] chars;
 
         public RichString(String s) {
                 this.s = s;
+                this.chars = s.toCharArray();
         }
 
         public String add(Object o) {
@@ -22,5 +24,9 @@ public class RichString {
 
         public Pattern r(int flags) {
                 return Pattern.compile(s, flags);
+        }
+
+        public char get(int index) {
+                return chars[index];
         }
 }
