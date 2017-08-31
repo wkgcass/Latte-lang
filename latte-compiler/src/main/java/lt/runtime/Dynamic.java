@@ -808,7 +808,7 @@ public class Dynamic {
                                                                         Class<?> outputType = m.getReturnType();
                                                                         Method foundMethod = findMethod(invoker, outputType, o, method, primitives, args);
                                                                         if (foundMethod == null) {
-                                                                                ec.add("Cannot cast " + o.getClass().getName() + " to " + m.getReturnType());
+                                                                                ec.add("Still cannot find method if casting " + o.getClass().getName() + " to " + m.getReturnType());
                                                                                 continue;
                                                                         }
                                                                         // get object instance
