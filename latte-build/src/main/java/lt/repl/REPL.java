@@ -208,6 +208,7 @@ public class REPL {
                                 "       -gb <project-directory>\n" +
                                 "       -repl\n" +
                                 "       -v | -version\n" +
+                                "       -e <statements>\n" +
                                 "\n" +
                                 "-s       Specify the script location and run the script\n" +
                                 "-c       Specify the source file directory and compile *.lt files\n" +
@@ -216,6 +217,7 @@ public class REPL {
                                 "-cp      [option] The classpath. use ':' to separate the class-paths\n" +
                                 "-repl    Start the repl (or run the program with 0 arguments)\n" +
                                 "-gb      Generate build.lts and run.lts in the given directory\n" +
+                                "-e       Evaluate the given statement and print the result\n" +
                                 "-version Show current version\n");
 
                 } else if (command.equals("-v") || command.equals("-version")) {
@@ -364,6 +366,21 @@ public class REPL {
 
                 } else if (command.equals("-repl")) {// repl
                         main(new String[0]);
+                } else if (command.equals("-e")) {// eval
+                        if (args.length == 1 || args[1] == null || args[1].trim().isEmpty()) {
+                                System.err.println("missing statements to eval");
+                                return;
+                        }
+                        int i = 1;
+                        String statements = args[i].trim();
+                        ++i;
+                        while (i < args.length) {
+                                statements += " " + args[i].trim();
+                                ++i;
+                        }
+                        Evaluator e = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
+                        Evaluator.Entry entry = e.eval(statements);
+                        System.out.println(entry.result);
 
                 } else {// run
                         List<URL> urls = new ArrayList<URL>();
