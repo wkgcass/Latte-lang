@@ -371,13 +371,7 @@ public class REPL {
                                 System.err.println("missing statements to eval");
                                 return;
                         }
-                        int i = 1;
-                        String statements = args[i].trim();
-                        ++i;
-                        while (i < args.length) {
-                                statements += " " + args[i].trim();
-                                ++i;
-                        }
+                        String statements = args[0].trim();
                         Evaluator e = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                         Evaluator.Entry entry = e.eval(statements);
                         System.out.println(entry.result);

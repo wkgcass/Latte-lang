@@ -129,7 +129,7 @@ def unixLink(script):
     # which redirect all input arguments to dest script
     f = open('latte', 'w')
     f.write('basepath=$(cd `dirname $0`; pwd)\n')
-    f.write('$basepath/' + script + ' $*\n')
+    f.write('$basepath/' + script + ' "$@"\n')
     f.close()
     # and chmox +x to both the scripts
     return \
