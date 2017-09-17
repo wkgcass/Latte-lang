@@ -27,10 +27,13 @@ package lt.repl;
 import lt.compiler.*;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
+import lt.repl.scripting.Config;
+import lt.repl.scripting.EvalEntry;
 import lt.runtime.LtRuntimeException;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.script.ScriptException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
@@ -110,7 +113,7 @@ public class TestBugsInEval {
         @Test
         public void test1() throws Exception {
                 evaluator.eval("arr:[]String=[null]");
-                Evaluator.Entry entry = evaluator.eval("arr[0]='abc'");
+                EvalEntry entry = evaluator.eval("arr[0]='abc'");
                 assertEquals("res0", entry.name);
                 assertEquals("abc", entry.result);
         }
@@ -191,7 +194,7 @@ public class TestBugsInEval {
 
         @Test
         public void testInternalLambdaAndOtherStatements() throws Exception {
-                evaluator.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
+                evaluator.setScannerType(Config.SCANNER_TYPE_BRACE);
                 assertEquals(2, evaluator.eval("" +
                         "[1, 2, 3, 4].filter{it > 2}\n" +
                         "1 + 1").result);
@@ -294,7 +297,7 @@ public class TestBugsInEval {
         @Test
         public void testForEachCast() throws Exception {
                 Evaluator e = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
-                e.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
+                e.setScannerType(Config.SCANNER_TYPE_BRACE);
                 try {
                         e.eval("(1..100).forEach(()->{...})");
                         fail();
@@ -324,8 +327,10 @@ public class TestBugsInEval {
                                 "1 in 2"
                         );
                         fail();
-                } catch (InvocationTargetException ex) {
-                        assertTrue(ex.getTargetException() instanceof LtRuntimeException);
+                } catch (LtRuntimeException ex) {
+                        // pass
+                        return;
                 }
+                fail();
         }
 }

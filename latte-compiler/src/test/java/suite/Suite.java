@@ -30,10 +30,7 @@ import lt.compiler.err_rec.TestParserErrorRecovery;
 import lt.compiler.err_rec.TestScannerErrorRecovery;
 import lt.compiler.err_rec.TestSemanticError;
 import lt.generator.TestJsSupport;
-import lt.repl.TestBugsInEval;
-import lt.repl.TestEvaluator;
-import lt.repl.VariableTest;
-import lt.repl.TestScript;
+import lt.repl.*;
 import org.junit.runner.RunWith;
 
 /**
@@ -62,7 +59,8 @@ import org.junit.runner.RunWith;
         TestSemanticError.class,
         TestSynchronized.class,
         TestPrimitiveOperators.class,
-        TestDefineAnnotations.class
+        TestDefineAnnotations.class,
+        TestJsr223.class
 })
 public class Suite extends TestSuite {
 }

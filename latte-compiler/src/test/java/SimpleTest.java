@@ -2,6 +2,10 @@ import lt.compiler.*;
 import lt.compiler.semantic.STypeDef;
 import lt.compiler.syntactic.Statement;
 
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -14,8 +18,10 @@ import java.util.Set;
  * Created by wkgcass on 16/6/4.
  */
 public class SimpleTest {
-        public static void main(String[] args) {
-                System.out.println(null + "a");
+        public static void main(String[] args) throws ScriptException {
+                ScriptEngine engine = new ScriptEngineManager().getEngineByName("Latte-lang");
+                engine.eval("a = ['key': 'value']");
+                System.out.println(engine.get("a"));
         }
 }
 /*

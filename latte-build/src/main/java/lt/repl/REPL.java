@@ -25,6 +25,8 @@
 package lt.repl;
 
 import lt.compiler.SyntaxException;
+import lt.repl.scripting.Config;
+import lt.repl.scripting.EvalEntry;
 import lt.util.Utils;
 
 import java.io.*;
@@ -43,6 +45,7 @@ import java.util.List;
 public class REPL {
         private static final String lineStarter = "lt> ";
         private static final String multipleLine = "  | ";
+        private static StringBuilder replSourceRec = new StringBuilder();
 
         private REPL() {
         }
@@ -56,6 +59,17 @@ public class REPL {
                         System.out.println("Type :help for more information.");
                         System.out.println("for syntax help, please visit https://github.com/wkgcass/Latte-lang/");
                         System.out.println();
+
+                        // listen ctrl-c
+                        CtrlCHandler ctrlCHandler = new CtrlCHandler();
+                        ctrlCHandler.handle();
+                        ctrlCHandler.onAlert(new Runnable() {
+                                @Override
+                                public void run() {
+                                        System.out.print(lineStarter);
+                                        replSourceRec = new StringBuilder();
+                                }
+                        });
 
                         ClassPathLoader classPathLoader = new ClassPathLoader(Thread.currentThread().getContextClassLoader());
 
@@ -73,7 +87,6 @@ public class REPL {
                         }
                         System.out.println();
                         System.out.print(lineStarter);
-                        StringBuilder sb = new StringBuilder();
                         while (true) {
                                 String str = reader.readLine();
                                 if (str.trim().startsWith(":")) {
@@ -101,10 +114,10 @@ public class REPL {
                                         } else if (cmd.equals(":q")) {
                                                 break;
                                         } else if (cmd.equals(":reset")) {
-                                                sb.delete(0, sb.length());
+                                                replSourceRec.delete(0, replSourceRec.length());
                                                 evaluator = new Evaluator(classPathLoader);
                                         } else if (cmd.equals(":restart")) {
-                                                sb.delete(0, sb.length());
+                                                replSourceRec.delete(0, replSourceRec.length());
                                                 classPathLoader = new ClassPathLoader(Thread.currentThread().getContextClassLoader());
                                                 evaluator = new Evaluator(classPathLoader);
                                         } else if (cmd.startsWith(":cp ")) {
@@ -128,11 +141,11 @@ public class REPL {
                                                         sleep(10);
                                                 }
                                         } else if (cmd.equals(":scanner-indent")) {
-                                                evaluator.setScannerType(Evaluator.SCANNER_TYPE_INDENT);
+                                                evaluator.setScannerType(Config.SCANNER_TYPE_INDENT);
                                         } else if (cmd.equals(":scanner-brace")) {
-                                                evaluator.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
+                                                evaluator.setScannerType(Config.SCANNER_TYPE_BRACE);
                                         } else if (cmd.equals(":")) {
-                                                sb.delete(0, sb.length());
+                                                replSourceRec.delete(0, replSourceRec.length());
                                         } else {
                                                 System.err.println("unknown command " + cmd + ", Type :help for more more information");
                                                 sleep(10);
@@ -140,17 +153,17 @@ public class REPL {
                                         System.out.print("\n" + lineStarter);
                                 } else {
                                         if (str.trim().isEmpty()) {
-                                                if (sb.length() != 0) {
+                                                if (replSourceRec.length() != 0) {
                                                         // do repl
-                                                        String stmt = sb.toString();
+                                                        String stmt = replSourceRec.toString();
                                                         try {
-                                                                Evaluator.Entry entry = evaluator.eval(stmt);
+                                                                EvalEntry entry = evaluator.eval(stmt);
                                                                 String name = entry.name;
                                                                 Object o = entry.result;
                                                                 if (name == null) {
                                                                         showObjectStructure(o);
                                                                 } else {
-                                                                        System.out.println(name + (o == null ? "" : " : " + o.getClass().getName()) + " = " + o);
+                                                                        System.out.println(name + " : " + entry.type.getName().replaceAll("\\.", "::") + " = " + o);
                                                                 }
                                                                 System.out.print("\n" + lineStarter);
                                                         } catch (Throwable t) {
@@ -179,12 +192,12 @@ public class REPL {
                                                                 sleep(10);
                                                                 System.out.print(lineStarter);
                                                         }
-                                                        sb.delete(0, sb.length());
+                                                        replSourceRec.delete(0, replSourceRec.length());
                                                 } else {
                                                         System.out.print(lineStarter);
                                                 }
                                         } else {
-                                                sb.append(str).append("\n");
+                                                replSourceRec.append(str).append("\n");
                                                 System.out.print(multipleLine);
                                         }
                                 }
@@ -373,7 +386,7 @@ public class REPL {
                         }
                         String statements = args[1].trim();
                         Evaluator e = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
-                        Evaluator.Entry entry = e.eval(statements);
+                        EvalEntry entry = e.eval(statements);
                         System.out.println(entry.result);
 
                 } else {// run
@@ -432,7 +445,7 @@ public class REPL {
                 for (Field f : cls.getDeclaredFields()) {
                         f.setAccessible(true);
                         Object value = f.get(o);
-                        System.out.println("    " + f.getName() + " : " + f.getType().getName() + " = " + value);
+                        System.out.println("    " + f.getName() + " : " + f.getType().getName().replaceAll("\\.", "::") + " = " + value);
                 }
                 for (Method m : cls.getDeclaredMethods()) {
                         System.out.print("    " + m.getName() + "(");
@@ -445,7 +458,7 @@ public class REPL {
                                 }
                                 System.out.print(paramT);
                         }
-                        System.out.println(") : " + m.getReturnType());
+                        System.out.println(") : " + m.getReturnType().getName().replaceAll("\\.", "::"));
                 }
         }
 

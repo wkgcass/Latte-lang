@@ -24,6 +24,8 @@
 
 package lt.repl;
 
+import lt.repl.scripting.Config;
+import lt.repl.scripting.EvalEntry;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -118,14 +120,14 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateVariableDef() throws Exception {
-                Evaluator.Entry entry = evaluator.eval("i=10*10");
+                EvalEntry entry = evaluator.eval("i=10*10");
                 assertEquals("i", entry.name);
                 assertEquals(100, entry.result);
         }
 
         @Test
         public void testEvaluateFieldSet() throws Exception {
-                Evaluator.Entry entry = evaluator.eval("i=10*10");
+                EvalEntry entry = evaluator.eval("i=10*10");
                 assertEquals("i", entry.name);
                 assertEquals(100, entry.result);
                 assertEquals(2, evaluator.eval("i=2").result);
@@ -134,7 +136,7 @@ public class TestEvaluator {
 
         @Test
         public void testEvaluateStmt() throws Exception {
-                Evaluator.Entry entry = evaluator.eval("method()=1");
+                EvalEntry entry = evaluator.eval("method()=1");
                 assertNull(entry.name);
                 Object o = entry.result;
                 Method m = o.getClass().getDeclaredMethod("method");
@@ -286,9 +288,9 @@ public class TestEvaluator {
                 list.add(4);
                 list.add(3);
                 list.add(5);
-                evaluator.setScannerType(Evaluator.SCANNER_TYPE_BRACE);
+                evaluator.setScannerType(Config.SCANNER_TYPE_BRACE);
                 evaluator.put("list", list);
-                Evaluator.Entry entry = evaluator.eval("" +
+                EvalEntry entry = evaluator.eval("" +
                         "import java::util::Collections._\n" +
                         "list2:List = list\n" +
                         "sort(list2)\n" +
