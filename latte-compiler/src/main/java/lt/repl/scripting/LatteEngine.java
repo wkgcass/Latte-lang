@@ -131,12 +131,14 @@ public class LatteEngine implements ScriptEngine {
 
                         List<Statement> scriptStatements = new ArrayList<Statement>();
                         final List<Statement> defList = new ArrayList<Statement>();
+                        // buffer these imports and add them if pass compile
+                        List<Import> readyToAddIntoImport = new ArrayList<Import>();
 
                         for (Statement s : statements) {
                                 if (s instanceof ClassDef || s instanceof InterfaceDef || s instanceof FunDef || s instanceof ObjectDef) {
                                         defList.add(s);
                                 } else if (s instanceof Import) {
-                                        imports.add((Import) s);
+                                        readyToAddIntoImport.add((Import) s);
                                 } else if (s instanceof PackageDeclare) {
                                         err.SyntaxException("scripts cannot have package declaration", s.line_col());
                                 } else if (s instanceof MethodDef) {
@@ -236,11 +238,14 @@ public class LatteEngine implements ScriptEngine {
                         defList.add(new Import(new AST.PackageRef("java::io", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                         defList.add(new Import(new AST.PackageRef("lt::repl", LineCol.SYNTHETIC), null, true, false, LineCol.SYNTHETIC));
                         defList.addAll(imports);
+                        defList.addAll(readyToAddIntoImport);
 
                         SemanticProcessor processor = new SemanticProcessor(new HashMap<String, List<Statement>>() {{
                                 put(scriptName, defList);
                         }}, cl, err);
                         CodeGenerator codeGen = new CodeGenerator(processor.parse(), processor.getTypes());
+                        // the imports are valid now, add into import list
+                        imports.addAll(readyToAddIntoImport);
                         Map<String, byte[]> byteCodes = codeGen.generate();
                         List<Class<?>> classes = new ArrayList<Class<?>>();
                         for (Map.Entry<String, byte[]> entry : byteCodes.entrySet()) {
