@@ -60,16 +60,7 @@ public class REPL {
                         System.out.println("for syntax help, please visit https://github.com/wkgcass/Latte-lang/");
                         System.out.println();
 
-                        // listen ctrl-c
-                        CtrlCHandler ctrlCHandler = new CtrlCHandler();
-                        ctrlCHandler.handle();
-                        ctrlCHandler.onAlert(new Runnable() {
-                                @Override
-                                public void run() {
-                                        System.out.print(lineStarter);
-                                        replSourceRec = new StringBuilder();
-                                }
-                        });
+                        handleCtrlC();
 
                         ClassPathLoader classPathLoader = new ClassPathLoader(Thread.currentThread().getContextClassLoader());
 
@@ -80,7 +71,7 @@ public class REPL {
                         } else {
                                 try {
                                         Class.forName("jline.console.ConsoleReader"); // check exists
-                                        reader = new JLineLineReader();
+                                        reader = (LineReader) Class.forName("lt.repl.JLineLineReader").newInstance();
                                 } catch (ClassNotFoundException ignore) {
                                         reader = new ScannerLineReader();
                                 }
@@ -468,5 +459,31 @@ public class REPL {
                 } catch (InterruptedException e) {
                         e.printStackTrace();
                 }
+        }
+
+        private static void handleCtrlC() {
+                // listen ctrl-c
+                Class<?> signalHandlerClass;
+                try {
+                        signalHandlerClass = Class.forName("lt.repl.CtrlCSignalHandler");
+                } catch (Throwable ignore) {
+                        // Signal api not correct or found
+                        return;
+                }
+                CtrlCHandler ctrlCHandler;
+                try {
+                        ctrlCHandler = (CtrlCHandler) signalHandlerClass.newInstance();
+                } catch (Throwable ignore) {
+                        // unknown error
+                        return;
+                }
+                ctrlCHandler.handle();
+                ctrlCHandler.onAlert(new Runnable() {
+                        @Override
+                        public void run() {
+                                System.out.print(lineStarter);
+                                replSourceRec = new StringBuilder();
+                        }
+                });
         }
 }
