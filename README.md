@@ -1,4 +1,4 @@
-#Latte-Lang
+# Latte-Lang
 
 ![](http://latte-lang.org/images/highlight.png)
 
@@ -16,9 +16,9 @@ Latte is a JVM language. It's highly readable and extensible.
 
 [latte-gradle-plugin](#gradle-plugin)
 
-##中文版戳[这里](#readme-ch)
+## 中文版戳[这里](#readme-ch)
 
-###Latte supports
+### Latte supports
 
 * Operator Binding
 * DSL
@@ -31,11 +31,12 @@ Latte is a JVM language. It's highly readable and extensible.
 * Read Eval Print Loop
 * Compiling to JavaScript
 * Latte Gradle Plugin
+* JSR 223
 * many other features
 
 `Latte` is based on java 6. It's compiled to JVM byte code, and can collaborate with any java library.
 
-#How to build
+# How to build
 
 `JDK 1.6` or higher is the only thing required.
 
@@ -68,7 +69,7 @@ then the [REPL](https://github.com/wkgcass/Latte-lang/blob/master/latte-build/sr
 
     lt>
 
-#Compile `lt` Files
+# Compile `lt` Files
 
 There are two ways of compiling `lt` files
 
@@ -110,7 +111,7 @@ or:
 
 	You can write a `script` to configure the settings. Check [build.lts.template](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/resources/build.lts.template) for more info.
 
-#Scripts
+# Scripts
 
 * you can run a script directly
 
@@ -123,13 +124,32 @@ or:
 
 	then use `script run` or `script run ['string array']` to run the script
 
+# JSR 223
+
+Latte-lang supports JSR 223 specification. Use `getEngineByName("Latte-lang")` to retrieve the scripting engine.  
+
+```java
+ScriptEngine engine = new ScriptEngineManager().getEngineByName("Latte-lang");
+Object result = engine.eval("a = 1 + 3");
+System.out.println(engine.get("a"));
+```
+
+Since Latte-lang is a compiling language, and it's directly compiled to JVM byte code, you could even use the scripting engine in Latte source codes.
+
+```
+engine = ScriptEngineManager().getEngineByName("Latte-lang")
+result = engine eval "a = 1 + 3"
+.println result
+.println engine.a
+```
+
 <h1 id='gradle-plugin'>Gradle Plugin</h1>
 
 A plugin for `Gradle` is provided, which helps you compile latte source codes.
 
-###How to use
+### How to use
 
-###step1
+### step1
 
 add the plugin configuration:
 
@@ -166,7 +186,7 @@ latteConfig {
 
 The plugin adds `compileLatte` and `compileTestLatte` tasks, where `compileLatte` is before `classes` task, and `compileTestLatte` is before `testClasses` task
 
-###step2
+### step2
 create a folder named `latte` in the same parent directory. The directory tree should be:
 
 	src
@@ -187,12 +207,12 @@ create a folder named `latte` in the same parent directory. The directory tree s
 	        ├── \*.lts
 	        └── other resources
 
-###step3
+### step3
 run
 
 	gradle clean jar
 
-#Syntax
+# Syntax
 
 visit the [Latte WebSite](http://latte-lang.org/)
 
@@ -214,7 +234,7 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 
 [latte-gradle-plugin](#gradle-plugin-ch)
 
-###Latte 支持如下功能
+### Latte 支持如下功能
 
 * 运算符绑定
 * DSL
@@ -227,11 +247,12 @@ Latte是一种JVM编程语言。 它非常可读，同时也非常可扩展。
 * Read Eval Print Loop
 * 编译到JavaScript
 * Latte Gradle Plugin
+* JSR 223
 * 许多其它特性
 
 `Latte`基于java6。它被编译到JVM字节码，可以与任何Java类库完美互通。
 
-#如何构建工程
+# 如何构建工程
 
 环境仅仅需要 `JDK 1.6` 或更高
 
@@ -263,7 +284,7 @@ clone这个仓库,然后执行
 
     lt>
 
-#编译 `lt` 文件
+# 编译 `lt` 文件
 
 * 使用程序命令
 
@@ -303,7 +324,7 @@ clone这个仓库,然后执行
 
 	您可以编写一个脚本 `script` 来配置这些属性。查看 [build.lts.template](https://github.com/wkgcass/Latte-lang/blob/master/latte-compiler/src/main/resources/build.lts.template) 以获取更多信息。
 
-#Scripts
+# Scripts
 
 * 你可以直接运行脚本
 
@@ -316,13 +337,32 @@ clone这个仓库,然后执行
 
 	然后使用 `script run` 或者 `script run ['string array']` 来运行这个脚本
 
+# JSR 223
+
+Latte-lang支持JSR223规范。使用`getEngineByName("Latte-lang")`来获取`ScriptEngine`。
+
+```java
+ScriptEngine engine = new ScriptEngineManager().getEngineByName("Latte-lang");
+Object result = engine.eval("a = 1 + 3");
+System.out.println(engine.get("a"));
+```
+
+由于Latte-lang是一种编译型语言，并且它直接编译到JVM字节码，所以你甚至可以在Latte源代码中使用脚本引擎。
+
+```
+engine = ScriptEngineManager().getEngineByName("Latte-lang")
+result = engine eval "a = 1 + 3"
+.println result
+.println engine.a
+```
+
 <h1 id='gradle-plugin-ch'>Gradle 插件</h1>
 
 提供了一个`Gradle`的插件， 这个插件可以用来编译和运行`latte`源文件和脚本（script）。
 
-###如何使用
+### 如何使用
 
-###step1
+### step1
 
 添加如下gradle plugin配置：
 
@@ -359,7 +399,7 @@ latteConfig {
 
 插件添加了 `compileLatte` 和 `compileTestLatte` 任务。`compileLatte` 在 `classes` 任务之前, `compileTestLatte` 在 `testClasses` 任务之前
 
-###step2
+### step2
 在同一个上级目录中创建名称为`latte`的目录。目录结构树应当为：
 
 	src
@@ -380,7 +420,7 @@ latteConfig {
 	        ├── \*.lts
 	        └── other resources
 
-###step3
+### step3
 运行
 
 	gradle clean jar
