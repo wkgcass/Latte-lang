@@ -49,8 +49,9 @@ import java.lang.annotation.ElementType;
 import java.lang.reflect.*;
 import java.net.URL;
 import java.util.*;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * semantic processor
@@ -126,9 +127,9 @@ public class SemanticProcessor {
          */
         public boolean enableTypeAccess = true;
         /**
-         * rt.jar file
+         * source files
          */
-        private static JarFile rtJar;
+        private static List<ZipFile> sourceClasses = new LinkedList<ZipFile>();
         private boolean alreadyWarnJar = false;
 
         /**
@@ -463,7 +464,7 @@ public class SemanticProcessor {
                                         String pkg = i.pkg.pkg.replace("::", ".");
                                         if (!fileNameToPackageName.containsValue(pkg + ".")
                                                 && !packageExistsInClassPath(pkg, classLoader)
-                                                && !packageExistInRtJar(pkg)) {
+                                                && !packageExistInJRE(pkg)) {
                                                 err.SyntaxException("Package " + i.pkg.pkg + " not found", i.pkg.line_col());
                                         }
                                 }
@@ -668,16 +669,16 @@ public class SemanticProcessor {
                 return url != null || packageExistsInClassPath(pkg, classLoader.getParent());
         }
 
-        public boolean packageExistInRtJar(String pkg) {
+        public boolean packageExistInJRE(String pkg) {
                 if (alreadyWarnJar) return true;
-                if (rtJar == null) {
+                if (sourceClasses.isEmpty()) {
                         String homePath = System.getProperty("java.home");
                         if (homePath == null) {
                                 err.warning("Cannot find java home via System.getProperty('java.home')");
                                 alreadyWarnJar = true;
                                 return true; // assume it's a valid import
                         }
-                        File binPathFile = new File(homePath);
+                        File homePathFile = new File(homePath);
                         File[] rtFileA = null;
 
                         boolean found = false;
@@ -686,7 +687,7 @@ public class SemanticProcessor {
                         // instead of $JAVA_HOME/lib/rt.jar
 
                         // check for classes.jar
-                        File[] classesFileA = binPathFile.getParentFile().listFiles(new FileFilter() {
+                        File[] classesFileA = homePathFile.getParentFile().listFiles(new FileFilter() {
                                 @Override
                                 public boolean accept(File f) {
                                         return f.getName().equals("Classes");
@@ -707,7 +708,7 @@ public class SemanticProcessor {
                         // not found
                         // check rt.jar
                         if (!found) {
-                                File[] libFileA = binPathFile.listFiles(
+                                File[] libFileA = homePathFile.listFiles(
                                         new FileFilter() {
                                                 @Override
                                                 public boolean accept(File f) {
@@ -727,34 +728,87 @@ public class SemanticProcessor {
                                                         return f.getName().equals("rt.jar");
                                                 }
                                         });
+                                if (rtFileA != null && rtFileA.length > 0 && rtFileA[0].exists()) {
+                                        found = true;
+                                }
                         }
 
-                        if (rtFileA == null || rtFileA.length == 0) {
-                                err.warning(homePath + "/lib/rt.jar not exist");
-                                alreadyWarnJar = true;
-                                return true;
+                        if (found) {
+                                File rtFile = rtFileA[0];
+                                if (!rtFile.exists()) {
+                                        err.warning(homePath + "/lib/rt.jar not exist");
+                                        alreadyWarnJar = true;
+                                        return true;
+                                }
+                                try {
+                                        sourceClasses.add(new JarFile(rtFile));
+                                } catch (IOException e) {
+                                        err.warning("Occurred exception " + e + " when opening rt.jar");
+                                        alreadyWarnJar = true;
+                                        return true;
+                                }
+                        } else {
+                                // check java 9 mods
+                                if (!findJava9(homePathFile)) {
+                                        err.warning(homePath + "/lib/rt.jar not exist");
+                                        alreadyWarnJar = true;
+                                        return true;
+                                }
                         }
-                        File rtFile = rtFileA[0];
-                        if (!rtFile.exists()) {
-                                err.warning(homePath + "/lib/rt.jar not exist");
-                                alreadyWarnJar = true;
-                                return true;
+                }
+                return findPackage(pkg, sourceClasses);
+        }
+
+        private boolean findJava9(File home) {
+                return findJava9JMods(home);
+        }
+
+        private boolean findJava9JMods(File home) {
+                File[] jmodsDirA = home.listFiles(new FileFilter() {
+                        @Override
+                        public boolean accept(File file) {
+                                return file.getName().equals("jmods") && file.isDirectory();
                         }
+                });
+                if (jmodsDirA == null || jmodsDirA.length == 0) {
+                        return false;
+                }
+                File jmodsDir = jmodsDirA[0];
+                File[] mods = jmodsDir.listFiles(new FileFilter() {
+                        @Override
+                        public boolean accept(File file) {
+                                return file.getName().endsWith(".jmod") && file.isFile();
+                        }
+                });
+                if (mods == null || mods.length == 0) {
+                        return false;
+                }
+                for (File f : mods) {
                         try {
-                                rtJar = new JarFile(rtFile);
+                                sourceClasses.add(new ZipFile(f));
                         } catch (IOException e) {
-                                err.warning("Occurred exception " + e + " when opening rt.jar");
-                                alreadyWarnJar = true;
+                                return false;
+                        }
+                }
+                return true;
+        }
+
+        private static boolean findPackage(String pkg, List<ZipFile> files) {
+                for (ZipFile f : files) {
+                        if (findPackage(pkg, f.entries())) {
                                 return true;
                         }
                 }
-                return findPackage(pkg, rtJar.entries());
+                return false;
         }
 
-        private static boolean findPackage(String pkg, Enumeration<JarEntry> entries) {
+        private static boolean findPackage(String pkg, Enumeration<? extends ZipEntry> entries) {
                 while (entries.hasMoreElements()) {
-                        JarEntry entry = entries.nextElement();
+                        ZipEntry entry = entries.nextElement();
                         if (entry.getName().startsWith(pkg.replace(".", "/"))) {
+                                return true;
+                        }
+                        if (entry.getName().startsWith("classes/" + pkg.replace(".", "/"))) {
                                 return true;
                         }
                 }
@@ -2586,6 +2640,8 @@ public class SemanticProcessor {
 
                         arr.setValues(values.toArray(new Value[values.size()]));
                         return arr;
+                } else if (value instanceof DummyValue) {
+                        return value;
                 } else {
                         err.SyntaxException("invalid annotation field " + value, lineCol);
                         return null;
@@ -9558,7 +9614,7 @@ public class SemanticProcessor {
                         Map<SAnnoField, Value> map = new HashMap<SAnnoField, Value>();
                         for (SAnnoField f : a.type().annoFields()) {
                                 try {
-                                        Object obj = annoCls.getMethod(f.name()).invoke(o);
+                                        Object obj = invokeAnnotationMethod((Annotation) o, annoCls.getMethod(f.name()));
                                         Value v = parseValueFromObject(obj);
                                         v = checkAndCastAnnotationValues(v, LineCol.SYNTHETIC);
                                         map.put(f, v);
@@ -9586,6 +9642,8 @@ public class SemanticProcessor {
                         arr.setValues(values);
 
                         return arr;
+                } else if (o instanceof DummyValue) {
+                        return (Value) o;
                 } else throw new LtBug("cannot parse " + o + " into Value");
         }
 
@@ -10478,13 +10536,26 @@ public class SemanticProcessor {
                                 for (Method m : aClass.getDeclaredMethods()) {
                                         assert m.getParameterTypes().length == 0;
                                         try {
-                                                sAnno.alreadyCompiledAnnotationValueMap().put(m.getName(), m.invoke(a));
+                                                sAnno.alreadyCompiledAnnotationValueMap().put(m.getName(), invokeAnnotationMethod(a, m));
                                         } catch (Throwable e) {
                                                 // the exception should never occur
                                                 throw new LtBug(e);
                                         }
                                 }
                         }
+                }
+        }
+
+        private Object invokeAnnotationMethod(Annotation a, Method m) throws InvocationTargetException, SyntaxException {
+                try {
+                        return m.invoke(a);
+                } catch (IllegalAccessException e) {
+                        // annotation methods are public
+                        // the exception won't occur only when java 9 module did not export the type
+                        // simply ignore the exception and replace the result with a dummy value
+                        return new DummyValue(
+                                getTypeWithName(m.getReturnType().getName(), LineCol.SYNTHETIC)
+                        );
                 }
         }
 
