@@ -104,7 +104,7 @@ def check():
 def execute(cmd):
     exportStr = 'export'
     env = {}
-    env['BUILD_ACTION'] = ACTION
+    env['BUILD_ACTION'] = ACTION.lower()
     if DEPLOY_USER and DEPLOY_PASS:
         env['DEPLOY_USER'] = DEPLOY_USER
         env['DEPLOY_PASS'] = DEPLOY_PASS
@@ -171,6 +171,8 @@ def perform():
 
 def start():
     if ACTION == 'Deploy':
+        global DEPLOY_USER
+        global DEPLOY_PASS
         DEPLOY_USER = raw_input('user: ')
         DEPLOY_PASS = getpass.getpass('pass: ')
 
