@@ -100,6 +100,19 @@ javadoc {
     }
 }
 
+if (null == ACTION) {
+    jar {
+        manifest {
+            attributes("Manifest-Version": 1.0,
+                       "Main-Class": "lt.repl.REPL")
+        }
+        from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+        into('assets') {
+            from 'assets'
+        }
+    }
+}
+
 if ('deploy' == ACTION) {
     signing {
         sign configurations.archives
