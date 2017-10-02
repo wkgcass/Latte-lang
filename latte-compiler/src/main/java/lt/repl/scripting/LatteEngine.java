@@ -10,7 +10,9 @@ import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.pre.Import;
 import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
+import lt.lang.Pointer;
 import lt.lang.Unit;
+import lt.runtime.LtRuntimeException;
 
 import javax.script.*;
 import java.io.IOException;
@@ -28,12 +30,15 @@ public class LatteEngine implements ScriptEngine {
         private static final String SCRIPT_CLASS_NAME = "LATTE_SCRIPTING";
         private final LatteEngineFactory factory;
         private ScriptContext context;
-        private ClassLoader classLoader;
+        private final ClassLoader classLoader;
 
         LatteEngine(LatteEngineFactory factory) {
                 this.factory = factory;
                 Bindings engineScope = new LatteScope();
                 context = new LatteContext(engineScope);
+                classLoader = new MultipleClassLoader(
+                        factory.getClass().getClassLoader(),
+                        Thread.currentThread().getContextClassLoader());
         }
 
         public LatteEngine(ClassLoader loader) {
@@ -69,11 +74,54 @@ public class LatteEngine implements ScriptEngine {
                         .setEval(false));
         }
 
-        public Object eval(String script, Bindings n, Config config) throws ScriptException {
+        public Object eval(final String script, final Bindings n, final Config config) throws ScriptException {
+                final Pointer<Throwable> pt = new Pointer<Throwable>(false, false);
+                final Pointer<Object> pres = new Pointer<Object>(false, false);
+                Thread thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                                Object res;
+                                try {
+                                        res = evalOnThread(script, n, config);
+                                } catch (Throwable t) {
+                                        try {
+                                                pt.set(t);
+                                        } catch (Throwable throwable) {
+                                                // should never happen
+                                                throw new LtBug(throwable);
+                                        }
+                                        return;
+                                }
+                                try {
+                                        pres.set(res);
+                                } catch (Throwable throwable) {
+                                        // should never happen
+                                        throw new LtBug(throwable);
+                                }
+                        }
+                });
+                thread.setContextClassLoader(classLoader);
+                thread.start();
+                try {
+                        thread.join();
+                } catch (InterruptedException e) {
+                        throw new LtRuntimeException("interrupted when eval", e);
+                }
+                if (pt.get() != null) {
+                        Throwable t = pt.get();
+                        if (t instanceof ScriptException) {
+                                throw (ScriptException) t;
+                        } else {
+                                throw new LtBug(t);
+                        }
+                }
+                return pres.get();
+        }
+
+        private Object evalOnThread(String script, Bindings n, Config config) throws ScriptException {
                 List<Import> imports = initImports(n);
                 CL cl = initCL(n);
                 List<MethodDef> recordedMethods = initMethodList(n);
-                int evalCount = incAndGetEvalCount(n);
                 final String scriptName = "latte-scripting.lts";
                 boolean isLatteScope = n instanceof LatteScope;
                 boolean recordVarIfPresent = true;
@@ -219,7 +267,7 @@ public class LatteEngine implements ScriptEngine {
                                 paramInstances.add(value);
                         }
 
-                        final String className = SCRIPT_CLASS_NAME + '_' + evalCount;
+                        final String className = SCRIPT_CLASS_NAME + '_' + UUID.randomUUID().toString().replace("-", "");
                         ClassDef evalClass = new ClassDef(
                                 className,
                                 Collections.<Modifier>emptySet(),
@@ -422,18 +470,6 @@ public class LatteEngine implements ScriptEngine {
                         n.put(methodsName, methodDefs);
                 }
                 return methodDefs;
-        }
-
-        private static int incAndGetEvalCount(Bindings n) {
-                final String evalCountName = "$latte.scripting.eval_count";
-                Integer evalCount = (Integer) n.get(evalCountName);
-                if (evalCount == null) {
-                        evalCount = 1;
-                } else {
-                        ++evalCount;
-                }
-                n.put(evalCountName, evalCount);
-                return evalCount;
         }
 
         private static int incAndGetResCount(Bindings n) {

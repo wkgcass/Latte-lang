@@ -152,7 +152,7 @@ public class Compiler {
          * construct the compiler
          */
         public Compiler() {
-                baseLoader = ClassLoader.getSystemClassLoader();
+                baseLoader = Thread.currentThread().getContextClassLoader();
         }
 
         /**

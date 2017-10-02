@@ -88,7 +88,7 @@ public class Utils {
          * @throws Exception exception
          */
         public static Object eval(String e) throws Exception {
-                return eval(ClassLoader.getSystemClassLoader(), e);
+                return eval(Thread.currentThread().getContextClassLoader(), e);
         }
 
         /**

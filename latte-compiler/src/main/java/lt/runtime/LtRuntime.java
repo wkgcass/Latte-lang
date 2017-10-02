@@ -24,6 +24,7 @@
 
 package lt.runtime;
 
+import lt.compiler.MultipleClassLoader;
 import lt.compiler.SemanticProcessor;
 import lt.lang.Unit;
 import lt.util.Utils;
@@ -269,6 +270,10 @@ public class LtRuntime {
                                         ClassLoader targetTypeCL = targetType.getClassLoader();
                                         if (targetTypeCL == null) {
                                                 targetTypeCL = Thread.currentThread().getContextClassLoader();
+                                        } else {
+                                                targetTypeCL = new MultipleClassLoader(
+                                                        targetTypeCL, Thread.currentThread().getContextClassLoader()
+                                                );
                                         }
                                         @SuppressWarnings("unchecked")
                                         List<Class<?>> ls = ((java.util.List<Class<?>>)

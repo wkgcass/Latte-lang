@@ -55,11 +55,10 @@ public class TestJsr223 {
         public void testScopeAfterEvalNonAssignmentExp() throws Exception {
                 assertEquals(0, engineScope.size());
                 assertEquals(4, engine.eval("1 + 3"));
-                assertEquals(5, engineScope.size());
+                assertEquals(4, engineScope.size());
                 assertEquals(Collections.emptyList(), engineScope.get("$latte.scripting.imports"));
                 assertTrue(engineScope.get("$latte.scripting.CL") instanceof CL);
                 assertEquals(Collections.emptyList(), engineScope.get("$latte.scripting.methods"));
-                assertEquals(1, engineScope.get("$latte.scripting.eval_count"));
                 assertEquals(0, engineScope.get("$latte.scripting.res_count"));
         }
 
