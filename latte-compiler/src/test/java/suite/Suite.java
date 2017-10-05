@@ -60,7 +60,8 @@ import org.junit.runner.RunWith;
         TestSynchronized.class,
         TestPrimitiveOperators.class,
         TestDefineAnnotations.class,
-        TestJsr223.class
+        TestJsr223.class,
+        TestDotPackage.class
 })
 public class Suite extends TestSuite {
 }

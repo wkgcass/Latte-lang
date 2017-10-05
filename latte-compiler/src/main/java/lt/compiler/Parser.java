@@ -776,7 +776,9 @@ public class Parser {
         /**
          * declare a package<br>
          * <code>
-         * # java::util
+         * package java::util<br>
+         * // or<br>
+         * package java.util
          * </code>
          *
          * @return PackageDeclare
@@ -793,9 +795,11 @@ public class Parser {
                         while (current != null && (current instanceof Element)) {
                                 Element elem = (Element) current;
                                 String s = elem.getContent();
-                                if (!isName && !s.equals("::")) {
+                                if (!isName && !s.equals("::") && !s.equals(".")) {
                                         err.UnexpectedTokenException("::", s, elem.getLineCol());
                                         err.debug("make it '::'");
+                                        s = "::";
+                                } else if (s.equals(".")) {
                                         s = "::";
                                 }
                                 isName = !isName;

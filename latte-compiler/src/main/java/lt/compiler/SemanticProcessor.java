@@ -451,20 +451,41 @@ public class SemanticProcessor {
                 for (String fileName : mapOfStatements.keySet()) {
                         // import
                         List<Import> imports = fileNameToImport.get(fileName);
-                        for (Import i : imports) {
+                        ListIterator<Import> ite = imports.listIterator();
+                        while (ite.hasNext()) {
+                                Import i = ite.next();
                                 if (i.pkg == null) {
-                                        // class exists
-                                        try {
-                                                getTypeWithAccess(i.access, Collections.<Import>emptyList());
-                                        } catch (SyntaxException e) {
-                                                err.SyntaxException("Type " + i.access + " not found", i.access.line_col());
-                                        }
+                                        // try class
+                                        STypeDef type = getTypeWithAccess(i.access, Collections.<Import>emptyList(), true);
+                                        if (null == type) {
+                                                boolean pass = false;
+                                                if (i.importAll) {
+                                                        // test whether it's a package
+                                                        AST.Access access = i.access;
+                                                        AST.PackageRef pkgRef = checkAndGetPackage(fileNameToPackageName, access);
+                                                        if (pkgRef != null) {
+                                                                pass = true;
+                                                                ite.set(new Import(pkgRef, null, true, i.implicit, i.line_col()));
+                                                        }
+                                                        // else {
+                                                        // do nothing
+                                                        // should error }
+                                                } else {
+                                                        AST.Access newAccessWithPkg = transformAccess(i.access);
+                                                        if (i.access != newAccessWithPkg) {
+                                                                pass = true;
+                                                                // replace the original object with new one
+                                                                ite.set(new Import(null, newAccessWithPkg, false, i.implicit, i.line_col()));
+                                                        }
+                                                }
+                                                if (!pass) {
+                                                        err.SyntaxException("Type " + i.access + " not found", i.access.line_col());
+                                                }
+                                        } // else: pass, for that a type is retrieved
                                 } else {
-                                        // package exists
+                                        // check package exists
                                         String pkg = i.pkg.pkg.replace("::", ".");
-                                        if (!fileNameToPackageName.containsValue(pkg + ".")
-                                                && !packageExistsInClassPath(pkg, classLoader)
-                                                && !packageExistInJRE(pkg)) {
+                                        if (!isPackage(fileNameToPackageName, pkg)) {
                                                 err.SyntaxException("Package " + i.pkg.pkg + " not found", i.pkg.line_col());
                                         }
                                 }
@@ -485,6 +506,52 @@ public class SemanticProcessor {
                 addRetention();
 
                 return typeDefSet;
+        }
+
+        private AST.PackageRef checkAndGetPackage(Map<String, String> fileNameToPackageName, AST.Access access) {
+                if (access.exp == null) {
+                        if (isPackage(fileNameToPackageName, access.name)) {
+                                return new AST.PackageRef(access.name, access.line_col());
+                        } else {
+                                return null;
+                        }
+                }
+                if (!(access.exp instanceof AST.Access)) {
+                        return null;
+                }
+                List<String> pkgSplitList = new ArrayList<String>();
+                pkgSplitList.add(access.name);
+                AST.Access tmp = (AST.Access) access.exp;
+                while (true) {
+                        pkgSplitList.add(tmp.name);
+                        Expression exp = tmp.exp;
+                        if (null == exp) break;
+                        if (!(exp instanceof AST.Access)) return null;
+                        tmp = (AST.Access) exp;
+                }
+                Collections.reverse(pkgSplitList);
+                StringBuilder pkgBuilder = new StringBuilder();
+                boolean isFirst = true;
+                for (String pkgSplitName : pkgSplitList) {
+                        if (isFirst) {
+                                isFirst = false;
+                        } else {
+                                pkgBuilder.append(".");
+                        }
+                        pkgBuilder.append(pkgSplitName);
+                }
+                String pkg = pkgBuilder.toString();
+                if (isPackage(fileNameToPackageName, pkg)) {
+                        return new AST.PackageRef(pkg.replace(".", "::"), access.line_col());
+                } else {
+                        return null;
+                }
+        }
+
+        private boolean isPackage(Map<String, String> fileNameToPackageName, String javaPkg) {
+                return fileNameToPackageName.containsValue(javaPkg + ".")
+                        || packageExistsInClassPath(javaPkg, classLoader)
+                        || packageExistInJRE(javaPkg);
         }
 
         private void addImportImplicit() throws SyntaxException {
@@ -7440,6 +7507,7 @@ public class SemanticProcessor {
          * @throws SyntaxException compiling error
          */
         private Value __parseValueFromAccess(AST.Access access, SemanticScope scope, boolean isTryingToAssign) throws SyntaxException {
+                access = transformAccess(access);
                 List<Import> imports = fileNameToImport.get(access.line_col().fileName);
                 if (access.exp == null) {
                         // Access(null,name)
@@ -8609,6 +8677,7 @@ public class SemanticProcessor {
                 // get import
                 List<Import> imports = fileNameToImport.get(invocation.line_col().fileName);
                 AST.Access access = (AST.Access) invocation.exp;
+                access = transformAccess(access);
                 if (access.exp == null) {
                         // access structure should be
                         // Access(null, methodName)
@@ -10403,6 +10472,19 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public STypeDef getTypeWithName(String clsName, LineCol lineCol) throws SyntaxException {
+                return getTypeWithName(clsName, false, lineCol);
+        }
+
+        /**
+         * get type by class name
+         *
+         * @param clsName        class name
+         * @param allowException if true, then no syntax exception would be thrown
+         * @param lineCol        file_line_col
+         * @return STypeDef (not null)
+         * @throws SyntaxException exception
+         */
+        public STypeDef getTypeWithName(String clsName, boolean allowException, LineCol lineCol) throws SyntaxException {
                 if (types.containsKey(clsName)) {
                         return types.get(clsName);
                 } else {
@@ -10506,7 +10588,9 @@ public class SemanticProcessor {
                                         return typeDef;
                                 }
                         } catch (ClassNotFoundException e) {
-                                err.SyntaxException("undefined class " + clsName, lineCol);
+                                if (!allowException) {
+                                        err.SyntaxException("undefined class " + clsName, lineCol);
+                                }
                                 return null;
                         }
                 }
@@ -10755,7 +10839,8 @@ public class SemanticProcessor {
          * @param access access
          * @return retrieved class name
          */
-        public String getClassNameFromAccess(AST.Access access) {
+        public String getClassNameFromAccess(AST.Access access) throws SyntaxException {
+                access = transformAccess(access);
                 String pre;
                 if (access.exp instanceof AST.Access) {
                         pre = getClassNameFromAccess((AST.Access) access.exp) + "$";
@@ -10774,7 +10859,7 @@ public class SemanticProcessor {
          * @param imports import statements
          * @return found class name or <tt>null</tt> if not found
          */
-        public String findClassNameWithImport(String name, List<Import> imports) {
+        public String findClassNameWithImport(String name, List<Import> imports) throws SyntaxException {
                 if (typeExists(name)) return name;
                 // first try to find those classes with the same simple name
                 // e.g. import java.util.List
@@ -10806,9 +10891,23 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public STypeDef getTypeWithAccess(AST.Access access, List<Import> imports) throws SyntaxException {
+                return getTypeWithAccess(access, imports, false);
+        }
+
+        /**
+         * get type with access
+         *
+         * @param access         access object
+         * @param imports        import list
+         * @param allowException if true, then syntax exception would be ignored
+         * @return retrieved STypeDef (not null)
+         * @throws SyntaxException exception
+         */
+        public STypeDef getTypeWithAccess(AST.Access access, List<Import> imports, boolean allowException) throws SyntaxException {
                 assert access.exp == null || access.exp instanceof AST.Access
                         || access.exp instanceof AST.PackageRef || "[]".equals(access.name) || "*".equals(access.name);
 
+                access = transformAccess(access);
                 boolean isPointer = false;
                 if ("*".equals(access.name)) {
                         if (access.exp == null) {
@@ -10859,13 +10958,17 @@ public class SemanticProcessor {
                         if (withPackage) {
                                 className = getClassNameFromAccess(access);
                                 if (null == className || !typeExists(className)) {
-                                        err.SyntaxException("type " + className + " not defined", access.line_col());
+                                        if (!allowException) {
+                                                err.SyntaxException("type " + className + " not defined", access.line_col());
+                                        }
                                         return null;
                                 }
                         } else {
                                 className = findClassNameWithImport(tmp.name, imports) + innerClassName;
                                 if (!typeExists(className)) {
-                                        err.SyntaxException("type " + innerClassName + " not defined", access.line_col());
+                                        if (!allowException) {
+                                                err.SyntaxException("type " + innerClassName + " not defined", access.line_col());
+                                        }
                                         return null;
                                 }
                         }
@@ -10885,7 +10988,9 @@ public class SemanticProcessor {
                         }
 
                         if (null == className || !typeExists(className)) {
-                                err.SyntaxException("type " + name + " not defined", access.line_col());
+                                if (!allowException) {
+                                        err.SyntaxException("type " + name + " not defined", access.line_col());
+                                }
                                 return null;
                         }
                         resultType = getTypeWithName(className, access.line_col());
@@ -10973,5 +11078,67 @@ public class SemanticProcessor {
                         return VoidType.get();
                 }
                 return type;
+        }
+
+        /**
+         * transform the AST.Access object<br>
+         * the part that may represent a `type` will be converted into package ref and typeSimpleName<br>
+         * e.g. java.lang.Object => (((null, java), lang), Object) => ((java::lang), Object)
+         *
+         * @param access access object
+         * @return original access object or a new one depending on the input
+         */
+        private AST.Access transformAccess(AST.Access access) throws SyntaxException {
+                if (null == access) return null;
+                if (null == access.exp) return access;
+                if (!(access.exp instanceof AST.Access)) return access;
+                // use ArrayList for that it requires random access
+                ArrayList<String> maybePackages = new ArrayList<String>();
+                ArrayList<LineCol> lineColInfo = new ArrayList<LineCol>();
+                maybePackages.add(access.name);
+                lineColInfo.add(access.line_col());
+                AST.Access tmp = (AST.Access) access.exp;
+                while (true) {
+                        maybePackages.add(tmp.name);
+                        lineColInfo.add(tmp.line_col());
+                        Expression exp = tmp.exp;
+                        if (null == exp) break;
+                        if (!(exp instanceof AST.Access)) return access;
+                        tmp = (AST.Access) exp;
+                }
+                Collections.reverse(maybePackages);
+                Collections.reverse(lineColInfo);
+                for (int i = 1; i < maybePackages.size(); ++i) {
+                        StringBuilder clsNameBuilder = new StringBuilder();
+                        for (int j = 0; j <= i; ++j) {
+                                if (j != 0) {
+                                        clsNameBuilder.append(".");
+                                }
+                                clsNameBuilder.append(maybePackages.get(j));
+                        }
+                        String clsName = clsNameBuilder.toString();
+                        STypeDef type = getTypeWithName(clsName, true, access.line_col());
+                        if (null == type) {
+                                continue;
+                        }
+                        // type found, build a new access object
+                        String fullName = type.fullName();
+                        String packageName;
+                        if (fullName.contains(".")) {
+                                packageName = fullName.substring(0, fullName.lastIndexOf(".")).replace(".", "::");
+                        } else {
+                                packageName = fullName;
+                        }
+                        AST.Access result = new AST.Access(new AST.PackageRef(
+                                packageName, lineColInfo.get(i - 1)
+                        ), maybePackages.get(i), lineColInfo.get(i));
+                        for (int j = i + 1; j < maybePackages.size(); ++j) {
+                                result = new AST.Access(result, maybePackages.get(j), lineColInfo.get(j));
+                        }
+                        return result;
+                }
+
+                // cannot be a package.type.*
+                return access;
         }
 }

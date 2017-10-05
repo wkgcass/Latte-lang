@@ -253,8 +253,6 @@ public class TestParserErrorRecovery {
                 err.out = ErrorManager.Out.allNull();
 
                 List<Statement> statements = parse("" +
-                                "package pack.clsx\n" +
-                /*                   ^not :: not name */
                                 "package pack cls\n" +
                 /*                    ^shouldn't be name */
                                 "package\n" +
@@ -262,27 +260,22 @@ public class TestParserErrorRecovery {
                                 "    ..."
                         , err);
 
-                assertEquals(4, err.errorList.size());
+                assertEquals(3, err.errorList.size());
+
                 assertEquals(1, err.errorList.get(0).lineCol.line);
-                assertEquals(13, err.errorList.get(0).lineCol.column);
+                assertEquals(14, err.errorList.get(0).lineCol.column);
                 assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(0).type);
 
-                assertEquals(4, err.errorList.size());
-                assertEquals(2, err.errorList.get(1).lineCol.line);
-                assertEquals(14, err.errorList.get(1).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(1).type);
+                assertEquals(1, err.errorList.get(1).lineCol.line);
+                assertEquals(1, err.errorList.get(1).lineCol.column);
+                assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(1).type);
 
-                assertEquals(2, err.errorList.get(2).lineCol.line);
-                assertEquals(1, err.errorList.get(2).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.Syntax, err.errorList.get(2).type);
-
-                assertEquals(4, err.errorList.get(3).lineCol.line);
-                assertEquals(5, err.errorList.get(3).lineCol.column);
-                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(3).type);
+                assertEquals(3, err.errorList.get(2).lineCol.line);
+                assertEquals(5, err.errorList.get(2).lineCol.column);
+                assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(2).type);
 
                 assertEquals(
                         Arrays.asList(
-                                new PackageDeclare(new AST.PackageRef("pack::clsx", LineCol.SYNTHETIC), LineCol.SYNTHETIC),
                                 new PackageDeclare(new AST.PackageRef("pack", LineCol.SYNTHETIC), LineCol.SYNTHETIC),
                                 new PackageDeclare(new AST.PackageRef("", LineCol.SYNTHETIC), LineCol.SYNTHETIC)
                         ),
