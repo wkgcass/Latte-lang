@@ -105,4 +105,9 @@ public abstract class Node implements Iterator<Node>, Iterable {
         }
 
         public abstract String toString(int indent);
+
+        public boolean equalsIgnoreIndent(Node o) {
+                return this == o || !(o == null || getClass() != o.getClass()) && tokenType == o.tokenType && !(next != null ? !next.equalsIgnoreIndent(o.next) : o.next != null);
+
+        }
 }

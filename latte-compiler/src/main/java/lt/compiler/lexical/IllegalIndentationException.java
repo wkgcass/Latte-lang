@@ -29,7 +29,7 @@ import lt.compiler.Properties;
 import lt.compiler.SyntaxException;
 
 /**
- * illegal indent. the indent should always be {@link Properties#_INDENTATION_} spaces
+ * illegal indent.
  */
 public class IllegalIndentationException extends SyntaxException {
         public IllegalIndentationException(String lineMsg, int _INDENT, LineCol lineCol) {

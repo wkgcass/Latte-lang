@@ -2157,7 +2157,7 @@ public class TestParser {
                         "#lt::generator::js\n" +
                         "#lt::generator::js\n" +
                         "    a=1\n" +
-                        "(" +
+                        "(\n" +
                         "    #lt::generator::js\n" +
                         "        a=1).charAt(0)");
                 VariableDef v = new VariableDef("a", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
@@ -2186,7 +2186,7 @@ public class TestParser {
         @Test
         public void testInternalSyntaxLambda() throws Exception {
                 List<Statement> stmts = parse("" +
-                        "(" +
+                        "(\n" +
                         "    (redisLock(o))\n" +
                         "        println(it)\n" +
                         ").test()");

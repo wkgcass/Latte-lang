@@ -25,6 +25,7 @@
 package lt.compiler.lexical;
 
 import lt.compiler.LineCol;
+import lt.compiler.LtBug;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -60,6 +61,17 @@ public class Args {
                 LineCol res = new LineCol(fileName, currentLine, currentCol);
                 res.useDefine.putAll(useDefine);
                 return res;
+        }
+
+        public int getLastNonFlexIndent() {
+                for (int i = startNodeStack.size() - 1; i >= 0; --i) {
+                        ElementStartNode node = startNodeStack.elementAt(i);
+                        int indent = node.getIndent().getIndent();
+                        if (indent != Indent.FLEX) {
+                                return indent;
+                        }
+                }
+                throw new LtBug("should not reach here!");
         }
 
         /**

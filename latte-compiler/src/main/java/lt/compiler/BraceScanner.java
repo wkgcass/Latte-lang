@@ -180,7 +180,7 @@ public class BraceScanner extends AbstractScanner {
          * <li>record text before the token as an element and do appending</li>
          * <li>check which category the token is in<br>
          * <ul>
-         * <li>{@link #LAYER} means starts after recording the token, a new ElementStartNode should be started, invoke {@link #createStartNode(Args)}</li>
+         * <li>{@link #LAYER} means starts after recording the token, a new ElementStartNode should be started, invoke {@link #createStartNode(Args, int)}</li>
          * <li>{@link #SPLIT_X}: the previous element and next element should be in the same layer. if it's also among {@link #NO_RECORD}, the token won't be recorded</li>
          * <li>{@link #STRING}: the next element is a string or a character. these characters should be considered as one element</li>
          * <li>{@link #ENDING}: append a new {@link EndingNode} to prevent generated nodes being ambiguous. NOTE that it only means the end of an expression or a statement. not the parsing process</li>
@@ -264,7 +264,7 @@ public class BraceScanner extends AbstractScanner {
                         if (LAYER.contains(token)) {
                                 // start new layer
                                 args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
-                                createStartNode(args);
+                                createStartNode(args, args.startNodeStack.lastElement().getIndent().getIndent() + 4);
                         } else if (SPLIT_X.contains(token)) {
                                 // do split check
                                 if (!NO_RECORD.contains(token)) {
@@ -326,7 +326,7 @@ public class BraceScanner extends AbstractScanner {
                         } else if (PAIR.containsKey(token)) {
                                 // pair start
                                 args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
-                                createStartNode(args);
+                                createStartNode(args, args.startNodeStack.lastElement().getIndent().getIndent() + 4);
                                 args.pairEntryStack.push(new PairEntry(token, args.startNodeStack.lastElement()));
                         } else if (PAIR.containsValue(token)) {
                                 // pair end
@@ -350,8 +350,8 @@ public class BraceScanner extends AbstractScanner {
                                         startNode.setLinkedNode(n);
                                 }
 
-                                if (args.startNodeStack.lastElement().getIndent() >= startNode.getIndent()) {
-                                        redirectToStartNodeByIndent(args, startNode.getIndent(), false);
+                                if (args.startNodeStack.lastElement().getIndent().getIndent() >= startNode.getIndent().getIndent()) {
+                                        redirectToPairStart(args, startNode.getIndent());
                                 } else {
                                         args.previous = startNode;
                                 }

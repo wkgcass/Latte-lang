@@ -33,7 +33,7 @@ import java.util.Map;
 
 /**
  * transform plain <tt>Latte</tt> text into Tokens<br>
- * <tt>Latte</tt> forces {@link Properties#_INDENTATION_} indentation to differ program blocks<br>
+ * <tt>Latte</tt> uses indentation to differ program blocks<br>
  * Instead of using <tt>INDENT</tt> and <tt>DEDENT</tt>, the Scanner uses a <b>Tree of Tokens</b> to record the indentation info.
  * Consistent statements with the same indentation are in the same <b>Layer</b><br>
  * <pre>
@@ -71,7 +71,7 @@ public class IndentScanner extends AbstractScanner {
          * <ol>
          * <li>read a line from the {@link #reader}</li>
          * <li>check indentation</li>
-         * <li>check layer =&gt; if indent = lastLayerIndent + {@link Properties#_INDENTATION_}, then start a new layer.
+         * <li>check layer =&gt; if indent &gt; lastLayerIndent, then start a new layer.
          * elseif indent &lt; lastLayerIndent then it should go back to upper layers<br>
          * </li>
          * <li>invoke {@link #scan(String, Args)} to scan the current line</li>
@@ -156,17 +156,7 @@ public class IndentScanner extends AbstractScanner {
                                 args.currentCol += spaces + 1 + rootIndent;
                         }
 
-                        // check space indent
-                        int indentation;
-                        if (spaces % properties._INDENTATION_ != 0) {
-                                err.IllegalIndentationException(
-                                        properties._INDENTATION_, args.generateLineCol());
-                                // assume that the indentation is spaces + (spaces%INDENTATION)
-                                int calculatedIndent = spaces + properties._INDENTATION_ - (spaces % properties._INDENTATION_);
-                                err.debug("assume that the indentation is spaces + _INDENTATION_ - (spaces % _INDENTATION_) : " + calculatedIndent);
-
-                                indentation = calculatedIndent;
-                        } else indentation = spaces;
+                        int indentation = spaces;
 
                         // remove spaces
                         line = line.trim();
@@ -178,20 +168,30 @@ public class IndentScanner extends AbstractScanner {
                         }
 
                         // check start node
-                        if (args.startNodeStack.lastElement().getIndent() != indentation) {
-                                if (args.startNodeStack.lastElement().getIndent() > indentation) {
-                                        // smaller indent
-                                        redirectToStartNodeByIndent(args, indentation + properties._INDENTATION_, true);
-                                } else if (args.startNodeStack.lastElement().getIndent() == indentation - properties._INDENTATION_) {
-                                        // greater indent
-                                        createStartNode(args);
+                        ElementStartNode lastStartNode = args.startNodeStack.lastElement();
+                        Indent lastIndentElem = lastStartNode.getIndent();
+                        int lastNonFlexIndent = args.getLastNonFlexIndent();
+                        if (indentation > lastNonFlexIndent && lastIndentElem.getIndent() == Indent.FLEX) {
+                                // flex
+                                ElementStartNode parent = args.startNodeStack.elementAt(args.startNodeStack.size() - 2);
+                                Indent parentIndent = parent.getIndent();
+                                if (indentation > parentIndent.getIndent()) {
+                                        // greater indent, assign it to the flex
+                                        lastIndentElem.setIndent(indentation);
                                 } else {
-                                        err.IllegalIndentationException(properties._INDENTATION_, args.generateLineCol());
-                                        // greater than parent indentation too much
-                                        // assume it's parent + _INDENTATION_
-                                        err.debug("assume it's parent.indentation + _INDENTATION_");
-                                        createStartNode(args);
-
+                                        // smaller or equal
+                                        // do redirect
+                                        redirectToDeeperStartNodeByIndent(args, indentation, true);
+                                }
+                        } else {
+                                if (lastIndentElem.getIndent() != indentation) {
+                                        if (indentation <= lastNonFlexIndent) {
+                                                // smaller indent
+                                                redirectToDeeperStartNodeByIndent(args, indentation, true);
+                                        } else { // if (lastIndent > indentation) {
+                                                // greater indent
+                                                createStartNode(args, indentation);
+                                        }
                                 }
                         }
 
@@ -219,7 +219,7 @@ public class IndentScanner extends AbstractScanner {
          * <li>record text before the token as an element and do appending</li>
          * <li>check which category the token is in<br>
          * <ul>
-         * <li>{@link #LAYER} means starts after recording the token, a new ElementStartNode should be started, invoke {@link #createStartNode(Args)}</li>
+         * <li>{@link #LAYER} means starts after recording the token, a new ElementStartNode should be started, invoke {@link #createStartNode(Args, int)}</li>
          * <li>{@link #SPLIT_X}: the previous element and next element should be in the same layer. if it's also among {@link #NO_RECORD}, the token won't be recorded</li>
          * <li>{@link #STRING}: the next element is a string or a character. these characters should be considered as one element</li>
          * <li>{@link #ENDING}: append a new {@link EndingNode} to prevent generated nodes being ambiguous. NOTE that it only means the end of an expression or a statement. not the parsing process</li>
@@ -303,7 +303,7 @@ public class IndentScanner extends AbstractScanner {
                         if (LAYER.contains(token)) {
                                 // start new layer
                                 args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
-                                createStartNode(args);
+                                createStartNode(args, Indent.FLEX);
                         } else if (SPLIT_X.contains(token)) {
                                 // do split check
                                 if (!NO_RECORD.contains(token)) {
@@ -365,10 +365,14 @@ public class IndentScanner extends AbstractScanner {
                         } else if (PAIR.containsKey(token)) {
                                 // pair start
                                 args.previous = new Element(args, token, getTokenType(token, args.generateLineCol()));
-                                createStartNode(args);
+                                createStartNode(args, Indent.FLEX);
                                 args.pairEntryStack.push(new PairEntry(token, args.startNodeStack.lastElement()));
                         } else if (PAIR.containsValue(token)) {
                                 // pair end
+                                if (args.pairEntryStack.isEmpty()) {
+                                        err.UnexpectedTokenException(token, args.generateLineCol());
+                                        return;
+                                }
                                 PairEntry entry = args.pairEntryStack.pop();
                                 String start = entry.key;
                                 if (!token.equals(PAIR.get(start))) {
@@ -377,33 +381,30 @@ public class IndentScanner extends AbstractScanner {
                                         err.debug("assume that the pair ends");
                                 }
 
-                                ElementStartNode startNode = entry.startNode;
-                                if (startNode.hasNext()) {
-                                        if (startNode.next() instanceof EndingNode && !startNode.next().hasNext()) {
-                                                startNode.setNext(null);
+                                ElementStartNode pairStartNode = entry.startNode;
+                                if (pairStartNode.hasNext()) {
+                                        if (pairStartNode.next() instanceof EndingNode && !pairStartNode.next().hasNext()) {
+                                                pairStartNode.setNext(null);
                                         } else {
                                                 err.SyntaxException(
-                                                        "indentation of " + startNode.next() + " should be " + startNode.getIndent(),
-                                                        startNode.next().getLineCol());
-                                                // fill the LinkedNode with all nodes after the startNode
-                                                Node n = startNode.next();
+                                                        "indentation of " + pairStartNode.next() + " should be " + pairStartNode.getIndent(),
+                                                        pairStartNode.next().getLineCol());
+                                                // fill the LinkedNode with all nodes after the pairStartNode
+                                                Node n = pairStartNode.next();
                                                 n.setPrevious(null);
-                                                startNode.setNext(null);
-                                                startNode.setLinkedNode(n);
+                                                pairStartNode.setNext(null);
+                                                pairStartNode.setLinkedNode(n);
                                         }
                                 }
 
-                                if (args.startNodeStack.lastElement().getIndent() >= startNode.getIndent()) {
-                                        redirectToStartNodeByIndent(args, startNode.getIndent(), false);
-                                } else if (args.startNodeStack.lastElement().getIndent() == startNode.getIndent() - properties._INDENTATION_) {
-                                        args.previous = startNode;
+                                ElementStartNode lastElement = args.startNodeStack.lastElement();
+                                Indent lastIndentElem = lastElement.getIndent();
+                                int lastIndent = lastIndentElem.getIndent();
+                                int pairIndent = pairStartNode.getIndent().getIndent();
+                                if (lastIndent >= pairIndent) {
+                                        redirectToPairStart(args, pairStartNode.getIndent());
                                 } else {
-                                        err.SyntaxException(
-                                                "indentation of " + token + " (" + args.startNodeStack.lastElement().getIndent() + ") should >= " + start + "'s indentation - 4 (" + (startNode.getIndent() - 4) + ")",
-                                                args.generateLineCol());
-                                        // assume they are the same
-                                        err.debug("assume that " + token + "'s indentation is the same with " + start + "'s indentation");
-                                        args.previous = startNode;
+                                        args.previous = pairStartNode;
                                 }
                                 args.previous = new Element(args, PAIR.get(start), getTokenType(token, args.generateLineCol()));
                         } else if (token.equals(MultipleLineCommentStart)) {

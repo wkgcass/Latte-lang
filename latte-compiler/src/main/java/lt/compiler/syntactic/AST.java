@@ -777,6 +777,11 @@ public class AST {
                         result = 31 * result + ast.hashCode();
                         return result;
                 }
+
+                @Override
+                public String toString() {
+                        return "GenSpec#" + type + "(" + ast + ")";
+                }
         }
 
         /**

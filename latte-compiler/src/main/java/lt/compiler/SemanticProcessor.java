@@ -10838,6 +10838,7 @@ public class SemanticProcessor {
          *
          * @param access access
          * @return retrieved class name
+         * @throws SyntaxException compile error
          */
         public String getClassNameFromAccess(AST.Access access) throws SyntaxException {
                 access = transformAccess(access);
@@ -10858,6 +10859,7 @@ public class SemanticProcessor {
          * @param name    the simple name or full name to be found
          * @param imports import statements
          * @return found class name or <tt>null</tt> if not found
+         * @throws SyntaxException compile error
          */
         public String findClassNameWithImport(String name, List<Import> imports) throws SyntaxException {
                 if (typeExists(name)) return name;

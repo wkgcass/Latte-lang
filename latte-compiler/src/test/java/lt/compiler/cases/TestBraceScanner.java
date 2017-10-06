@@ -46,7 +46,7 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "package", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "lt", TokenType.VALID_NAME);
@@ -65,7 +65,7 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "import", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "Package", TokenType.VALID_NAME);
@@ -91,7 +91,7 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "class", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 new Element(args, "ClassName", TokenType.VALID_NAME);
@@ -106,12 +106,12 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "class", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "ClassName", TokenType.VALID_NAME);
                 args.previous = new Element(args, "(", TokenType.SYMBOL);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(4));
                 args.previous = startNode;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 new Element(args, ")", TokenType.SYMBOL);
@@ -136,7 +136,7 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "val", TokenType.MODIFIER);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "value", TokenType.VALID_NAME);
@@ -157,16 +157,16 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "val", TokenType.MODIFIER);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "trim", TokenType.VALID_NAME);
                 args.previous = new Element(args, "(", TokenType.SYMBOL);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(4));
                 args.previous = startNode;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, ")", TokenType.SYMBOL);
-                ElementStartNode startNode1 = new ElementStartNode(args, 4);
+                ElementStartNode startNode1 = new ElementStartNode(args, new Indent(4));
 
                 args.previous = null;
                 args.previous = new Element(args, "input", TokenType.VALID_NAME);
@@ -191,11 +191,11 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "voidMethod", TokenType.VALID_NAME);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "(", TokenType.SYMBOL);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(4));
                 args.previous = startNode;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, ")", TokenType.SYMBOL);
@@ -216,7 +216,7 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "public", TokenType.MODIFIER);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "val", TokenType.MODIFIER);
@@ -247,20 +247,20 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "if", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "true", TokenType.BOOL);
-                ElementStartNode startNode1 = new ElementStartNode(args, 4);
+                ElementStartNode startNode1 = new ElementStartNode(args, new Indent(4));
                 args.previous = startNode1;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "elseif", TokenType.KEY);
                 args.previous = new Element(args, "false", TokenType.BOOL);
-                ElementStartNode startNode2 = new ElementStartNode(args, 4);
+                ElementStartNode startNode2 = new ElementStartNode(args, new Indent(4));
                 args.previous = startNode2;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "else", TokenType.KEY);
-                ElementStartNode startNode3 = new ElementStartNode(args, 4);
+                ElementStartNode startNode3 = new ElementStartNode(args, new Indent(4));
 
                 args.previous = null;
                 args.previous = new Element(args, "return", TokenType.KEY);
@@ -292,13 +292,13 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "for", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "i", TokenType.VALID_NAME);
                 args.previous = new Element(args, "in", TokenType.KEY);
                 args.previous = new Element(args, "iterable", TokenType.VALID_NAME);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(4));
 
                 args.previous = null;
                 startNode.setLinkedNode(new Element(args, "i", TokenType.VALID_NAME));
@@ -318,11 +318,11 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "while", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "true", TokenType.BOOL);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(4));
 
                 args.previous = null;
                 args.previous = new Element(args, "i", TokenType.VALID_NAME);
@@ -346,10 +346,10 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "do", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(4));
                 args.previous = startNode;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "while", TokenType.KEY);
@@ -389,19 +389,19 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "try", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
-                ElementStartNode startNode1 = new ElementStartNode(args, 4);
+                ElementStartNode startNode1 = new ElementStartNode(args, new Indent(4));
                 args.previous = startNode1;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "catch", TokenType.KEY);
                 args.previous = new Element(args, "e", TokenType.VALID_NAME);
-                ElementStartNode startNode2 = new ElementStartNode(args, 4);
+                ElementStartNode startNode2 = new ElementStartNode(args, new Indent(4));
                 args.previous = startNode2;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "finally", TokenType.KEY);
-                ElementStartNode startNode3 = new ElementStartNode(args, 4);
+                ElementStartNode startNode3 = new ElementStartNode(args, new Indent(4));
 
                 args.previous = null;
                 args.previous = new Element(args, "throw", TokenType.KEY);
@@ -413,7 +413,7 @@ public class TestBraceScanner {
                 startNode2.setLinkedNode(args.previous);
                 args.previous = new EndingNode(args, EndingNode.STRONG);
                 args.previous = new Element(args, "AnotherException", TokenType.VALID_NAME);
-                ElementStartNode startNode1_1 = new ElementStartNode(args, 8);
+                ElementStartNode startNode1_1 = new ElementStartNode(args, new Indent(8));
                 args.previous = startNode1_1;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "OtherException", TokenType.VALID_NAME);
@@ -423,7 +423,7 @@ public class TestBraceScanner {
                 startNode1_1.setLinkedNode(args.previous);
                 args.previous = new Element(args, "RuntimeException", TokenType.VALID_NAME);
                 args.previous = new Element(args, "(", TokenType.SYMBOL);
-                ElementStartNode startNode1_1_1 = new ElementStartNode(args, 12);
+                ElementStartNode startNode1_1_1 = new ElementStartNode(args, new Indent(12));
                 args.previous = startNode1_1_1;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, ")", TokenType.SYMBOL);
@@ -456,7 +456,7 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "list", TokenType.VALID_NAME);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, ".", TokenType.SYMBOL);
@@ -466,7 +466,7 @@ public class TestBraceScanner {
                 args.previous = new Element(args, ".", TokenType.SYMBOL);
                 args.previous = new Element(args, "filter", TokenType.VALID_NAME);
                 args.previous = new Element(args, "(", TokenType.SYMBOL);
-                ElementStartNode startNode1 = new ElementStartNode(args, 4);
+                ElementStartNode startNode1 = new ElementStartNode(args, new Indent(4));
                 args.previous = startNode1;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, ")", TokenType.SYMBOL);
@@ -474,12 +474,12 @@ public class TestBraceScanner {
                 args.previous = null;
                 args.previous = new Element(args, "(", TokenType.SYMBOL);
                 startNode1.setLinkedNode(args.previous);
-                ElementStartNode startNode2 = new ElementStartNode(args, 8);
+                ElementStartNode startNode2 = new ElementStartNode(args, new Indent(8));
                 args.previous = startNode2;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, ")", TokenType.SYMBOL);
                 args.previous = new Element(args, "->", TokenType.SYMBOL);
-                ElementStartNode startNode3 = new ElementStartNode(args, 8);
+                ElementStartNode startNode3 = new ElementStartNode(args, new Indent(8));
 
                 args.previous = null;
                 args.previous = new Element(args, "e", TokenType.VALID_NAME);
@@ -515,7 +515,7 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
 
                 args.previous = new Element(args, "1", TokenType.NUMBER);
                 root2.setLinkedNode(args.previous);
@@ -615,7 +615,6 @@ public class TestBraceScanner {
         @Test
         public void testIndent() throws Exception {
                 Properties properties = new Properties();
-                properties._INDENTATION_ = 2;
                 BraceScanner processor = new BraceScanner("test", new StringReader(
                         // the statements is copied from testIf
                         // but changed indentation to 2
@@ -649,7 +648,7 @@ public class TestBraceScanner {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 Element e = new Element(args, "a", TokenType.VALID_NAME);
                 root2.setLinkedNode(e);
                 args.previous = e;

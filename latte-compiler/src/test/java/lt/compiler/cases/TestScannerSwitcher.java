@@ -27,7 +27,7 @@ public class TestScannerSwitcher {
                                 "class A(a, public b):B(a)\n" +
                                 "    protected x=1"
                 ), new Properties(), new ErrorManager(true));
-                assertEquals(s1.scan(), s2.scan());
+                assertTrue(s1.scan().equalsIgnoreIndent(s2.scan()));
         }
 
         @Test
@@ -49,6 +49,6 @@ public class TestScannerSwitcher {
                                 "]"
                 ), new Properties(), new ErrorManager(true));
 
-                assertEquals(s1.scan(), s2.scan());
+                assertTrue(s1.scan().equalsIgnoreIndent(s2.scan()));
         }
 }

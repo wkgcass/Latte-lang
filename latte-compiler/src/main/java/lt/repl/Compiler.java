@@ -498,7 +498,6 @@ public class Compiler {
                 List<Scan> scans = new ArrayList<Scan>();
                 Properties properties = new Properties();
                 properties._COLUMN_BASE_ = config.code.columnBase;
-                properties._INDENTATION_ = config.code.indentation;
                 properties._LINE_BASE_ = config.code.lineBase;
                 for (Map.Entry<String, Reader> entry : input.entrySet()) {
                         Scan scan = new Scan(entry.getKey(), entry.getValue(), properties, errorManager);

@@ -60,6 +60,11 @@ public class EndingNode extends Node {
         }
 
         @Override
+        public boolean equalsIgnoreIndent(Node node) {
+                return super.equalsIgnoreIndent(node);
+        }
+
+        @Override
         public String toString() {
                 return (type == STRONG ? "," : "NewLine");
         }

@@ -28,15 +28,15 @@ package lt.compiler.lexical;
  * starts an element
  */
 public class ElementStartNode extends Node {
-        private int indent;
+        private final Indent indent;
         private Node linkedNode;
 
-        public ElementStartNode(Args args, int indent) {
+        public ElementStartNode(Args args, Indent indent) {
                 super(args, TokenType.ElementStartNode);
                 this.indent = indent;
         }
 
-        public int getIndent() {
+        public Indent getIndent() {
                 return indent;
         }
 
@@ -48,7 +48,7 @@ public class ElementStartNode extends Node {
 
                 ElementStartNode that = (ElementStartNode) o;
 
-                return !(linkedNode != null ? !linkedNode.equals(that.linkedNode) : that.linkedNode != null);
+                return !(linkedNode != null ? !linkedNode.equals(that.linkedNode) : that.linkedNode != null) && this.getIndent().equals(that.getIndent());
         }
 
         @Override
@@ -83,5 +83,16 @@ public class ElementStartNode extends Node {
         @Override
         public void remove() {
                 throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean equalsIgnoreIndent(Node o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                if (!super.equalsIgnoreIndent(o)) return false;
+
+                ElementStartNode that = (ElementStartNode) o;
+
+                return !(linkedNode != null ? !linkedNode.equalsIgnoreIndent(that.linkedNode) : that.linkedNode != null);
         }
 }

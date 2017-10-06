@@ -3189,7 +3189,7 @@ public class TestCodeGen {
                                 "        def method2 {1}\n" +
                                 "        def method3 = [\"a\":1, \"b\":2]\n" +
                                 "        def method4(a,b) = (if a > b {1} else {2})\n" +
-                                "        def method5 {" +
+                                "        def method5 {\n" +
                                 "            [   \"a\": 1\n" +
                                 "                \"b\": 2]\n" +
                                 "        }"

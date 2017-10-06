@@ -77,6 +77,17 @@ public class Element extends Node {
         }
 
         @Override
+        public boolean equalsIgnoreIndent(Node o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                if (!super.equalsIgnoreIndent(o)) return false;
+
+                Element element = (Element) o;
+
+                return !(content != null ? !content.equals(element.content) : element.content != null);
+        }
+
+        @Override
         public String toString() {
                 return content;
         }

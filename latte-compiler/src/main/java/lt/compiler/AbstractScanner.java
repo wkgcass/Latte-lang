@@ -169,7 +169,7 @@ public abstract class AbstractScanner implements Scanner {
         public ElementStartNode scan() throws IOException, SyntaxException {
                 Args args = new Args();
                 args.fileName = fileName;
-                ElementStartNode elementStartNode = new ElementStartNode(args, 0);
+                ElementStartNode elementStartNode = new ElementStartNode(args, new Indent(0));
                 args.startNodeStack.push(elementStartNode);
                 args.currentLine = properties._LINE_BASE_;
                 scan(args);
@@ -286,10 +286,11 @@ public abstract class AbstractScanner implements Scanner {
         /**
          * create an {@link ElementStartNode}
          *
-         * @param args args context
+         * @param args        args context
+         * @param indentation indentation of the new element start node
          */
-        protected final void createStartNode(Args args) {
-                ElementStartNode elementStartNode = new ElementStartNode(args, args.startNodeStack.lastElement().getIndent() + properties._INDENTATION_);
+        protected final void createStartNode(Args args, int indentation) {
+                ElementStartNode elementStartNode = new ElementStartNode(args, new Indent(indentation));
                 args.previous = null;
                 args.startNodeStack.push(elementStartNode);
         }
@@ -315,32 +316,61 @@ public abstract class AbstractScanner implements Scanner {
         /**
          * pop one or more nodes from {@link Args#startNodeStack}, the last popped node's indentation should be the same as required indent
          *
-         * @param args    args context
-         * @param indent  required indentation
-         * @param newLine reaching a "new line"
+         * @param args   args context
+         * @param indent required indentation
          * @throws UnexpectedTokenException compiling error
          */
-        protected final void redirectToStartNodeByIndent(Args args, int indent, boolean newLine) throws UnexpectedTokenException {
+        protected final void redirectToPairStart(Args args, Indent indent) throws SyntaxException {
                 if (args.startNodeStack.empty()) {
-                        throw new LtBug("this should never happen");
+                        err.SyntaxException("possibly incorrect indentation or mismatched brackets", args.generateLineCol());
+                        return;
                 }
 
                 ElementStartNode startNode = args.startNodeStack.pop();
 
+                // use `==`, compare the reference
                 if (startNode.getIndent() == indent) {
                         if (startNode.hasNext()) {
                                 throw new LtBug("startNode in this step should never have nodes appended");
                         }
                         // do redirect
                         args.previous = startNode;
+                } else {
+                        if ((startNode.getIndent().getIndent() != Indent.FLEX && startNode.getIndent().getIndent() < indent.getIndent())
+                                || args.startNodeStack.empty()) {
+                                err.SyntaxException("possibly incorrect indentation or mismatched brackets", args.generateLineCol());
+                                return;
+                        }
+                        redirectToPairStart(args, indent);
+                }
+        }
+
+        protected final void redirectToDeeperStartNodeByIndent(Args args, int indent, boolean newLine) throws UnexpectedTokenException {
+                if (args.startNodeStack.empty()) {
+                        throw new LtBug("this should never happen");
+                }
+
+                ElementStartNode requiredNode = args.startNodeStack.pop();
+                if (args.startNodeStack.empty()) {
+                        throw new LtBug("this should never happen");
+                }
+                ElementStartNode startNode = args.startNodeStack.lastElement();
+
+                if (startNode.getIndent().getIndent() == indent) {
+                        if (startNode.hasNext()) {
+                                throw new LtBug("startNode in this step should never have nodes appended");
+                        }
+                        // do redirect
+                        args.previous = requiredNode;
                         if (newLine) {
                                 args.previous = new EndingNode(args, EndingNode.WEAK);
                         }
                 } else {
-                        if (startNode.getIndent() < indent || args.startNodeStack.empty()) {
+                        if ((startNode.getIndent().getIndent() != Indent.FLEX && startNode.getIndent().getIndent() < indent)
+                                || args.startNodeStack.empty()) {
                                 throw new LtBug("position=" + args.currentLine + ":" + args.currentCol + ",indent=" + indent);
                         }
-                        redirectToStartNodeByIndent(args, indent, newLine);
+                        redirectToDeeperStartNodeByIndent(args, indent, newLine);
                 }
         }
 }

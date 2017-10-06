@@ -27,6 +27,7 @@ package lt.compiler.cases;
 import lt.compiler.*;
 import lt.compiler.IndentScanner;
 import lt.compiler.Properties;
+import lt.compiler.lexical.ElementStartNode;
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
 import lt.compiler.syntactic.Expression;
@@ -54,8 +55,10 @@ public class TestSemantic {
                 Map<String, List<Statement>> map = new HashMap<String, List<Statement>>();
                 for (String fileName : fileMap.keySet()) {
                         IndentScanner lexicalProcessor = new IndentScanner("test", new StringReader(fileMap.get(fileName)), new Properties(), err);
-                        Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
-                        map.put(fileName, syntacticProcessor.parse());
+                        ElementStartNode root = lexicalProcessor.scan();
+                        Parser syntacticProcessor = new Parser(root, err);
+                        List<Statement> stmts = syntacticProcessor.parse();
+                        map.put(fileName, stmts);
                 }
                 SemanticProcessor semanticProcessor = new SemanticProcessor(map, Thread.currentThread().getContextClassLoader(), err);
                 return semanticProcessor.parse();

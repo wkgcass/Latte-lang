@@ -45,7 +45,7 @@ public class TestScannerLayerControl {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "package", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "lt", TokenType.VALID_NAME);
@@ -64,16 +64,16 @@ public class TestScannerLayerControl {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "val", TokenType.MODIFIER);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "trim", TokenType.VALID_NAME);
                 args.previous = new Element(args, "(", TokenType.SYMBOL);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(-1));
                 args.previous = startNode;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, ")", TokenType.SYMBOL);
-                ElementStartNode startNode1 = new ElementStartNode(args, 4);
+                ElementStartNode startNode1 = new ElementStartNode(args, new Indent(-1));
 
                 args.previous = null;
                 args.previous = new Element(args, "input", TokenType.VALID_NAME);
@@ -105,20 +105,20 @@ public class TestScannerLayerControl {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "if", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "true", TokenType.BOOL);
-                ElementStartNode startNode1 = new ElementStartNode(args, 4);
+                ElementStartNode startNode1 = new ElementStartNode(args, new Indent(-1));
                 args.previous = startNode1;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "elseif", TokenType.KEY);
                 args.previous = new Element(args, "false", TokenType.BOOL);
-                ElementStartNode startNode2 = new ElementStartNode(args, 4);
+                ElementStartNode startNode2 = new ElementStartNode(args, new Indent(-1));
                 args.previous = startNode2;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "else", TokenType.KEY);
-                ElementStartNode startNode3 = new ElementStartNode(args, 4);
+                ElementStartNode startNode3 = new ElementStartNode(args, new Indent(-1));
 
                 args.previous = null;
                 args.previous = new Element(args, "return", TokenType.KEY);
@@ -147,13 +147,13 @@ public class TestScannerLayerControl {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "for", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "i", TokenType.VALID_NAME);
                 args.previous = new Element(args, "in", TokenType.KEY);
                 args.previous = new Element(args, "iterable", TokenType.VALID_NAME);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(-1));
 
                 args.previous = null;
                 startNode.setLinkedNode(new Element(args, "i", TokenType.VALID_NAME));
@@ -170,11 +170,11 @@ public class TestScannerLayerControl {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "while", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
                 args.previous = new Element(args, "true", TokenType.BOOL);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(-1));
 
                 args.previous = null;
                 args.previous = new Element(args, "i", TokenType.VALID_NAME);
@@ -195,10 +195,10 @@ public class TestScannerLayerControl {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "do", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
-                ElementStartNode startNode = new ElementStartNode(args, 4);
+                ElementStartNode startNode = new ElementStartNode(args, new Indent(-1));
                 args.previous = startNode;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "while", TokenType.KEY);
@@ -238,19 +238,19 @@ public class TestScannerLayerControl {
                 ElementStartNode root = processor.scan();
 
                 Args args = new Args();
-                ElementStartNode root2 = new ElementStartNode(args, 0);
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
                 args.previous = new Element(args, "try", TokenType.KEY);
                 root2.setLinkedNode(args.previous);
-                ElementStartNode startNode1 = new ElementStartNode(args, 4);
+                ElementStartNode startNode1 = new ElementStartNode(args, new Indent(-1));
                 args.previous = startNode1;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "catch", TokenType.KEY);
                 args.previous = new Element(args, "e", TokenType.VALID_NAME);
-                ElementStartNode startNode2 = new ElementStartNode(args, 4);
+                ElementStartNode startNode2 = new ElementStartNode(args, new Indent(-1));
                 args.previous = startNode2;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "finally", TokenType.KEY);
-                ElementStartNode startNode3 = new ElementStartNode(args, 4);
+                ElementStartNode startNode3 = new ElementStartNode(args, new Indent(-1));
 
                 args.previous = null;
                 args.previous = new Element(args, "throw", TokenType.KEY);
@@ -262,7 +262,7 @@ public class TestScannerLayerControl {
                 startNode2.setLinkedNode(args.previous);
                 args.previous = new EndingNode(args, EndingNode.STRONG);
                 args.previous = new Element(args, "AnotherException", TokenType.VALID_NAME);
-                ElementStartNode startNode1_1 = new ElementStartNode(args, 8);
+                ElementStartNode startNode1_1 = new ElementStartNode(args, new Indent(-1));
                 args.previous = startNode1_1;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, "OtherException", TokenType.VALID_NAME);
@@ -272,7 +272,7 @@ public class TestScannerLayerControl {
                 startNode1_1.setLinkedNode(args.previous);
                 args.previous = new Element(args, "RuntimeException", TokenType.VALID_NAME);
                 args.previous = new Element(args, "(", TokenType.SYMBOL);
-                ElementStartNode startNode1_1_1 = new ElementStartNode(args, 12);
+                ElementStartNode startNode1_1_1 = new ElementStartNode(args, new Indent(-1));
                 args.previous = startNode1_1_1;
                 args.previous = new EndingNode(args, EndingNode.WEAK);
                 args.previous = new Element(args, ")", TokenType.SYMBOL);
