@@ -345,7 +345,7 @@ public abstract class AbstractScanner implements Scanner {
                 }
         }
 
-        protected final void redirectToDeeperStartNodeByIndent(Args args, int indent, boolean newLine) throws UnexpectedTokenException {
+        protected final void redirectToDeeperStartNodeByIndent(Args args, int indent, boolean newLine) throws SyntaxException {
                 if (args.startNodeStack.empty()) {
                         throw new LtBug("this should never happen");
                 }
@@ -368,7 +368,8 @@ public abstract class AbstractScanner implements Scanner {
                 } else {
                         if ((startNode.getIndent().getIndent() != Indent.FLEX && startNode.getIndent().getIndent() < indent)
                                 || args.startNodeStack.empty()) {
-                                throw new LtBug("position=" + args.currentLine + ":" + args.currentCol + ",indent=" + indent);
+                                err.SyntaxException("possibly incorrect indentation or mismatched brackets", args.generateLineCol());
+                                return;
                         }
                         redirectToDeeperStartNodeByIndent(args, indent, newLine);
                 }
