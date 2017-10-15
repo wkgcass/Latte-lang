@@ -3217,11 +3217,18 @@ public class SemanticProcessor {
                 m.modifiers().add(0, SModifier.PRIVATE);
 
                 // change to real pointer type
+                // and mark capture parameters
                 int cursor = 0;
+                int currentIndex = 0;
+                int capturedParamSize = param4Locals.size();
                 for (SParameter p : m.getParameters()) {
                         if (isPointerType(p.type())) {
                                 p.setType(realPointerTypes.get(cursor++));
                         }
+                        if (currentIndex < capturedParamSize) {
+                                p.setCapture(true);
+                        }
+                        ++currentIndex;
                 }
                 assert cursor == realPointerTypes.size();
 
@@ -6041,16 +6048,6 @@ public class SemanticProcessor {
 
                 // constructor arguments
                 List<Value> consArgs = new ArrayList<Value>();
-                /* it's no longer used
-                // methodHandle
-                consArgs.add(new MethodHandleValue(
-                        method,
-                        method.modifiers().contains(SModifier.STATIC)
-                                ? Dynamic.INVOKE_STATIC
-                                : Dynamic.INVOKE_SPECIAL,
-                        getMethodHandle_Class()
-                ));
-                */
                 // o
                 if (scope.getThis() != null) consArgs.add(scope.getThis());
                 // local
@@ -6129,14 +6126,6 @@ public class SemanticProcessor {
                 sClassDef.modifiers().add(SModifier.PUBLIC);
 
                 // fields
-                /* it's no longer used!
-                // methodHandle
-                SFieldDef f1 = new SFieldDef(LineCol.SYNTHETIC);
-                f1.setName("methodHandle");
-                f1.setType(getMethodHandle_Class());
-                sClassDef.fields().add(f1);
-                f1.setDeclaringType(sClassDef);
-                */
                 // o
                 SFieldDef f2 = null;
                 if (!isStatic) {
@@ -6184,19 +6173,6 @@ public class SemanticProcessor {
                         f4, new Ins.This(sClassDef),
                         new Ins.This(sClassDef), LineCol.SYNTHETIC, err));
                 con.modifiers().add(SModifier.PUBLIC);
-                /* it's no longer used!
-                // p1
-                SParameter p1 = new SParameter();
-                p1.setType(getMethodHandle_Class());
-                con.getParameters().add(p1);
-                conScope.putLeftValue("p1", p1);
-                con.statements().add(new Ins.PutField(
-                        f1,
-                        conScope.getThis(),
-                        new Ins.TLoad(p1, conScope, LineCol.SYNTHETIC),
-                        LineCol.SYNTHETIC, err
-                ));
-                */
                 // p2
                 if (!isStatic) {
                         SParameter p2 = new SParameter();
@@ -6242,7 +6218,7 @@ public class SemanticProcessor {
                 }
                 // the lambda USED to be using MethodHandle to invoke the method
                 // now it directly invokes that method
-                List<Value> methodArgs = new ArrayList<Value>();
+                List<Value> capturedValues = new ArrayList<Value>();
                 // add local variables in list
                 for (int index = 0; index < localVarCount; ++index) {
                         Ins.InvokeInterface ii = new Ins.InvokeInterface(
@@ -6251,8 +6227,9 @@ public class SemanticProcessor {
                         );
                         ii.arguments().add(new IntValue(index));
                         Ins.CheckCast cc = new Ins.CheckCast(ii, innerMethod.getParameters().get(index).type(), LineCol.SYNTHETIC);
-                        methodArgs.add(cc);
+                        capturedValues.add(cc);
                 }
+                List<Value> methodArgs = new ArrayList<Value>();
                 // add parameters
                 for (SParameter p : theMethod.getParameters()) {
                         methodArgs.add(new Ins.TLoad(
@@ -6263,19 +6240,19 @@ public class SemanticProcessor {
                 methodArgs.add(new Ins.GetField(f4, meScope.getThis(), LineCol.SYNTHETIC));
                 Instruction theStmt;
                 if (isStatic) {
-                        Ins.InvokeStatic is = new Ins.InvokeStatic(
-                                innerMethod, LineCol.SYNTHETIC
-                        );
-                        is.arguments().addAll(methodArgs);
-                        theStmt = is;
+                        Ins.InvokeWithCapture iwc = new Ins.InvokeWithCapture(null, innerMethod, true, LineCol.SYNTHETIC);
+                        iwc.capturedArguments().addAll(capturedValues);
+                        iwc.arguments().addAll(methodArgs);
+                        theStmt = iwc;
                 } else {
-                        Ins.InvokeVirtual iv = new Ins.InvokeVirtual(
+                        Ins.InvokeWithCapture iwc = new Ins.InvokeWithCapture(
                                 new Ins.GetField(f2, meScope.getThis(), LineCol.SYNTHETIC),
                                 innerMethod,
-                                LineCol.SYNTHETIC
+                                false, LineCol.SYNTHETIC
                         );
-                        iv.arguments().addAll(methodArgs);
-                        theStmt = iv;
+                        iwc.capturedArguments().addAll(capturedValues);
+                        iwc.arguments().addAll(methodArgs);
+                        theStmt = iwc;
                 }
                 // return if it's not `void`
                 if (!theMethod.getReturnType().equals(VoidType.get())) {
@@ -9064,6 +9041,7 @@ public class SemanticProcessor {
 
                         if (invokeInnerMethod) {
                                 List<Value> values = new ArrayList<Value>();
+                                List<Value> capturedValues = new ArrayList<Value>();
                                 int inc = innerMethod.method.getParameters().size() - innerMethod.paramCount;
                                 for (int i = 0; i < argList.size(); ++i) {
                                         STypeDef requiredType = innerMethod.method.getParameters().get(i + inc).type();
@@ -9075,11 +9053,11 @@ public class SemanticProcessor {
                                         ));
                                 }
 
-                                Ins.Invoke invoke;
+                                Ins.InvokeWithCapture invoke;
                                 if (innerMethod.method.modifiers().contains(SModifier.STATIC)) {
-                                        invoke = new Ins.InvokeStatic(innerMethod.method, invocation.line_col());
+                                        invoke = new Ins.InvokeWithCapture(null, innerMethod.method, true, invocation.line_col());
                                 } else {
-                                        invoke = new Ins.InvokeSpecial(scope.getThis(), innerMethod.method, invocation.line_col());
+                                        invoke = new Ins.InvokeWithCapture(scope.getThis(), innerMethod.method, false, invocation.line_col());
                                 }
                                 int requiredLocalVariableCount = innerMethod.method.getParameters().size() - innerMethod.paramCount;
                                 List<LeftValue> leftValues = scope.getLeftValues(requiredLocalVariableCount, false);
@@ -9087,9 +9065,10 @@ public class SemanticProcessor {
                                         throw new LtBug("require " + requiredLocalVariableCount + " local variable(s), got " + leftValues.size());
 
                                 for (LeftValue v : leftValues) {
-                                        invoke.arguments().add(new Ins.TLoad(v, scope, LineCol.SYNTHETIC));
+                                        capturedValues.add(new Ins.TLoad(v, scope, LineCol.SYNTHETIC));
                                 }
                                 invoke.arguments().addAll(values);
+                                invoke.capturedArguments().addAll(capturedValues);
 
                                 if (invoke.type().equals(VoidType.get()))
                                         return new ValueAnotherType(

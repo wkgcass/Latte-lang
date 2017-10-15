@@ -2285,13 +2285,14 @@ public class TestSemantic {
                 Instruction i0 = method.statements().get(0);
 
                 assertTrue(i0 instanceof Ins.TReturn);
-                assertTrue(((Ins.TReturn) i0).value() instanceof Ins.InvokeSpecial);
-                Ins.InvokeSpecial invokeSpecial = (Ins.InvokeSpecial) ((Ins.TReturn) i0).value();
+                assertTrue(((Ins.TReturn) i0).value() instanceof Ins.InvokeWithCapture);
+                Ins.InvokeWithCapture invokeWithCapture = (Ins.InvokeWithCapture) ((Ins.TReturn) i0).value();
 
-                assertTrue(invokeSpecial.invokable() instanceof SMethodDef);
-                assertEquals("procedure$0$Latte$InnerMethod$0", ((SMethodDef) invokeSpecial.invokable()).name());
+                assertFalse(invokeWithCapture.isStatic());
+                assertTrue(invokeWithCapture.invokable() instanceof SMethodDef);
+                assertEquals("procedure$0$Latte$InnerMethod$0", ((SMethodDef) invokeWithCapture.invokable()).name());
 
-                assertEquals(new IntValue(1), ((Ins.TReturn) invokeSpecial.invokable().statements().get(0)).value());
+                assertEquals(new IntValue(1), ((Ins.TReturn) invokeWithCapture.invokable().statements().get(0)).value());
         }
 
         @Test
@@ -2310,13 +2311,14 @@ public class TestSemantic {
                 Instruction i1 = ((ValuePack) classDef.constructors().get(0).statements().get(1)).instructions().get(0);
 
                 assertTrue(i1 instanceof Ins.PutField);
-                assertTrue(((Ins.PutField) i1).value() instanceof Ins.InvokeSpecial);
-                Ins.InvokeSpecial invokeSpecial = (Ins.InvokeSpecial) ((Ins.PutField) i1).value();
+                assertTrue(((Ins.PutField) i1).value() instanceof Ins.InvokeWithCapture);
+                Ins.InvokeWithCapture invokeWithCapture = (Ins.InvokeWithCapture) ((Ins.PutField) i1).value();
+                assertFalse(invokeWithCapture.isStatic());
 
-                assertTrue(invokeSpecial.invokable() instanceof SMethodDef);
-                assertEquals("procedure$0$Latte$InnerMethod$0", ((SMethodDef) invokeSpecial.invokable()).name());
+                assertTrue(invokeWithCapture.invokable() instanceof SMethodDef);
+                assertEquals("procedure$0$Latte$InnerMethod$0", ((SMethodDef) invokeWithCapture.invokable()).name());
 
-                assertEquals(new IntValue(1), ((Ins.TReturn) invokeSpecial.invokable().statements().get(0)).value());
+                assertEquals(new IntValue(1), ((Ins.TReturn) invokeWithCapture.invokable().statements().get(0)).value());
         }
 
         @Test
@@ -2426,7 +2428,7 @@ public class TestSemantic {
                 assertEquals(1, lambda.methods().get(0).getParameters().size());
                 Ins.TReturn i0 = (Ins.TReturn) lambda.methods().get(0).statements().get(0); // return
 
-                assertTrue(i0.value() instanceof Ins.InvokeVirtual);
+                assertTrue(i0.value() instanceof Ins.InvokeWithCapture);
 
         }
 

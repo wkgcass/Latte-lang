@@ -605,6 +605,27 @@ public class Ins {
         }
 
         /**
+         * invoke lambda expression
+         */
+        public static class InvokeWithCapture extends InvokeWithTarget {
+                private final List<Value> capturedArguments = new ArrayList<Value>();
+                private final boolean isStatic;
+
+                public InvokeWithCapture(Value target, SInvokable invokable, boolean isStatic, LineCol lineCol) {
+                        super(target, invokable, lineCol);
+                        this.isStatic = isStatic;
+                }
+
+                public List<Value> capturedArguments() {
+                        return capturedArguments;
+                }
+
+                public boolean isStatic() {
+                        return isStatic;
+                }
+        }
+
+        /**
          * invoke
          */
         public abstract static class InvokeWithTarget extends Invoke implements Instruction, Value {
@@ -1178,6 +1199,9 @@ public class Ins {
                                 mode = Aload;
 
                         this.index = index;
+
+                        // set variable to 'used'
+                        value.setUsed(true);
                 }
 
                 public TLoad(LeftValue value, SemanticScope scope, LineCol lineCol) {

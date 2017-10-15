@@ -30,6 +30,7 @@ package lt.compiler.semantic;
 public class LocalVariable implements LeftValue {
         private final boolean canChange;
         private STypeDef type;
+        private boolean used;
 
         private boolean alreadyAssigned = false;
 
@@ -55,6 +56,17 @@ public class LocalVariable implements LeftValue {
         @Override
         public void assign() {
                 alreadyAssigned = true;
+                setUsed(true);
+        }
+
+        @Override
+        public boolean isUsed() {
+                return used;
+        }
+
+        @Override
+        public void setUsed(boolean used) {
+                this.used = used;
         }
 
         @Override

@@ -38,6 +38,8 @@ public class SParameter implements LeftValue, SAnnotationPresentable {
         private boolean canChange = true;
         private boolean notNull = false;
         private boolean notEmpty = false;
+        private boolean used = false;
+        private boolean isCapture = false;
 
         public void setTarget(SInvokable target) {
                 this.target = target;
@@ -87,6 +89,8 @@ public class SParameter implements LeftValue, SAnnotationPresentable {
 
         @Override
         public void assign() {
+                // empty implementation
+                // not required
         }
 
         @Override
@@ -109,5 +113,33 @@ public class SParameter implements LeftValue, SAnnotationPresentable {
                 if (!canChange()) str += "final ";
                 str += type().fullName() + " " + name();
                 return str;
+        }
+
+        @Override
+        public void setUsed(boolean used) {
+                this.used = used;
+        }
+
+        @Override
+        public boolean isUsed() {
+                return used;
+        }
+
+        /**
+         * check whether the parameter is a captured param
+         *
+         * @return true/false
+         */
+        public boolean isCapture() {
+                return isCapture;
+        }
+
+        /**
+         * mark the parameter whether it's a captured param
+         *
+         * @param capture true/false
+         */
+        public void setCapture(boolean capture) {
+                isCapture = capture;
         }
 }

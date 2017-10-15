@@ -17,6 +17,7 @@ import java.util.Set;
 /**
  * Created by wkgcass on 16/6/4.
  */
+/*
 public class SimpleTest {
         public static void main(String[] args) throws ScriptException {
                 ScriptEngine engine = new ScriptEngineManager().getEngineByName("Latte-lang");
@@ -24,19 +25,31 @@ public class SimpleTest {
                 System.out.println(engine.get("a"));
         }
 }
-/*
+*/
 public class SimpleTest {
         public static void main(String[] args) throws Exception {
                 ErrorManager err = new ErrorManager(true);
 
                 StringBuilder sb = new StringBuilder();
                 sb.append("" +
-                        "import java::util::Collections._\n" +
-                        "class TestImportStaticAnno\n" +
-                        "    static\n" +
-                        "        list = [1,3,2]\n" +
-                        "        sort(list)\n" +
-                        "        list"
+                        "class A\n" +
+                        " static\n" +
+                        "  def method(args:[]String)\n" +
+                        "   def method_try_catch_finally(func)\n" +
+                        "    a=0\n" +
+                        "    try\n" +
+                        "        func.apply()\n" +
+                        "        a=1\n" +
+                        "    catch e\n" +
+                        "        if e is type RuntimeException\n" +
+                        "            a=2\n" +
+                        "        elseif e is type Error or e is type Exception\n" +
+                        "            a=3\n" +
+                        "        elseif e is type Throwable\n" +
+                        "            a=4\n" +
+                        "    finally\n" +
+                        "        ++a\n" +
+                        "    return a"
                 );
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
@@ -48,8 +61,8 @@ public class SimpleTest {
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
-                byte[] b = list.get("TestImportStaticAnno");
-                FileOutputStream fos = new FileOutputStream(new File("/Volumes/PROJECTS/openSource/LessTyping/hehe.class"));
+                byte[] b = list.get("A");
+                FileOutputStream fos = new FileOutputStream(new File("/Users/wkgcass/OpenSource/Latte-lang/hehe.class"));
                 fos.write(b);
                 fos.flush();
                 fos.close();
@@ -61,4 +74,3 @@ public class SimpleTest {
                 return a == b;
         }
 }
-*/

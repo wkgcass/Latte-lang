@@ -43,7 +43,21 @@ public interface LeftValue extends Value {
         boolean alreadyAssigned();
 
         /**
-         * assign the value, change <tt>alreadyAssigned</tt> state to true
+         * assign the value, change <tt>alreadyAssigned</tt> state to true.
          */
         void assign();
+
+        /**
+         * whether the value is referenced
+         *
+         * @return true if it's used
+         */
+        boolean isUsed();
+
+        /**
+         * mark the variable as used
+         *
+         * @param used true if it's used
+         */
+        void setUsed(boolean used);
 }

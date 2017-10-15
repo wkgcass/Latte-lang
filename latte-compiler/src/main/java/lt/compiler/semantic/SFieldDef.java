@@ -33,6 +33,7 @@ public class SFieldDef extends SMember implements LeftValue {
         private String name;
         private STypeDef type;
         private boolean alreadyAssigned = false;
+        private boolean used;
 
         public SFieldDef(LineCol lineCol) {
                 super(lineCol);
@@ -63,6 +64,17 @@ public class SFieldDef extends SMember implements LeftValue {
         @Override
         public void assign() {
                 alreadyAssigned = true;
+                setUsed(true);
+        }
+
+        @Override
+        public boolean isUsed() {
+                return used;
+        }
+
+        @Override
+        public void setUsed(boolean used) {
+                this.used = used;
         }
 
         @Override

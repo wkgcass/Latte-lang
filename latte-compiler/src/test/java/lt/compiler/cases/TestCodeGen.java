@@ -34,6 +34,7 @@ import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.literal.NumberLiteral;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
 import lt.generator.SourceGenerator;
+import lt.lang.Pointer;
 import lt.lang.Unit;
 import lt.lang.function.Function0;
 import lt.lang.function.Function1;
@@ -3984,5 +3985,43 @@ public class TestCodeGen {
                 Method method = cls.getMethod("method", String.class, int.class);
                 assertEquals('h', method.invoke(null, "helloworld", 0));
                 assertEquals('w', method.invoke(null, "helloworld", 5));
+        }
+
+        @Test
+        public void testTakeOnlyUsedVariablesInInnerMethods() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestTakeOnlyUsedVariablesInInnerMethods\n" +
+                                "  static\n" +
+                                "    def method(a:int)\n" +
+                                "      b:String = 'abc'\n" +
+                                "      c:double = 4.0\n" +
+                                "      def inner(d:long)\n" +
+                                "        a += 2\n" +
+                                "        return b + 'de'\n" +
+                                "      inner(1 as long) + a"
+                        , "TestTakeOnlyUsedVariablesInInnerMethods");
+                Method method = cls.getMethod("method", int.class);
+                assertEquals("abcde5", method.invoke(null, 3));
+                // only capture two variables
+                cls.getDeclaredMethod("inner$Latte$InnerMethod$0", Pointer.class, Pointer.class, long.class);
+        }
+
+        @Test
+        public void testTakeOnlyUsedVariablesInInnerMethods2() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestTakeOnlyUsedVariablesInInnerMethods\n" +
+                                "    def method(a:int)\n" +
+                                "      b:String = 'abc'\n" +
+                                "      c:double = 4.0\n" +
+                                "      def inner(d:long)\n" +
+                                "        a += 2\n" +
+                                "        return b + 'de'\n" +
+                                "      inner(1 as long) + a"
+                        , "TestTakeOnlyUsedVariablesInInnerMethods");
+                Object inst = cls.newInstance();
+                Method method = cls.getMethod("method", int.class);
+                assertEquals("abcde5", method.invoke(inst, 3));
+                // only capture two variables
+                cls.getDeclaredMethod("inner$Latte$InnerMethod$0", Pointer.class, Pointer.class, long.class);
         }
 }
