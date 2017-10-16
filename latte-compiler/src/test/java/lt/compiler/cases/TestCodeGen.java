@@ -4024,4 +4024,18 @@ public class TestCodeGen {
                 // only capture two variables
                 cls.getDeclaredMethod("inner$Latte$InnerMethod$0", Pointer.class, Pointer.class, long.class);
         }
+
+        @Test
+        public void testUTF8Variable() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class 测试UTF8变量\n" +
+                                "  static\n" +
+                                "    字段 = 'world'\n" +
+                                "    def 方法()\n" +
+                                "      你好='hello' + \" \" + 字段\n" +
+                                "      return 你好"
+                        , "测试UTF8变量");
+                Method method = cls.getMethod("方法");
+                assertEquals("hello world", method.invoke(null));
+        }
 }

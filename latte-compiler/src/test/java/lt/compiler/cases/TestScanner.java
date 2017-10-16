@@ -651,4 +651,23 @@ public class TestScanner {
 
                 assertEquals(root2, root);
         }
+
+        @Test
+        public void testUTF8Words() throws Exception {
+                IndentScanner scanner = new IndentScanner("test", new StringReader("" +
+                        "" +
+                        "你好='hello'"),
+                        new Properties(), new ErrorManager(true));
+                ElementStartNode root = scanner.scan();
+
+                Args args = new Args();
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
+                Element e = new Element(args, "你好", TokenType.VALID_NAME);
+                root2.setLinkedNode(e);
+                args.previous = e;
+
+                args.previous = new Element(args, "=", TokenType.SYMBOL);
+                args.previous = new Element(args, "'hello'", TokenType.STRING);
+                assertEquals(root2, root);
+        }
 }

@@ -485,11 +485,6 @@ public class LatteEngine implements ScriptEngine {
         }
 
         private static boolean isValidName(String name) {
-                for (char c : name.toCharArray()) {
-                        if (c != '_' && c != '$' && (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9')) {
-                                return false;
-                        }
-                }
-                return true;
+                return CompileUtil.isValidName(name);
         }
 }

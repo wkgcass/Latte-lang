@@ -157,20 +157,20 @@ public class CompileUtil {
          * check whether the given char can be one of a name
          *
          * @param c char
-         * @return true/false (a-z|A-Z|$|_|0-9)
+         * @return true/false (a-z|A-Z|$|_|0-9|>=256)
          */
         public static boolean isValidNameChar(char c) {
-                return isValidNameStartChar(c) || (c >= '0' && c <= '9');
+                return isValidNameStartChar(c) || (c >= '0' && c <= '9') || c >= 128;
         }
 
         /**
          * check whether the given char can be start of a name
          *
          * @param c char
-         * @return true/false (a-z|A-Z|$|_)
+         * @return true/false (a-z|A-Z|$|_|>=256)
          */
         public static boolean isValidNameStartChar(char c) {
-                return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '$' || c == '_';
+                return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '$' || c == '_' || c >= 128;
         }
 
         private static Set<String> modifiers = new HashSet<String>(Arrays.asList(
