@@ -32,24 +32,17 @@ public class SimpleTest {
 
                 StringBuilder sb = new StringBuilder();
                 sb.append("" +
-                        "class A\n" +
-                        " static\n" +
-                        "  def method(args:[]String)\n" +
-                        "   def method_try_catch_finally(func)\n" +
-                        "    a=0\n" +
-                        "    try\n" +
-                        "        func.apply()\n" +
-                        "        a=1\n" +
-                        "    catch e\n" +
-                        "        if e is type RuntimeException\n" +
-                        "            a=2\n" +
-                        "        elseif e is type Error or e is type Exception\n" +
-                        "            a=3\n" +
-                        "        elseif e is type Throwable\n" +
-                        "            a=4\n" +
-                        "    finally\n" +
-                        "        ++a\n" +
-                        "    return a"
+                        "class TestLambdaCallSelfVal\n" +
+                        "    static\n" +
+                        "        def method(x)\n" +
+                        "            var count = 0\n" +
+                        "            val f = a->\n" +
+                        "                if a > 2\n" +
+                        "                    return null\n" +
+                        "                count ++\n" +
+                        "                f(a+1)\n" +
+                        "            f(x)\n" +
+                        "            return count"
                 );
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
@@ -61,7 +54,7 @@ public class SimpleTest {
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
-                byte[] b = list.get("A");
+                byte[] b = list.get("TestLambdaCallSelfVal");
                 FileOutputStream fos = new FileOutputStream(new File("/Users/wkgcass/OpenSource/Latte-lang/hehe.class"));
                 fos.write(b);
                 fos.flush();

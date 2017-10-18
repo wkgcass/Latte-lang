@@ -4704,6 +4704,23 @@ public class SemanticProcessor {
                 return List_get;
         }
 
+        private SMethodDef Map_get;
+
+        private SMethodDef getMap_get() throws SyntaxException {
+                if (Map_get == null) {
+                        SInterfaceDef MapDef = (SInterfaceDef) getTypeWithName("java.util.Map", LineCol.SYNTHETIC);
+                        for (SMethodDef m : MapDef.methods()) {
+                                if (m.name().equals("get") && m.getParameters().size() == 1
+                                        && m.getParameters().get(0).type().equals(getObject_Class())) {
+                                        Map_get = m;
+                                        break;
+                                }
+                        }
+                }
+                assert Map_get != null;
+                return Map_get;
+        }
+
         private boolean destructCanChangeInLocalVariable(AST.Destruct d) throws SyntaxException {
                 if (d.modifiers.size() > 1) {
                         err.SyntaxException("modifier for destruct should only be `var` or `val`", d.line_col());
@@ -6026,13 +6043,13 @@ public class SemanticProcessor {
                         lambda.statements,
                         LineCol.SYNTHETIC
                 );
-                SMethodDef method = parseInnerMethod(methodDef, scope, true);
-                assert method != null;
-                method.modifiers().remove(SModifier.PRIVATE); // it should be package access
-                methodToStatements.put(method, lambda.statements);
+                SMethodDef innerMethod = parseInnerMethod(methodDef, scope, true);
+                assert innerMethod != null;
+                innerMethod.modifiers().remove(SModifier.PRIVATE); // it should be package access
+                methodToStatements.put(innerMethod, lambda.statements);
 
                 List<Value> args = new ArrayList<Value>();
-                for (LeftValue l : scope.getLeftValues(method.getParameters().size() - lambda.params.size(), true)) {
+                for (LeftValue l : scope.getLeftValues(innerMethod.getParameters().size() - lambda.params.size(), true)) {
                         args.add(new Ins.TLoad(l, scope, LineCol.SYNTHETIC));
                 }
 
@@ -6051,22 +6068,26 @@ public class SemanticProcessor {
                 // o
                 if (scope.getThis() != null) consArgs.add(scope.getThis());
                 // local
-                Ins.NewList newList = new Ins.NewList(getTypeWithName("java.util.LinkedList", LineCol.SYNTHETIC));
-                for (Value arg : args) {
+                Ins.NewMap newMap = new Ins.NewMap(getTypeWithName(HashMap.class.getName(), LineCol.SYNTHETIC));
+                for (int index = 0; index < args.size(); ++index) {
+                        Value arg = args.get(index);
+                        if (!innerMethod.getParameters().get(index).isUsed()) {
+                                continue;
+                        }
                         if (arg.type() instanceof PrimitiveTypeDef) {
                                 arg = boxPrimitive(arg, LineCol.SYNTHETIC);
                         }
-                        newList.initValues().add(arg);
+                        newMap.initValues().put(boxPrimitive(new IntValue(index), LineCol.SYNTHETIC), arg);
                 }
-                consArgs.add(newList);
+                consArgs.add(newMap);
 
                 boolean isInterface = requiredType instanceof SInterfaceDef;
                 SClassDef builtClass = buildAClassForLambda(
                         scope.type(), scope.getThis() == null, methodToOverride,
                         constructorWithZeroParamAndCanAccess,
                         isInterface ? (SInterfaceDef) requiredType : null,
-                        isInterface, newList.initValues().size(),
-                        method);
+                        isInterface, args.size(),
+                        innerMethod);
 
                 SConstructorDef cons = builtClass.constructors().get(0);
                 Ins.New aNew = new Ins.New(cons, LineCol.SYNTHETIC);
@@ -6138,7 +6159,7 @@ public class SemanticProcessor {
                 // local
                 SFieldDef f3 = new SFieldDef(LineCol.SYNTHETIC);
                 f3.setName("local");
-                f3.setType(getTypeWithName("java.util.List", LineCol.SYNTHETIC));
+                f3.setType(getTypeWithName("java.util.Map", LineCol.SYNTHETIC));
                 sClassDef.fields().add(f3);
                 f3.setDeclaringType(sClassDef);
                 // self
@@ -6188,7 +6209,7 @@ public class SemanticProcessor {
                 }
                 // p3
                 SParameter p3 = new SParameter();
-                p3.setType(getTypeWithName("java.util.List", LineCol.SYNTHETIC));
+                p3.setType(getTypeWithName("java.util.Map", LineCol.SYNTHETIC));
                 con.getParameters().add(p3);
                 conScope.putLeftValue("p3", p3);
                 con.statements().add(new Ins.PutField(
@@ -6223,9 +6244,9 @@ public class SemanticProcessor {
                 for (int index = 0; index < localVarCount; ++index) {
                         Ins.InvokeInterface ii = new Ins.InvokeInterface(
                                 new Ins.GetField(f3, meScope.getThis(), LineCol.SYNTHETIC),
-                                getList_get(), LineCol.SYNTHETIC
+                                getMap_get(), LineCol.SYNTHETIC
                         );
-                        ii.arguments().add(new IntValue(index));
+                        ii.arguments().add(boxPrimitive(new IntValue(index), LineCol.SYNTHETIC));
                         Ins.CheckCast cc = new Ins.CheckCast(ii, innerMethod.getParameters().get(index).type(), LineCol.SYNTHETIC);
                         capturedValues.add(cc);
                 }

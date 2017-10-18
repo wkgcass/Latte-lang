@@ -2847,4 +2847,44 @@ public class TestSemantic {
                 assertEquals(IntTypeDef.get(), f.type());
                 assertEquals(new IntValue(1), f.defaultValue());
         }
+
+        @Test
+        public void testLambdaConstruction() throws Exception {
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("test", "" +
+                        "class A\n" +
+                        "  def method\n" +
+                        "    x = 1\n" +
+                        "    y = 2\n" +
+                        "    a = ()-> x + 1\n");
+                Set<STypeDef> sTypeDefs = parse(map);
+                assertEquals(2, sTypeDefs.size());
+                Iterator<STypeDef> it = sTypeDefs.iterator();
+                STypeDef type = it.next();
+                if (!type.fullName().equals("A")) {
+                        type = it.next();
+                }
+                assertEquals("A", type.fullName());
+                SClassDef sClassDef = (SClassDef) type;
+
+                List<SMethodDef> methodDefs = sClassDef.methods();
+                assertEquals(2, methodDefs.size());
+                Iterator<SMethodDef> it2 = methodDefs.iterator();
+                SMethodDef method = it2.next();
+                if (!method.name().equals("method")) {
+                        method = it2.next();
+                }
+                assertEquals("method", method.name());
+                assertEquals(3, method.statements().size());
+                Instruction ins = method.statements().get(2);
+                Ins.TReturn ret = (Ins.TReturn) ins;
+                ValuePack vp = (ValuePack) ret.value();
+                Ins.InvokeVirtual iv = (Ins.InvokeVirtual) vp.instructions().get(1);
+                Ins.New iNew = (Ins.New) iv.arguments().get(0);
+                assertEquals(2, iNew.args().size());
+                Ins.NewMap newMap = (Ins.NewMap) iNew.args().get(1);
+
+                // only capture one argument
+                assertEquals(1, newMap.initValues().size());
+        }
 }
