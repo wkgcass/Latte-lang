@@ -157,7 +157,7 @@ public class CompileUtil {
          * check whether the given char can be one of a name
          *
          * @param c char
-         * @return true/false (a-z|A-Z|$|_|0-9|>=128)
+         * @return true/false (a-z|A-Z|$|_|0-9|&gt;=128)
          */
         public static boolean isValidNameChar(char c) {
                 return isValidNameStartChar(c) || (c >= '0' && c <= '9') || c >= 128;
@@ -167,7 +167,7 @@ public class CompileUtil {
          * check whether the given char can be start of a name
          *
          * @param c char
-         * @return true/false (a-z|A-Z|$|_|>=128)
+         * @return true/false (a-z|A-Z|$|_|&gt;=128)
          */
         public static boolean isValidNameStartChar(char c) {
                 return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '$' || c == '_' || c >= 128;
