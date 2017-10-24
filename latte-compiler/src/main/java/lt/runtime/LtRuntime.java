@@ -27,6 +27,7 @@ package lt.runtime;
 import lt.compiler.MultipleClassLoader;
 import lt.compiler.SemanticProcessor;
 import lt.lang.Unit;
+import lt.repl.scripting.CL;
 import lt.util.Utils;
 import lt.lang.function.Function;
 import lt.lang.function.Function1;
@@ -231,56 +232,24 @@ public class LtRuntime {
                                 Method method = Dynamic.findAbstractMethod(targetType);
                                 Method funcMethod = o.getClass().getDeclaredMethods()[0];
                                 if (method.getParameterTypes().length == funcMethod.getParameterTypes().length) {
-                                        int i = 0;
-                                        while (true) {
-                                                try {
-                                                        Class.forName(targetType.getSimpleName() + "$Latte$lambda$" + i);
-                                                } catch (ClassNotFoundException e) {
-                                                        break;
-                                                }
-                                        }
-                                        StringBuilder sb = new StringBuilder();
-                                        sb.append("class ").append(targetType.getSimpleName()).append("$Latte$lambda$").append(i)
-                                                .append("(func:").append(
-                                                getLatteTypeName(funcMethod.getDeclaringClass().getInterfaces()[0].getName()))
-                                                .append("):").append(
-                                                getLatteTypeName(targetType.getName())).append("\n")
-                                                .append("    ").append(method.getName()).append("(");
-                                        boolean isFirst = true;
-                                        int index = 0;
-                                        for (Class<?> param : method.getParameterTypes()) {
-                                                if (isFirst) isFirst = false;
-                                                else sb.append(",");
-                                                sb.append("p").append(index++).append(":").append(
-                                                        getLatteTypeName(param.getName()));
-                                        }
-                                        sb.append("):").append(
-                                                getLatteTypeName(method.getReturnType().getName())).append("\n")
-                                                .append("        func.self = this\n").append("        ");
-                                        if (method.getReturnType() != void.class) sb.append("return ");
-                                        sb.append("func.apply(");
-                                        isFirst = true;
-                                        for (int j = 0; j < index; ++j) {
-                                                if (isFirst) isFirst = false;
-                                                else sb.append(",");
-                                                sb.append("p").append(j);
-                                        }
-                                        sb.append(")\n");
+                                        Map.Entry<String, byte[]> pair = LambdaGen.gen((Function) o, targetType);
 
                                         ClassLoader targetTypeCL = targetType.getClassLoader();
                                         if (targetTypeCL == null) {
-                                                targetTypeCL = Thread.currentThread().getContextClassLoader();
+                                                targetTypeCL = new MultipleClassLoader(
+                                                        o.getClass().getClassLoader(),
+                                                        Thread.currentThread().getContextClassLoader());
                                         } else {
                                                 targetTypeCL = new MultipleClassLoader(
+                                                        o.getClass().getClassLoader(),
                                                         targetTypeCL, Thread.currentThread().getContextClassLoader()
                                                 );
                                         }
-                                        @SuppressWarnings("unchecked")
-                                        List<Class<?>> ls = ((java.util.List<Class<?>>)
-                                                Utils.eval(
-                                                        targetTypeCL,
-                                                        sb.toString()));
-                                        Class<?> cls = ls.get(0);
+
+                                        CL cl = new CL(targetTypeCL);
+                                        cl.addByteCodes(pair.getKey(), pair.getValue());
+
+                                        Class<?> cls = cl.loadClass(pair.getKey());
                                         final Constructor<?> con = cls.getConstructor(funcMethod.getDeclaringClass().getInterfaces()[0]);
                                         Function1<Object, Object> func = new Function1<Object, Object>() {
                                                 @Override

@@ -6,7 +6,7 @@ import java.util.Map;
 public class CL extends ClassLoader {
         private Map<String, byte[]> byteCodes = new HashMap<String, byte[]>();
 
-        CL(ClassLoader cl) {
+        public CL(ClassLoader cl) {
                 super(cl);
         }
 
@@ -17,7 +17,7 @@ public class CL extends ClassLoader {
                 return defineClass(name, byteCode, 0, byteCode.length);
         }
 
-        void addByteCodes(String name, byte[] bytes) {
+        public void addByteCodes(String name, byte[] bytes) {
                 byteCodes.put(name, bytes);
         }
 }
