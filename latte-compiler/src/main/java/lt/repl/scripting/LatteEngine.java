@@ -74,51 +74,7 @@ public class LatteEngine implements ScriptEngine {
                         .setEval(false));
         }
 
-        public Object eval(final String script, final Bindings n, final Config config) throws ScriptException {
-                final Pointer<Throwable> pt = new Pointer<Throwable>(false, false);
-                final Pointer<Object> pres = new Pointer<Object>(false, false);
-                Thread thread = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                                Object res;
-                                try {
-                                        res = evalOnThread(script, n, config);
-                                } catch (Throwable t) {
-                                        try {
-                                                pt.set(t);
-                                        } catch (Throwable throwable) {
-                                                // should never happen
-                                                throw new LtBug(throwable);
-                                        }
-                                        return;
-                                }
-                                try {
-                                        pres.set(res);
-                                } catch (Throwable throwable) {
-                                        // should never happen
-                                        throw new LtBug(throwable);
-                                }
-                        }
-                });
-                thread.setContextClassLoader(classLoader);
-                thread.start();
-                try {
-                        thread.join();
-                } catch (InterruptedException e) {
-                        throw new LtRuntimeException("interrupted when eval", e);
-                }
-                if (pt.get() != null) {
-                        Throwable t = pt.get();
-                        if (t instanceof ScriptException) {
-                                throw (ScriptException) t;
-                        } else {
-                                throw new LtBug(t);
-                        }
-                }
-                return pres.get();
-        }
-
-        private Object evalOnThread(String script, Bindings n, Config config) throws ScriptException {
+        public Object eval(String script, Bindings n, Config config) throws ScriptException {
                 List<Import> imports = initImports(n);
                 CL cl = initCL(n);
                 List<MethodDef> recordedMethods = initMethodList(n);
@@ -267,7 +223,7 @@ public class LatteEngine implements ScriptEngine {
                                 paramInstances.add(value);
                         }
 
-                        final String className = SCRIPT_CLASS_NAME + '_' + UUID.randomUUID().toString().replace("-", "");
+                        final String className = SCRIPT_CLASS_NAME + '_' + new Date().getTime() + '_' + UUID.randomUUID().toString().replace("-", "");
                         ClassDef evalClass = new ClassDef(
                                 className,
                                 Collections.<Modifier>emptySet(),

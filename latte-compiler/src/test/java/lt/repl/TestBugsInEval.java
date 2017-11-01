@@ -299,9 +299,10 @@ public class TestBugsInEval {
                 Evaluator e = new Evaluator(new ClassPathLoader(Thread.currentThread().getContextClassLoader()));
                 e.setScannerType(Config.SCANNER_TYPE_BRACE);
                 try {
-                        e.eval("(1..100).forEach(()->{...})");
+                        e.eval("(1 to 100).forEach(()->{...})");
                         fail();
                 } catch (Exception ex) {
+                        // ex: argument type mismatch
                         Object res = e.eval("" +
                                 "var res = 0\n" +
                                 "(1 to 100).forEach { res += it }\n" +

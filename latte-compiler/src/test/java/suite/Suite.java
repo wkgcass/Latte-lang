@@ -61,7 +61,8 @@ import org.junit.runner.RunWith;
         TestPrimitiveOperators.class,
         TestDefineAnnotations.class,
         TestJsr223.class,
-        TestDotPackage.class
+        TestDotPackage.class,
+        TestLambdaGen.class
 })
 public class Suite extends TestSuite {
 }

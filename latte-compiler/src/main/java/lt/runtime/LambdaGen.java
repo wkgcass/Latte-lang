@@ -7,22 +7,25 @@ import lt.dependencies.asm.MethodVisitor;
 import lt.dependencies.asm.Opcodes;
 import lt.lang.function.Function;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * it's used to generate for an implementation for a functional interface or abstract class
  */
 public class LambdaGen {
         private static final String FUNC_FIELD_NAME = "func";
+        private static final String F_FIELD_NAME = "f";
+        private static final String FIELD_DESC = "Ljava/lang/reflect/Field;";
 
         public static Map.Entry<String, byte[]> gen(Function f, Class<?> targetType) {
                 Method abstractMethod = Dynamic.findAbstractMethod(targetType);
                 Method funcMethod = f.getClass().getDeclaredMethods()[0];
 
                 final String className = getLambdaName(targetType);
-                String functionInternal = f.getClass().getInterfaces()[0].getName().replace('.', '/');
-                String functionRealInternal = f.getClass().getName().replace('.', '/');
+                String functionInternal = typeToInternalName(f.getClass().getInterfaces()[0]);
                 String functionDesc = "L" + functionInternal + ";";
 
                 // class X
@@ -31,16 +34,20 @@ public class LambdaGen {
                 String[] interfaces;
                 if (targetType.isInterface()) {
                         superClass = "java/lang/Object";
-                        interfaces = new String[]{targetType.getName().replace('.', '/')};
+                        interfaces = new String[]{typeToInternalName(targetType)};
                 } else {
-                        superClass = targetType.getName().replace('.', '/');
+                        superClass = typeToInternalName(targetType);
                         interfaces = new String[0];
                 }
                 classVisitor.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC, className, null, superClass, interfaces);
 
                 // func (field)
-                FieldVisitor fieldVisitor = classVisitor.visitField(Opcodes.ACC_PRIVATE, FUNC_FIELD_NAME, functionDesc, null, null);
-                fieldVisitor.visitEnd();
+                FieldVisitor funcVisitor = classVisitor.visitField(Opcodes.ACC_PRIVATE, FUNC_FIELD_NAME, functionDesc, null, null);
+                funcVisitor.visitEnd();
+
+                // f (field Field)
+                FieldVisitor fVisitor = classVisitor.visitField(Opcodes.ACC_PRIVATE, F_FIELD_NAME, typeToDesc(Field.class), null, null);
+                fVisitor.visitEnd();
 
                 MethodVisitor constructorVisitor = classVisitor.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(" + functionDesc + ")V", null, null);
                 constructorVisitor.visitCode();
@@ -54,6 +61,17 @@ public class LambdaGen {
                 constructorVisitor.visitVarInsn(Opcodes.ALOAD, 1);
                 // this.func = func
                 constructorVisitor.visitFieldInsn(Opcodes.PUTFIELD, className, FUNC_FIELD_NAME, functionDesc);
+                // invoke var1.getClass()
+                constructorVisitor.visitVarInsn(Opcodes.ALOAD, 1);
+                constructorVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+                // getField('self')
+                constructorVisitor.visitLdcInsn("self");
+                constructorVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getField", "(Ljava/lang/String;)Ljava/lang/reflect/Field;", false);
+                // this.f = (field)
+                visitThis(constructorVisitor);
+                constructorVisitor.visitInsn(Opcodes.SWAP);
+                constructorVisitor.visitFieldInsn(Opcodes.PUTFIELD, className, F_FIELD_NAME, FIELD_DESC);
+                // return
                 constructorVisitor.visitInsn(Opcodes.RETURN);
                 constructorVisitor.visitMaxs(0, 0);
                 constructorVisitor.visitEnd();
@@ -61,15 +79,29 @@ public class LambdaGen {
                 // method
                 MethodVisitor implMethod = classVisitor.visitMethod(Opcodes.ACC_PUBLIC, abstractMethod.getName(), getDescFromMethod(abstractMethod), null, null);
                 implMethod.visitCode();
-                // this.func
+                // this.f
+                visitThis(implMethod);
+                implMethod.visitFieldInsn(Opcodes.GETFIELD, className, F_FIELD_NAME, FIELD_DESC);
+                // setAccessible(true)
+                implMethod.visitLdcInsn(true);
+                try {
+                        implMethod.visitMethodInsn(Opcodes.INVOKEVIRTUAL, typeToInternalName(Field.class), "setAccessible", getDescFromMethod(Field.class.getMethod("setAccessible", boolean.class)), false);
+                } catch (NoSuchMethodException e) {
+                        throw new LtBug(e);
+                }
+                // this.f
+                visitThis(implMethod);
+                implMethod.visitFieldInsn(Opcodes.GETFIELD, className, F_FIELD_NAME, FIELD_DESC);
+                // set(this.func, this)
                 visitThis(implMethod);
                 implMethod.visitFieldInsn(Opcodes.GETFIELD, className, FUNC_FIELD_NAME, functionDesc);
-                // check cast
-                implMethod.visitTypeInsn(Opcodes.CHECKCAST, functionRealInternal);
-                // this
                 visitThis(implMethod);
-                // this.func.self = this
-                implMethod.visitFieldInsn(Opcodes.PUTFIELD, functionRealInternal, "self", "Ljava/lang/Object;");
+                try {
+                        implMethod.visitMethodInsn(Opcodes.INVOKEVIRTUAL, typeToInternalName(Field.class), "set", getDescFromMethod(Field.class.getMethod("set", Object.class, Object.class)), false);
+                } catch (NoSuchMethodException e) {
+                        throw new LtBug(e);
+                }
+
                 // this.func
                 visitThis(implMethod);
                 implMethod.visitFieldInsn(Opcodes.GETFIELD, className, FUNC_FIELD_NAME, functionDesc);
@@ -96,6 +128,7 @@ public class LambdaGen {
                         // return
                         if (abstractMethod.getReturnType().isPrimitive()) {
                                 Class<?> returnType = abstractMethod.getReturnType();
+                                castToPrimitive(returnType, implMethod);
                                 if (returnType == long.class) {
                                         implMethod.visitInsn(Opcodes.LRETURN);
                                 } else if (returnType == float.class) {
@@ -106,7 +139,13 @@ public class LambdaGen {
                                         implMethod.visitInsn(Opcodes.IRETURN);
                                 }
                         } else {
-                                implMethod.visitInsn(Opcodes.ARETURN);
+                                // check type
+                                if (abstractMethod.getReturnType().equals(Object.class)) {
+                                        implMethod.visitInsn(Opcodes.ARETURN);
+                                } else {
+                                        checkcast(abstractMethod.getReturnType(), implMethod);
+                                        implMethod.visitInsn(Opcodes.ARETURN);
+                                }
                         }
                 }
                 implMethod.visitMaxs(0, 0);
@@ -129,6 +168,36 @@ public class LambdaGen {
                                 throw new UnsupportedOperationException();
                         }
                 };
+        }
+
+        private static void castToPrimitive(Class<?> c, MethodVisitor visitor) throws NoSuchElementException {
+                String name = "castTo";
+                if (c == int.class) {
+                        name += "Int";
+                } else if (c == short.class) {
+                        name += "Short";
+                } else if (c == byte.class) {
+                        name += "Byte";
+                } else if (c == boolean.class) {
+                        name += "Bool";
+                } else if (c == float.class) {
+                        name += "Float";
+                } else if (c == long.class) {
+                        name += "Long";
+                } else if (c == double.class) {
+                        name += "Double";
+                } else if (c == char.class) {
+                        name += "Char";
+                } else {
+                        throw new LtBug("unknown primitive " + c);
+                }
+                visitor.visitMethodInsn(Opcodes.INVOKESTATIC,
+                        typeToInternalName(LtRuntime.class), name,
+                        "(Ljava/lang/Object;)" + typeToDesc(c), false);
+        }
+
+        private static void checkcast(Class<?> c, MethodVisitor visitor) {
+                visitor.visitTypeInsn(Opcodes.CHECKCAST, typeToDesc(c));
         }
 
         private static void boxPrimitive(Class<?> c, MethodVisitor visitor) throws NoSuchMethodException {
@@ -165,6 +234,10 @@ public class LambdaGen {
                 visitor.visitMethodInsn(Opcodes.INVOKESTATIC, owner, name, desc, false);
         }
 
+        private static String typeToInternalName(Class<?> type) {
+                return type.getName().replace('.', '/');
+        }
+
         private static String typeToDesc(Class<?> type) {
                 StringBuilder sb = new StringBuilder();
                 if (type.isPrimitive()) {
@@ -176,6 +249,7 @@ public class LambdaGen {
                         else if (type == float.class) sb.append("F");
                         else if (type == double.class) sb.append("D");
                         else if (type == char.class) sb.append("C");
+                        else if (type == void.class) sb.append("V"); // java 1.8 void is primitive
                         else throw new LtBug("unknown primitive: " + type);
                 } else if (type.isArray()) {
                         Class<?> tmp = type;
@@ -185,10 +259,10 @@ public class LambdaGen {
                         }
                         sb.append(typeToDesc(tmp));
                 } else if (type == void.class) {
-                        sb.append("V");
+                        sb.append("V"); // java 1.6 void is not primitive
                 } else {
                         // object L...;
-                        sb.append("L").append(type.getName().replace('.', '/')).append(";");
+                        sb.append("L").append(typeToInternalName(type)).append(";");
                 }
                 return sb.toString();
         }
