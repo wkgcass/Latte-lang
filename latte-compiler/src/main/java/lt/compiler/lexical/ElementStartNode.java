@@ -54,6 +54,7 @@ public class ElementStartNode extends Node {
         @Override
         public String toString(int indent) {
                 StringBuilder sb = new StringBuilder();
+                sb.append("StartNode(").append(this.indent).append(")\n");
                 if (hasLinkedNode()) {
                         sb.append(getLinkedNode().toString(indent + 4));
                 }

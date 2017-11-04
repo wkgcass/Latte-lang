@@ -187,7 +187,48 @@ public class IndentScanner extends AbstractScanner {
                                 if (lastIndentElem.getIndent() != indentation) {
                                         if (indentation <= lastNonFlexIndent) {
                                                 // smaller indent
-                                                redirectToDeeperStartNodeByIndent(args, indentation, true);
+                                                // check PAIR_END and handle
+                                                boolean isPairEnd = false;
+                                                for (String pairEnd : PAIR.values()) {
+                                                        if (line.startsWith(pairEnd)) {
+                                                                isPairEnd = true;
+                                                                PairEntry lastPair = args.pairEntryStack.lastElement();
+
+                                                                // check indentation
+                                                                ElementStartNode theStartNode = lastPair.startNode;
+                                                                // go to it's parent
+                                                                for (int i = args.startNodeStack.size() - 1; i >= 0; --i) {
+                                                                        ElementStartNode node = args.startNodeStack.get(i);
+                                                                        if (node == theStartNode) {
+                                                                                assert i != 0;
+                                                                                theStartNode = args.startNodeStack.get(i - 1);
+                                                                                break;
+                                                                        }
+                                                                }
+                                                                Indent indent = theStartNode.getIndent();
+                                                                if (indent.getIndent() != Indent.FLEX) {
+                                                                        // current should greater or equal
+                                                                        // else, raise compile error
+                                                                        if (indentation < indent.getIndent()) {
+                                                                                err.IllegalIndentationException(indent.getIndent(), args.generateLineCol());
+                                                                                // error handling: ignore and assume it's correct
+                                                                        }
+                                                                }
+                                                                if (!PAIR.get(lastPair.key).equals(pairEnd)) {
+                                                                        // last pair mismatch
+                                                                        // set `isPairEnd` to false
+                                                                        // and throw compile error
+                                                                        // in later steps
+                                                                        isPairEnd = false;
+                                                                }
+                                                                break;
+                                                        }
+                                                }
+                                                // if is  PAIR_END, handle the redirect in later steps
+                                                // if not PAIR_END, redirect the startNode
+                                                if (!isPairEnd) {
+                                                        redirectToDeeperStartNodeByIndent(args, indentation, true);
+                                                }
                                         } else { // if (lastIndent > indentation) {
                                                 // greater indent
                                                 createStartNode(args, indentation);

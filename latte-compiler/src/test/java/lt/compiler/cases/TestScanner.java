@@ -670,4 +670,62 @@ public class TestScanner {
                 args.previous = new Element(args, "'hello'", TokenType.STRING);
                 assertEquals(root2, root);
         }
+
+        @Test
+        public void testPairIndent() throws Exception {
+                IndentScanner scanner = new IndentScanner("test", new StringReader("" +
+                        "" +
+                        "a = [1,\n" +
+                        "  2,3,[\n" +
+                        "    4,5\n" +
+                        "   ]\n" + // more indent
+                        "]\n" + // same as root indent
+                        "b = [\n" +
+                        "]\n" + // FLEX indent
+                        ""),
+                        new Properties(), new ErrorManager(true));
+                ElementStartNode root = scanner.scan();
+
+                Args args = new Args();
+                ElementStartNode root2 = new ElementStartNode(args, new Indent(0));
+                Element e = new Element(args, "a", TokenType.VALID_NAME);
+                root2.setLinkedNode(e);
+                args.previous = e;
+
+                args.previous = new Element(args, "=", TokenType.SYMBOL);
+                args.previous = new Element(args, "[", TokenType.SYMBOL);
+                ElementStartNode startLine1 = new ElementStartNode(args, new Indent(2));
+                args.previous = startLine1;
+                args.previous = new EndingNode(args, EndingNode.SYNTHETIC);
+                args.previous = new Element(args, "]", TokenType.SYMBOL);
+                args.previous = new EndingNode(args, EndingNode.WEAK);
+                args.previous = new Element(args, "b", TokenType.VALID_NAME);
+                args.previous = new Element(args, "=", TokenType.SYMBOL);
+                args.previous = new Element(args, "[", TokenType.SYMBOL);
+                args.previous = new Element(args, "]", TokenType.SYMBOL);
+
+                args.previous = null;
+                e = new Element(args, "1", TokenType.NUMBER);
+                startLine1.setLinkedNode(e);
+                args.previous = e;
+                args.previous = new EndingNode(args, EndingNode.STRONG);
+                args.previous = new Element(args, "2", TokenType.NUMBER);
+                args.previous = new EndingNode(args, EndingNode.STRONG);
+                args.previous = new Element(args, "3", TokenType.NUMBER);
+                args.previous = new EndingNode(args, EndingNode.STRONG);
+                args.previous = new Element(args, "[", TokenType.SYMBOL);
+                ElementStartNode startLine2 = new ElementStartNode(args, new Indent(4));
+                args.previous = startLine2;
+                args.previous = new EndingNode(args, EndingNode.SYNTHETIC);
+                args.previous = new Element(args, "]", TokenType.SYMBOL);
+
+                args.previous = null;
+                e = new Element(args, "4", TokenType.NUMBER);
+                args.previous = e;
+                startLine2.setLinkedNode(e);
+                args.previous = new EndingNode(args, EndingNode.STRONG);
+                args.previous = new Element(args, "5", TokenType.NUMBER);
+
+                assertEquals(root2, root);
+        }
 }
