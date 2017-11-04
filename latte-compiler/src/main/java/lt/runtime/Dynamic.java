@@ -43,17 +43,58 @@ public class Dynamic {
         private static final int PRIMITIVE_BOX_CAST_BASE = 233;
         private static final int COLLECTION_OBJECT_CAST_BASE = 2333;
 
+        /**
+         * check cast when parameter and argument are both primitive
+         * the primitive argument would be cast to box type when handled
+         * so add box types into list
+         */
+        private static final Map<Class<?>, Set<Class<?>>> primitiveCast = new HashMap<Class<?>, Set<Class<?>>>() {{
+                final Map<Class<?>, Set<Class<?>>> self = this;
+                put(int.class, new HashSet<Class<?>>() {{
+                        add(Byte.class);
+                        add(Short.class);
+                        add(Character.class);
+                        add(Integer.class);
+                }});
+                put(long.class, new HashSet<Class<?>>() {{
+                        addAll(self.get(int.class));
+                        add(Long.class);
+                }});
+                put(float.class, new HashSet<Class<?>>() {{
+                        addAll(self.get(long.class));
+                        add(Float.class);
+                }});
+                put(double.class, new HashSet<Class<?>>() {{
+                        addAll(self.get(long.class));
+                        addAll(self.get(float.class));
+                        add(Double.class);
+                }});
+                put(byte.class, new HashSet<Class<?>>() {{
+                        add(Byte.class);
+                }});
+                put(short.class, new HashSet<Class<?>>() {{
+                        add(Short.class);
+                }});
+                put(char.class, new HashSet<Class<?>>() {{
+                        add(Character.class);
+                }});
+                put(boolean.class, new HashSet<Class<?>>() {{
+                        add(Boolean.class);
+                }});
+        }};
+
         private Dynamic() {
         }
 
         /**
          * check whether the parameters' declaring type can be candidate of invoking by these arguments.
          *
-         * @param params parameters
-         * @param args   arguments
+         * @param params     parameters
+         * @param args       arguments
+         * @param primitives whether the arg is a primitive
          * @return true or false
          */
-        private static boolean canBeCandidate(Class<?>[] params, Object[] args) {
+        private static boolean canBeCandidate(Class<?>[] params, Object[] args, boolean[] primitives) {
                 for (int i = 0; i < args.length; ++i) {
                         if (!params[i].isInstance(args[i]) &&
                                 (
@@ -69,6 +110,12 @@ public class Dynamic {
                                 Object obj = args[i];
                                 if (null == obj) continue;
 
+                                if (cls.isPrimitive() && primitives[i]) {
+                                        if (!primitiveCast.get(cls).contains(obj.getClass())) {
+                                                return false;
+                                        }
+                                        continue;
+                                }
                                 if (cls.equals(int.class)) {
                                         if (!(obj instanceof Integer)) return false;
                                 } else if (cls.equals(short.class)) {
@@ -147,7 +194,7 @@ public class Dynamic {
                 Class<?> c = chooseType(targetType, target);
                 while (c != null) {
                         Collections.addAll(interfaces, c.getInterfaces());
-                        fillMethodCandidates(c, invoker, method, args, methodList, target == null);
+                        fillMethodCandidates(c, invoker, method, primitives, args, methodList, target == null);
                         c = c.getSuperclass();
                 }
                 c = chooseType(targetType, target);
@@ -155,7 +202,7 @@ public class Dynamic {
                 Collections.addAll(interfaces, c.getInterfaces());
                 while (!interfaces.isEmpty()) {
                         Class<?> i = interfaces.remove();
-                        fillMethodCandidates(i, invoker, method, args, methodList, target == null);
+                        fillMethodCandidates(i, invoker, method, primitives, args, methodList, target == null);
                         Collections.addAll(interfaces, i.getInterfaces());
                 }
 
@@ -184,6 +231,7 @@ public class Dynamic {
         private static void fillMethodCandidates(Class<?> c,
                                                  Class<?> invoker,
                                                  String method,
+                                                 boolean[] primitives,
                                                  Object[] args,
                                                  List<Method> methodList,
                                                  boolean onlyStatic) {
@@ -201,7 +249,7 @@ public class Dynamic {
                         // else public
                         // do nothing
 
-                        if (canBeCandidate(m.getParameterTypes(), args)) {
+                        if (canBeCandidate(m.getParameterTypes(), args, primitives)) {
                                 methodList.add(m);
                         }
                 }
@@ -567,6 +615,54 @@ public class Dynamic {
         }
 
         /**
+         * get number type primitives cast depth
+         *
+         * @param from from type
+         * @param to   to type
+         * @return depth
+         */
+        private static int getNumberPrimitiveCastDepth(Class<?> from, Class<?> to) {
+                if (from == Integer.class) from = int.class;
+                if (from == Float.class) from = float.class;
+                if (from == Long.class) from = long.class;
+                if (from == Double.class) from = double.class;
+                if (from == Short.class) from = short.class;
+                if (from == Byte.class) from = byte.class;
+                if (from == Character.class) from = char.class;
+
+                if (from == to) return 0;
+                if (from == byte.class || from == short.class || from == char.class) {
+                        if (to == int.class) {
+                                return 1;
+                        } else if (to == long.class) {
+                                return 2;
+                        } else if (to == float.class) {
+                                return 3;
+                        } else if (to == double.class) {
+                                return 4;
+                        } else throw new LtBug("should not reach here, from: " + from + " to: " + to);
+                } else if (from == int.class) {
+                        if (to == long.class) {
+                                return 1;
+                        } else if (to == float.class) {
+                                return 2;
+                        } else if (to == double.class) {
+                                return 3;
+                        } else throw new LtBug("should not reach here, from: " + from + " to: " + to);
+                } else if (from == long.class) {
+                        if (to == float.class) {
+                                return 1;
+                        } else if (to == double.class) {
+                                return 2;
+                        } else throw new LtBug("should not reach here, from: " + from + " to: " + to);
+                } else if (from == float.class) {
+                        if (to == double.class) {
+                                return 1;
+                        } else throw new LtBug("should not reach here, from: " + from + " to: " + to);
+                } else throw new LtBug("should not reach here, from: " + from);
+        }
+
+        /**
          * find best match.
          *
          * @param methodList method list (constructors or methods)
@@ -588,7 +684,7 @@ public class Dynamic {
                                         type = ((Constructor) m).getParameterTypes()[i];
                                 }
                                 if (primitives[i] && type.isPrimitive()) {
-                                        step[i] = 0;
+                                        step[i] = getNumberPrimitiveCastDepth(args[i].getClass(), type);
                                 } else if (primitives[i]) {
                                         // param is not primitive
                                         step[i] = PRIMITIVE_BOX_CAST_BASE; // first cast to box type
@@ -674,7 +770,7 @@ public class Dynamic {
                         if (!LtRuntime.haveAccess(con.getModifiers(), targetType, invoker)) continue;
 
                         if (con.getParameterTypes().length == args.length) {
-                                if (canBeCandidate(con.getParameterTypes(), args)) {
+                                if (canBeCandidate(con.getParameterTypes(), args, primitives)) {
                                         candidates.add(con);
                                 }
                         }

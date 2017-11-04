@@ -534,4 +534,137 @@ public class TestPrimitiveOperators {
                         }
                 }
         }
+
+        @Test
+        public void testImplicitCastWhenInvokingMethods() throws Exception {
+                Class<?> c = retrieveClass("" +
+                                "class TestImplicitCastWhenInvokingMethods\n" +
+                                "    static\n" +
+                                "        private i(i:int)=i\n" +
+                                "        private l(l:long)=l\n" +
+                                "        private f(f:float)=f\n" +
+                                "        private d(d:double)=d\n" +
+                                "        b2i(b:byte)=i(b)\n" +
+                                "        b2l(b:byte)=l(b)\n" +
+                                "        b2f(b:byte)=f(b)\n" +
+                                "        b2d(b:byte)=d(b)\n" +
+                                "        s2i(b:short)=i(b)\n" +
+                                "        s2l(b:short)=l(b)\n" +
+                                "        s2f(b:short)=f(b)\n" +
+                                "        s2d(b:short)=d(b)\n" +
+                                "        c2i(b:char)=i(b)\n" +
+                                "        c2l(b:char)=l(b)\n" +
+                                "        c2f(b:char)=f(b)\n" +
+                                "        c2d(b:char)=d(b)\n" +
+                                "        i2l(b:int)=l(b)\n" +
+                                "        i2f(b:int)=f(b)\n" +
+                                "        i2d(b:int)=d(b)\n" +
+                                "        l2f(b:long)=f(b)\n" +
+                                "        l2d(b:long)=d(b)\n" +
+                                "        f2d(b:float)=d(b)\n"
+                        , "TestImplicitCastWhenInvokingMethods");
+                for (Class<?> from : Arrays.<Class<?>>asList(
+                        byte.class, short.class, char.class,
+                        int.class, long.class, float.class
+                )) {
+                        for (Class<?> to : Arrays.<Class<?>>asList(int.class, long.class, float.class, double.class)) {
+                                if (from == to) {
+                                        continue;
+                                }
+                                if (from == long.class && to == int.class) {
+                                        continue;
+                                } else if (from == float.class && (to == int.class || to == long.class)) {
+                                        continue;
+                                }
+
+                                Method x = c.getMethod(from.getName().charAt(0) + "2" + to.getName().charAt(0), from);
+                                Object input = produce(from);
+                                Object output = produce(to);
+
+                                Object res = x.invoke(null, input);
+                                assertEquals(output, res);
+                        }
+                }
+        }
+
+        private Object produce(Class<?> t) {
+                if (t == byte.class) {
+                        return (byte) 1;
+                } else if (t == short.class) {
+                        return (short) 1;
+                } else if (t == char.class) {
+                        return (char) 1;
+                } else if (t == int.class) {
+                        return 1;
+                } else if (t == long.class) {
+                        return 1L;
+                } else if (t == float.class) {
+                        return 1f;
+                } else if (t == double.class) {
+                        return 1d;
+                } else throw new RuntimeException();
+        }
+
+        @Test
+        public void testOverwritten() throws Exception {
+                Class<?> c = retrieveClass("" +
+                                "class TestOverwritten1\n" +
+                                "  static\n" +
+                                "    private x(i:int)=i\n" +
+                                "    private x(f:float)=f\n" +
+                                "    private x(l:long)=l\n" +
+                                "    private x(d:double)=d\n" +
+                                "    def method_byte(o:byte)=x(o)\n" +
+                                "    def method_short(o:short)=x(o)\n" +
+                                "    def method_char(o:char)=x(o)\n" +
+                                "    def method_int(o:int)=x(o)"
+                        , "TestOverwritten1");
+                for (Class<?> t : Arrays.<Class<?>>asList(byte.class, short.class, char.class, int.class)) {
+                        Method method = c.getMethod("method_" + t.getName(), t);
+                        Object input = produce(t);
+                        Object output = produce(int.class);
+
+                        Object result = method.invoke(null, input);
+                        assertEquals("input " + t + ", output: int, result " + result.getClass(), output, result);
+                }
+
+                c = retrieveClass("" +
+                                "class TestOverwritten2\n" +
+                                "  static\n" +
+                                "    private x(f:float)=f\n" +
+                                "    private x(l:long)=l\n" +
+                                "    private x(d:double)=d\n" +
+                                "    def method_byte(o:byte)=x(o)\n" +
+                                "    def method_short(o:short)=x(o)\n" +
+                                "    def method_char(o:char)=x(o)\n" +
+                                "    def method_int(o:int)=x(o)"
+                        , "TestOverwritten2");
+                for (Class<?> t : Arrays.<Class<?>>asList(byte.class, short.class, char.class, int.class)) {
+                        Method method = c.getMethod("method_" + t.getName(), t);
+                        Object input = produce(t);
+                        Object output = produce(long.class);
+
+                        Object result = method.invoke(null, input);
+                        assertEquals("input " + t + ", output: long, result " + result.getClass(), output, result);
+                }
+
+                c = retrieveClass("" +
+                                "class TestOverwritten3\n" +
+                                "  static\n" +
+                                "    private x(f:float)=f\n" +
+                                "    private x(d:double)=d\n" +
+                                "    def method_byte(o:byte)=x(o)\n" +
+                                "    def method_short(o:short)=x(o)\n" +
+                                "    def method_char(o:char)=x(o)\n" +
+                                "    def method_int(o:int)=x(o)"
+                        , "TestOverwritten3");
+                for (Class<?> t : Arrays.<Class<?>>asList(byte.class, short.class, char.class, int.class)) {
+                        Method method = c.getMethod("method_" + t.getName(), t);
+                        Object input = produce(t);
+                        Object output = produce(float.class);
+
+                        Object result = method.invoke(null, input);
+                        assertEquals("input " + t + ", output: float, result " + result.getClass(), output, result);
+                }
+        }
 }

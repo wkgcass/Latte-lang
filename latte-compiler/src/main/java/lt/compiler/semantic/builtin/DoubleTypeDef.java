@@ -49,6 +49,6 @@ public class DoubleTypeDef extends PrimitiveTypeDef {
         public boolean isAssignableFrom(STypeDef cls) {
                 if (super.isAssignableFrom(cls)) return true;
                 // cls is float or long or assignable from float
-                return cls instanceof FloatTypeDef || cls instanceof LongTypeDef || FloatTypeDef.get().isAssignableFrom(cls);
+                return cls instanceof FloatTypeDef || FloatTypeDef.get().isAssignableFrom(cls);
         }
 }

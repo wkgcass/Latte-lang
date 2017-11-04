@@ -49,6 +49,7 @@ public class FloatTypeDef extends PrimitiveTypeDef {
         public boolean isAssignableFrom(STypeDef cls) {
                 if (super.isAssignableFrom(cls)) return true;
                 // cls is int or is assignable from int
-                return cls instanceof IntTypeDef || IntTypeDef.get().isAssignableFrom(cls);
+                return cls instanceof IntTypeDef || IntTypeDef.get().isAssignableFrom(cls)
+                        || cls instanceof LongTypeDef || LongTypeDef.get().isAssignableFrom(cls);
         }
 }
