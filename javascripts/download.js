@@ -36,24 +36,26 @@ $(document).ready(function () {
             ?[
                 $sce.trustAsHtml("" +
                     "<ul class='ui list'>" +
-                    "<li>依赖于 <code>JRE 8</code></li>" +
-                    "<li>自动Build还需 <code>Maven 3</code></li>" +
+                    "<li>依赖于 <code>JDK 1.6</code></li>" +
+                    "<li>自动Build还需 <code>Gradle 2.14</code> 或更高</li>" +
+                    "<li>自动化脚本需要 <code>Python 2.7</code></li>" +
                     "</ul>"),
                 $sce.trustAsHtml("如果手动编译请编译 <code>/src/main/java</code> 目录"),
                 $sce.trustAsHtml("建议以<code>lt.repl.REPL</code>为主类打包为jar. 并复制 <code>src/main/resources/latte.sh</code> 或 <code>latte.bat</code> 到打包的目录"),
-                $sce.trustAsHtml("若需自动编译, 下载 Master 分支, 然后执行<code>mvn clean package</code>, 在根目录会生成 <code>repl.jar</code> 和批处理文件."),
-                $sce.trustAsHtml("执行 <code>.&#47;latte</code> 即可启动 REPL, 当然也可将jar文件引入到项目中使用")
+                $sce.trustAsHtml("若需自动编译, 下载 Master 分支, 然后执行<code>.&#47;build.py</code>."),
+                $sce.trustAsHtml("执行 <code>.&#47;latte</code> 即可启动 REPL, 当然也可将编译得到的jar文件引入到项目中使用")
             ]
             :[
                 $sce.trustAsHtml("" +
                     "<ul class='ui list'>" +
-                    "<li><code>JRE 8</code> is required</li>" +
-                    "<li>Automatic building also requires <code>Maven 3</code></li>" +
+                    "<li><code>JDK 1.6</code> is required</li>" +
+                    "<li>Automatic building also requires <code>Gradle 2.14</code> or higher</li>" +
+                    "<li>Automatic script requires <code>Python 2.7</code></li>" +
                     "</ul>"),
                     $sce.trustAsHtml("Compile the <code>/src/main/java</code> directory if you want to build manually."),
                     $sce.trustAsHtml("It's recommended to package <code>lt.repl.REPL</code> as the main class. And copy <code>src/main/resources/latte.sh</code> or <code>latte.bat</code> to the jar directory."),
-                    $sce.trustAsHtml("If you want to build automatically, download the Master branch, and run <code>mvn clean package</code>, then, <code>repl.jar</code> and batch procedure files will be generated at root directory."),
-                    $sce.trustAsHtml("run <code>.&#47;latte</code> to launch REPL, or you can add the jar to your project.")
+                    $sce.trustAsHtml("If you want to build automatically, download the Master branch, and run <code>.&#47;build.py</code>."),
+                    $sce.trustAsHtml("run <code>.&#47;latte</code> to launch REPL, or you can add the compiled jar to your project.")
             ]
         };
         $scope.compile_original = {
@@ -71,7 +73,7 @@ $(document).ready(function () {
                     "compiler.add(\"class-path\")\n" +
                     "    .shiftRight(\"output directory\")\n" +
                     "    .compile(lt.lang.Utils.filesInDirectory(\n" +
-                    "        \"source file directory\",\".*\\\\.lt\"\n" +
+                    "        \"source file directory\",Pattern.compile(\".*\\\\.lt\")\n" +
                     "    ))" +
                     "</textarea>" +
                     "<script>var editor = CodeMirror.fromTextArea(document.getElementById('compile_java'));editor.setSize('auto', '150px');</script>")
@@ -88,7 +90,7 @@ $(document).ready(function () {
                     "compiler.add(\"class-path\")\n" +
                     "    .shiftRight(\"output directory\")\n" +
                     "    .compile(lt.lang.Utils.filesInDirectory(\n" +
-                    "        \"source file directory\",\".*\\\\.lt\"\n" +
+                    "        \"source file directory\",Pattern.compile(\".*\\\\.lt\")\n" +
                     "    ))" +
                     "</textarea>" +
                     "<script>var editor = CodeMirror.fromTextArea(document.getElementById('compile_java'));editor.setSize('auto', '160px');</script>")
@@ -159,16 +161,6 @@ $(document).ready(function () {
                 $sce.trustAsHtml("<img src='images/highlight.png'>")
             ]
         };
-        $scope.ide = {
-            title: "IDE",
-            contents: zh?[
-                $sce.trustAsHtml("针对Atom开发了一个Latte的IDE"),
-                $sce.trustAsHtml("在Atom中搜索并安装 <code>atom-latte-lang-ide</code> 并按照<a target='_blank' href='https://atom.io/packages/atom-latte-lang-ide'>这里</a>的步骤进行配置")
-            ]:[
-                $sce.trustAsHtml("Atom Latte IDE"),
-                $sce.trustAsHtml("Search and Install <code>atom-latte-lang-ide</code> in Atom, and follow instructions <a target='_blank' href='https://atom.io/packages/atom-latte-lang-ide'>here</a> to configure settings.")
-            ]
-        }
     }
     ])
     ;

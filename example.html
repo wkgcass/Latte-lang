@@ -17,10 +17,16 @@
 </head>
 <body ng-app="example" ng-controller="controller" class="pushable">
 <div class="ui large top fixed borderless menu">
-    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a>
+    <div class="ui container">
+        <div class="item" style="width: 60px">
+            <div class="ui middle aligned tiny image">
+                <img src="static/Latte-lang-logo-small.png">
+            </div>
+        </div>
+        <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a>
 
         <div class="right menu">
-            <div class="item"><a href="{{git_repo}}" class="ui teal button">Fork Me</a></div>
+            <div class="item"><a href="{{git_repo}}" class="ui orange button">Fork Me</a></div>
         </div>
     </div>
 </div>

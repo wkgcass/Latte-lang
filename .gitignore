@@ -7,3 +7,4 @@ latte
 *.class
 target/
 latte-*/
+.DS_Store

@@ -17,11 +17,17 @@
 </head>
 <body ng-app="dev" ng-controller="controller" class="pushable">
 <div class="ui large top fixed borderless menu">
-    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs"
+    <div class="ui container">
+        <div class="item" style="width: 60px">
+            <div class="ui middle aligned tiny image">
+                <img src="static/Latte-lang-logo-small.png">
+            </div>
+        </div>
+        <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs"
                                  class="item">{{nav.name}}</a>
 
         <div class="right menu">
-            <div class="item"><a href="{{git_repo}}" class="ui teal button">Fork Me</a></div>
+            <div class="item"><a href="{{git_repo}}" class="ui orange button">Fork Me</a></div>
         </div>
     </div>
 </div>
@@ -59,8 +65,8 @@
             <div class="item">
                 <i class="folder icon"></i>
                 <div class="content">
-                    <div class="header">latte-maven-plugin</div>
-                    <div class="description">a plugin for maven which is able to compile latte source codes or run latte scripts</div>
+                    <div class="header">latte-gradle-plugin</div>
+                    <div class="description">a plugin for gradle which is able to compile latte source codes or run latte scripts</div>
                 </div>
             </div>
             <div class="item">
@@ -74,7 +80,14 @@
                 <i class="folder icon"></i>
                 <div class="content">
                     <div class="header">latte-build</div>
-                    <div class="description">the module is used for <code>mvn clean package</code></div>
+                    <div class="description">the module is used to generate command-line program for latte</div>
+                </div>
+            </div>
+            <div class="item">
+                <i class="folder icon"></i>
+                <div class="content">
+                    <div class="header">latte-class-recorder</div>
+                    <div class="description">the module is used to record ouptut classes of latte-compiler and latte-library</div>
                 </div>
             </div>
             <div class="item">
@@ -90,17 +103,8 @@
                 <i class="file icon"></i>
 
                 <div class="content">
-                    <div class="header">ltls.md</div>
-                    <div class="description">The Latte Language Specification</div>
-                </div>
-            </div>
-
-            <div class="item">
-                <i class="file icon"></i>
-
-                <div class="content">
-                    <div class="header">pom.xml</div>
-                    <div class="description">Maven configureation file</div>
+                    <div class="header">build.py</div>
+                    <div class="description">the build script</div>
                 </div>
             </div>
         </div>

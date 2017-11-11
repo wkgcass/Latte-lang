@@ -42,11 +42,6 @@ function common_navs() {
             link: "download.html" + suffix
         },
         {
-            name: isZh ? "基础语法" : "Basic Syntax",
-            active: false,
-            link: "syntax.html" + suffix
-        },
-        {
             name: isZh ? "示例" : "Examples",
             active: false,
             link: "example.html" + suffix
@@ -69,11 +64,11 @@ function common_compile_highlighting() {
             "compiler = Compiler()\n" +
             "compiler + 'class-path'\n" +
             "compiler >> 'output directory'\n" +
-            "compiler compile filesInDirectory('source file directory', //.*\\.lt//)\n" +
+            "compiler compile filesInDirectory('source file directory', '.*\\\\.lt'.r)\n" +
             "\n" +
-            "; or you can chain these invocations up\n" +
+            "// or you can chain these invocations up\n" +
             "\n" +
-            "Compiler() + 'class-path' >> 'output dir' compile filesInDirectory('source file directory', //.*\\.lt//)", {}) +
+            "Compiler() + 'class-path' >> 'output dir' compile filesInDirectory('source file directory', '.*\\\\.lt'.r)", {}) +
         "</pre>";
 }
 

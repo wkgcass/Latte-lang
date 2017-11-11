@@ -21,11 +21,17 @@
         alt="Fork me on GitHub"/></a>
 
 <div class="ui large top fixed hidden menu">
-    <div class="ui container"><a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs"
+    <div class="ui container">
+        <div class="item" style="width: 60px">
+            <div class="ui middle aligned tiny image">
+                <img src="static/Latte-lang-logo-small.png">
+            </div>
+        </div>
+        <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs"
                                  class="item">{{nav.name}}</a>
 
         <div class="right menu">
-            <div class="item"><a href="{{git_repo}}" class="ui teal button">Fork Me</a></div>
+            <div class="item"><a href="{{git_repo}}" class="ui orange button">Fork Me</a></div>
         </div>
     </div>
 </div>
@@ -33,7 +39,7 @@
     <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a></div>
 <div class="pusher">
     <div class="ui inverted vertical masthead center aligned segment"
-         style="background:url('http://o8p2vn5s8.bkt.clouddn.com/2.jpg')">
+         style="background:url('http://o8p2vn5s8.bkt.clouddn.com/head.jpg')">
         <div class="ui container">
             <div class="ui large secondary inverted pointing menu"
                 style="border:none">
@@ -43,7 +49,10 @@
             </div>
         </div>
         <div class="ui text container">
-            <h1 class="ui inverted header">{{header}}</h1>
+            <div class="ui small image" style="margin-top: 30px">
+                <img src="static/Latte-lang-logo-large.png">
+            </div>
+            <h2 class="ui inverted header">{{header}}</h2>
 
             <h2>{{header_descr}}</h2>
 
@@ -69,7 +78,7 @@
                 </div>
                 <div class="nine wide right floated column">
                     <div style="height:485px;width:100%;background-color:RGB(240,240,240);overflow:hidden;padding:20px">
-                        <pre>; {{codes_head}}</pre>
+                        <pre>// {{codes_head}}</pre>
                         <div class="ui buttons">
                             <button class="ui labeled icon button" onclick="previous()"><i
                                     class="left chevron icon"></i>previous
@@ -96,17 +105,6 @@
                 <div class="column"><img src="images/highlight.png"/></div>
             </div>
         </div>
-    </div>
-    <div id="theVideo" style="text-align: center;margin-top: -60px; padding-top: 60px;z-index: 99">
-        <embed
-                src="http://player.youku.com/player.php/sid/XMTU5MzkxMTQwMA==/v.swf"
-                allowFullScreen="true"
-                quality="high"
-                width="100%"
-                height="600"
-                align="middle"
-                allowScriptAccess="always"
-                type="application/x-shockwave-flash"></embed>
     </div>
     <div class="ui vertical stripe segment">
         <div class="ui text container">

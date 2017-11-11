@@ -18,11 +18,11 @@ var SPLIT_X = [
     "..", ".:", // list generator
     "..." // pass
 ];
-var STRING = ["\"", "'", "`", "//"];
+var STRING = ["\"", "'", "`"];
 var ESCAPE = "\\";
 var NO_RECORD = [" "];
 var ENDING = ",";
-var COMMENT = ";";
+var COMMENT = "//";
 
 var MultipleLineCommentStart = "/*";
 /**

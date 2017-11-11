@@ -7,7 +7,7 @@ $(document).ready(function () {
         var zh = useZh();
 
         $scope.navs = common_navs();
-        $scope.navs[3].active = true;
+        $scope.navs[2].active = true;
 
         $scope.git_repo = common_git_repo();
 
