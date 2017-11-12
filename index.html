@@ -39,7 +39,7 @@
     <a href="{{nav.link}}" ng-class="{'active':nav.active}" ng-repeat="nav in navs" class="item">{{nav.name}}</a></div>
 <div class="pusher">
     <div class="ui inverted vertical masthead center aligned segment"
-         style="background:url('http://o8p2vn5s8.bkt.clouddn.com/head.jpg')">
+         style="background:url('static/head.jpg')">
         <div class="ui container">
             <div class="ui large secondary inverted pointing menu"
                 style="border:none">
@@ -102,7 +102,11 @@
 
                     <p ng-repeat="p in highlight.contents" ng-bind-html="p"></p>
                 </div>
-                <div class="column"><img src="images/highlight.png"/></div>
+                <div class="column">
+                    <div class="ui large image">
+                        <img src="static/highlight.png"/>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -45,9 +45,6 @@ $(document).ready(function () {
                     name: isZh?"运算符绑定":"Operator Binding"
                 },
                 {
-                    name : isZh?"正则表达式":"Regular Expression"
-                },
-                {
                     name: "DSL"
                 },
                 {
@@ -121,13 +118,6 @@ $(document).ready(function () {
                     "    return o.isEmpty\n" +
                     "\n" +
                     "['hello', 'world'].stream.filter(empty).count"
-                    , {}))
-            },
-            {
-                code: $sce.trustAsHtml(highlighting("example_9.lts", "" +
-                    (isZh?"// 正则表达式\n":"// Regular Expression\n") +
-                    "pattern = //\\b+//\n"+
-                    "pattern.matcher('123').matches()"
                     , {}))
             },
             {
@@ -290,17 +280,15 @@ $(document).ready(function () {
             )
         };
         $scope.highlight = {
-            title: isZh?"Atom 语法高亮与IDE":"Atom Highlighting and IDE",
+            title: isZh?"Atom 语法高亮":"Atom Highlighting",
             contents:
             isZh
             ?[
-                $sce.trustAsHtml("针对Atom编辑器开发了<a target='_blank' href='https://atom.io/packages/Atom-Latte-Highlighting'>语法高亮</a>和" +
-                    "<a target='_blank' href='https://atom.io/packages/atom-latte-ide'>IDE</a>"),
+                $sce.trustAsHtml("针对Atom编辑器开发了<a target='_blank' href='https://atom.io/packages/Atom-Latte-Highlighting'>语法高亮</a>"),
                 $sce.trustAsHtml("可以更加方便的编写Latte源代码")
             ]
             :[
-                $sce.trustAsHtml("a <a target='_blank' href='https://atom.io/packages/Atom-Latte-Highlighting'>Syntax Highlighting</a> and an " +
-                    "<a target='_blank' href='https://atom.io/packages/atom-latte-ide'>IDE</a> on Atom"),
+                $sce.trustAsHtml("a <a target='_blank' href='https://atom.io/packages/Atom-Latte-Highlighting'>Syntax Highlighting</a>"),
                 $sce.trustAsHtml("which help you write Latte source code conveniently")
             ]
         }
