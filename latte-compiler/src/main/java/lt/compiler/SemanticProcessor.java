@@ -38,6 +38,7 @@ import lt.compiler.syntactic.pre.Import;
 import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
 import lt.compiler.util.BindList;
+import lt.compiler.util.Flags;
 import lt.generator.SourceGenerator;
 import lt.dependencies.asm.MethodVisitor;
 import lt.lang.Unit;
@@ -1703,7 +1704,7 @@ public class SemanticProcessor {
                                 parseAnnoValues(sClassDef.annos());
 
                                 // initiate the type scope
-                                SemanticScope scope = new SemanticScope(sTypeDef);
+                                SemanticScope scope = new SemanticScope(sTypeDef, null);
 
                                 // parse constructors
                                 for (SConstructorDef constructorToFillStatements : sClassDef.constructors()) {
@@ -1711,7 +1712,7 @@ public class SemanticProcessor {
                                         if (!constructorToFillStatements.statements().isEmpty())
                                                 continue;
                                         // initiate constructor scope
-                                        SemanticScope constructorScope = new SemanticScope(scope);
+                                        SemanticScope constructorScope = new SemanticScope(scope, constructorToFillStatements.meta());
                                         constructorScope.setThis(new Ins.This(sTypeDef)); // set `this`
                                         for (SParameter param : constructorToFillStatements.getParameters()) {
                                                 constructorScope.putLeftValue(param.name(), param);
@@ -1778,7 +1779,7 @@ public class SemanticProcessor {
 
                                                 // a new constructor scope
                                                 // the parameters are ignored and all variables are fields
-                                                constructorScope = new SemanticScope(scope);
+                                                constructorScope = new SemanticScope(scope, constructorToFillStatements.meta());
                                                 constructorScope.setThis(new Ins.This(sTypeDef)); // set `this`
                                                 for (SParameter param : constructorToFillStatements.getParameters()) {
                                                         constructorScope.putLeftValue(constructorScope.generateTempName(), param);
@@ -1821,7 +1822,7 @@ public class SemanticProcessor {
                                                 astClass == null) ? astObject.statements
                                                 : astClass.statements;
                                         // parse static
-                                        SemanticScope staticScope = new SemanticScope(scope);
+                                        SemanticScope staticScope = new SemanticScope(scope, sClassDef.staticMeta());
 
                                         if (sClassDef.classType() == SClassDef.OBJECT) {
                                                 SFieldDef singletonInstanceField = null;
@@ -1863,7 +1864,7 @@ public class SemanticProcessor {
 
                                 parseAnnoValues(sInterfaceDef.annos());
 
-                                SemanticScope scope = new SemanticScope(sInterfaceDef);
+                                SemanticScope scope = new SemanticScope(sInterfaceDef, null);
 
                                 // parse method
                                 // use traditional for loop because the method list might be modified
@@ -1875,7 +1876,7 @@ public class SemanticProcessor {
                                 }
 
                                 // parse static
-                                SemanticScope staticScope = new SemanticScope(scope);
+                                SemanticScope staticScope = new SemanticScope(scope, sInterfaceDef.staticMeta());
                                 for (Statement statement : astInterface.statements) {
                                         if (statement instanceof AST.StaticScope) {
                                                 for (Statement statementInStatic : ((AST.StaticScope) statement).statements) {
@@ -1957,7 +1958,7 @@ public class SemanticProcessor {
                         Ins.InvokeSpecial invoke = new Ins.InvokeSpecial(scope.getThis(), methodToInvoke, LineCol.SYNTHETIC);
                         int count = 1;
                         for (SParameter p : invokable.getParameters()) {
-                                invoke.arguments().add(new Ins.TLoad(p, count++, LineCol.SYNTHETIC));
+                                invoke.arguments().add(new Ins.TLoad(p, scope, LineCol.SYNTHETIC));
                         }
                         List<SParameter> paramsOfLast = methodToInvoke.getParameters();
                         invoke.arguments().add(parseValueFromExpression(arg, paramsOfLast.get(paramsOfLast.size() - 1).type(),
@@ -1980,7 +1981,7 @@ public class SemanticProcessor {
                         }
                         for (int ii = 0; ii < methodDef.getParameters().size(); ++ii) {
                                 // load arguments
-                                invoke.arguments().add(new Ins.TLoad(methodDef.getParameters().get(ii), ii + (isStatic ? 0 : 1), LineCol.SYNTHETIC));
+                                invoke.arguments().add(new Ins.TLoad(methodDef.getParameters().get(ii), scope, LineCol.SYNTHETIC));
                         }
                         List<SParameter> lastParams = lastMethod.getParameters();
                         invoke.arguments().add(parseValueFromExpression(arg, lastParams.get(lastParams.size() - 1).type(), null));
@@ -2081,7 +2082,7 @@ public class SemanticProcessor {
                         }
                 }
 
-                SemanticScope scope = new SemanticScope(cls);
+                SemanticScope scope = new SemanticScope(cls, null);
                 scope.setThis(new Ins.This(cls));
 
                 String className = cls.fullName();
@@ -2138,7 +2139,7 @@ public class SemanticProcessor {
                         Statement stmt = new AST.Return(lastExp, lineCol);
 
                         parseStatement(stmt, toStringOverride.getReturnType(),
-                                new SemanticScope(scope),
+                                new SemanticScope(scope, toStringOverride.meta()),
                                 toStringOverride.statements(), toStringOverride.exceptionTables(),
                                 null, null, false);
                 }
@@ -2209,7 +2210,7 @@ public class SemanticProcessor {
                         Statement stmt = new AST.Return(lastExp, lineCol);
 
                         parseStatement(stmt, hashCodeOverride.getReturnType(),
-                                new SemanticScope(scope),
+                                new SemanticScope(scope, hashCodeOverride.meta()),
                                 hashCodeOverride.statements(), hashCodeOverride.exceptionTables(),
                                 null, null, false);
                 }
@@ -2271,7 +2272,7 @@ public class SemanticProcessor {
                         }
 
                         Statement stmt = new AST.Return(lastExp, lineCol);
-                        SemanticScope equalsScope = new SemanticScope(scope);
+                        SemanticScope equalsScope = new SemanticScope(scope, equalsOverride.meta());
                         equalsScope.putLeftValue("o", o);
                         parseStatement(stmt, equalsOverride.getReturnType(),
                                 equalsScope,
@@ -2351,7 +2352,7 @@ public class SemanticProcessor {
                                         ),
                                         lineCol
                                 );
-                                parseStatement(stmt, getter.getReturnType(), new SemanticScope(scope), getter.statements(),
+                                parseStatement(stmt, getter.getReturnType(), new SemanticScope(scope, getter.meta()), getter.statements(),
                                         getter.exceptionTables(), null, null, false);
                         }
                         if (setter == null) {
@@ -2369,7 +2370,7 @@ public class SemanticProcessor {
                                 p.setType(f.type());
                                 setter.modifiers().add(SModifier.PUBLIC);
 
-                                SemanticScope setterScope = new SemanticScope(scope);
+                                SemanticScope setterScope = new SemanticScope(scope, setter.meta());
                                 setterScope.putLeftValue(f.name(), p);
 
                                 Statement stmt = new AST.Assignment(
@@ -2401,7 +2402,8 @@ public class SemanticProcessor {
                         p.setType(cls);
                         unapply.getParameters().add(p);
 
-                        SemanticScope unapplyScope = new SemanticScope(new SemanticScope(cls));
+                        // static { unapply }
+                        SemanticScope unapplyScope = new SemanticScope(new SemanticScope(cls, null), unapply.meta());
                         unapplyScope.putLeftValue("o", p);
 
                         List<Expression> tmpList = new ArrayList<Expression>();
@@ -2455,21 +2457,21 @@ public class SemanticProcessor {
                         transformLastExpToReturn(statements);
                 }
 
-                SemanticScope scope = new SemanticScope(superScope);
+                SemanticScope scope = new SemanticScope(superScope, methodDef.meta());
                 if (!methodDef.modifiers().contains(SModifier.STATIC)) {
                         scope.setThis(new Ins.This(scope.type()));
+                }
+                for (SParameter p : methodDef.getParameters()) {
+                        if (p.canChange() && !isPointerType(p.type()) && CompileUtil.isValidName(p.name())) {
+                                scope.putLeftValue(scope.generateTempName(), p);
+                        } else {
+                                scope.putLeftValue(p.name(), p);
+                        }
                 }
 
                 if (defaultParamInvokable.containsKey(methodDef)) {
                         fillDefaultParamMethod(methodDef, scope);
                 } else {
-                        for (SParameter p : methodDef.getParameters()) {
-                                if (p.canChange() && !isPointerType(p.type()) && CompileUtil.isValidName(p.name())) {
-                                        scope.putLeftValue(scope.generateTempName(), p);
-                                } else {
-                                        scope.putLeftValue(p.name(), p);
-                                }
-                        }
                         paramValueAvaliable(methodDef.getParameters(), methodDef.statements(), scope, methodDef.line_col());
                         for (SParameter p : methodDef.getParameters()) {
                                 if (p.canChange() && !isPointerType(p.type()) && CompileUtil.isValidName(p.name())) {
@@ -2491,6 +2493,7 @@ public class SemanticProcessor {
                                                 new Ins.TLoad(p, scope, LineCol.SYNTHETIC),
                                                 LineCol.SYNTHETIC),
                                                 scope, LineCol.SYNTHETIC, err);
+                                        tStore.flag |= Flags.IS_POINTER_NEW;
                                         methodDef.statements().add(tStore);
                                 }
                         }
@@ -3211,6 +3214,11 @@ public class SemanticProcessor {
                 parseMethod(newMethodDef, newMethodDef.params.size(), scope.type(), null, fileNameToImport.get(newMethodDef.line_col().fileName),
                         (scope.type() instanceof SClassDef) ? PARSING_CLASS : PARSING_INTERFACE, scope.getThis() == null);
                 SMethodDef m = methods.get(methods.size() - 1);
+                // set captured values
+                for (int x = 0; x < param4Locals.size(); ++x) {
+                        m.meta().pointerLocalVar.add(m.getParameters().get(x));
+                }
+
                 // change the modifier
                 m.modifiers().remove(SModifier.PUBLIC);
                 m.modifiers().remove(SModifier.PROTECTED);
@@ -3238,7 +3246,7 @@ public class SemanticProcessor {
 
                 // generate a scope for the inner method
                 // the scope contains the inner method itself
-                SemanticScope innerMethodScope = new SemanticScope(theTopScope);
+                SemanticScope innerMethodScope = new SemanticScope(theTopScope, m.meta());
                 for (Map.Entry<String, SemanticScope.MethodRecorder> srec : scope.getInnerMethods().entrySet()) {
                         innerMethodScope.addMethodDef(srec.getKey(), srec.getValue());
                 }
@@ -3304,7 +3312,7 @@ public class SemanticProcessor {
                                                      Ins.Nop breakIns,
                                                      Ins.Nop continueIns) throws SyntaxException {
 
-                SemanticScope subScope = new SemanticScope(scope);
+                SemanticScope subScope = new SemanticScope(scope, scope.getMeta());
                 Stack<Ins.MonitorEnter> stack = new Stack<Ins.MonitorEnter>();
                 for (Expression exp : aSynchronized.toSync) {
                         Value v = parseValueFromExpression(exp, null, subScope);
@@ -3528,7 +3536,7 @@ public class SemanticProcessor {
                                             Ins.Nop breakIns,
                                             Ins.Nop continueIns) throws SyntaxException {
                 // try ...
-                SemanticScope scopeA = new SemanticScope(scope);
+                SemanticScope scopeA = new SemanticScope(scope, scope.getMeta());
                 List<Instruction> insA = new ArrayList<Instruction>(); // instructions in scope A
                 for (Statement stmt : aTry.statements) {
                         parseStatement(stmt, methodReturnType, scopeA, insA, exceptionTable, breakIns, continueIns, false);
@@ -3575,7 +3583,7 @@ public class SemanticProcessor {
                 // build normal finally (D1)
                 List<Instruction> normalFinally = new ArrayList<Instruction>();
                 for (Statement stmt : aTry.fin) {
-                        parseStatement(stmt, methodReturnType, new SemanticScope(scope), normalFinally, exceptionTable, breakIns, continueIns, false);
+                        parseStatement(stmt, methodReturnType, new SemanticScope(scope, scope.getMeta()), normalFinally, exceptionTable, breakIns, continueIns, false);
                 }
                 if (normalFinally.isEmpty()) {
                         normalFinally.add(new Ins.Nop());
@@ -3583,7 +3591,7 @@ public class SemanticProcessor {
                 Instruction D1start = normalFinally.get(0);
 
                 // build exception finally (D2)
-                SemanticScope exceptionFinallyScope = new SemanticScope(scope);
+                SemanticScope exceptionFinallyScope = new SemanticScope(scope, scope.getMeta());
                 // add D2start to exception finally at 0
                 // add throw to exception finally at end
                 LocalVariable tmpForExStore = new LocalVariable(
@@ -3613,7 +3621,7 @@ public class SemanticProcessor {
                                 List<Instruction> list = new ArrayList<Instruction>();
                                 for (Statement stmt : aTry.fin) {
                                         parseStatement(stmt, methodReturnType,
-                                                new SemanticScope(scopeA),
+                                                new SemanticScope(scopeA, scope.getMeta()),
                                                 list, exceptionTable, breakIns, continueIns, false);
                                 }
                                 i += insertInstructionsBeforeReturn(insA, i, list, scopeA);
@@ -3625,7 +3633,7 @@ public class SemanticProcessor {
                                                 List<Instruction> list = new ArrayList<Instruction>();
                                                 for (Statement stmt : aTry.fin) {
                                                         parseStatement(stmt, methodReturnType,
-                                                                new SemanticScope(scopeA),
+                                                                new SemanticScope(scopeA, scope.getMeta()),
                                                                 list, exceptionTable, breakIns, continueIns, false);
                                                 }
                                                 insA.addAll(i, list);
@@ -3662,7 +3670,7 @@ public class SemanticProcessor {
                         startToEndEx.put(key, exclusive);
                 }
 
-                SemanticScope catchScope = new SemanticScope(scope); // catch scope
+                SemanticScope catchScope = new SemanticScope(scope, scope.getMeta()); // catch scope
 
                 STypeDef THROWABLE = getTypeWithName("java.lang.Throwable", LineCol.SYNTHETIC);
 
@@ -3731,7 +3739,7 @@ public class SemanticProcessor {
                         if (ins instanceof Ins.TReturn) {
                                 List<Instruction> list = new ArrayList<Instruction>();
                                 for (Statement stmt : aTry.fin) {
-                                        parseStatement(stmt, methodReturnType, new SemanticScope(catchScope),
+                                        parseStatement(stmt, methodReturnType, new SemanticScope(catchScope, catchScope.getMeta()),
                                                 list, exceptionTable, breakIns, continueIns, false);
                                 }
                                 i += insertInstructionsBeforeReturn(insCatch, i, list, catchScope);
@@ -3743,7 +3751,7 @@ public class SemanticProcessor {
                                                 List<Instruction> list = new ArrayList<Instruction>();
                                                 for (Statement stmt : aTry.fin) {
                                                         parseStatement(stmt, methodReturnType,
-                                                                new SemanticScope(catchScope),
+                                                                new SemanticScope(catchScope, catchScope.getMeta()),
                                                                 list, exceptionTable, breakIns, continueIns, false);
                                                 }
                                                 insCatch.addAll(i, list);
@@ -3925,7 +3933,7 @@ public class SemanticProcessor {
                 Ins.TLoad tLoad1 = new Ins.TLoad(localVariable, scope, LineCol.SYNTHETIC);
                 // next
                 Ins.InvokeVirtual next = new Ins.InvokeVirtual(tLoad1, getLtIterator_next(), LineCol.SYNTHETIC);
-                SemanticScope subScope = new SemanticScope(scope);
+                SemanticScope subScope = new SemanticScope(scope, scope.getMeta());
                 LocalVariable newLocal = new LocalVariable(getTypeWithName("java.lang.Object", LineCol.SYNTHETIC), true);
                 subScope.putLeftValue(aFor.name, newLocal);
                 Ins.TStore tStore1 = new Ins.TStore(newLocal, next, subScope, LineCol.SYNTHETIC, err);
@@ -3986,7 +3994,7 @@ public class SemanticProcessor {
                 Ins.Nop nopBreak = new Ins.Nop();
                 Ins.Nop nopContinue = new Ins.Nop();
 
-                SemanticScope whileScope = new SemanticScope(scope);
+                SemanticScope whileScope = new SemanticScope(scope, scope.getMeta());
 
                 List<Instruction> ins = new ArrayList<Instruction>();
                 for (Statement stmt : aWhile.statements) {
@@ -4116,7 +4124,7 @@ public class SemanticProcessor {
                 Ins.Nop nop = new Ins.Nop();
 
                 for (AST.If.IfPair ifPair : anIf.ifs) {
-                        SemanticScope ifScope = new SemanticScope(scope);
+                        SemanticScope ifScope = new SemanticScope(scope, scope.getMeta());
                         List<Instruction> instructionList = new ArrayList<Instruction>();
 
                         if (ifPair.condition == null) {
@@ -4500,6 +4508,7 @@ public class SemanticProcessor {
 
                                 Ins.TStore storePtr = new Ins.TStore(localVariable,
                                         constructPointer(nonnull, nonempty), scope, LineCol.SYNTHETIC, err);
+                                storePtr.flag |= Flags.IS_POINTER_NEW;
                                 pack.instructions().add(storePtr);
                         }
 
@@ -4571,6 +4580,11 @@ public class SemanticProcessor {
                                         }
                                         localVariable.setType(tmp);
                                 }
+
+                                // nonnull and nonempty check
+                                if (nonempty || nonnull) {
+                                        scope.getMeta().pointerLocalVar.add(localVariable);
+                                }
                         }
                         return pack;
                 }
@@ -4628,6 +4642,7 @@ public class SemanticProcessor {
                         valueToSet = boxPrimitive(valueToSet, LineCol.SYNTHETIC);
                 }
                 set.arguments().add(valueToSet);
+                set.flag |= Flags.IS_POINTER_SET;
                 return set;
         }
 
@@ -4652,9 +4667,11 @@ public class SemanticProcessor {
 
                 Ins.InvokeVirtual get = new Ins.InvokeVirtual(
                         target, getPointer_get(), lineCol);
+                get.flag |= Flags.IS_POINTER_GET;
 
                 if (pointingType instanceof PrimitiveTypeDef) {
-                        return cast(pointingType, get, null, lineCol);
+                        Value after = cast(pointingType, get, null, lineCol);
+                        return new Ins.PointerGetCastHelper(after, get);
                 } else {
                         return new Ins.CheckCast(get, pointingType, lineCol);
                 }
@@ -4773,6 +4790,7 @@ public class SemanticProcessor {
 
                                 Ins.TStore storePtr = new Ins.TStore(localVariable,
                                         constructPointer(false, false), scope, LineCol.SYNTHETIC, err);
+                                storePtr.flag |= Flags.IS_POINTER_NEW;
                                 pack.instructions().add(storePtr);
                         } else {
                                 nameToField.put(pd.name, f);
@@ -4853,10 +4871,15 @@ public class SemanticProcessor {
                         } else {
                                 LeftValue leftValue = scope.getLeftValue(define.name);
                                 leftValue.assign();
+                                Ins.TLoad tLoad = new Ins.TLoad(leftValue, scope, LineCol.SYNTHETIC);
                                 pack.instructions().add(invokePointerSet(
-                                        new Ins.TLoad(leftValue, scope, LineCol.SYNTHETIC),
+                                        tLoad,
                                         invokeInterface, destruct.line_col()
                                 ));
+                                // this is considered as `captured` for that
+                                // it's defined before they actually get assigned
+                                // and they might be used inside an if expression
+                                scope.getMeta().pointerLocalVar.add(tLoad.value());
                         }
                 }
 
@@ -6048,7 +6071,7 @@ public class SemanticProcessor {
                 innerMethod.modifiers().remove(SModifier.PRIVATE); // it should be package access
                 methodToStatements.put(innerMethod, lambda.statements);
 
-                List<Value> args = new ArrayList<Value>();
+                List<Ins.TLoad> args = new ArrayList<Ins.TLoad>();
                 for (LeftValue l : scope.getLeftValues(innerMethod.getParameters().size() - lambda.params.size(), true)) {
                         args.add(new Ins.TLoad(l, scope, LineCol.SYNTHETIC));
                 }
@@ -6074,6 +6097,10 @@ public class SemanticProcessor {
                         if (!innerMethod.getParameters().get(index).isUsed()) {
                                 continue;
                         }
+
+                        // mark the variable as `captured by lambda`
+                        scope.getMeta().pointerLocalVar.add(((Ins.TLoad) arg).value());
+
                         if (arg.type() instanceof PrimitiveTypeDef) {
                                 arg = boxPrimitive(arg, LineCol.SYNTHETIC);
                         }
@@ -6128,7 +6155,7 @@ public class SemanticProcessor {
                 // class
                 SClassDef sClassDef = new SClassDef(SClassDef.NORMAL, LineCol.SYNTHETIC);
                 typeDefSet.add(sClassDef);
-                SemanticScope scope = new SemanticScope(sClassDef);
+                SemanticScope scope = new SemanticScope(sClassDef, null);
 
                 if (isInterface) {
                         sClassDef.setParent((SClassDef) getTypeWithName("java.lang.Object", LineCol.SYNTHETIC));
@@ -6174,7 +6201,7 @@ public class SemanticProcessor {
                 SConstructorDef con = new SConstructorDef(LineCol.SYNTHETIC);
                 sClassDef.constructors().add(con);
                 con.setDeclaringType(sClassDef);
-                SemanticScope conScope = new SemanticScope(scope);
+                SemanticScope conScope = new SemanticScope(scope, con.meta());
                 conScope.setThis(new Ins.This(sClassDef));
                 if (isInterface) {
                         con.statements().add(new Ins.InvokeSpecial(
@@ -6221,7 +6248,7 @@ public class SemanticProcessor {
 
                 // method
                 SMethodDef theMethod = new SMethodDef(LineCol.SYNTHETIC);
-                SemanticScope meScope = new SemanticScope(scope);
+                SemanticScope meScope = new SemanticScope(scope, theMethod.meta());
                 meScope.setThis(new Ins.This(sClassDef));
                 sClassDef.methods().add(theMethod);
                 theMethod.setDeclaringType(sClassDef);
@@ -9062,7 +9089,7 @@ public class SemanticProcessor {
 
                         if (invokeInnerMethod) {
                                 List<Value> values = new ArrayList<Value>();
-                                List<Value> capturedValues = new ArrayList<Value>();
+                                List<Ins.TLoad> capturedValues = new ArrayList<Ins.TLoad>();
                                 int inc = innerMethod.method.getParameters().size() - innerMethod.paramCount;
                                 for (int i = 0; i < argList.size(); ++i) {
                                         STypeDef requiredType = innerMethod.method.getParameters().get(i + inc).type();
@@ -9090,6 +9117,14 @@ public class SemanticProcessor {
                                 }
                                 invoke.arguments().addAll(values);
                                 invoke.capturedArguments().addAll(capturedValues);
+                                for (int i = 0; i < innerMethod.method.getParameters().size() - innerMethod.paramCount; ++i) {
+                                        SParameter p = innerMethod.method.getParameters().get(i);
+                                        assert p.isCapture();
+                                        if (p.isUsed()) {
+                                                Ins.TLoad v = capturedValues.get(i);
+                                                scope.getMeta().pointerLocalVar.add(v.value());
+                                        }
+                                }
 
                                 if (invoke.type().equals(VoidType.get()))
                                         return new ValueAnotherType(

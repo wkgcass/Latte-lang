@@ -32,17 +32,8 @@ public class SimpleTest {
 
                 StringBuilder sb = new StringBuilder();
                 sb.append("" +
-                        "class TestLambdaCallSelfVal\n" +
-                        "    static\n" +
-                        "        def method(x)\n" +
-                        "            var count = 0\n" +
-                        "            val f = a->\n" +
-                        "                if a > 2\n" +
-                        "                    return null\n" +
-                        "                count ++\n" +
-                        "                f(a+1)\n" +
-                        "            f(x)\n" +
-                        "            return count"
+                        "class X\n" +
+                        "    def method(a:int, b:long, c:float)=a+b+c"
                 );
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
@@ -54,7 +45,7 @@ public class SimpleTest {
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
-                byte[] b = list.get("TestLambdaCallSelfVal");
+                byte[] b = list.get("X");
                 FileOutputStream fos = new FileOutputStream(new File("/Users/wkgcass/OpenSource/Latte-lang/hehe.class"));
                 fos.write(b);
                 fos.flush();

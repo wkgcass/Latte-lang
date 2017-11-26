@@ -46,6 +46,8 @@ public class SemanticScope {
 
         public final SemanticScope parent;
 
+        private final InvokableMeta meta;
+
         private final Map<String, LeftValue> leftValueMap = new LinkedHashMap<String, LeftValue>();
         private final Map<String, MethodRecorder> innerMethodMap = new HashMap<String, MethodRecorder>();
 
@@ -53,14 +55,20 @@ public class SemanticScope {
 
         private Ins.This aThis;
 
-        public SemanticScope(SemanticScope parent) {
+        public SemanticScope(SemanticScope parent, InvokableMeta meta) {
                 this.parent = parent;
                 sTypeDef = null;
+                this.meta = meta;
         }
 
-        public SemanticScope(STypeDef sTypeDef) {
+        public SemanticScope(STypeDef sTypeDef, InvokableMeta meta) {
                 this.sTypeDef = sTypeDef;
                 parent = null;
+                this.meta = meta;
+        }
+
+        public InvokableMeta getMeta() {
+                return meta;
         }
 
         public LeftValue getLeftValue(String name) {
@@ -84,6 +92,21 @@ public class SemanticScope {
                         String k = entry.getKey();
                         LeftValue v = entry.getValue();
                         map.put(k, v.type());
+                }
+                return map;
+        }
+
+        public LinkedHashMap<String, LeftValue> getRawLocalVariables() {
+                LinkedHashMap<String, LeftValue> map;
+                if (parent != null) {
+                        map = parent.getRawLocalVariables();
+                } else {
+                        map = new LinkedHashMap<String, LeftValue>();
+                }
+                for (Map.Entry<String, LeftValue> entry : leftValueMap.entrySet()) {
+                        String k = entry.getKey();
+                        LeftValue v = entry.getValue();
+                        map.put(k, v);
                 }
                 return map;
         }
@@ -156,43 +179,6 @@ public class SemanticScope {
                         return aThis;
                 if (parent != null) return parent.getThis();
                 return null;
-        }
-
-        public int getIndex(LeftValue leftValue) {
-                // try parent
-                if (parent != null) {
-                        try {
-                                return parent.getIndex(leftValue);
-                        } catch (RuntimeException ignore) {
-                        }
-                }
-                int i = getThis() == null ? 0 : 1;
-
-                SemanticScope scope = parent;
-
-                while (scope != null) {
-                        for (LeftValue lv : scope.leftValueMap.values()) {
-                                if (lv.type().equals(LongTypeDef.get())
-                                        || lv.type().equals(DoubleTypeDef.get())) {
-                                        i += 2;
-                                } else {
-                                        i += 1;
-                                }
-                        }
-                        scope = scope.parent;
-                }
-
-                for (LeftValue v : leftValueMap.values()) {
-                        if (v.equals(leftValue)) return i;
-                        if (v.type().equals(LongTypeDef.get())
-                                || v.type().equals(DoubleTypeDef.get())) {
-                                i += 2;
-                        } else {
-                                i += 1;
-                        }
-                }
-
-                throw new RuntimeException(leftValue + " is not recorded in the scope");
         }
 
         public String generateTempName() {

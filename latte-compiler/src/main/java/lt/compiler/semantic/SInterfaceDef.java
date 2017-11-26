@@ -36,6 +36,7 @@ public class SInterfaceDef extends SRefTypeDef {
 
         private final List<Instruction> staticStatements = new ArrayList<Instruction>();
         private final List<ExceptionTable> staticExceptionTable = new ArrayList<ExceptionTable>();
+        public InvokableMeta staticInvokableMeta = new InvokableMeta();
 
         public SInterfaceDef(LineCol lineCol) {
                 super(lineCol);
@@ -51,6 +52,10 @@ public class SInterfaceDef extends SRefTypeDef {
 
         public List<ExceptionTable> staticExceptionTable() {
                 return staticExceptionTable;
+        }
+
+        public InvokableMeta staticMeta() {
+                return staticInvokableMeta;
         }
 
         @Override

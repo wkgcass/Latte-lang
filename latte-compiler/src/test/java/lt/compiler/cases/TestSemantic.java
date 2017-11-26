@@ -35,6 +35,7 @@ import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.literal.BoolLiteral;
 import lt.compiler.syntactic.literal.NumberLiteral;
 import lt.compiler.syntactic.literal.StringLiteral;
+import lt.compiler.util.LocalVariables;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -472,12 +473,16 @@ public class TestSemantic {
                                 Ins.InvokeSpecial invokeSpecial = (Ins.InvokeSpecial) con.statements().get(0);
                                 assertEquals(lastConstructor, invokeSpecial.invokable()); // invoke last constructor
                                 assertEquals(invokeSpecial.invokable().getParameters().size(), invokeSpecial.arguments().size()); // param size
-                                assertEquals(1, ((Ins.TLoad) invokeSpecial.arguments().get(0)).getIndex());
+                                Ins.TLoad tLoad = (Ins.TLoad) invokeSpecial.arguments().get(0);
+                                int index = LocalVariables.calculateIndexForLocalVariable(tLoad.value(), tLoad.getScope(), false);
+                                assertEquals(1, index);
                                 if (invokeSpecial.arguments().size() == 2) {
                                         assertEquals(new IntValue(1), invokeSpecial.arguments().get(1));
                                 }
                                 if (invokeSpecial.arguments().size() == 3) {
-                                        assertEquals(2, ((Ins.TLoad) invokeSpecial.arguments().get(1)).getIndex());
+                                        tLoad = (Ins.TLoad) invokeSpecial.arguments().get(1);
+                                        index = LocalVariables.calculateIndexForLocalVariable(tLoad.value(), tLoad.getScope(), false);
+                                        assertEquals(2, index);
                                         assertEquals(new IntValue(2), invokeSpecial.arguments().get(2));
                                 }
                         }
@@ -513,14 +518,18 @@ public class TestSemantic {
                                 );
                                 assertEquals(lastMethod, invokeVirtual.invokable()); // invoke last method
                                 assertEquals(invokeVirtual.invokable().getParameters().size(), invokeVirtual.arguments().size()); // param size
-                                assertEquals(1, ((Ins.TLoad) invokeVirtual.arguments().get(0)).getIndex());
+                                Ins.TLoad tLoad = (Ins.TLoad) invokeVirtual.arguments().get(0);
+                                int index = LocalVariables.calculateIndexForLocalVariable(tLoad.value(), tLoad.getScope(), false);
+                                assertEquals(1, index);
 
                                 assertTrue(invokeVirtual.arguments().size() == 2 || invokeVirtual.arguments().size() == 3);
                                 if (invokeVirtual.arguments().size() == 2) {
                                         assertEquals(new IntValue(1), invokeVirtual.arguments().get(1));
                                 }
                                 if (invokeVirtual.arguments().size() == 3) {
-                                        assertEquals(2, ((Ins.TLoad) invokeVirtual.arguments().get(1)).getIndex());
+                                        tLoad = (Ins.TLoad) invokeVirtual.arguments().get(1);
+                                        index = LocalVariables.calculateIndexForLocalVariable(tLoad.value(), tLoad.getScope(), false);
+                                        assertEquals(2, index);
                                         assertEquals(new DoubleValue(2), invokeVirtual.arguments().get(2));
                                 }
                         }
@@ -1246,7 +1255,8 @@ public class TestSemantic {
                 assertTrue(ins instanceof Ins.TStore);
                 Ins.TStore TStore = (Ins.TStore) ins;
 
-                assertEquals(1, TStore.index());
+                int index = LocalVariables.calculateIndexForLocalVariable(TStore.leftValue(), TStore.getScope(), false);
+                assertEquals(1, index);
                 assertTrue(TStore.newValue() instanceof Ins.New);
                 Ins.New pointer_new = (Ins.New) TStore.newValue();
                 assertEquals("lt.lang.Pointer", pointer_new.constructor().declaringType().fullName());

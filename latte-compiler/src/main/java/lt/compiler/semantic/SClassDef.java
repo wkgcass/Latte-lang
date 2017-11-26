@@ -43,6 +43,7 @@ public class SClassDef extends SRefTypeDef {
         private final List<SInterfaceDef> superInterfaces = new ArrayList<SInterfaceDef>();
         private final List<Instruction> staticStatements = new ArrayList<Instruction>();
         private final List<ExceptionTable> staticExceptionTable = new ArrayList<ExceptionTable>();
+        private final InvokableMeta staticInvokableMeta = new InvokableMeta();
         private boolean isDataClass;
 
         public SClassDef(int type, LineCol lineCol) {
@@ -85,6 +86,10 @@ public class SClassDef extends SRefTypeDef {
 
         public int classType() {
                 return type;
+        }
+
+        public InvokableMeta staticMeta() {
+                return staticInvokableMeta;
         }
 
         @Override

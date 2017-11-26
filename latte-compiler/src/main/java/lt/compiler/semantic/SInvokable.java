@@ -37,6 +37,7 @@ abstract public class SInvokable extends SMember {
         private STypeDef returnType;
         private final List<Instruction> statements = new ArrayList<Instruction>();
         private final List<ExceptionTable> exceptionTables = new ArrayList<ExceptionTable>();
+        private final InvokableMeta meta = new InvokableMeta();
 
         public SInvokable(LineCol lineCol) {
                 super(lineCol);
@@ -60,5 +61,9 @@ abstract public class SInvokable extends SMember {
 
         public List<ExceptionTable> exceptionTables() {
                 return exceptionTables;
+        }
+
+        public InvokableMeta meta() {
+                return meta;
         }
 }

@@ -211,10 +211,12 @@ public class Ins {
          * this storage will be parsed into <code>AStore index</code>, the exception pushed by jvm will be stored into local variable table
          */
         public static class ExStore implements Instruction {
-                private final int index;
+                private final LeftValue leftValue;
+                private final SemanticScope scope;
 
                 public ExStore(LeftValue ex, SemanticScope scope) {
-                        index = scope.getIndex(ex);
+                        this.leftValue = ex;
+                        this.scope = scope;
                 }
 
                 @Override
@@ -222,8 +224,12 @@ public class Ins {
                         return null;
                 }
 
-                public int index() {
-                        return index;
+                public LeftValue leftValue() {
+                        return leftValue;
+                }
+
+                public SemanticScope getScope() {
+                        return scope;
                 }
         }
 
@@ -599,6 +605,8 @@ public class Ins {
          * invoke special
          */
         public static class InvokeVirtual extends InvokeWithTarget {
+                public int flag;
+
                 public InvokeVirtual(Value target, SInvokable invokable, LineCol lineCol) {
                         super(target, invokable, lineCol);
                 }
@@ -642,6 +650,37 @@ public class Ins {
 
                 public Value target() {
                         return target;
+                }
+        }
+
+        /**
+         * This class is only used to optimize code when getting pointer variables.
+         */
+        public static class PointerGetCastHelper implements Instruction, Value {
+                private final Value valueAfterCast;
+                private final InvokeVirtual valueBeforeCast;
+
+                public PointerGetCastHelper(Value valueAfterCast, InvokeVirtual valueBeforeCast) {
+                        this.valueAfterCast = valueAfterCast;
+                        this.valueBeforeCast = valueBeforeCast;
+                }
+
+                public Value after() {
+                        return valueAfterCast;
+                }
+
+                public InvokeVirtual before() {
+                        return valueBeforeCast;
+                }
+
+                @Override
+                public STypeDef type() {
+                        return valueAfterCast.type();
+                }
+
+                @Override
+                public LineCol line_col() {
+                        return valueBeforeCast.line_col();
                 }
         }
 
@@ -725,14 +764,16 @@ public class Ins {
         public static class MonitorEnter implements Instruction {
                 private final LineCol lineCol;
                 private final Value valueToMonitor;
-                private final int index;
+                private final LeftValue leftValue;
+                private final SemanticScope scope;
 
                 public MonitorEnter(Value valueToMonitor, SemanticScope scope, LineCol lineCol) {
                         this.lineCol = lineCol;
                         this.valueToMonitor = valueToMonitor;
                         LocalVariable localVariable = new LocalVariable(valueToMonitor.type(), false);
                         scope.putLeftValue(scope.generateTempName(), localVariable);
-                        this.index = scope.getIndex(localVariable);
+                        this.leftValue = localVariable;
+                        this.scope = scope;
                 }
 
                 @Override
@@ -744,8 +785,12 @@ public class Ins {
                         return valueToMonitor;
                 }
 
-                public int storeIndex() {
-                        return index;
+                public LeftValue leftValue() {
+                        return leftValue;
+                }
+
+                public SemanticScope getScope() {
+                        return scope;
                 }
         }
 
@@ -1179,9 +1224,9 @@ public class Ins {
                 private final LineCol lineCol;
                 private final LeftValue value;
                 private final int mode;
-                private final int index;
+                private final SemanticScope scope;
 
-                public TLoad(LeftValue value, int index, LineCol lineCol) {
+                public TLoad(LeftValue value, SemanticScope scope, LineCol lineCol) {
                         this.value = value;
                         this.lineCol = lineCol;
 
@@ -1198,14 +1243,10 @@ public class Ins {
                         } else
                                 mode = Aload;
 
-                        this.index = index;
+                        this.scope = scope;
 
                         // set variable to 'used'
                         value.setUsed(true);
-                }
-
-                public TLoad(LeftValue value, SemanticScope scope, LineCol lineCol) {
-                        this(value, scope.getIndex(value), lineCol);
                 }
 
                 @Override
@@ -1226,8 +1267,8 @@ public class Ins {
                         return mode;
                 }
 
-                public int getIndex() {
-                        return index;
+                public SemanticScope getScope() {
+                        return scope;
                 }
         }
 
@@ -1296,7 +1337,9 @@ public class Ins {
                 private final Value newValue;
                 private final int mode;
                 private final LineCol lineCol;
-                private final int index;
+                private final SemanticScope scope;
+
+                public int flag;
 
                 public TStore(LeftValue leftValue, Value newValue, SemanticScope scope, LineCol lineCol, ErrorManager err) throws SyntaxException {
                         if (leftValue.alreadyAssigned() && !leftValue.canChange())
@@ -1318,7 +1361,7 @@ public class Ins {
                         } else
                                 mode = Astore;
 
-                        index = scope.getIndex(leftValue);
+                        this.scope = scope;
 
                         leftValue.assign();
                 }
@@ -1341,8 +1384,8 @@ public class Ins {
                         return mode;
                 }
 
-                public int index() {
-                        return index;
+                public SemanticScope getScope() {
+                        return scope;
                 }
         }
 

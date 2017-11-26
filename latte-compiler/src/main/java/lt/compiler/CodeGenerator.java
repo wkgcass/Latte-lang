@@ -26,7 +26,10 @@ package lt.compiler;
 
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
+import lt.compiler.util.Flags;
+import lt.compiler.util.LocalVariables;
 import lt.dependencies.asm.*;
+import lt.lang.Pointer;
 
 import java.util.*;
 
@@ -164,6 +167,7 @@ public class CodeGenerator {
                         List<SModifier> modifiers;                // modifier
                         List<Instruction> staticIns;              // <clinit>
                         List<ExceptionTable> exceptionTables;     // exception table for <clinit>
+                        InvokableMeta staticMeta; // meta
                         List<SConstructorDef> constructors = null;// constructor
                         List<SFieldDef> fields;                   // field
                         List<SMethodDef> methods;                 // method
@@ -178,6 +182,7 @@ public class CodeGenerator {
                                 modifiers = ((SClassDef) type).modifiers();
                                 staticIns = ((SClassDef) type).staticStatements();
                                 exceptionTables = ((SClassDef) type).staticExceptionTable();
+                                staticMeta = ((SClassDef) type).staticMeta();
                                 constructors = ((SClassDef) type).constructors();
                                 fields = ((SClassDef) type).fields();
                                 methods = ((SClassDef) type).methods();
@@ -187,6 +192,7 @@ public class CodeGenerator {
                                 modifiers = ((SInterfaceDef) type).modifiers();
                                 staticIns = ((SInterfaceDef) type).staticStatements();
                                 exceptionTables = ((SInterfaceDef) type).staticExceptionTable();
+                                staticMeta = ((SInterfaceDef) type).staticMeta();
                                 fields = ((SInterfaceDef) type).fields();
                                 methods = ((SInterfaceDef) type).methods();
                                 superInterfaces = ((SInterfaceDef) type).superInterfaces();
@@ -213,7 +219,7 @@ public class CodeGenerator {
                                 buildAnnotation(annotationVisitor, anno);
                         }
 
-                        buildStatic(classWriter, staticIns, exceptionTables);
+                        buildStatic(classWriter, staticIns, exceptionTables, staticMeta);
                         buildField(classWriter, fields);
                         if (constructors != null) {
                                 buildConstructor(classWriter, constructors);
@@ -769,61 +775,8 @@ public class CodeGenerator {
                 }
         }
 
-        private int calculateIndexForLocalVariable(int insIndex, CodeInfo info) {
-                if (info.getInvokable() != null) {
-                        SInvokable invokable = info.getInvokable();
-                        List<SParameter> parameters = invokable.getParameters();
-
-                        // static methods doesn't contain `this` in slot0
-                        // so the iteration goes directly from the first param
-                        // else, this is in slot0, so iteration goes from this
-                        // then the first param
-                        if (info.isStatic()) {
-                                if (insIndex < parameters.size()) {
-                                        // get from params
-                                        int subtract = 0;
-                                        for (int i = 0; i <= insIndex; ++i) {
-                                                SParameter p = parameters.get(i);
-                                                if (p.isCapture() && !p.isUsed()) {
-                                                        ++subtract;
-                                                }
-                                        }
-                                        insIndex -= subtract;
-                                } else {
-                                        // get local variable defiend in body
-                                        // subtract the unused captured params
-                                        int capturedUnusedSize = 0;
-                                        for (SParameter p : parameters) {
-                                                if (p.isCapture() && !p.isUsed()) {
-                                                        ++capturedUnusedSize;
-                                                }
-                                        }
-                                        insIndex -= capturedUnusedSize;
-                                }
-                        } else {
-                                // add `this` in slot0
-                                if (insIndex < parameters.size() + 1) {
-                                        int subtract = 0;
-                                        for (int i = 0; i <= insIndex - 1; ++i) {
-                                                SParameter p = parameters.get(i);
-                                                if (p.isCapture() && !p.isUsed()) {
-                                                        ++subtract;
-                                                }
-                                        }
-                                        insIndex -= subtract;
-                                } else {
-                                        // same as `isStatic` and `insIndex >= parameters.size`
-                                        int capturedUnusedSize = 0;
-                                        for (SParameter p : parameters) {
-                                                if (p.isCapture() && !p.isUsed()) {
-                                                        ++capturedUnusedSize;
-                                                }
-                                        }
-                                        insIndex -= capturedUnusedSize;
-                                }
-                        }
-                }
-                return insIndex;
+        private int calculateIndexForLocalVariable(LeftValue theVar, SemanticScope scope, CodeInfo info) {
+                return LocalVariables.calculateIndexForLocalVariable(theVar, scope, info.isStatic());
         }
 
         /**
@@ -887,7 +840,7 @@ public class CodeGenerator {
                         Label label = new Label();
                         methodVisitor.visitLabel(label);
 
-                        int index = calculateIndexForLocalVariable(tLoad.getIndex(), info);
+                        int index = calculateIndexForLocalVariable(tLoad.value(), tLoad.getScope(), info);
                         methodVisitor.visitVarInsn(tLoad.mode(), index);
                         if (tLoad.mode() == Ins.TLoad.Dload || tLoad.mode() == Ins.TLoad.Lload)
                                 info.push(CodeInfo.Size._2);
@@ -989,8 +942,23 @@ public class CodeGenerator {
                         info.push(CodeInfo.Size._1);
                 } else if (value instanceof ValueAnotherType) {
                         buildValueAccess(methodVisitor, info, ((ValueAnotherType) value).value(), requireValue);
+                } else if (value instanceof Ins.PointerGetCastHelper) {
+                        buildPointerCastHelper(methodVisitor, info, (Ins.PointerGetCastHelper) value, requireValue);
                 } else {
                         throw new LtBug("unknown value " + value);
+                }
+        }
+
+        private void buildPointerCastHelper(MethodVisitor methodVisitor, CodeInfo info, Ins.PointerGetCastHelper h, boolean requireValue) {
+                if (!requireValue) {
+                        // ignore the invocation if not requiring a value
+                        return;
+                }
+
+                if (canOptimizePointerRetrieving(h.before(), info)) {
+                        buildValueAccess(methodVisitor, info, h.before(), true);
+                } else {
+                        buildValueAccess(methodVisitor, info, h.after(), true);
                 }
         }
 
@@ -1053,6 +1021,110 @@ public class CodeGenerator {
                 }
         }
 
+        private void _buildOptimizedPointerTLoad(MethodVisitor methodVisitor, CodeInfo info, int index, STypeDef type) {
+                if (type instanceof PrimitiveTypeDef) {
+                        if (type.equals(DoubleTypeDef.get())) {
+                                methodVisitor.visitVarInsn(Opcodes.DLOAD, index);
+                                info.push(CodeInfo.Size._2);
+                        } else if (type.equals(LongTypeDef.get())) {
+                                methodVisitor.visitVarInsn(Opcodes.LLOAD, index);
+                                info.push(CodeInfo.Size._2);
+                        } else if (type.equals(FloatTypeDef.get())) {
+                                methodVisitor.visitVarInsn(Opcodes.FLOAD, index);
+                                info.push(CodeInfo.Size._1);
+                        } else {
+                                methodVisitor.visitVarInsn(Opcodes.ILOAD, index);
+                                info.push(CodeInfo.Size._1);
+                        }
+                } else {
+                        methodVisitor.visitVarInsn(Opcodes.ALOAD, index);
+                        info.push(CodeInfo.Size._1);
+                }
+        }
+
+        private void _buildUnbox(MethodVisitor methodVisitor, CodeInfo info, Value v) {
+                if (v.type() instanceof PrimitiveTypeDef) {
+                        buildValueAccess(methodVisitor, info, v, true);
+                } else if (v instanceof Ins.InvokeStatic && ((Ins.InvokeStatic) v).invokable() instanceof SMethodDef &&
+                        ((SMethodDef) ((Ins.InvokeStatic) v).invokable()).name().equals("valueOf") &&
+                        Arrays.asList(
+                                "java.lang.Double",
+                                "java.lang.Long",
+                                "java.lang.Float",
+                                "java.lang.Integer",
+                                "java.lang.Short",
+                                "java.lang.Byte",
+                                "java.lang.Character",
+                                "java.lang.Boolean"
+                        ).contains(((Ins.InvokeStatic) v).invokable().declaringType().fullName())) {
+
+                        Value primitiveValue = ((Ins.InvokeStatic) v).arguments().get(0);
+                        buildValueAccess(methodVisitor, info, primitiveValue, true);
+                } else {
+                        buildValueAccess(methodVisitor, info, v, true);
+                        if (v.type().fullName().equals("java.lang.Double")) {
+                                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                                        "java/lang/Double", "doubleValue", "()D", false);
+                                info.push(CodeInfo.Size._2);
+                        } else if (v.type().fullName().equals("java.lang.Long")) {
+                                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                                        "java/lang/Long", "longValue", "()L", false);
+                                info.push(CodeInfo.Size._2);
+                        } else if (v.type().fullName().equals("java.lang.Float")) {
+                                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                                        "java/lang/Float", "floatValue", "()F", false);
+                                info.push(CodeInfo.Size._1);
+                        } else if (v.type().fullName().equals("java.lang.Integer")) {
+                                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                                        "java/lang/Integer", "intValue", "()I", false);
+                                info.push(CodeInfo.Size._1);
+                        } else if (v.type().fullName().equals("java.lang.Short")) {
+                                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                                        "java/lang/Short", "shortValue", "()S", false);
+                                info.push(CodeInfo.Size._1);
+                        } else if (v.type().fullName().equals("java.lang.Byte")) {
+                                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                                        "java/lang/Byte", "byteValue", "()B", false);
+                                info.push(CodeInfo.Size._1);
+                        } else if (v.type().fullName().equals("java.lang.Character")) {
+                                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                                        "java/lang/Character", "charValue", "()C", false);
+                                info.push(CodeInfo.Size._1);
+                        } else if (v.type().fullName().equals("java.lang.Boolean")) {
+                                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                                        "java/lang/Boolean", "booleanValue", "()Z", false);
+                                info.push(CodeInfo.Size._1);
+                        } else {
+                                throw new LtBug("unknown boxing type " + v.type());
+                        }
+                }
+        }
+
+        private void _buildOptimizedPointerTStore(MethodVisitor methodVisitor, CodeInfo info, int index, STypeDef type, Value v) {
+                if (type instanceof PrimitiveTypeDef) {
+                        _buildUnbox(methodVisitor, info, v);
+                        if (type.equals(DoubleTypeDef.get())) {
+                                methodVisitor.visitVarInsn(Opcodes.DSTORE, index);
+                        } else if (type.equals(LongTypeDef.get())) {
+                                methodVisitor.visitVarInsn(Opcodes.LSTORE, index);
+                        } else if (type.equals(FloatTypeDef.get())) {
+                                methodVisitor.visitVarInsn(Opcodes.FSTORE, index);
+                        } else {
+                                methodVisitor.visitVarInsn(Opcodes.ISTORE, index);
+                        }
+                        info.pop(1);
+                } else {
+                        buildValueAccess(methodVisitor, info, v, true);
+                        methodVisitor.visitVarInsn(Opcodes.ASTORE, index);
+                        info.pop(1);
+                }
+        }
+
+        private boolean canOptimizePointerRetrieving(Ins.InvokeVirtual invoke, CodeInfo info) {
+                Ins.TLoad target = (Ins.TLoad) invoke.target();
+                return !info.getMeta().pointerLocalVar.contains(target.value()) && target.type().fullName().equals(Pointer.class.getName());
+        }
+
         /**
          * build invoke.
          *
@@ -1105,6 +1177,35 @@ public class CodeGenerator {
                         buildUnitWhenInvokeVoid(invokable, info);
 
                 } else if (invoke instanceof Ins.InvokeVirtual) {
+                        if (Flags.match(((Ins.InvokeVirtual) invoke).flag, Flags.IS_POINTER_GET)) {
+                                // pointer get
+                                if (!requireValue) {
+                                        return;
+                                }
+                                if (canOptimizePointerRetrieving((Ins.InvokeVirtual) invoke, info)) {
+                                        Ins.TLoad target = (Ins.TLoad) ((Ins.InvokeVirtual) invoke).target();
+                                        int index = calculateIndexForLocalVariable(target.value(), target.getScope(), info);
+                                        // simplify to tLoad
+                                        _buildOptimizedPointerTLoad(methodVisitor, info, index, ((PointerType) target.type()).getPointingType());
+                                        return;
+                                }
+                        } else if (Flags.match(((Ins.InvokeVirtual) invoke).flag, Flags.IS_POINTER_SET)) {
+                                // pointer set
+
+                                if (((Ins.InvokeVirtual) invoke).target() instanceof Ins.TLoad) {
+                                        Ins.TLoad target = (Ins.TLoad) ((Ins.InvokeVirtual) invoke).target();
+                                        int index = calculateIndexForLocalVariable(target.value(), target.getScope(), info);
+                                        if (!info.getMeta().pointerLocalVar.contains(target.value()) && target.type().fullName().equals(Pointer.class.getName())) {
+                                                // simplify to tStore
+                                                _buildOptimizedPointerTStore(methodVisitor, info, index, ((PointerType) target.type()).getPointingType(), invoke.arguments().get(0));
+                                                return;
+                                        }
+                                } else {
+                                        // else it should be New
+                                        assert ((Ins.InvokeVirtual) invoke).target() instanceof Ins.New;
+                                }
+                        }
+
                         // push target object
                         buildValueAccess(methodVisitor, info, ((Ins.InvokeVirtual) invoke).target(), true);
 
@@ -1319,11 +1420,45 @@ public class CodeGenerator {
          * @param tStore        Ins.TStore
          */
         private void buildTStore(MethodVisitor methodVisitor, CodeInfo info, Ins.TStore tStore) {
+                if (tStore.flag == Flags.IS_POINTER_NEW) {
+                        if (!info.getMeta().pointerLocalVar.contains(tStore.leftValue())) {
+                                STypeDef pointerType = tStore.leftValue().type();
+                                STypeDef type = ((PointerType) pointerType).getPointingType();
+                                int index = calculateIndexForLocalVariable(tStore.leftValue(), tStore.getScope(), info);
+                                Value newValue = tStore.newValue();
+                                if (newValue instanceof Ins.New && newValue.type().fullName().equals(Pointer.class.getName())) {
+                                        // constructing a new pointer object but not assigning any value
+                                        return; // do nothing
+                                } else if (newValue instanceof Ins.InvokeVirtual) {
+                                        //                                        pointer.set(           ?            )
+                                        Value valueToBuild = ((Ins.InvokeVirtual) tStore.newValue()).arguments().get(0);
+                                        if (type instanceof PrimitiveTypeDef) {
+                                                _buildUnbox(methodVisitor, info, valueToBuild);
+                                                if (type instanceof DoubleTypeDef) {
+                                                        methodVisitor.visitVarInsn(Opcodes.DSTORE, index);
+                                                } else if (type instanceof LongTypeDef) {
+                                                        methodVisitor.visitVarInsn(Opcodes.LSTORE, index);
+                                                } else if (type instanceof FloatTypeDef) {
+                                                        methodVisitor.visitVarInsn(Opcodes.FSTORE, index);
+                                                } else {
+                                                        methodVisitor.visitVarInsn(Opcodes.ISTORE, index);
+                                                }
+                                        } else {
+                                                buildValueAccess(methodVisitor, info, valueToBuild, true);
+                                                methodVisitor.visitVarInsn(Opcodes.ASTORE, index);
+                                        }
+                                        info.pop(1);
+                                        info.registerLocal(index);
+                                        return;
+                                } else throw new LtBug("should not each here");
+                        }
+                }
+
                 buildValueAccess(methodVisitor, info, tStore.newValue(), true);
-                int index = calculateIndexForLocalVariable(tStore.index(), info);
+                int index = calculateIndexForLocalVariable(tStore.leftValue(), tStore.getScope(), info);
                 methodVisitor.visitVarInsn(tStore.mode(), index);
                 info.pop(1);
-                info.registerLocal(tStore.index());
+                info.registerLocal(index);
         }
 
         /**
@@ -1447,7 +1582,7 @@ public class CodeGenerator {
                 buildValueAccess(methodVisitor, info, monitorEnter.valueToMonitor(), true);
                 methodVisitor.visitInsn(Opcodes.DUP);
                 info.push(CodeInfo.Size._1);
-                methodVisitor.visitVarInsn(Opcodes.ASTORE, monitorEnter.storeIndex());
+                methodVisitor.visitVarInsn(Opcodes.ASTORE, calculateIndexForLocalVariable(monitorEnter.leftValue(), monitorEnter.getScope(), info));
                 info.pop(1);
                 methodVisitor.visitInsn(Opcodes.MONITORENTER);
                 info.pop(1);
@@ -1464,7 +1599,7 @@ public class CodeGenerator {
          * @param monitorExit   Ins.MonitorExit
          */
         private void buildMonitorExit(MethodVisitor methodVisitor, CodeInfo info, Ins.MonitorExit monitorExit) {
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, monitorExit.enterInstruction().storeIndex());
+                methodVisitor.visitVarInsn(Opcodes.ALOAD, calculateIndexForLocalVariable(monitorExit.enterInstruction().leftValue(), monitorExit.enterInstruction().getScope(), info));
                 info.push(CodeInfo.Size._1);
                 methodVisitor.visitInsn(Opcodes.MONITOREXIT);
                 info.pop(1);
@@ -1604,9 +1739,9 @@ public class CodeGenerator {
 
                 } else if (ins instanceof Ins.ExStore) {
                         info.push(CodeInfo.Size._1);
-                        int index = calculateIndexForLocalVariable(((Ins.ExStore) ins).index(), info);
+                        int index = calculateIndexForLocalVariable(((Ins.ExStore) ins).leftValue(), ((Ins.ExStore) ins).getScope(), info);
                         methodVisitor.visitVarInsn(Opcodes.ASTORE, index);
-                        info.registerLocal(((Ins.ExStore) ins).index());
+                        info.registerLocal(index);
                         info.pop(1);
                 } else if (ins instanceof Ins.Pop) {
                         methodVisitor.visitInsn(Opcodes.POP);
@@ -1715,9 +1850,9 @@ public class CodeGenerator {
          * @param staticIns      static instructions
          * @param exceptionTable exception table
          */
-        private void buildStatic(ClassWriter classWriter, List<Instruction> staticIns, List<ExceptionTable> exceptionTable) {
+        private void buildStatic(ClassWriter classWriter, List<Instruction> staticIns, List<ExceptionTable> exceptionTable, InvokableMeta meta) {
                 MethodVisitor methodVisitor = classWriter.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
-                buildInstructions(methodVisitor, new CodeInfo(0, null), staticIns, exceptionTable, VoidType.get());
+                buildInstructions(methodVisitor, new CodeInfo(0, null, meta), staticIns, exceptionTable, VoidType.get());
                 methodVisitor.visitEnd();
         }
 
@@ -1747,7 +1882,7 @@ public class CodeGenerator {
 
                         buildInstructions(
                                 methodVisitor,
-                                new CodeInfo(1 + cons.getParameters().size(), cons),
+                                new CodeInfo(1 + cons.getParameters().size(), cons, cons.meta()),
                                 cons.statements(), cons.exceptionTables(), VoidType.get());
 
                         methodVisitor.visitEnd();
@@ -1810,8 +1945,8 @@ public class CodeGenerator {
                                         methodVisitor,
                                         new CodeInfo(
                                                 (method.modifiers().contains(SModifier.STATIC) ? 0 : 1) + method.getParameters().size(),
-                                                method
-                                        ),
+                                                method,
+                                                method.meta()),
                                         method.statements(), method.exceptionTables(), method.getReturnType());
 
 

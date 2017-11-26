@@ -28,7 +28,6 @@ import lt.compiler.semantic.*;
 import lt.dependencies.asm.Label;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -46,6 +45,7 @@ public class CodeInfo {
         private int maxLocal;
         private final SInvokable invokable;
         private final boolean isStatic;
+        private final InvokableMeta meta;
 
         public static class Container {
                 public final Label label;
@@ -58,10 +58,11 @@ public class CodeInfo {
 
         public final Map<Instruction, Container> insToLabel = new HashMap<Instruction, Container>();
 
-        public CodeInfo(int localInit, SInvokable invokable) {
+        public CodeInfo(int localInit, SInvokable invokable, InvokableMeta meta) {
                 this.maxLocal = localInit;
                 this.invokable = invokable;
                 this.isStatic = invokable == null || this.invokable.modifiers().contains(SModifier.STATIC);
+                this.meta = meta;
         }
 
         public void push(Size size) {
@@ -109,6 +110,10 @@ public class CodeInfo {
 
         public boolean isStatic() {
                 return isStatic;
+        }
+
+        public InvokableMeta getMeta() {
+                return meta;
         }
 
         @Override
