@@ -2485,6 +2485,7 @@ public class SemanticProcessor {
 
                                         LocalVariable local = new LocalVariable(t, p.canChange());
                                         scope.putLeftValue(p.name(), local);
+                                        local.setWrappingParam(p);
 
                                         // local = new Pointer(p)
                                         Ins.TStore tStore = new Ins.TStore(

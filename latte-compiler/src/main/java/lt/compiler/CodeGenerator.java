@@ -1125,6 +1125,10 @@ public class CodeGenerator {
                 return !info.getMeta().pointerLocalVar.contains(target.value()) && target.type().fullName().equals(Pointer.class.getName());
         }
 
+        private boolean isParameterWrappingPointer(LeftValue v) {
+                return LocalVariables.isParameterWrappingPointer(v);
+        }
+
         /**
          * build invoke.
          *
@@ -1184,7 +1188,12 @@ public class CodeGenerator {
                                 }
                                 if (canOptimizePointerRetrieving((Ins.InvokeVirtual) invoke, info)) {
                                         Ins.TLoad target = (Ins.TLoad) ((Ins.InvokeVirtual) invoke).target();
-                                        int index = calculateIndexForLocalVariable(target.value(), target.getScope(), info);
+                                        int index;
+                                        if (isParameterWrappingPointer(target.value())) {
+                                                index = calculateIndexForLocalVariable(((LocalVariable) target.value()).getWrappingParam(), target.getScope(), info);
+                                        } else {
+                                                index = calculateIndexForLocalVariable(target.value(), target.getScope(), info);
+                                        }
                                         // simplify to tLoad
                                         _buildOptimizedPointerTLoad(methodVisitor, info, index, ((PointerType) target.type()).getPointingType());
                                         return;
@@ -1194,9 +1203,14 @@ public class CodeGenerator {
 
                                 if (((Ins.InvokeVirtual) invoke).target() instanceof Ins.TLoad) {
                                         Ins.TLoad target = (Ins.TLoad) ((Ins.InvokeVirtual) invoke).target();
-                                        int index = calculateIndexForLocalVariable(target.value(), target.getScope(), info);
                                         if (!info.getMeta().pointerLocalVar.contains(target.value()) && target.type().fullName().equals(Pointer.class.getName())) {
                                                 // simplify to tStore
+                                                int index;
+                                                if (isParameterWrappingPointer(target.value())) {
+                                                        index = calculateIndexForLocalVariable(((LocalVariable) target.value()).getWrappingParam(), target.getScope(), info);
+                                                } else {
+                                                        index = calculateIndexForLocalVariable(target.value(), target.getScope(), info);
+                                                }
                                                 _buildOptimizedPointerTStore(methodVisitor, info, index, ((PointerType) target.type()).getPointingType(), invoke.arguments().get(0));
                                                 return;
                                         }
@@ -1424,6 +1438,10 @@ public class CodeGenerator {
                         if (!info.getMeta().pointerLocalVar.contains(tStore.leftValue())) {
                                 STypeDef pointerType = tStore.leftValue().type();
                                 STypeDef type = ((PointerType) pointerType).getPointingType();
+                                if (isParameterWrappingPointer(tStore.leftValue())) {
+                                        // ignore the value
+                                        return;
+                                }
                                 int index = calculateIndexForLocalVariable(tStore.leftValue(), tStore.getScope(), info);
                                 Value newValue = tStore.newValue();
                                 if (newValue instanceof Ins.New && newValue.type().fullName().equals(Pointer.class.getName())) {

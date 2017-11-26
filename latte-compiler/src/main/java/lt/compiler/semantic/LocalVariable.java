@@ -34,6 +34,8 @@ public class LocalVariable implements LeftValue {
 
         private boolean alreadyAssigned = false;
 
+        private SParameter wrappingParam;
+
         public LocalVariable(STypeDef type, boolean canChange) {
                 this.type = type;
                 this.canChange = canChange;
@@ -81,5 +83,13 @@ public class LocalVariable implements LeftValue {
                         ", canChange=" + canChange +
                         ", type=" + type +
                         '}';
+        }
+
+        public SParameter getWrappingParam() {
+                return wrappingParam;
+        }
+
+        public void setWrappingParam(SParameter wrappingParam) {
+                this.wrappingParam = wrappingParam;
         }
 }

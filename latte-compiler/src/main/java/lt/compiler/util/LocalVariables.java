@@ -57,14 +57,21 @@ public class LocalVariables {
                         }
 
                         // the local var should be added
-                        insIndex += _slots(current.type());
+                        int currentSlot = _slots(current.type());
+                        insIndex += currentSlot;
 
                         // check whether it's pointer and should not be pointer
                         // which should be optimized as normal local variable
                         if (current.type().fullName().equals(Pointer.class.getName()) && !meta.pointerLocalVar.contains(current)) {
+                                assert currentSlot == 1; // pointer is a ref type, should take 1 slot
                                 assert current.type() instanceof PointerType; // pointerType
-                                STypeDef t = ((PointerType) current.type()).getPointingType();
-                                insIndex += (_slots(t) - 1); // expand the slot size
+                                if (isParameterWrappingPointer(current)) {
+                                        // it will be totally ignored, so index should be subtracted as well
+                                        insIndex -= currentSlot;
+                                } else {
+                                        STypeDef t = ((PointerType) current.type()).getPointingType();
+                                        insIndex += (_slots(t) - 1); // expand the slot size
+                                }
                         }
 
                         if (!localVarIte.hasNext())
@@ -72,5 +79,9 @@ public class LocalVariables {
                         current = localVarIte.next();
                 }
                 return insIndex;
+        }
+
+        public static boolean isParameterWrappingPointer(LeftValue v) {
+                return v instanceof LocalVariable && ((LocalVariable) v).getWrappingParam() != null;
         }
 }
