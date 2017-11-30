@@ -1,6 +1,6 @@
 # Latte-Lang
 
-![](http://latte-lang.org/static/Latte-lang-logo-large.png)
+<img src ="http://latte-lang.org/static/Latte-lang-logo-large.png" width=50px>
 
 Latte is a JVM language. It's highly readable and extensible.
 
