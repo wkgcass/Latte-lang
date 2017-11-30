@@ -58,7 +58,7 @@ import static org.junit.Assert.*;
  * test code generator
  */
 public class TestCodeGen {
-        public static Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
+        public static Map<String, byte[]> retrieveByteCode(String code) throws IOException, SyntaxException, ClassNotFoundException {
                 ErrorManager err = new ErrorManager(true);
                 Scanner lexicalProcessor = new ScannerSwitcher("test.lt", new StringReader(code), new Properties(), err);
                 Parser syntacticProcessor = new Parser(lexicalProcessor.scan(), err);
@@ -68,7 +68,11 @@ public class TestCodeGen {
                 Set<STypeDef> types = semanticProcessor.parse();
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
-                final Map<String, byte[]> list = codeGenerator.generate();
+                return codeGenerator.generate();
+        }
+
+        public static Class<?> retrieveClass(String code, String clsName) throws IOException, SyntaxException, ClassNotFoundException {
+                final Map<String, byte[]> list = retrieveByteCode(code);
 
                 ClassLoader classLoader = new ClassLoader() {
                         @Override
