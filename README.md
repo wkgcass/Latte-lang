@@ -1,6 +1,6 @@
 # Latte-Lang
 
-![](./logo.png)
+![](http://latte-lang.org/static/Latte-lang-logo-large.png)
 
 Latte is a JVM language. It's highly readable and extensible.
 
@@ -99,7 +99,7 @@ or:
 
 	use `compile MAP` to specify source codes to be compiled and start compiling
 
-		compiler compile {'fileName':FileObject}
+		compiler compile ['fileName':FileObject]
 
 	usually `filesInDirectory('...', regex)` is used, e.g.
 
@@ -312,7 +312,7 @@ clone这个仓库,然后执行
 
 	使用 `compile MAP` 来确定源代码并立即开始编译
 
-		compiler compile {'fileName':FileObject}
+		compiler compile ['fileName':FileObject]
 
 	通常来说会使用 `filesInDirectory('...', regex)`, e.g.
 
