@@ -1,5 +1,7 @@
 # Latte-Lang
 
+[![Join the chat at https://gitter.im/latte-lang/Lobby](https://badges.gitter.im/latte-lang/Lobby.svg)](https://gitter.im/latte-lang/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 <img src ="http://latte-lang.org/static/Latte-lang-logo-large.png" width=50px>
 
 Latte is a JVM language. It's highly readable and extensible.
