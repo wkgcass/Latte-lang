@@ -1,0 +1,6 @@
+.idea/
+*.jar
+*.class
+out/
+gen/
+idea-flex.skeleton
