@@ -106,6 +106,7 @@ public abstract class AbstractScanner implements Scanner {
                 PAIR.put("(", ")"); // arguments/procedures/expressions
                 PAIR.put("{", "}"); // map
                 PAIR.put("[", "]"); // array[index]
+                PAIR.put("<:", ":>"); // generic
 
                 SPLIT_X.addAll(NO_RECORD);
                 SPLIT_X.addAll(SPLIT_TWO_VAR_OP_THAT_CAN_BE_USED_WITH_ASSIGN);

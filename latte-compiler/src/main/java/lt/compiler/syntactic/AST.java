@@ -29,9 +29,7 @@ import lt.compiler.syntactic.def.VariableDef;
 import lt.compiler.syntactic.pre.Modifier;
 
 import java.io.Serializable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * a file containing all node definitions of the ast tree<br>
@@ -46,6 +44,7 @@ public class AST {
         public static class Access implements Expression {
                 public final Expression exp;
                 public final String name;
+                public final List<Access> generics = new ArrayList<Access>(); // len = 0 means no generic
                 private final LineCol lineCol;
 
                 public Access(Expression exp, String name, LineCol lineCol) {
@@ -56,7 +55,7 @@ public class AST {
 
                 @Override
                 public String toString() {
-                        return "(" + (exp == null ? "" : exp) + ((exp != null && name != null) ? "." : "") + (name == null ? "" : name) + ")";
+                        return "(" + (exp == null ? "" : exp) + ((exp != null && name != null) ? "." : "") + (name == null ? "" : name) + (generics.size() == 0 ? "" : "<:" + generics.toString() + ":>") + ")";
                 }
 
                 @Override
@@ -66,13 +65,14 @@ public class AST {
 
                         Access access = (Access) o;
 
-                        return !(exp != null ? !exp.equals(access.exp) : access.exp != null) && !(name != null ? !name.equals(access.name) : access.name != null);
+                        return (exp != null ? exp.equals(access.exp) : access.exp == null) && (name != null ? name.equals(access.name) : access.name == null) && generics.equals(access.generics);
                 }
 
                 @Override
                 public int hashCode() {
                         int result = exp != null ? exp.hashCode() : 0;
                         result = 31 * result + (name != null ? name.hashCode() : 0);
+                        result = 31 * result + generics.hashCode();
                         return result;
                 }
 

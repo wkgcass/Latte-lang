@@ -37,6 +37,7 @@ import java.util.Set;
  */
 public class ClassDef implements Definition {
         public final String name;
+        public final List<AST.Access> generics;
         public final Set<Modifier> modifiers;
         public final List<VariableDef> params;
         public final AST.Invocation superWithInvocation;
@@ -46,8 +47,9 @@ public class ClassDef implements Definition {
 
         private final LineCol lineCol;
 
-        public ClassDef(String name, Set<Modifier> modifiers, List<VariableDef> params, AST.Invocation superWithInvocation, List<AST.Access> superWithoutInvocation, Set<AST.Anno> annos, List<Statement> statements, LineCol lineCol) {
+        public ClassDef(String name, List<AST.Access> generics, Set<Modifier> modifiers, List<VariableDef> params, AST.Invocation superWithInvocation, List<AST.Access> superWithoutInvocation, Set<AST.Anno> annos, List<Statement> statements, LineCol lineCol) {
                 this.name = name;
+                this.generics = generics;
                 this.lineCol = lineCol;
                 this.modifiers = new HashSet<Modifier>(modifiers);
                 this.params = params;
@@ -66,7 +68,11 @@ public class ClassDef implements Definition {
                 for (Modifier m : modifiers) {
                         sb.append(m).append(" ");
                 }
-                sb.append("class ").append(name).append("(");
+                sb.append("class ").append(name);
+                if (!generics.isEmpty()) {
+                        sb.append("<:").append(generics).append(":>");
+                }
+                sb.append("(");
                 boolean isFirst = true;
                 for (VariableDef v : params) {
                         if (isFirst) {
@@ -107,6 +113,7 @@ public class ClassDef implements Definition {
                 ClassDef classDef = (ClassDef) o;
 
                 if (!name.equals(classDef.name)) return false;
+                if (!generics.equals(classDef.generics)) return false;
                 if (!modifiers.equals(classDef.modifiers)) return false;
                 if (!params.equals(classDef.params)) return false;
                 if (superWithInvocation != null ? !superWithInvocation.equals(classDef.superWithInvocation) : classDef.superWithInvocation != null)
@@ -120,6 +127,7 @@ public class ClassDef implements Definition {
         @Override
         public int hashCode() {
                 int result = name.hashCode();
+                result = 31 * result + generics.hashCode();
                 result = 31 * result + modifiers.hashCode();
                 result = 31 * result + params.hashCode();
                 result = 31 * result + (superWithInvocation != null ? superWithInvocation.hashCode() : 0);

@@ -226,6 +226,7 @@ public class LatteEngine implements ScriptEngine {
                         final String className = SCRIPT_CLASS_NAME + '_' + new Date().getTime() + '_' + UUID.randomUUID().toString().replace("-", "");
                         ClassDef evalClass = new ClassDef(
                                 className,
+                                Collections.<AST.Access>emptyList(),
                                 Collections.<Modifier>emptySet(),
                                 parameters,
                                 null,

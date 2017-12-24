@@ -392,7 +392,7 @@ public class TestParserErrorRecovery {
                 assertEquals(
                         Collections.singletonList(
                                 new InterfaceDef(
-                                        "I", Collections.<Modifier>emptySet(), Collections.<AST.Access>emptyList(),
+                                        "I", Collections.<AST.Access>emptyList(), Collections.<Modifier>emptySet(), Collections.<AST.Access>emptyList(),
                                         Collections.<AST.Anno>emptySet(), Collections.<Statement>emptyList(), LineCol.SYNTHETIC)
                         ),
                         statements
@@ -450,7 +450,7 @@ public class TestParserErrorRecovery {
                 var_1_a.setInit(new NumberLiteral("1", LineCol.SYNTHETIC));
                 assertEquals(Arrays.asList(
                         new ClassDef(
-                                "C", Collections.<Modifier>emptySet(),
+                                "C", Collections.<AST.Access>emptyList(), Collections.<Modifier>emptySet(),
                                 Arrays.asList(
                                         var_1_a,
                                         new VariableDef("b", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC)
@@ -462,7 +462,7 @@ public class TestParserErrorRecovery {
                                 LineCol.SYNTHETIC
                         ),
                         new ClassDef(
-                                "C", Collections.<Modifier>emptySet(),
+                                "C", Collections.<AST.Access>emptyList(), Collections.<Modifier>emptySet(),
                                 Collections.singletonList(
                                         new VariableDef("a", Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC)
                                 ),
@@ -473,7 +473,7 @@ public class TestParserErrorRecovery {
                                 LineCol.SYNTHETIC
                         ),
                         new ClassDef(
-                                "C", Collections.<Modifier>emptySet(),
+                                "C", Collections.<AST.Access>emptyList(), Collections.<Modifier>emptySet(),
                                 Collections.<VariableDef>emptyList(),
                                 null,
                                 Collections.<AST.Access>emptyList(),
@@ -482,7 +482,7 @@ public class TestParserErrorRecovery {
                                 LineCol.SYNTHETIC
                         ),
                         new ClassDef(
-                                "C", Collections.<Modifier>emptySet(),
+                                "C", Collections.<AST.Access>emptyList(), Collections.<Modifier>emptySet(),
                                 Collections.<VariableDef>emptyList(),
                                 new AST.Invocation(
                                         new AST.Access(null, "P1", LineCol.SYNTHETIC),
@@ -497,7 +497,7 @@ public class TestParserErrorRecovery {
                                 LineCol.SYNTHETIC
                         ),
                         new ClassDef(
-                                "C", Collections.<Modifier>emptySet(),
+                                "C", Collections.<AST.Access>emptyList(), Collections.<Modifier>emptySet(),
                                 Collections.<VariableDef>emptyList(),
                                 null,
                                 Collections.<AST.Access>emptyList(),
@@ -806,5 +806,22 @@ public class TestParserErrorRecovery {
                 assertEquals(ErrorManager.CompilingError.UnexpectedToken, err.errorList.get(0).type);
 
                 assertEquals(0, statements.size());
+        }
+
+        @Test
+        public void testObjectOrFunWithGeneric() throws Exception {
+                ErrorManager err = new ErrorManager(false);
+                err.out = ErrorManager.Out.allNull();
+
+                List<Statement> statements = parse("" +
+                                "object A<:T:>\n" +
+                                "fun B<:T:>"
+                        , err);
+
+                assertEquals(2, err.errorList.size());
+                assertEquals(1, err.errorList.get(0).lineCol.line);
+                assertEquals(11, err.errorList.get(0).lineCol.column);
+                assertEquals(2, err.errorList.get(1).lineCol.line);
+                assertEquals(8, err.errorList.get(1).lineCol.column);
         }
 }

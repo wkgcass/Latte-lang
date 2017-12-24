@@ -37,6 +37,7 @@ import java.util.Set;
  */
 public class InterfaceDef implements Definition {
         public final String name;
+        public final List<AST.Access> generics;
         public final Set<Modifier> modifiers;
         public final List<AST.Access> superInterfaces;
         public final List<Statement> statements;
@@ -44,8 +45,9 @@ public class InterfaceDef implements Definition {
 
         private final LineCol lineCol;
 
-        public InterfaceDef(String name, Set<Modifier> modifiers, List<AST.Access> superInterfaces, Set<AST.Anno> annos, List<Statement> statements, LineCol lineCol) {
+        public InterfaceDef(String name, List<AST.Access> generics, Set<Modifier> modifiers, List<AST.Access> superInterfaces, Set<AST.Anno> annos, List<Statement> statements, LineCol lineCol) {
                 this.name = name;
+                this.generics = generics;
                 this.lineCol = lineCol;
                 this.modifiers = new HashSet<Modifier>(modifiers);
                 this.superInterfaces = superInterfaces;
@@ -63,6 +65,9 @@ public class InterfaceDef implements Definition {
                         sb.append(m).append(" ");
                 }
                 sb.append("interface ").append(name);
+                if (!generics.isEmpty()) {
+                        sb.append("<:").append(generics).append(":>");
+                }
                 if (!superInterfaces.isEmpty()) {
                         sb.append(" : ");
                         boolean isFirst = true;
@@ -87,6 +92,7 @@ public class InterfaceDef implements Definition {
                 InterfaceDef that = (InterfaceDef) o;
 
                 if (!name.equals(that.name)) return false;
+                if (!generics.equals(that.generics)) return false;
                 if (!modifiers.equals(that.modifiers)) return false;
                 if (!superInterfaces.equals(that.superInterfaces)) return false;
                 if (!statements.equals(that.statements)) return false;
@@ -97,6 +103,7 @@ public class InterfaceDef implements Definition {
         @Override
         public int hashCode() {
                 int result = name.hashCode();
+                result = 31 * result + generics.hashCode();
                 result = 31 * result + modifiers.hashCode();
                 result = 31 * result + superInterfaces.hashCode();
                 result = 31 * result + statements.hashCode();

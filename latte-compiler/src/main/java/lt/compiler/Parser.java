@@ -560,6 +560,9 @@ public class Parser {
                 if (!classDef.params.isEmpty()) {
                         err.SyntaxException("object do not have params", classDef.params.get(0).line_col());
                 }
+                if (!classDef.generics.isEmpty()) {
+                        err.SyntaxException("object do not have generics", classDef.generics.get(0).line_col());
+                }
                 return new ObjectDef(classDef.name,
                         classDef.superWithInvocation, classDef.superWithoutInvocation,
                         classDef.modifiers,
@@ -1061,12 +1064,20 @@ public class Parser {
                 if (current instanceof Element) {
                         String name = ((Element) current).getContent();
 
-                        List<AST.Access> accesses;
+                        List<AST.Access> generics = new ArrayList<AST.Access>();
+                        List<AST.Access> superInterfaces = new ArrayList<AST.Access>();
 
                         if (current.getTokenType() == TokenType.VALID_NAME) {
-                                nextNode(true); // can be : or ending or startNode
+                                nextNode(true); // can be <: or : or ending or startNode
+
+                                // generic
+                                if (current instanceof Element) {
+                                        if (((Element) current).getContent().equals("<:")) {
+                                                generics = parse_generic();
+                                        }
+                                }
+
                                 // interface name :
-                                accesses = new ArrayList<AST.Access>();
 
                                 if (current instanceof Element) {
                                         expecting(":", current.previous(), current, err);
@@ -1077,7 +1088,7 @@ public class Parser {
                                                         Expression e = get_exp(true, true);
 
                                                         if (e instanceof AST.Access) {
-                                                                accesses.add((AST.Access) e);
+                                                                superInterfaces.add((AST.Access) e);
                                                         } else {
                                                                 err.UnexpectedTokenException("super interface", e.toString(), e.line_col());
                                                                 err.debug("ignore this super interface");
@@ -1107,8 +1118,8 @@ public class Parser {
                                 nextNode(true);
                         }
 
-                        InterfaceDef interfaceDef = new InterfaceDef(name, set,
-                                accesses,
+                        InterfaceDef interfaceDef = new InterfaceDef(name, generics, set,
+                                superInterfaces,
                                 annos,
                                 statements == null ? Collections.<Statement>emptyList() : statements,
                                 lineCol);
@@ -1119,6 +1130,45 @@ public class Parser {
                         err.debug("ignore this interface declaration");
                         return null;
                 }
+        }
+
+        /**
+         * parse generic, cursor will be after :> after the method
+         *
+         * @return list of generics
+         * @throws SyntaxException exception
+         */
+        private List<AST.Access> parse_generic() throws SyntaxException {
+                List<AST.Access> generics = new ArrayList<AST.Access>();
+
+                nextNode(false);
+                if (current instanceof ElementStartNode) {
+                        ElementStartNode startNode = (ElementStartNode) current;
+                        nextNode(false);
+                        expecting(":>", current.previous(), current, err);
+                        nextNode(true);
+
+                        // handle generic
+                        Parser parser = new Parser(startNode, err);
+                        if (!(parser.current instanceof Element)) {
+                                err.UnexpectedTokenException(parser.current.toString(), parser.current.getLineCol());
+                        }
+                        while (true) {
+                                AST.Access type = parser.parse_cls_for_type_spec();
+                                generics.add(type);
+                                if (parser.current == null) {
+                                        break;
+                                }
+                                if (!(parser.current instanceof EndingNode)) {
+                                        err.UnexpectedTokenException(",", parser.current.toString(), parser.current.getLineCol());
+                                        break;
+                                }
+                                parser.nextNode(false);
+                        }
+                } else {
+                        err.UnexpectedTokenException("generic type definition", current.toString(), current.getLineCol());
+                }
+                return generics;
         }
 
         /**
@@ -1148,10 +1198,23 @@ public class Parser {
                                 err.UnexpectedTokenException("valid class name", name, current.getLineCol());
                                 err.debug("assume the token is a valid name");
                         }
+                        nextNode(true); // can be <: or ( or : or ending or ending or startNode
+
+                        List<AST.Access> generics = new ArrayList<AST.Access>();
+
+                        // check generic
+                        if (current instanceof Element) {
+                                String p = ((Element) current).getContent();
+                                if (p.equals("<:")) { // class Cls<:T:>
+                                        generics = parse_generic();
+                                }
+                        }
+
                         List<VariableDef> params = null;
 
                         Set<String> newParamNames = new HashSet<String>();
-                        nextNode(true); // can be ( or : or ending or ending or startNode
+
+                        // check parameters
                         if (current instanceof Element) {
                                 String p = ((Element) current).getContent();
                                 if (p.equals("(")) {// class Cls(...)
@@ -1212,7 +1275,6 @@ public class Parser {
                                                 err.UnexpectedTokenException(current.toString(), current.getLineCol());
                                                 err.debug("ignore the parameters");
                                         }
-
                                 } else if (!p.equals(":")) {
                                         err.UnexpectedTokenException("( or :", p, current.getLineCol());
                                         err.debug("ignore the token");
@@ -1266,6 +1328,7 @@ public class Parser {
 
                         return new ClassDef(
                                 name,
+                                generics,
                                 set,
                                 params == null ? Collections.<VariableDef>emptyList() : params,
                                 invocation,
@@ -1318,6 +1381,9 @@ public class Parser {
                 }
                 if (!classDef.modifiers.isEmpty()) {
                         err.SyntaxException("function definitions do not have modifiers", classDef.line_col());
+                }
+                if (!classDef.generics.isEmpty()) {
+                        err.SyntaxException("function definitions do not have generics", classDef.generics.get(0).line_col());
                 }
 
                 // transform into fun
@@ -1854,6 +1920,7 @@ public class Parser {
                                                         if (parsedExps.isEmpty()) {
                                                                 parse_dot_start_invocation();
                                                         } else {
+                                                                nextNode(false);
                                                                 parse_access(true);
                                                         }
 
@@ -2975,9 +3042,10 @@ public class Parser {
         private void parse_access(boolean parse_exp) throws SyntaxException {
                 LineCol lineCol = current.getLineCol();
 
-                parsedExpsNotEmpty(current);
-                Expression exp = parsedExps.pop();
-                nextNode(false);
+                Expression exp = null;
+                if (!parsedExps.isEmpty()) {
+                        exp = parsedExps.pop();
+                }
                 if (current instanceof Element) {
                         String name = ((Element) current).getContent();
                         if (current.getTokenType() != TokenType.VALID_NAME) {
@@ -2989,6 +3057,12 @@ public class Parser {
                         parsedExps.push(access);
 
                         nextNode(true);
+
+                        if (current != null && current.getTokenType() == TokenType.SYMBOL && ((Element) current).getContent().equals("<:")) {
+                                // generic
+                                access.generics.addAll(parse_generic());
+                        }
+
                         if (parse_exp) {
                                 parse_expression();
                         }
@@ -3169,12 +3243,10 @@ public class Parser {
                         usedVarNames.add(content);
                         parsedExps.push(def);
 
+                        nextNode(true);
                 } else {
-                        AST.Access access = new AST.Access(null, content, current.getLineCol());
-                        parsedExps.push(access);
+                        parse_access(false);
                 }
-
-                nextNode(true);
                 parse_expression();
         }
 
@@ -3201,6 +3273,7 @@ public class Parser {
 
                         while (current instanceof Element && ((Element) current).getContent().equals(".")) {
                                 // package::name::Class.Inner
+                                nextNode(false);
                                 parse_access(false);
                         }
                         // i:pkg::Cls.[Inner]
@@ -3216,6 +3289,7 @@ public class Parser {
 
                         while (current instanceof Element && ((Element) current).getContent().equals(".")) {
                                 // package::name::Class.[Inner]
+                                nextNode(false);
                                 parse_access(false);
                         }
 

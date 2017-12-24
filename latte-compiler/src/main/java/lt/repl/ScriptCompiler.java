@@ -298,6 +298,7 @@ public class ScriptCompiler {
                 v.setType(new AST.Access(new AST.Access(null, "String", LineCol.SYNTHETIC), "[]", LineCol.SYNTHETIC));
                 ClassDef classDef = new ClassDef(
                         nameForTheScript,
+                        Collections.<AST.Access>emptyList(),
                         Collections.<Modifier>emptySet(),
                         Collections.<VariableDef>emptyList(),
                         null,
