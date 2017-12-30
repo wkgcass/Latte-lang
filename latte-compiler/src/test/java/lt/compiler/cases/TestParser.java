@@ -2948,4 +2948,14 @@ public class TestParser {
                 );
                 assertEquals(expected, access);
         }
+
+        @Test
+        public void testTypeArray() throws Exception {
+                List<Statement> stmts = parse("type []A<:T:>");
+                AST.Access a = new AST.Access(null, "A", LineCol.SYNTHETIC);
+                a.generics.add(new AST.Access(null, "T", LineCol.SYNTHETIC));
+                assertEquals(Collections.singletonList(
+                        new AST.TypeOf(new AST.Access(a, "[]", LineCol.SYNTHETIC), LineCol.SYNTHETIC)
+                ), stmts);
+        }
 }

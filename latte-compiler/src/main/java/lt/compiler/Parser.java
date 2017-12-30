@@ -3302,6 +3302,10 @@ public class Parser {
 
                 }
 
+                if (current instanceof Element && ((Element) current).getContent().equals("<:")) {
+                        a.generics.addAll(parse_generic());
+                }
+
                 for (int i = 0; i < arrayDepth; ++i) {
                         a = new AST.Access(a, "[]", a.line_col());
                 }
