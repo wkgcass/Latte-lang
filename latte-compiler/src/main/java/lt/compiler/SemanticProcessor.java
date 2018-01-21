@@ -381,7 +381,7 @@ public class SemanticProcessor {
                                 Import i = ite.next();
                                 if (i.pkg == null) {
                                         // try class
-                                        STypeDef type = getTypeWithAccess(i.access, Collections.<Import>emptyList(), true);
+                                        STypeDef type = getTypeWithAccess(i.access, Collections.<String, STypeDef>emptyMap(), Collections.<Import>emptyList(), true);
                                         if (null == type) {
                                                 boolean pass = false;
                                                 if (i.importAll) {
@@ -570,7 +570,7 @@ public class SemanticProcessor {
                 String clsName = accessToClassName(access, imports, false);
                 List<STypeDef> genericTypes = new ArrayList<STypeDef>();
                 for (AST.Access a : access.generics) {
-                        STypeDef t = getTypeWithAccess(a, imports);
+                        STypeDef t = getTypeWithAccess(a, Collections.<String, STypeDef>emptyMap(), imports);
                         genericTypes.add(t);
                 }
                 if (types.containsKey(buildTemplateAppliedName(clsName, genericTypes))) {
@@ -659,7 +659,7 @@ public class SemanticProcessor {
                 for (List<Import> imports : fileNameToImport.values()) {
                         for (Import im : imports) {
                                 if (im.implicit) {
-                                        STypeDef type = getTypeWithAccess(im.access, Collections.<Import>emptyList());
+                                        STypeDef type = getTypeWithAccess(im.access, Collections.<String, STypeDef>emptyMap(), Collections.<Import>emptyList());
                                         if (!(type instanceof SClassDef)) {
                                                 err.SyntaxException("import implicit should be an implicit class", im.line_col());
                                                 return;
@@ -709,7 +709,7 @@ public class SemanticProcessor {
                         Set<Ins.GetClass> tmpSet = new HashSet<Ins.GetClass>(); // distinct
                         for (Import i : imports) {
                                 if (i.implicit) {
-                                        Ins.GetClass getC = new Ins.GetClass(getTypeWithAccess(i.access, Collections.<Import>emptyList()), classTypeDef);
+                                        Ins.GetClass getC = new Ins.GetClass(getTypeWithAccess(i.access, Collections.<String, STypeDef>emptyMap(), Collections.<Import>emptyList()), classTypeDef);
                                         if (!getC.targetType().equals(sTypeDef)) {
                                                 if (tmpSet.add(getC)) {
                                                         valueList.add(getC);
@@ -769,7 +769,7 @@ public class SemanticProcessor {
                         Set<Ins.GetClass> tmpSet = new HashSet<Ins.GetClass>(); // distinct
                         for (Import i : imports) {
                                 if (i.importAll && i.pkg == null) {
-                                        Ins.GetClass getC = new Ins.GetClass(getTypeWithAccess(i.access, Collections.<Import>emptyList()), classTypeDef);
+                                        Ins.GetClass getC = new Ins.GetClass(getTypeWithAccess(i.access, Collections.<String, STypeDef>emptyMap(), Collections.<Import>emptyList()), classTypeDef);
                                         if (!getC.targetType().equals(sTypeDef)) {
                                                 if (tmpSet.add(getC)) {
                                                         valueList.add(getC);
@@ -1102,6 +1102,9 @@ public class SemanticProcessor {
                                                 // however the statements won't be filled in this step
                                                 SConstructorDef constructor = new SConstructorDef(classDef.line_col());
 
+                                                constructor.setDeclaringType(sClassDef);
+                                                sClassDef.constructors().add(constructor);
+
                                                 // constructor should be filled with
                                                 // parameters|declaringType(class)|modifiers
                                                 // in this step
@@ -1149,9 +1152,6 @@ public class SemanticProcessor {
                                                 // parameters
                                                 parseParameters(classDef.params, i, constructor, imports, true);
 
-                                                constructor.setDeclaringType(sClassDef);
-                                                sClassDef.constructors().add(constructor);
-
                                                 if (lastConstructor != null) {
                                                         // record the constructor and expressions
                                                         Map<SInvokable, Expression> invoke = new HashMap<SInvokable, Expression>();
@@ -1178,7 +1178,7 @@ public class SemanticProcessor {
 
                                 // parse super interfaces
                                 for (AST.Access access : interfaceDef.superInterfaces) {
-                                        SInterfaceDef superInterface = (SInterfaceDef) getTypeWithAccess(access, imports);
+                                        SInterfaceDef superInterface = (SInterfaceDef) getTypeWithAccess(access, getGenericMap(sInterfaceDef), imports);
                                         sInterfaceDef.superInterfaces().add(superInterface);
                                 }
 
@@ -1297,7 +1297,7 @@ public class SemanticProcessor {
                                 if (v.getType() == null) {
                                         err.SyntaxException("annotation fields should have a type", v.line_col());
                                 }
-                                STypeDef type = getTypeWithAccess(v.getType(), imports);
+                                STypeDef type = getTypeWithAccess(v.getType(), getGenericMap(sAnnoDef), imports);
                                 assertToBeAnnotationField(type);
                                 SAnnoField f = new SAnnoField();
                                 f.setName(v.getName());
@@ -1342,6 +1342,8 @@ public class SemanticProcessor {
                                        List<AST.Access> superWithoutInvocation,
                                        List<Import> imports,
                                        LineCol lineCol) throws SyntaxException {
+                // generic type map
+                Map<String, STypeDef> genericTypeMap = getGenericMap(sClassDef);
                 // parse parent
                 Iterator<AST.Access> superWithoutInvocationAccess;
                 if (superWithInvocation == null) {
@@ -1352,7 +1354,7 @@ public class SemanticProcessor {
                         } else {
                                 superWithoutInvocationAccess = superWithoutInvocation.iterator();
                                 AST.Access mightBeClassAccess = superWithoutInvocationAccess.next();
-                                STypeDef tmp = getTypeWithAccess(mightBeClassAccess, imports);
+                                STypeDef tmp = getTypeWithAccess(mightBeClassAccess, genericTypeMap, imports);
                                 if (tmp instanceof SClassDef) {
                                         // constructor without constructor invocation
                                         sClassDef.setParent((SClassDef) tmp);
@@ -1374,7 +1376,7 @@ public class SemanticProcessor {
                         }
 
                         AST.Access access = (AST.Access) superWithInvocation.exp;
-                        STypeDef tmp = getTypeWithAccess(access, imports);
+                        STypeDef tmp = getTypeWithAccess(access, genericTypeMap, imports);
                         if (tmp instanceof SClassDef) {
                                 sClassDef.setParent((SClassDef) tmp);
                         } else {
@@ -1387,7 +1389,7 @@ public class SemanticProcessor {
                 // interfaces to be parsed
                 while (superWithoutInvocationAccess != null && superWithoutInvocationAccess.hasNext()) {
                         AST.Access interfaceAccess = superWithoutInvocationAccess.next();
-                        STypeDef tmp = getTypeWithAccess(interfaceAccess, imports);
+                        STypeDef tmp = getTypeWithAccess(interfaceAccess, getGenericMap(sClassDef), imports);
                         if (tmp instanceof SInterfaceDef) {
                                 sClassDef.superInterfaces().add((SInterfaceDef) tmp);
                         } else {
@@ -1521,7 +1523,7 @@ public class SemanticProcessor {
                                 List<Import> imports = fileNameToImport.get(fun.line_col().fileName);
 
                                 // get super class/interface
-                                STypeDef type = getTypeWithAccess(fun.superType, imports);
+                                STypeDef type = getTypeWithAccess(fun.superType, getGenericMap(sTypeDef), imports);
                                 if (!(type instanceof SClassDef || type instanceof SInterfaceDef)) {
                                         err.SyntaxException("function super type should be functional interfaces or functional abstract classes", fun.superType.line_col());
                                         return;
@@ -4550,6 +4552,10 @@ public class SemanticProcessor {
          * @throws SyntaxException compile error
          */
         public Value parseValueFromVariableDef(VariableDef variableDef, SemanticScope scope) throws SyntaxException {
+                // generic type map
+                Map<String, STypeDef> genericTypeMap = getGenericMap(scope.type());
+
+                // handle
                 List<Import> imports = fileNameToImport.get(variableDef.line_col().fileName);
 
                 STypeDef type = variableDef.getType() == null
@@ -4560,6 +4566,7 @@ public class SemanticProcessor {
 
                         : getTypeWithAccess(
                         variableDef.getType(),
+                        genericTypeMap,
                         imports);
                 STypeDef rawType = type;
 
@@ -4603,7 +4610,7 @@ public class SemanticProcessor {
                                 }
 
                                 AST.Access typeAccess = variableDef.getType();
-                                type = getTypeWithAccess(new AST.Access(typeAccess, "*", typeAccess == null ? LineCol.SYNTHETIC : typeAccess.line_col()), imports);
+                                type = getTypeWithAccess(new AST.Access(typeAccess, "*", typeAccess == null ? LineCol.SYNTHETIC : typeAccess.line_col()), genericTypeMap, imports);
 
                                 LocalVariable localVariable = new LocalVariable(type, canChange);
                                 scope.putLeftValue(variableDef.getName(), localVariable);
@@ -4868,6 +4875,9 @@ public class SemanticProcessor {
          * @throws SyntaxException compiling error
          */
         public Value parseValueFromDestruct(AST.Destruct destruct, SemanticScope scope) throws SyntaxException {
+                // generic type map
+                Map<String, STypeDef> genericTypeMap = getGenericMap(scope.type());
+
                 // imports
                 List<Import> imports = fileNameToImport.get(destruct.line_col().fileName);
 
@@ -4885,7 +4895,7 @@ public class SemanticProcessor {
                         SFieldDef f = findFieldFromTypeDef(pd.name, scope.type(), scope.type(),
                                 scope.getThis() == null ? FIND_MODE_STATIC : FIND_MODE_NON_STATIC, true);
                         if (f == null) {
-                                STypeDef type = getTypeWithAccess(new AST.Access(pd.type, "*", destruct.line_col()), imports);
+                                STypeDef type = getTypeWithAccess(new AST.Access(pd.type, "*", destruct.line_col()), genericTypeMap, imports);
 
                                 LocalVariable localVariable = new LocalVariable(type, destructCanChangeInLocalVariable(destruct));
                                 scope.putLeftValue(pd.name, localVariable);
@@ -4910,7 +4920,7 @@ public class SemanticProcessor {
                 if (destruct.pattern.type == null) {
                         getResList.arguments().add(NullValue.get());
                 } else {
-                        getResList.arguments().add(new Ins.GetClass(getTypeWithAccess(destruct.pattern.type, imports),
+                        getResList.arguments().add(new Ins.GetClass(getTypeWithAccess(destruct.pattern.type, genericTypeMap, imports),
                                 (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)));
                 }
                 getResList.arguments().add(parseValueFromExpression(destruct.exp, null, scope)); // o
@@ -5039,6 +5049,9 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public Value parseValueFromExpression(Expression exp, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
+                // generic type map
+                Map<String, STypeDef> genericTypeMap = scope == null ? Collections.<String, STypeDef>emptyMap() : getGenericMap(scope.type());
+                // handle
                 if (requiredType != null && isPointerType(requiredType)) {
                         requiredType = getPointingType(requiredType);
                 }
@@ -5195,7 +5208,7 @@ public class SemanticProcessor {
                         }
                 } else if (exp instanceof AST.AsType) {
                         AST.AsType asType = (AST.AsType) exp;
-                        v = parseValueFromExpression(asType.exp, getTypeWithAccess(asType.type, imports), scope);
+                        v = parseValueFromExpression(asType.exp, getTypeWithAccess(asType.type, genericTypeMap, imports), scope);
                 } else if (exp instanceof AST.Access) {
                         // parse access
                         if (((AST.Access) exp).name == null) {
@@ -5228,7 +5241,7 @@ public class SemanticProcessor {
                 } else if (exp instanceof AST.Lambda) {
                         v = parseValueFromLambda((AST.Lambda) exp, requiredType, scope);
                 } else if (exp instanceof AST.TypeOf) {
-                        STypeDef t = getTypeWithAccess(((AST.TypeOf) exp).type, imports);
+                        STypeDef t = getTypeWithAccess(((AST.TypeOf) exp).type, genericTypeMap, imports);
                         if (t.fullName().equals("lt.lang.Unit")) {
                                 t = VoidType.get();
                         }
@@ -5240,7 +5253,7 @@ public class SemanticProcessor {
                 } else if (exp instanceof AST.AnnoExpression) {
                         SAnno anno = new SAnno();
                         AST.Anno astAnno = ((AST.AnnoExpression) exp).anno;
-                        STypeDef type = getTypeWithAccess(astAnno.anno, imports);
+                        STypeDef type = getTypeWithAccess(astAnno.anno, genericTypeMap, imports);
                         if (!(type instanceof SAnnoDef)) {
                                 err.SyntaxException(type + " is not annotation type", astAnno.anno.line_col());
                                 return null;
@@ -5254,6 +5267,7 @@ public class SemanticProcessor {
                         SMethodDef method = getLang_require();
                         Ins.InvokeStatic invokeStatic = new Ins.InvokeStatic(method, exp.line_col());
                         // caller class
+                        assert scope != null;
                         invokeStatic.arguments().add(new Ins.GetClass(
                                 scope.type(),
                                 (SClassDef) getTypeWithName("java.lang.Class", LineCol.SYNTHETIC)
@@ -5648,7 +5662,7 @@ public class SemanticProcessor {
         }
 
         public Value parseValueFromGeneratorSpec(AST.GeneratorSpec gs, STypeDef requiredType, SemanticScope scope) throws SyntaxException {
-                STypeDef type = getTypeWithAccess(gs.type, fileNameToImport.get(gs.line_col().fileName));
+                STypeDef type = getTypeWithAccess(gs.type, getGenericMap(scope.type()), fileNameToImport.get(gs.line_col().fileName));
                 if (type instanceof SClassDef && !((SClassDef) type).modifiers().contains(SModifier.ABSTRACT)) {
                         Class<?> c;
                         try {
@@ -5815,6 +5829,7 @@ public class SemanticProcessor {
                 SClassDef type;
                 try {
                         type = (SClassDef) getTypeWithAccess((AST.Access) aNew.invocation.exp,
+                                getGenericMap(scope.type()),
                                 fileNameToImport.get(aNew.line_col().fileName));
                 } catch (Throwable t) {
                         err.SyntaxException(aNew.invocation.exp + " is not a class", aNew.line_col());
@@ -5873,6 +5888,7 @@ public class SemanticProcessor {
                 STypeDef theType;
                 try {
                         theType = getTypeWithAccess((AST.Access) invocation.exp,
+                                getGenericMap(scope.type()),
                                 fileNameToImport.get(invocation.line_col().fileName));
                 } catch (Throwable t) {
                         err.SyntaxException(invocation.exp + " is not a type", invocation.exp.line_col());
@@ -7567,7 +7583,7 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public Value parseValueFromAccessType(AST.Access access, List<Import> imports, STypeDef currentType) throws SyntaxException {
-                SClassDef type = (SClassDef) getTypeWithAccess(access, imports);
+                SClassDef type = (SClassDef) getTypeWithAccess(access, getGenericMap(currentType), imports);
                 assert type != null;
                 SConstructorDef zeroParamCons = null;
                 for (SConstructorDef c : type.constructors()) {
@@ -7634,10 +7650,14 @@ public class SemanticProcessor {
          * @throws SyntaxException compiling error
          */
         private Value __parseValueFromAccess(AST.Access access, SemanticScope scope, boolean isTryingToAssign) throws SyntaxException {
+                // get generic type map
+                Map<String, STypeDef> genericTypeMap = scope == null ? Collections.<String, STypeDef>emptyMap() : getGenericMap(scope.type());
+                // handle
                 access = transformAccess(access);
                 List<Import> imports = fileNameToImport.get(access.line_col().fileName);
                 if (access.exp == null) {
                         // Access(null,name)
+                        assert scope != null;
                         if (access.name.equals("this")) {
                                 if (scope.getThis() == null) {
                                         err.SyntaxException("static scope do not have `this` to access", access.line_col());
@@ -7666,7 +7686,7 @@ public class SemanticProcessor {
                                                         // import static
                                                         f = findFieldFromTypeDef(
                                                                 access.name,
-                                                                getTypeWithAccess(im.access, imports),
+                                                                getTypeWithAccess(im.access, genericTypeMap, imports),
                                                                 scope.type(),
                                                                 FIND_MODE_STATIC,
                                                                 true);
@@ -7711,6 +7731,7 @@ public class SemanticProcessor {
                                 AST.Access access1 = (AST.Access) access.exp;
                                 if (access1.exp == null && access1.name.equals("this")) {
                                         // this.fieldName
+                                        assert scope != null;
                                         if (scope.getThis() == null) {
                                                 err.SyntaxException("static methods don't have `this` variable", access1.line_col());
                                                 return null;
@@ -7725,9 +7746,10 @@ public class SemanticProcessor {
                                         return invokeGetField(scope.getThis(), access.name, scope.type(), access.line_col());
                                 } else if (access1.exp instanceof AST.Access && access1.name.equals("this")) {
                                         // SuperClass.this.fieldName
-                                        STypeDef type = getTypeWithAccess((AST.Access) access1.exp, imports);
+                                        STypeDef type = getTypeWithAccess((AST.Access) access1.exp, genericTypeMap, imports);
                                         assert type != null;
 
+                                        assert scope != null;
                                         if (!type.isAssignableFrom(scope.type())) {
                                                 err.SyntaxException("`SuperClass` in SuperClass.this should be super class of this class", access1.line_col());
                                                 return null;
@@ -7742,6 +7764,7 @@ public class SemanticProcessor {
                                 }
                         } else if (access.exp instanceof AST.PackageRef && enableTypeAccess) {
                                 try {
+                                        assert scope != null;
                                         return parseValueFromAccessType(access, imports, scope.type());
                                 } catch (Throwable ignore) {
                                 }
@@ -7755,7 +7778,7 @@ public class SemanticProcessor {
                         // not value, then try to find type
                         if (access.exp instanceof AST.Access) {
                                 try {
-                                        type = getTypeWithAccess((AST.Access) access.exp, imports);
+                                        type = getTypeWithAccess((AST.Access) access.exp, genericTypeMap, imports);
                                 } catch (Throwable ignore) {
                                         // type not found or wrong Access format
                                 }
@@ -7808,8 +7831,10 @@ public class SemanticProcessor {
                                         // array field can be `length`
                                         if (access.name.equals("length"))
                                                 return new Ins.ArrayLength(v, access.line_col());
-                                        else
+                                        else {
+                                                assert scope != null;
                                                 return invokeGetField(v, access.name, scope.type(), access.line_col());
+                                        }
                                 } else {
                                         // check primitive
                                         if (v.type() instanceof PrimitiveTypeDef) {
@@ -8767,7 +8792,7 @@ public class SemanticProcessor {
          * <li>invoke methods on values -- Access(value,methodName)</li>
          * <li>invoke methods from SomeClass -- Access(SomeClass,methodName)</li>
          * <li>invoke methods on `this` but invoke methods in super class/interface (invoke special) -- Access(Access(SuperClass,`this`),methodName)</li>
-         * <li>construct an object -- {@link #getTypeWithAccess(AST.Access, List)}</li>
+         * <li>construct an object -- {@link #getTypeWithAccess(AST.Access, Map, List)}</li>
          * </ol>
          *
          * @param invocation invocation object. invocation.exp should be AST.Access when calling this method.
@@ -8779,6 +8804,8 @@ public class SemanticProcessor {
          * @see #parseValueFromInvocationFunctionalObject(AST.Invocation, SemanticScope)
          */
         public Value parseValueFromInvocation(AST.Invocation invocation, SemanticScope scope) throws SyntaxException {
+                // generic type map
+                Map<String, STypeDef> genericTypeMap = getGenericMap(scope.type());
                 // parse args
                 List<Value> argList = new ArrayList<Value>();
                 boolean tmpEnableTypeAccess = enableTypeAccess;
@@ -8863,7 +8890,7 @@ public class SemanticProcessor {
                                         if (im.importAll && im.pkg == null) {
                                                 // this import type is import static
 
-                                                STypeDef type = getTypeWithAccess(im.access, imports);
+                                                STypeDef type = getTypeWithAccess(im.access, genericTypeMap, imports);
                                                 findMethodFromTypeWithArguments(
                                                         access.line_col(),
                                                         access.name,
@@ -8912,7 +8939,7 @@ public class SemanticProcessor {
 
                                                 doInvokeSpecial = true;
 
-                                                STypeDef type = getTypeWithAccess((AST.Access) access1.exp, imports);
+                                                STypeDef type = getTypeWithAccess((AST.Access) access1.exp, genericTypeMap, imports);
                                                 assert type != null;
                                                 // type should be assignable from scope.type()
                                                 if (!type.isAssignableFrom(scope.type())) {
@@ -8939,7 +8966,7 @@ public class SemanticProcessor {
                                         STypeDef type = null;
                                         if (access.exp instanceof AST.Access) {
                                                 try {
-                                                        type = getTypeWithAccess((AST.Access) access.exp, imports);
+                                                        type = getTypeWithAccess((AST.Access) access.exp, genericTypeMap, imports);
                                                 } catch (Throwable ignore) {
                                                 }
                                                 if (type != null) {
@@ -9085,7 +9112,7 @@ public class SemanticProcessor {
                         // try to find constructor
                         STypeDef type = null;
                         try {
-                                type = getTypeWithAccess(access, imports);
+                                type = getTypeWithAccess(access, genericTypeMap, imports);
                         } catch (Throwable ignore) {
                                 // not found or not type format
                         }
@@ -10159,7 +10186,12 @@ public class SemanticProcessor {
                                ElementType type,
                                List<ElementType> checkTheseWhenFail) throws SyntaxException {
                 for (AST.Anno anno : annos) {
-                        SAnnoDef annoType = (SAnnoDef) getTypeWithAccess(anno.anno, imports);
+                        SAnnoDef annoType;
+                        if (annotationPresentable instanceof SMember) {
+                                annoType = (SAnnoDef) getTypeWithAccess(anno.anno, getGenericMap(((SMember) annotationPresentable).declaringType()), imports);
+                        } else {
+                                annoType = (SAnnoDef) getTypeWithAccess(anno.anno, Collections.<String, STypeDef>emptyMap(), imports);
+                        }
                         assert annoType != null;
 
                         if (annoType.canPresentOn(type)) {
@@ -10211,7 +10243,7 @@ public class SemanticProcessor {
                                 type = getTypeWithName("java.lang.Object",
                                         v.line_col());
                         } else {
-                                type = getTypeWithAccess(v.getType(), imports);
+                                type = getTypeWithAccess(v.getType(), getGenericMap(invokable.declaringType()), imports);
                         }
                         param.setType(type);
 
@@ -10374,7 +10406,7 @@ public class SemanticProcessor {
                 fieldDef.setType(
                         v.getType() == null
                                 ? getTypeWithName("java.lang.Object", v.line_col())
-                                : getTypeWithAccess(v.getType(), imports)
+                                : getTypeWithAccess(v.getType(), getGenericMap(type), imports)
                 );
                 fieldDef.setDeclaringType(type); // declaringClass
 
@@ -10432,7 +10464,7 @@ public class SemanticProcessor {
                 methodDef.setReturnType(
                         m.returnType == null
                                 ? getTypeWithName("java.lang.Object", m.line_col())
-                                : getRealReturnType(getTypeWithAccess(m.returnType, imports), true)
+                                : getRealReturnType(getTypeWithAccess(m.returnType, getGenericMap(type), imports), true)
                 );
                 parseParameters(m.params, i, methodDef, imports, false);
 
@@ -11042,20 +11074,21 @@ public class SemanticProcessor {
          * @return retrieved STypeDef (not null)
          * @throws SyntaxException exception
          */
-        public STypeDef getTypeWithAccess(AST.Access access, List<Import> imports) throws SyntaxException {
-                return getTypeWithAccess(access, imports, false);
+        public STypeDef getTypeWithAccess(AST.Access access, Map<String, STypeDef> genericMap, List<Import> imports) throws SyntaxException {
+                return getTypeWithAccess(access, genericMap, imports, false);
         }
 
         /**
          * get type with access
          *
          * @param access         access object
+         * @param genericMap     generic info
          * @param imports        import list
          * @param allowException if true, then syntax exception would be ignored
          * @return retrieved STypeDef (not null)
          * @throws SyntaxException exception
          */
-        public STypeDef getTypeWithAccess(AST.Access access, List<Import> imports, boolean allowException) throws SyntaxException {
+        public STypeDef getTypeWithAccess(AST.Access access, Map<String, STypeDef> genericMap, List<Import> imports, boolean allowException) throws SyntaxException {
                 assert access.exp == null || access.exp instanceof AST.Access
                         || access.exp instanceof AST.PackageRef || "[]".equals(access.name) || "*".equals(access.name);
 
@@ -11074,7 +11107,7 @@ public class SemanticProcessor {
                 STypeDef resultType;
                 if ("[]".equals(access.name)) {
                         assert access.exp instanceof AST.Access;
-                        STypeDef type = getTypeWithAccess((AST.Access) access.exp, imports);
+                        STypeDef type = getTypeWithAccess((AST.Access) access.exp, genericMap, imports);
                         int dimension;
                         if (type instanceof SArrayTypeDef) {
                                 SArrayTypeDef a = (SArrayTypeDef) type;
@@ -11101,9 +11134,12 @@ public class SemanticProcessor {
                                 }
                                 return null;
                         }
+                        if (!className.contains(".") && genericMap.containsKey(className)) {
+                                return genericMap.get(className);
+                        }
                         List<STypeDef> genericTypes = new ArrayList<STypeDef>();
                         for (AST.Access a : access.generics) {
-                                genericTypes.add(getTypeWithAccess(a, imports));
+                                genericTypes.add(getTypeWithAccess(a, genericMap, imports));
                         }
                         resultType = getTypeWithName(className, genericTypes, allowException, access.line_col());
                 }
@@ -11310,5 +11346,79 @@ public class SemanticProcessor {
                         }
                 }
                 return className;
+        }
+
+        private Map<String, STypeDef> getGenericMap(STypeDef t) {
+                if (t instanceof SClassDef) {
+                        return getGenericMap((SClassDef) t);
+                } else if (t instanceof SInterfaceDef) {
+                        return getGenericMap((SInterfaceDef) t);
+                } else if (t instanceof SAnnoDef) {
+                        return getGenericMap((SAnnoDef) t);
+                } else {
+                        throw new LtBug("unknown STypeDef " + t);
+                }
+        }
+
+        private Map<String, STypeDef> getGenericMap(SClassDef c) {
+                if (c.classType() == SClassDef.NORMAL) {
+                        ASTGHolder<ClassDef> holder = originalClasses.get(c.fullName());
+                        ClassDef classDef = holder.s;
+                        List<STypeDef> genericArgs = holder.generics;
+                        List<AST.Access> genericParams = classDef.generics;
+                        LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
+                        for (int i = 0; i < genericParams.size(); ++i) {
+                                ret.put(genericParams.get(i).name, genericArgs.get(i));
+                        }
+                        return ret;
+                } else if (c.classType() == SClassDef.OBJECT) {
+                        ASTGHolder<ObjectDef> holder = originalObjects.get(c.fullName());
+                        ObjectDef objectDef = holder.s;
+                        List<STypeDef> genericArgs = holder.generics;
+                        if (genericArgs.size() == 0) {
+                                return Collections.emptyMap();
+                        }
+                        LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
+                        // TODO
+                        throw new LtBug("objects don't support generic parameters yet...");
+                } else if (c.classType() == SClassDef.FUN) {
+                        ASTGHolder<FunDef> holder = originalFunctions.get(c.fullName());
+                        FunDef funDef = holder.s;
+                        List<STypeDef> genericArgs = holder.generics;
+                        if (genericArgs.size() == 0) {
+                                return Collections.emptyMap();
+                        }
+                        LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
+                        // TODO
+                        throw new LtBug("functions don't support generic parameters yet...");
+                } else {
+                        throw new LtBug("unknown classType " + c.classType());
+                }
+        }
+
+        private Map<String, STypeDef> getGenericMap(SInterfaceDef interf) {
+                ASTGHolder<InterfaceDef> holder = originalInterfaces.get(interf.fullName());
+                InterfaceDef interfaceDef = holder.s;
+                List<STypeDef> genericArgs = holder.generics;
+                List<AST.Access> genericParams = interfaceDef.generics;
+                LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
+                for (int i = 0; i < genericParams.size(); ++i) {
+                        ret.put(genericParams.get(i).name, genericArgs.get(i));
+                }
+                return ret;
+        }
+
+        private Map<String, STypeDef> getGenericMap(SAnnoDef anno) {
+                ASTGHolder<AnnotationDef> holder = originalAnnotations.get(anno.fullName());
+                AnnotationDef annoDef = holder.s;
+                List<STypeDef> genericArgs = holder.generics;
+                // TODO
+                if (genericArgs.size() == 0) {
+                        return Collections.emptyMap();
+                }
+                throw new LtBug("annotations don't support generic parameters yet...");
+                // ASTGHolder<AnnotationDef> holder = originalAnnotations.get(anno.fullName());
+                // AnnotationDef annoDef = holder.s;
+                // List<STypeDef> genericArgs = holder.generics;
         }
 }
