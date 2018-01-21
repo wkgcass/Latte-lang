@@ -417,9 +417,7 @@ public class SemanticProcessor {
                         }
                 }
 
-                step2(fileNameToClassDef, fileNameToInterfaceDef,
-                        fileNameToFunctions, fileNameToPackageName,
-                        fileNameToObjectDef, fileNameToAnnotationDef);
+                step2(fileNameToPackageName);
                 step3(fileNameToPackageName, fileNameToFunctions);
                 // ensures that @ImplicitImports and @StaticImports are loaded
                 getTypeWithName("lt.runtime.ImplicitImports", LineCol.SYNTHETIC);
@@ -551,7 +549,7 @@ public class SemanticProcessor {
                         return;
                 }
 
-                SAnnoDef sAnnoDef = new SAnnoDef();
+                SAnnoDef sAnnoDef = new SAnnoDef(a.line_col());
                 sAnnoDef.setPkg(pkg);
                 sAnnoDef.setFullName(annoName);
 
@@ -990,134 +988,193 @@ public class SemanticProcessor {
          * build fields,methods,constructors,parameters,parent-classes,super-interfaces,annotations.
          * but no details (annotation's values|method statements|constructor statements won't be parsed)
          *
-         * @param fileNameToClassDef       file name to class defintion
-         * @param fileNameToInterfaceDef   file name to interface definition
-         * @param fileNameToPackageName    file name to package name
-         * @param fileNameToFunctions      file name to function def
-         * @param fileNameToObjectDefs     file name to object def
-         * @param fileNameToAnnotationDefs file name to annotation def
+         * @param fileNameToPackageName file name to package name
          * @throws SyntaxException exception
          */
-        public void step2(Map<String, List<ClassDef>> fileNameToClassDef,
-                          Map<String, List<InterfaceDef>> fileNameToInterfaceDef,
-                          Map<String, List<FunDef>> fileNameToFunctions,
-                          Map<String, String> fileNameToPackageName,
-                          Map<String, List<ObjectDef>> fileNameToObjectDefs,
-                          Map<String, List<AnnotationDef>> fileNameToAnnotationDefs) throws SyntaxException {
-                for (String fileName : mapOfStatements.keySet()) {
+        public void step2(Map<String, String> fileNameToPackageName) throws SyntaxException {
+                for (STypeDef sTypeDef : typeDefSet) {
+                        String fileName = sTypeDef.line_col().fileName;
                         List<Import> imports = fileNameToImport.get(fileName);
-                        List<ClassDef> classDefs = fileNameToClassDef.get(fileName);
-                        List<InterfaceDef> interfaceDefs = fileNameToInterfaceDef.get(fileName);
-                        List<FunDef> funDefs = fileNameToFunctions.get(fileName);
                         String pkg = fileNameToPackageName.get(fileName);
-                        List<ObjectDef> objectDefs = fileNameToObjectDefs.get(fileName);
-                        List<AnnotationDef> annotationDefs = fileNameToAnnotationDefs.get(fileName);
 
-                        for (ClassDef classDef : classDefs) {
-                                SClassDef sClassDef = (SClassDef) types.get(pkg + classDef.name);
+                        if (sTypeDef instanceof SClassDef) {
+                                SClassDef sClassDef = (SClassDef) sTypeDef;
+                                if (sClassDef.classType() == SClassDef.FUN) {
+                                        SAnno latteFun = new SAnno();
+                                        latteFun.setAnnoDef((SAnnoDef) getTypeWithName("lt.runtime.LatteFun", LineCol.SYNTHETIC));
+                                        latteFun.setPresent(sClassDef);
+                                        sClassDef.annos().add(latteFun);
+                                } else if (sClassDef.classType() == SClassDef.OBJECT) {
+                                        ASTGHolder<ObjectDef> objectHolder = originalObjects.get(sClassDef.fullName());
+                                        ObjectDef objectDef = objectHolder.s;
 
-                                parseClassDefInfo(sClassDef, classDef.superWithInvocation,
-                                        classDef.superWithoutInvocation, imports, classDef.line_col());
+                                        // present annotation
+                                        SAnno objectAnno = new SAnno();
+                                        objectAnno.setAnnoDef((SAnnoDef) getTypeWithName("lt.runtime.LatteObject", LineCol.SYNTHETIC));
+                                        objectAnno.setPresent(sClassDef);
+                                        sClassDef.annos().add(objectAnno);
 
-                                // annos
-                                parseAnnos(classDef.annos, sClassDef, imports, ElementType.TYPE,
-                                        Collections.singletonList(ElementType.CONSTRUCTOR));
+                                        parseClassDefInfo(sClassDef, objectDef.superWithInvocation,
+                                                objectDef.superWithoutInvocation, imports, objectDef.line_col());
 
-                                // parse constructor
-                                int generateIndex = -1;
-                                for (VariableDef v : classDef.params) {
-                                        if (v.getInit() == null) {
-                                                ++generateIndex;
-                                        } else break;
-                                }
-
-                                SConstructorDef lastConstructor = null;
-                                for (int i = classDef.params.size(); i > generateIndex; --i) {
-                                        // generate constructors
-                                        // these constructors will call the constructor that has length+1 parameter length constructor
-                                        // e.g.
-                                        // class Cls(a,b=1)
-                                        // will be parsed into
-                                        // public class Cls{
-                                        //      public Cls(a){
-                                        //              this(a,1);
-                                        //      }
-                                        //      public Cls(a,b){
-                                        //              ...
-                                        //      }
-                                        // }
-                                        // however the statements won't be filled in this step
-                                        SConstructorDef constructor = new SConstructorDef(classDef.line_col());
-
-                                        // constructor should be filled with
-                                        // parameters|declaringType(class)|modifiers
-                                        // in this step
-
-                                        // annotation
-                                        parseAnnos(classDef.annos, constructor, imports, ElementType.CONSTRUCTOR,
-                                                Collections.singletonList(ElementType.TYPE));
-
-                                        // modifier
-                                        boolean hasAccessModifier = false;
-                                        for (Modifier m : classDef.modifiers) {
-                                                if (m.modifier.equals(Modifier.Available.PUBLIC)
-                                                        || m.modifier.equals(Modifier.Available.PRIVATE)
-                                                        || m.modifier.equals(Modifier.Available.PROTECTED)
-                                                        || m.modifier.equals(Modifier.Available.PKG)) {
-                                                        hasAccessModifier = true;
-                                                }
-                                        }
-                                        if (!hasAccessModifier) {
-                                                constructor.modifiers().add(SModifier.PUBLIC);
-                                        }
-                                        for (Modifier m : classDef.modifiers) {
+                                        // modifiers
+                                        boolean isImplicit = false;
+                                        for (Modifier m : objectDef.modifiers) {
                                                 switch (m.modifier) {
-                                                        case PUBLIC:
-                                                                constructor.modifiers().add(SModifier.PUBLIC);
+                                                        case IMPLICIT:
+                                                                isImplicit = true;
                                                                 break;
-                                                        case PRIVATE:
-                                                                constructor.modifiers().add(SModifier.PRIVATE);
-                                                                break;
-                                                        case PROTECTED:
-                                                                constructor.modifiers().add(SModifier.PROTECTED);
-                                                                break;
-                                                        case VAL:
-                                                        case PKG:
-                                                        case DATA:
-                                                        case ABSTRACT:
-                                                                // data, val and abs are presented on class
-                                                                break; // pkg don't need to sign modifier
                                                         default:
-                                                                err.UnexpectedTokenException("valid constructor modifier (public|private|protected|internal)", m.toString(), m.line_col());
+                                                                err.UnexpectedTokenException("valid modifier (implicit)", m.toString(), m.line_col());
                                                                 return;
                                                 }
                                         }
 
-                                        // parameters
-                                        parseParameters(classDef.params, i, constructor, imports, true);
+                                        // annos
+                                        parseAnnos(objectDef.annos, sClassDef, imports, ElementType.TYPE,
+                                                Collections.singletonList(ElementType.CONSTRUCTOR));
 
+                                        if (isImplicit) {
+                                                checkAndAddImplicitAnno(sClassDef);
+                                        }
+
+                                        // build constructor
+                                        SConstructorDef constructor = new SConstructorDef(LineCol.SYNTHETIC);
+                                        constructor.setDeclaringType(sClassDef);
+
+                                        // annotation
+                                        parseAnnos(objectDef.annos, constructor, imports, ElementType.CONSTRUCTOR,
+                                                Collections.singletonList(ElementType.TYPE));
+
+                                        // modifier
+                                        constructor.modifiers().add(SModifier.PRIVATE);
+
+                                        // declaring
                                         constructor.setDeclaringType(sClassDef);
                                         sClassDef.constructors().add(constructor);
 
-                                        if (lastConstructor != null) {
-                                                // record the constructor and expressions
-                                                Map<SInvokable, Expression> invoke = new HashMap<SInvokable, Expression>();
-                                                invoke.put(lastConstructor, classDef.params.get(i).getInit());
-                                                defaultParamInvokable.put(constructor, invoke);
-                                        }
-                                        lastConstructor = constructor;
-                                }
-                                // constructor finished
+                                        // static public val singletonInstance = XXX
+                                        VariableDef v = new VariableDef(CompileUtil.SingletonFieldName,
+                                                new HashSet<Modifier>(Arrays.asList(
+                                                        new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC),
+                                                        new Modifier(Modifier.Available.PUBLIC, LineCol.SYNTHETIC)
+                                                )), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
+                                        v.setType(new AST.Access(pkg.isEmpty() ? null : new AST.PackageRef(pkg, LineCol.SYNTHETIC),
+                                                objectDef.name, LineCol.SYNTHETIC));
+                                        objectDef.statements.add(0, new AST.StaticScope(Collections.<Statement>singletonList(v),
+                                                LineCol.SYNTHETIC));
+                                        // fields methods
+                                        parseFieldsAndMethodsForClass(sClassDef, objectDef.statements, imports);
+                                } else if (sClassDef.classType() == SClassDef.NORMAL) {
+                                        ASTGHolder<ClassDef> classHolder = originalClasses.get(sClassDef.fullName());
+                                        ClassDef classDef = classHolder.s;
 
-                                // fields and methods
-                                // parse field from constructor parameters
-                                for (VariableDef v : classDef.params) {
-                                        parseField(v, sClassDef, imports, PARSING_CLASS, false, true);
+                                        parseClassDefInfo(sClassDef, classDef.superWithInvocation,
+                                                classDef.superWithoutInvocation, imports, classDef.line_col());
+
+                                        // annos
+                                        parseAnnos(classDef.annos, sClassDef, imports, ElementType.TYPE,
+                                                Collections.singletonList(ElementType.CONSTRUCTOR));
+
+                                        // parse constructor
+                                        int generateIndex = -1;
+                                        for (VariableDef v : classDef.params) {
+                                                if (v.getInit() == null) {
+                                                        ++generateIndex;
+                                                } else break;
+                                        }
+
+                                        SConstructorDef lastConstructor = null;
+                                        for (int i = classDef.params.size(); i > generateIndex; --i) {
+                                                // generate constructors
+                                                // these constructors will call the constructor that has length+1 parameter length constructor
+                                                // e.g.
+                                                // class Cls(a,b=1)
+                                                // will be parsed into
+                                                // public class Cls{
+                                                //      public Cls(a){
+                                                //              this(a,1);
+                                                //      }
+                                                //      public Cls(a,b){
+                                                //              ...
+                                                //      }
+                                                // }
+                                                // however the statements won't be filled in this step
+                                                SConstructorDef constructor = new SConstructorDef(classDef.line_col());
+
+                                                // constructor should be filled with
+                                                // parameters|declaringType(class)|modifiers
+                                                // in this step
+
+                                                // annotation
+                                                parseAnnos(classDef.annos, constructor, imports, ElementType.CONSTRUCTOR,
+                                                        Collections.singletonList(ElementType.TYPE));
+
+                                                // modifier
+                                                boolean hasAccessModifier = false;
+                                                for (Modifier m : classDef.modifiers) {
+                                                        if (m.modifier.equals(Modifier.Available.PUBLIC)
+                                                                || m.modifier.equals(Modifier.Available.PRIVATE)
+                                                                || m.modifier.equals(Modifier.Available.PROTECTED)
+                                                                || m.modifier.equals(Modifier.Available.PKG)) {
+                                                                hasAccessModifier = true;
+                                                        }
+                                                }
+                                                if (!hasAccessModifier) {
+                                                        constructor.modifiers().add(SModifier.PUBLIC);
+                                                }
+                                                for (Modifier m : classDef.modifiers) {
+                                                        switch (m.modifier) {
+                                                                case PUBLIC:
+                                                                        constructor.modifiers().add(SModifier.PUBLIC);
+                                                                        break;
+                                                                case PRIVATE:
+                                                                        constructor.modifiers().add(SModifier.PRIVATE);
+                                                                        break;
+                                                                case PROTECTED:
+                                                                        constructor.modifiers().add(SModifier.PROTECTED);
+                                                                        break;
+                                                                case VAL:
+                                                                case PKG:
+                                                                case DATA:
+                                                                case ABSTRACT:
+                                                                        // data, val and abs are presented on class
+                                                                        break; // pkg don't need to sign modifier
+                                                                default:
+                                                                        err.UnexpectedTokenException("valid constructor modifier (public|private|protected|internal)", m.toString(), m.line_col());
+                                                                        return;
+                                                        }
+                                                }
+
+                                                // parameters
+                                                parseParameters(classDef.params, i, constructor, imports, true);
+
+                                                constructor.setDeclaringType(sClassDef);
+                                                sClassDef.constructors().add(constructor);
+
+                                                if (lastConstructor != null) {
+                                                        // record the constructor and expressions
+                                                        Map<SInvokable, Expression> invoke = new HashMap<SInvokable, Expression>();
+                                                        invoke.put(lastConstructor, classDef.params.get(i).getInit());
+                                                        defaultParamInvokable.put(constructor, invoke);
+                                                }
+                                                lastConstructor = constructor;
+                                        }
+                                        // constructor finished
+
+                                        // fields and methods
+                                        // parse field from constructor parameters
+                                        for (VariableDef v : classDef.params) {
+                                                parseField(v, sClassDef, imports, PARSING_CLASS, false, true);
+                                        }
+                                        parseFieldsAndMethodsForClass(sClassDef, classDef.statements, imports);
+                                } else {
+                                        throw new LtBug("unknown sClassDef.classType(): " + sClassDef.classType());
                                 }
-                                parseFieldsAndMethodsForClass(sClassDef, classDef.statements, imports);
-                        }
-                        for (InterfaceDef interfaceDef : interfaceDefs) {
-                                SInterfaceDef sInterfaceDef = (SInterfaceDef) types.get(pkg + interfaceDef.name);
+                        } else if (sTypeDef instanceof SInterfaceDef) {
+                                SInterfaceDef sInterfaceDef = (SInterfaceDef) sTypeDef;
+                                ASTGHolder<InterfaceDef> interfaceHolder = originalInterfaces.get(sInterfaceDef.fullName());
+                                InterfaceDef interfaceDef = interfaceHolder.s;
 
                                 // parse super interfaces
                                 for (AST.Access access : interfaceDef.superInterfaces) {
@@ -1189,76 +1246,10 @@ public class SemanticProcessor {
                                                 }
                                         }
                                 }
-                        }
-                        for (FunDef funDef : funDefs) {
-                                SClassDef sClassDef = (SClassDef) types.get(pkg + funDef.name);
-                                SAnno latteFun = new SAnno();
-                                latteFun.setAnnoDef((SAnnoDef) getTypeWithName("lt.runtime.LatteFun", LineCol.SYNTHETIC));
-                                latteFun.setPresent(sClassDef);
-                                sClassDef.annos().add(latteFun);
-                        }
-                        for (ObjectDef objectDef : objectDefs) {
-                                // present annotation
-                                SClassDef sClassDef = (SClassDef) types.get(pkg + objectDef.name);
-                                SAnno objectAnno = new SAnno();
-                                objectAnno.setAnnoDef((SAnnoDef) getTypeWithName("lt.runtime.LatteObject", LineCol.SYNTHETIC));
-                                objectAnno.setPresent(sClassDef);
-                                sClassDef.annos().add(objectAnno);
-
-                                parseClassDefInfo(sClassDef, objectDef.superWithInvocation,
-                                        objectDef.superWithoutInvocation, imports, objectDef.line_col());
-
-                                // modifiers
-                                boolean isImplicit = false;
-                                for (Modifier m : objectDef.modifiers) {
-                                        switch (m.modifier) {
-                                                case IMPLICIT:
-                                                        isImplicit = true;
-                                                        break;
-                                                default:
-                                                        err.UnexpectedTokenException("valid modifier (implicit)", m.toString(), m.line_col());
-                                                        return;
-                                        }
-                                }
-
-                                // annos
-                                parseAnnos(objectDef.annos, sClassDef, imports, ElementType.TYPE,
-                                        Collections.singletonList(ElementType.CONSTRUCTOR));
-
-                                if (isImplicit) {
-                                        checkAndAddImplicitAnno(sClassDef);
-                                }
-
-                                // build constructor
-                                SConstructorDef constructor = new SConstructorDef(LineCol.SYNTHETIC);
-                                constructor.setDeclaringType(sClassDef);
-
-                                // annotation
-                                parseAnnos(objectDef.annos, constructor, imports, ElementType.CONSTRUCTOR,
-                                        Collections.singletonList(ElementType.TYPE));
-
-                                // modifier
-                                constructor.modifiers().add(SModifier.PRIVATE);
-
-                                // declaring
-                                constructor.setDeclaringType(sClassDef);
-                                sClassDef.constructors().add(constructor);
-
-                                // static public val singletonInstance = XXX
-                                VariableDef v = new VariableDef(CompileUtil.SingletonFieldName,
-                                        new HashSet<Modifier>(Arrays.asList(
-                                                new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC),
-                                                new Modifier(Modifier.Available.PUBLIC, LineCol.SYNTHETIC)
-                                        )), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
-                                v.setType(new AST.Access(pkg.isEmpty() ? null : new AST.PackageRef(pkg, LineCol.SYNTHETIC),
-                                        objectDef.name, LineCol.SYNTHETIC));
-                                objectDef.statements.add(0, new AST.StaticScope(Collections.<Statement>singletonList(v),
-                                        LineCol.SYNTHETIC));
-                                // fields methods
-                                parseFieldsAndMethodsForClass(sClassDef, objectDef.statements, imports);
-                        }
-                        for (AnnotationDef annotationDef : annotationDefs) {
-                                SAnnoDef sAnnoDef = (SAnnoDef) types.get(pkg + annotationDef.name);
+                        } else if (sTypeDef instanceof SAnnoDef) {
+                                SAnnoDef sAnnoDef = (SAnnoDef) sTypeDef;
+                                ASTGHolder<AnnotationDef> annoHolder = originalAnnotations.get(sAnnoDef.fullName());
+                                AnnotationDef annotationDef = annoHolder.s;
 
                                 // annos
                                 parseAnnos(annotationDef.annos, sAnnoDef, imports, ElementType.ANNOTATION_TYPE,
@@ -1266,6 +1257,8 @@ public class SemanticProcessor {
 
                                 // annotation fields
                                 parseAnnotationFields(sAnnoDef, annotationDef.stmts, imports);
+                        } else {
+                                throw new LtBug("unknown STypeDef " + sTypeDef);
                         }
                 }
         }
@@ -2063,7 +2056,6 @@ public class SemanticProcessor {
                 if (invokable instanceof SConstructorDef) {
                         // invoke another constructor
                         Ins.InvokeSpecial invoke = new Ins.InvokeSpecial(scope.getThis(), methodToInvoke, LineCol.SYNTHETIC);
-                        int count = 1;
                         for (SParameter p : invokable.getParameters()) {
                                 invoke.arguments().add(new Ins.TLoad(p, scope, LineCol.SYNTHETIC));
                         }
@@ -10666,7 +10658,7 @@ public class SemanticProcessor {
                                         List<SModifier> modifiers; // modifiers
                                         STypeDef typeDef;
                                         if (cls.isAnnotation()) {
-                                                SAnnoDef a = new SAnnoDef();
+                                                SAnnoDef a = new SAnnoDef(LineCol.SYNTHETIC);
                                                 a.setFullName(clsName);
 
                                                 typeDef = a;

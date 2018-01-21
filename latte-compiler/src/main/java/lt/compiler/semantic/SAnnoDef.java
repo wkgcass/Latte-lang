@@ -42,9 +42,8 @@ public class SAnnoDef extends STypeDef {
         private final List<SAnnoField> annoFields = new ArrayList<SAnnoField>();
         private final List<SModifier> modifiers = new ArrayList<SModifier>();
 
-        public SAnnoDef() {
-                // annotations cannot be defined in Latte
-                super(LineCol.SYNTHETIC);
+        public SAnnoDef(LineCol lineCol) {
+                super(lineCol);
         }
 
         public List<SAnnoField> annoFields() {
