@@ -27,6 +27,8 @@ package lt.compiler.syntactic.pre;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Pre;
+import lt.compiler.syntactic.Statement;
+import lt.lang.function.Function1;
 
 /**
  * declare current package
@@ -63,5 +65,10 @@ public class PackageDeclare implements Pre {
         @Override
         public LineCol line_col() {
                 return lineCol;
+        }
+
+        @Override
+        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                // nothing to visit
         }
 }

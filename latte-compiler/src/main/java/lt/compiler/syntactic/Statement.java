@@ -25,6 +25,7 @@
 package lt.compiler.syntactic;
 
 import lt.compiler.LineCol;
+import lt.lang.function.Function1;
 
 import java.io.Serializable;
 
@@ -33,4 +34,6 @@ import java.io.Serializable;
  */
 public interface Statement extends Serializable {
         LineCol line_col();
+
+        void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception;
 }

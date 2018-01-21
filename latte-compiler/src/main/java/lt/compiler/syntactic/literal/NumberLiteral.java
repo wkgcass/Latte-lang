@@ -26,6 +26,8 @@ package lt.compiler.syntactic.literal;
 
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.Literal;
+import lt.compiler.syntactic.Statement;
+import lt.lang.function.Function1;
 
 /**
  * number literal
@@ -33,5 +35,10 @@ import lt.compiler.syntactic.Literal;
 public class NumberLiteral extends Literal {
         public NumberLiteral(String literal, LineCol lineCol) {
                 super(NUMBER, literal, lineCol);
+        }
+
+        @Override
+        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                // nothing to visit
         }
 }

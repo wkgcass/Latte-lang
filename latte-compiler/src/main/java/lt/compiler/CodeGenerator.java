@@ -26,7 +26,7 @@ package lt.compiler;
 
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
-import lt.compiler.util.Flags;
+import lt.compiler.util.Consts;
 import lt.compiler.util.LocalVariables;
 import lt.dependencies.asm.*;
 import lt.lang.Pointer;
@@ -1181,7 +1181,7 @@ public class CodeGenerator {
                         buildUnitWhenInvokeVoid(invokable, info);
 
                 } else if (invoke instanceof Ins.InvokeVirtual) {
-                        if (Flags.match(((Ins.InvokeVirtual) invoke).flag, Flags.IS_POINTER_GET)) {
+                        if (Consts.match(((Ins.InvokeVirtual) invoke).flag, Consts.IS_POINTER_GET)) {
                                 // pointer get
                                 if (!requireValue) {
                                         return;
@@ -1198,7 +1198,7 @@ public class CodeGenerator {
                                         _buildOptimizedPointerTLoad(methodVisitor, info, index, ((PointerType) target.type()).getPointingType());
                                         return;
                                 }
-                        } else if (Flags.match(((Ins.InvokeVirtual) invoke).flag, Flags.IS_POINTER_SET)) {
+                        } else if (Consts.match(((Ins.InvokeVirtual) invoke).flag, Consts.IS_POINTER_SET)) {
                                 // pointer set
 
                                 if (((Ins.InvokeVirtual) invoke).target() instanceof Ins.TLoad) {
@@ -1434,7 +1434,7 @@ public class CodeGenerator {
          * @param tStore        Ins.TStore
          */
         private void buildTStore(MethodVisitor methodVisitor, CodeInfo info, Ins.TStore tStore) {
-                if (tStore.flag == Flags.IS_POINTER_NEW) {
+                if (tStore.flag == Consts.IS_POINTER_NEW) {
                         if (!info.getMeta().pointerLocalVar.contains(tStore.leftValue())) {
                                 STypeDef pointerType = tStore.leftValue().type();
                                 STypeDef type = ((PointerType) pointerType).getPointingType();

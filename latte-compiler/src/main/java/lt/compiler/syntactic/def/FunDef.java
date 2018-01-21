@@ -1,10 +1,12 @@
 package lt.compiler.syntactic.def;
 
+import lt.compiler.CompileUtil;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Definition;
 import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.pre.Modifier;
+import lt.lang.function.Function1;
 
 import java.util.List;
 import java.util.Set;
@@ -33,6 +35,14 @@ public class FunDef implements Definition {
         @Override
         public LineCol line_col() {
                 return lineCol;
+        }
+
+        @Override
+        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                CompileUtil.visitStmt(params, f);
+                CompileUtil.visitStmt(superType, f);
+                CompileUtil.visitStmt(annos, f);
+                CompileUtil.visitStmt(statements, f);
         }
 
         @Override

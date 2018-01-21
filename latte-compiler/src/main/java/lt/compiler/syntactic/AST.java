@@ -24,12 +24,16 @@
 
 package lt.compiler.syntactic;
 
+import lt.compiler.CompileUtil;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.def.VariableDef;
 import lt.compiler.syntactic.pre.Modifier;
+import lt.lang.function.Function1;
 
 import java.io.Serializable;
 import java.util.*;
+
+import static lt.compiler.CompileUtil.visitStmt;
 
 /**
  * a file containing all node definitions of the ast tree<br>
@@ -79,6 +83,12 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(exp, f);
+                        visitStmt(generics, f);
                 }
         }
 
@@ -140,6 +150,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(anno, f);
+                        visitStmt(args, f);
+                }
         }
 
         /**
@@ -155,6 +171,11 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return anno.line_col();
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(anno, f);
                 }
 
                 @Override
@@ -225,6 +246,11 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(list, f);
+                }
         }
 
         /**
@@ -273,6 +299,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(assignTo, f);
+                        visitStmt(assignFrom, f);
+                }
         }
 
         /**
@@ -318,6 +350,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(exp, f);
+                        visitStmt(type, f);
+                }
         }
 
         public static class Destruct implements Expression {
@@ -338,6 +376,14 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(modifiers, f);
+                        visitStmt(annos, f);
+                        visitStmt(pattern, f);
+                        visitStmt(exp, f);
                 }
 
                 @Override
@@ -373,7 +419,7 @@ public class AST {
         /**
          * pattern
          */
-        public abstract static class Pattern implements Serializable {
+        public abstract static class Pattern implements Statement, Serializable {
                 public final PatternType patternType;
 
                 public Pattern(PatternType patternType) {
@@ -400,6 +446,11 @@ public class AST {
                 public String toString() {
                         return "Pattern(" + patternType + ")";
                 }
+
+                @Override
+                public LineCol line_col() {
+                        throw new UnsupportedOperationException();
+                }
         }
 
         public static class Pattern_Default extends Pattern {
@@ -416,6 +467,11 @@ public class AST {
                 @Override
                 public String toString() {
                         return "(_)";
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        // nothing to visit
                 }
         }
 
@@ -454,6 +510,11 @@ public class AST {
                 public String toString() {
                         return "(_:" + type + ")";
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(type, f);
+                }
         }
 
         /**
@@ -489,6 +550,11 @@ public class AST {
                 @Override
                 public String toString() {
                         return "(" + exp + ")";
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(exp, f);
                 }
         }
 
@@ -532,6 +598,12 @@ public class AST {
                 public String toString() {
                         return "(" + type + subPatterns + ")";
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(type, f);
+                        visitStmt(subPatterns, f);
+                }
         }
 
         public static class Pattern_Define extends Pattern {
@@ -570,13 +642,18 @@ public class AST {
                 public String toString() {
                         return "(" + name + ":" + type + ")";
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(type, f);
+                }
         }
 
         public enum PatternType {
                 TYPE, VALUE, DESTRUCT, DEFAULT, DEFINE
         }
 
-        public static class PatternCondition {
+        public static class PatternCondition implements Statement {
                 public final Pattern pattern;
                 public final Expression condition;
 
@@ -609,6 +686,17 @@ public class AST {
                 public String toString() {
                         return "(" + pattern + " if " + condition + ")";
                 }
+
+                @Override
+                public LineCol line_col() {
+                        throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(pattern, f);
+                        visitStmt(condition, f);
+                }
         }
 
         /**
@@ -628,6 +716,15 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(expToMatch, f);
+                        visitStmt(patternsToStatements.keySet(), f);
+                        for (List<Statement> l : patternsToStatements.values()) {
+                                visitStmt(l, f);
+                        }
                 }
 
                 @Override
@@ -693,6 +790,11 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(statements, f);
+                }
         }
 
         /**
@@ -738,6 +840,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(exp, f);
+                        visitStmt(body, f);
+                }
         }
 
         /**
@@ -757,6 +865,12 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(type, f);
+                        visitStmt(ast, f);
                 }
 
                 @Override
@@ -788,7 +902,7 @@ public class AST {
          * if exp
          */
         public static class If implements Statement {
-                public static class IfPair {
+                public static class IfPair implements Statement {
                         public final Expression condition;
                         public final List<Statement> body;
                         public final LineCol lineCol;
@@ -814,6 +928,17 @@ public class AST {
                                 int result = condition != null ? condition.hashCode() : 0;
                                 result = 31 * result + (body != null ? body.hashCode() : 0);
                                 return result;
+                        }
+
+                        @Override
+                        public LineCol line_col() {
+                                throw new UnsupportedOperationException();
+                        }
+
+                        @Override
+                        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                                visitStmt(condition, f);
+                                visitStmt(body, f);
                         }
                 }
 
@@ -850,6 +975,11 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(ifs, f);
                 }
 
                 @Override
@@ -922,6 +1052,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(exp, f);
+                        visitStmt(args, f);
+                }
         }
 
         /**
@@ -984,6 +1120,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(exp, f);
+                        visitStmt(args, f);
+                }
         }
 
         /**
@@ -1037,6 +1179,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(params, f);
+                        visitStmt(statements, f);
+                }
         }
 
         /**
@@ -1087,6 +1235,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(map.keySet(), f);
+                        visitStmt(map.values(), f);
+                }
         }
 
         /**
@@ -1104,6 +1258,11 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(invocation, f);
                 }
 
                 @Override
@@ -1151,6 +1310,11 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        // nothing to visit
+                }
         }
 
         /**
@@ -1189,6 +1353,11 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        // nothing to visit
+                }
         }
 
         /**
@@ -1220,6 +1389,11 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        // nothing to visit
+                }
         }
 
         /**
@@ -1237,6 +1411,11 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(required, f);
                 }
         }
 
@@ -1276,6 +1455,11 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(exp, f);
+                }
         }
 
         /**
@@ -1314,6 +1498,11 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(statements, f);
                 }
         }
 
@@ -1370,6 +1559,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(toSync, f);
+                        visitStmt(statements, f);
+                }
         }
 
         /**
@@ -1407,6 +1602,11 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(exp, f);
                 }
         }
 
@@ -1462,6 +1662,13 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(statements, f);
+                        visitStmt(catchStatements, f);
+                        visitStmt(fin, f);
+                }
         }
 
         /**
@@ -1499,6 +1706,11 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(type, f);
                 }
         }
 
@@ -1555,6 +1767,12 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        visitStmt(condition, f);
+                        visitStmt(statements, f);
+                }
         }
 
         /**
@@ -1571,6 +1789,11 @@ public class AST {
                 public LineCol line_col() {
                         return lineCol;
                 }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        // do nothing
+                }
         }
 
         /**
@@ -1586,6 +1809,11 @@ public class AST {
                 @Override
                 public LineCol line_col() {
                         return lineCol;
+                }
+
+                @Override
+                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                        // do nothing
                 }
         }
 }

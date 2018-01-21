@@ -1,8 +1,10 @@
 package lt.compiler.syntactic.def;
 
+import lt.compiler.CompileUtil;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Statement;
+import lt.lang.function.Function1;
 
 import java.util.List;
 import java.util.Set;
@@ -26,6 +28,12 @@ public class AnnotationDef implements Statement {
         @Override
         public LineCol line_col() {
                 return lineCol;
+        }
+
+        @Override
+        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                CompileUtil.visitStmt(annos, f);
+                CompileUtil.visitStmt(stmts, f);
         }
 
         @Override

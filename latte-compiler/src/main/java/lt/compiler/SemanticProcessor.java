@@ -26,6 +26,7 @@ package lt.compiler;
 
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
+import lt.compiler.semantic.helper.ASTGHolder;
 import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
@@ -38,11 +39,13 @@ import lt.compiler.syntactic.pre.Import;
 import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
 import lt.compiler.util.BindList;
-import lt.compiler.util.Flags;
+import lt.compiler.util.Consts;
 import lt.generator.SourceGenerator;
 import lt.dependencies.asm.MethodVisitor;
 import lt.lang.Unit;
+import lt.lang.function.Function1;
 import lt.runtime.*;
+import sun.misc.BASE64Decoder;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -85,19 +88,23 @@ public class SemanticProcessor {
         /**
          * full name to {@link ClassDef} from {@link Parser}
          */
-        public Map<String, ClassDef> originalClasses = new HashMap<String, ClassDef>();
+        public Map<String, ASTGHolder<ClassDef>> originalClasses = new HashMap<String, ASTGHolder<ClassDef>>();
         /**
          * full name to {@link InterfaceDef} from {@link Parser}
          */
-        public Map<String, InterfaceDef> originalInterfaces = new HashMap<String, InterfaceDef>();
+        public Map<String, ASTGHolder<InterfaceDef>> originalInterfaces = new HashMap<String, ASTGHolder<InterfaceDef>>();
+        /**
+         * full name to {@link FunDef} from {@link Parser}
+         */
+        public Map<String, ASTGHolder<FunDef>> originalFunctions = new HashMap<String, ASTGHolder<FunDef>>();
         /**
          * full name to {@link ObjectDef} from {@link Parser}
          */
-        public Map<String, ObjectDef> originalObjects = new HashMap<String, ObjectDef>();
+        public Map<String, ASTGHolder<ObjectDef>> originalObjects = new HashMap<String, ASTGHolder<ObjectDef>>();
         /**
          * full name to {@link AnnotationDef} from {@link Parser}
          */
-        public Map<String, AnnotationDef> originalAnnotations = new HashMap<String, AnnotationDef>();
+        public Map<String, ASTGHolder<AnnotationDef>> originalAnnotations = new HashMap<String, ASTGHolder<AnnotationDef>>();
         /**
          * {@link SMethodDef} to it's containing statements
          */
@@ -221,7 +228,7 @@ public class SemanticProcessor {
                 Map<String, List<FunDef>> fileNameToFunctions = new HashMap<String, List<FunDef>>();
                 Map<String, List<ObjectDef>> fileNameToObjectDef = new HashMap<String, List<ObjectDef>>();
                 Map<String, List<AnnotationDef>> fileNameToAnnotationDef = new HashMap<String, List<AnnotationDef>>();
-                Map<String, String> fileNameToPackageName = new HashMap<String, String>();
+                final Map<String, String> fileNameToPackageName = new HashMap<String, String>();
                 // record types and packages
                 for (String fileName : mapOfStatements.keySet()) {
                         List<Statement> statements = mapOfStatements.get(fileName);
@@ -324,129 +331,46 @@ public class SemanticProcessor {
                         // package|fullName|modifiers
                         // in this step
                         for (ClassDef c : classDefs) {
-                                String className = pkg + c.name;
-                                // check occurrence
-                                if (typeExists(className)) {
-                                        err.SyntaxException("duplicate type names " + className, c.line_col());
-                                        return null;
-                                }
-
-                                SClassDef sClassDef = new SClassDef(SClassDef.NORMAL, c.line_col());
-                                sClassDef.setFullName(className);
-                                sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
-                                sClassDef.modifiers().add(SModifier.PUBLIC);
-
-                                for (Modifier m : c.modifiers) {
-                                        switch (m.modifier) {
-                                                case ABSTRACT:
-                                                        sClassDef.modifiers().add(SModifier.ABSTRACT);
-                                                        break;
-                                                case VAL:
-                                                        sClassDef.modifiers().add(SModifier.FINAL);
-                                                        break;
-                                                case PUBLIC:
-                                                case PRIVATE:
-                                                case PROTECTED:
-                                                case PKG:
-                                                        // pub|pri|pro|pkg are for constructors
-                                                        break;
-                                                case DATA:
-                                                        sClassDef.setIsDataClass(true);
-                                                        break;
-                                                default:
-                                                        err.UnexpectedTokenException("valid modifier for class (val|abstract|public|private|protected|internal)", m.toString(), m.line_col());
-                                                        return null;
-                                        }
-                                }
-
-                                types.put(className, sClassDef); // record the class
-                                originalClasses.put(className, c);
-                                typeDefSet.add(sClassDef);
+                                recordClass(c, pkg, Collections.<STypeDef>emptyList());
                         }
                         for (InterfaceDef i : interfaceDefs) {
-                                String interfaceName = pkg + i.name;
-                                // check occurrence
-                                if (typeExists(interfaceName)) {
-                                        err.SyntaxException("duplicate type names " + interfaceName, i.line_col());
-                                        return null;
-                                }
-
-                                SInterfaceDef sInterfaceDef = new SInterfaceDef(i.line_col());
-                                sInterfaceDef.setFullName(interfaceName);
-                                sInterfaceDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
-                                sInterfaceDef.modifiers().add(SModifier.PUBLIC);
-                                sInterfaceDef.modifiers().add(SModifier.ABSTRACT);
-
-                                for (Modifier m : i.modifiers) {
-                                        switch (m.modifier) {
-                                                case PUBLIC:
-                                                case ABSTRACT:
-                                                        // can only be abstract or public
-                                                        break;
-                                                default:
-                                                        err.UnexpectedTokenException("valid modifier for interface (abs)", m.toString(), m.line_col());
-                                                        return null;
-                                        }
-                                }
-
-                                types.put(interfaceName, sInterfaceDef); // record the interface
-                                originalInterfaces.put(interfaceName, i);
-                                typeDefSet.add(sInterfaceDef);
+                                recordInterface(i, pkg, Collections.<STypeDef>emptyList());
                         }
                         for (FunDef f : funDefs) {
-                                String className = pkg + f.name;
-                                // check occurrence
-                                if (typeExists(className)) {
-                                        err.SyntaxException("duplicate type names " + className, f.line_col());
-                                        return null;
-                                }
-
-                                SClassDef sClassDef = new SClassDef(SClassDef.FUN, f.line_col());
-                                sClassDef.setFullName(className);
-                                sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
-                                sClassDef.modifiers().add(SModifier.PUBLIC);
-                                sClassDef.modifiers().add(SModifier.FINAL);
-
-                                types.put(className, sClassDef); // record the class
-                                typeDefSet.add(sClassDef);
+                                recordFun(f, pkg, Collections.<STypeDef>emptyList());
                         }
                         for (ObjectDef o : objectDefs) {
-                                String className = pkg + o.name;
-                                // check occurrence
-                                if (typeExists(className)) {
-                                        err.SyntaxException("duplicate type names " + className, o.line_col());
-                                        return null;
-                                }
-
-                                SClassDef sClassDef = new SClassDef(SClassDef.OBJECT, o.line_col());
-                                sClassDef.setFullName(className);
-                                sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
-                                sClassDef.modifiers().add(SModifier.PUBLIC);
-                                sClassDef.modifiers().add(SModifier.FINAL);
-
-                                types.put(className, sClassDef);
-                                originalObjects.put(className, o);
-                                typeDefSet.add(sClassDef);
+                                recordObject(o, pkg, Collections.<STypeDef>emptyList());
                         }
                         for (AnnotationDef a : annotationDefs) {
-                                String annoName = pkg + a.name;
-                                // check occurrence
-                                if (typeExists(annoName)) {
-                                        err.SyntaxException("duplicate type names " + annoName, a.line_col());
-                                        return null;
-                                }
-
-                                SAnnoDef sAnnoDef = new SAnnoDef();
-                                sAnnoDef.setPkg(pkg);
-                                sAnnoDef.setFullName(annoName);
-
-                                types.put(annoName, sAnnoDef);
-                                originalAnnotations.put(annoName, a);
-                                typeDefSet.add(sAnnoDef);
+                                recordAnnotation(a, pkg, Collections.<STypeDef>emptyList());
                         }
-
-                        // all classes occurred in the parsing process will be inside `types` map or is already defined
                 }
+
+                for (String file : mapOfStatements.keySet()) {
+                        List<Statement> stmts = mapOfStatements.get(file);
+                        final List<Import> imports = fileNameToImport.get(file);
+                        for (Statement stmt : stmts) {
+                                try {
+                                        stmt.foreachInnerStatements(new Function1<Boolean, Statement>() {
+                                                @Override
+                                                public Boolean apply(Statement statement) throws Exception {
+                                                        if (statement instanceof AST.Access) {
+                                                                AST.Access access = (AST.Access) statement;
+                                                                handleGenericAST(access, imports, fileNameToPackageName);
+                                                                return false;
+                                                        }
+                                                        return true;
+                                                }
+                                        });
+                                } catch (SyntaxException e) {
+                                        throw e;
+                                } catch (Exception e) {
+                                        throw new LtBug("should not have any exception other than SyntaxException");
+                                }
+                        }
+                }
+                // all classes occurred in the parsing process will be inside `types` map or is already defined
 
                 // check package and type exists
                 for (String fileName : mapOfStatements.keySet()) {
@@ -507,6 +431,183 @@ public class SemanticProcessor {
                 addRetention();
 
                 return typeDefSet;
+        }
+
+        private void recordClass(ClassDef c, String pkg, List<STypeDef> generics) throws SyntaxException {
+                String className = buildTemplateAppliedName(pkg + c.name, generics);
+                // check occurrence
+                if (typeExists(className)) {
+                        err.SyntaxException("duplicate type names " + className, c.line_col());
+                        return;
+                }
+
+                SClassDef sClassDef = new SClassDef(SClassDef.NORMAL, c.line_col());
+                sClassDef.setFullName(className);
+                sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
+                sClassDef.modifiers().add(SModifier.PUBLIC);
+
+                for (Modifier m : c.modifiers) {
+                        switch (m.modifier) {
+                                case ABSTRACT:
+                                        sClassDef.modifiers().add(SModifier.ABSTRACT);
+                                        break;
+                                case VAL:
+                                        sClassDef.modifiers().add(SModifier.FINAL);
+                                        break;
+                                case PUBLIC:
+                                case PRIVATE:
+                                case PROTECTED:
+                                case PKG:
+                                        // pub|pri|pro|pkg are for constructors
+                                        break;
+                                case DATA:
+                                        sClassDef.setIsDataClass(true);
+                                        break;
+                                default:
+                                        err.UnexpectedTokenException("valid modifier for class (val|abstract|public|private|protected|internal)", m.toString(), m.line_col());
+                                        return;
+                        }
+                }
+
+                types.put(className, sClassDef); // record the class
+                originalClasses.put(className, new ASTGHolder<ClassDef>(c, generics));
+                typeDefSet.add(sClassDef);
+        }
+
+        private void recordInterface(InterfaceDef i, String pkg, List<STypeDef> generics) throws SyntaxException {
+                String interfaceName = buildTemplateAppliedName(pkg + i.name, generics);
+                // check occurrence
+                if (typeExists(interfaceName)) {
+                        err.SyntaxException("duplicate type names " + interfaceName, i.line_col());
+                        return;
+                }
+
+                SInterfaceDef sInterfaceDef = new SInterfaceDef(i.line_col());
+                sInterfaceDef.setFullName(interfaceName);
+                sInterfaceDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
+                sInterfaceDef.modifiers().add(SModifier.PUBLIC);
+                sInterfaceDef.modifiers().add(SModifier.ABSTRACT);
+
+                for (Modifier m : i.modifiers) {
+                        switch (m.modifier) {
+                                case PUBLIC:
+                                case ABSTRACT:
+                                        // can only be abstract or public
+                                        break;
+                                default:
+                                        err.UnexpectedTokenException("valid modifier for interface (abs)", m.toString(), m.line_col());
+                                        return;
+                        }
+                }
+
+                types.put(interfaceName, sInterfaceDef); // record the interface
+                originalInterfaces.put(interfaceName, new ASTGHolder<InterfaceDef>(i, generics));
+                typeDefSet.add(sInterfaceDef);
+        }
+
+        private void recordFun(FunDef f, String pkg, List<STypeDef> generics) throws SyntaxException {
+                String className = buildTemplateAppliedName(pkg + f.name, generics);
+                // check occurrence
+                if (typeExists(className)) {
+                        err.SyntaxException("duplicate type names " + className, f.line_col());
+                        return;
+                }
+
+                SClassDef sClassDef = new SClassDef(SClassDef.FUN, f.line_col());
+                sClassDef.setFullName(className);
+                sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
+                sClassDef.modifiers().add(SModifier.PUBLIC);
+                sClassDef.modifiers().add(SModifier.FINAL);
+
+                types.put(className, sClassDef); // record the class
+                originalFunctions.put(className, new ASTGHolder<FunDef>(f, generics));
+                typeDefSet.add(sClassDef);
+        }
+
+        private void recordObject(ObjectDef o, String pkg, List<STypeDef> generics) throws SyntaxException {
+                String className = buildTemplateAppliedName(pkg + o.name, generics);
+                // check occurrence
+                if (typeExists(className)) {
+                        err.SyntaxException("duplicate type names " + className, o.line_col());
+                        return;
+                }
+
+                SClassDef sClassDef = new SClassDef(SClassDef.OBJECT, o.line_col());
+                sClassDef.setFullName(className);
+                sClassDef.setPkg(pkg.endsWith(".") ? pkg.substring(0, pkg.length() - 1) : pkg);
+                sClassDef.modifiers().add(SModifier.PUBLIC);
+                sClassDef.modifiers().add(SModifier.FINAL);
+
+                types.put(className, sClassDef);
+                originalObjects.put(className, new ASTGHolder<ObjectDef>(o, generics));
+                typeDefSet.add(sClassDef);
+        }
+
+        private void recordAnnotation(AnnotationDef a, String pkg, List<STypeDef> generics) throws SyntaxException {
+                String annoName = buildTemplateAppliedName(pkg + a.name, generics);
+                // check occurrence
+                if (typeExists(annoName)) {
+                        err.SyntaxException("duplicate type names " + annoName, a.line_col());
+                        return;
+                }
+
+                SAnnoDef sAnnoDef = new SAnnoDef();
+                sAnnoDef.setPkg(pkg);
+                sAnnoDef.setFullName(annoName);
+
+                types.put(annoName, sAnnoDef);
+                originalAnnotations.put(annoName, new ASTGHolder<AnnotationDef>(a, generics));
+                typeDefSet.add(sAnnoDef);
+        }
+
+        private void handleGenericAST(AST.Access access,
+                                      List<Import> imports,
+                                      Map<String, String> fileNameToPackageName) throws SyntaxException {
+                if (access.generics.isEmpty()) {
+                        return;
+                }
+                for (AST.Access g : access.generics) {
+                        handleGenericAST(g, imports, fileNameToPackageName);
+                }
+                String clsName = accessToClassName(access, imports, false);
+                List<STypeDef> genericTypes = new ArrayList<STypeDef>();
+                for (AST.Access a : access.generics) {
+                        STypeDef t = getTypeWithAccess(a, imports);
+                        genericTypes.add(t);
+                }
+                if (types.containsKey(buildTemplateAppliedName(clsName, genericTypes))) {
+                        // already defined
+                        // ignore and return
+                        return;
+                }
+                if (originalClasses.containsKey(clsName)) {
+                        ClassDef ast = originalClasses.get(clsName).s;
+                        String file = ast.line_col().fileName;
+                        recordClass(ast, fileNameToPackageName.get(file), genericTypes);
+
+                } else if (originalInterfaces.containsKey(clsName)) {
+                        InterfaceDef ast = originalInterfaces.get(clsName).s;
+                        String file = ast.line_col().fileName;
+                        recordInterface(ast, fileNameToPackageName.get(file), genericTypes);
+
+                } else if (originalObjects.containsKey(clsName)) {
+                        ObjectDef ast = originalObjects.get(clsName).s;
+                        String file = ast.line_col().fileName;
+                        recordObject(ast, fileNameToPackageName.get(file), genericTypes);
+
+                } else if (originalFunctions.containsKey(clsName)) {
+                        FunDef ast = originalFunctions.get(clsName).s;
+                        String file = ast.line_col().fileName;
+                        recordFun(ast, fileNameToPackageName.get(file), genericTypes);
+
+                } else if (originalAnnotations.containsKey(clsName)) {
+                        AnnotationDef ast = originalAnnotations.get(clsName).s;
+                        String file = ast.line_col().fileName;
+                        recordAnnotation(ast, fileNameToPackageName.get(file), genericTypes);
+
+                } else {
+                        err.SyntaxException("type " + clsName + " not found", access.line_col());
+                }
         }
 
         private AST.PackageRef checkAndGetPackage(Map<String, String> fileNameToPackageName, AST.Access access) {
@@ -802,6 +903,7 @@ public class SemanticProcessor {
                         }
 
                         if (found) {
+                                assert rtFileA != null;
                                 File rtFile = rtFileA[0];
                                 if (!rtFile.exists()) {
                                         err.warning(homePath + "/lib/rt.jar not exist");
@@ -1568,7 +1670,8 @@ public class SemanticProcessor {
                 for (STypeDef typeDef : typeDefSet) {
                         if (typeDef instanceof SAnnoDef) {
                                 SAnnoDef annoDef = (SAnnoDef) typeDef;
-                                AnnotationDef astAnnoDef = originalAnnotations.get(annoDef.fullName());
+                                ASTGHolder<AnnotationDef> holder = originalAnnotations.get(annoDef.fullName());
+                                AnnotationDef astAnnoDef = holder.s;
                                 for (SAnnoField f : annoDef.annoFields()) {
                                         for (Statement stmt : astAnnoDef.stmts) {
                                                 if (stmt instanceof VariableDef
@@ -1621,7 +1724,8 @@ public class SemanticProcessor {
                 for (STypeDef typeDef : typeDefSet) {
                         if (typeDef instanceof SAnnoDef) {
                                 SAnnoDef annoDef = (SAnnoDef) typeDef;
-                                AnnotationDef astAnnoDef = originalAnnotations.get(annoDef.fullName());
+                                ASTGHolder<AnnotationDef> holder = originalAnnotations.get(annoDef.fullName());
+                                AnnotationDef astAnnoDef = holder.s;
                                 for (SAnnoField f : annoDef.annoFields()) {
                                         for (Statement stmt : astAnnoDef.stmts) {
                                                 if (stmt instanceof VariableDef
@@ -1698,8 +1802,10 @@ public class SemanticProcessor {
                 for (STypeDef sTypeDef : typeDefList) {
                         if (sTypeDef instanceof SClassDef) {
                                 SClassDef sClassDef = (SClassDef) sTypeDef;
-                                ClassDef astClass = originalClasses.get(sClassDef.fullName());
-                                ObjectDef astObject = originalObjects.get(sClassDef.fullName());
+                                ASTGHolder<ClassDef> classHolder = originalClasses.get(sClassDef.fullName());
+                                ASTGHolder<ObjectDef> objectHolder = originalObjects.get(sClassDef.fullName());
+                                ClassDef astClass = (null == classHolder) ? null : classHolder.s;
+                                ObjectDef astObject = (null == objectHolder) ? null : objectHolder.s;
 
                                 parseAnnoValues(sClassDef.annos());
 
@@ -1860,7 +1966,8 @@ public class SemanticProcessor {
                                 }
                         } else if (sTypeDef instanceof SInterfaceDef) {
                                 SInterfaceDef sInterfaceDef = (SInterfaceDef) sTypeDef;
-                                InterfaceDef astInterface = originalInterfaces.get(sInterfaceDef.fullName());
+                                ASTGHolder<InterfaceDef> holder = originalInterfaces.get(sInterfaceDef.fullName());
+                                InterfaceDef astInterface = holder.s;
 
                                 parseAnnoValues(sInterfaceDef.annos());
 
@@ -2494,7 +2601,7 @@ public class SemanticProcessor {
                                                 new Ins.TLoad(p, scope, LineCol.SYNTHETIC),
                                                 LineCol.SYNTHETIC),
                                                 scope, LineCol.SYNTHETIC, err);
-                                        tStore.flag |= Flags.IS_POINTER_NEW;
+                                        tStore.flag |= Consts.IS_POINTER_NEW;
                                         methodDef.statements().add(tStore);
                                 }
                         }
@@ -4509,7 +4616,7 @@ public class SemanticProcessor {
 
                                 Ins.TStore storePtr = new Ins.TStore(localVariable,
                                         constructPointer(nonnull, nonempty), scope, LineCol.SYNTHETIC, err);
-                                storePtr.flag |= Flags.IS_POINTER_NEW;
+                                storePtr.flag |= Consts.IS_POINTER_NEW;
                                 pack.instructions().add(storePtr);
                         }
 
@@ -4643,7 +4750,7 @@ public class SemanticProcessor {
                         valueToSet = boxPrimitive(valueToSet, LineCol.SYNTHETIC);
                 }
                 set.arguments().add(valueToSet);
-                set.flag |= Flags.IS_POINTER_SET;
+                set.flag |= Consts.IS_POINTER_SET;
                 return set;
         }
 
@@ -4668,7 +4775,7 @@ public class SemanticProcessor {
 
                 Ins.InvokeVirtual get = new Ins.InvokeVirtual(
                         target, getPointer_get(), lineCol);
-                get.flag |= Flags.IS_POINTER_GET;
+                get.flag |= Consts.IS_POINTER_GET;
 
                 if (pointingType instanceof PrimitiveTypeDef) {
                         Value after = cast(pointingType, get, null, lineCol);
@@ -4791,7 +4898,7 @@ public class SemanticProcessor {
 
                                 Ins.TStore storePtr = new Ins.TStore(localVariable,
                                         constructPointer(false, false), scope, LineCol.SYNTHETIC, err);
-                                storePtr.flag |= Flags.IS_POINTER_NEW;
+                                storePtr.flag |= Consts.IS_POINTER_NEW;
                                 pack.instructions().add(storePtr);
                         } else {
                                 nameToField.put(pd.name, f);
@@ -10508,7 +10615,19 @@ public class SemanticProcessor {
          * @throws SyntaxException exception
          */
         public STypeDef getTypeWithName(String clsName, LineCol lineCol) throws SyntaxException {
-                return getTypeWithName(clsName, false, lineCol);
+                return getTypeWithName(clsName, Collections.<STypeDef>emptyList(), false, lineCol);
+        }
+
+        private String buildTemplateAppliedName(String clsName, List<? extends STypeDef> generics) {
+                if (generics.isEmpty()) {
+                        return clsName;
+                }
+                StringBuilder sb = new StringBuilder();
+                sb.append(clsName);
+                for (STypeDef t : generics) {
+                        sb.append(Consts.GENERIC_NAME_SPLIT).append(t.fullName().replaceAll("\\.", "_"));
+                }
+                return sb.toString();
         }
 
         /**
@@ -10520,7 +10639,8 @@ public class SemanticProcessor {
          * @return STypeDef (not null)
          * @throws SyntaxException exception
          */
-        public STypeDef getTypeWithName(String clsName, boolean allowException, LineCol lineCol) throws SyntaxException {
+        public STypeDef getTypeWithName(String clsName, List<? extends STypeDef> generics, boolean allowException, LineCol lineCol) throws SyntaxException {
+                clsName = buildTemplateAppliedName(clsName, generics);
                 if (types.containsKey(clsName)) {
                         return types.get(clsName);
                 } else {
@@ -10978,60 +11098,20 @@ public class SemanticProcessor {
                                 putNameAndTypeDef(a, access.line_col());
                                 resultType = a;
                         }
-
-                } else if (access.exp instanceof AST.Access) {
-                        boolean withPackage = false;
-                        AST.Access tmp = access;
-                        String innerClassName = ""; // only used if it's inner class ref
-                        while (tmp.exp != null) {
-                                assert tmp.exp instanceof AST.Access || tmp.exp instanceof AST.PackageRef;
-                                if (tmp.exp instanceof AST.PackageRef) {
-                                        withPackage = true;
-                                        break;
-                                }
-                                innerClassName = "$" + tmp.name + innerClassName;
-                                tmp = (AST.Access) tmp.exp;
-                        }
-                        String className;
-                        if (withPackage) {
-                                className = getClassNameFromAccess(access);
-                                if (null == className || !typeExists(className)) {
-                                        if (!allowException) {
-                                                err.SyntaxException("type " + className + " not defined", access.line_col());
-                                        }
-                                        return null;
-                                }
-                        } else {
-                                className = findClassNameWithImport(tmp.name, imports) + innerClassName;
-                                if (!typeExists(className)) {
-                                        if (!allowException) {
-                                                err.SyntaxException("type " + innerClassName + " not defined", access.line_col());
-                                        }
-                                        return null;
-                                }
-                        }
-                        resultType = getTypeWithName(className, access.line_col());
                 } else {
-
-                        assert access.exp == null || access.exp instanceof AST.PackageRef;
-
-                        AST.PackageRef pkg = (AST.PackageRef) access.exp;
-                        String name = access.name;
-
-                        String className;
-                        if (pkg == null) {
-                                className = findClassNameWithImport(name, imports);
-                        } else {
-                                className = pkg.pkg.replace("::", ".") + "." + name;
-                        }
-
-                        if (null == className || !typeExists(className)) {
+                        String className = accessToClassName(access, imports, allowException);
+                        if (className == null) {
+                                // if the classname not found
                                 if (!allowException) {
-                                        err.SyntaxException("type " + name + " not defined", access.line_col());
+                                        err.SyntaxException("Type not found: " + access, access.line_col());
                                 }
                                 return null;
                         }
-                        resultType = getTypeWithName(className, access.line_col());
+                        List<STypeDef> genericTypes = new ArrayList<STypeDef>();
+                        for (AST.Access a : access.generics) {
+                                genericTypes.add(getTypeWithAccess(a, imports));
+                        }
+                        resultType = getTypeWithName(className, genericTypes, allowException, access.line_col());
                 }
 
                 if (isPointer) {
@@ -11121,7 +11201,9 @@ public class SemanticProcessor {
         /**
          * transform the AST.Access object<br>
          * the part that may represent a `type` will be converted into package ref and typeSimpleName<br>
-         * e.g. java.lang.Object => (((null, java), lang), Object) => ((java::lang), Object)
+         * e.g. java.lang.Object => (((null, java), lang), Object) => ((java::lang), Object)<br>
+         * <br>
+         * this method doesn't care about whether it's a generic type.
          *
          * @param access access object
          * @return original access object or a new one depending on the input
@@ -11155,7 +11237,7 @@ public class SemanticProcessor {
                                 clsNameBuilder.append(maybePackages.get(j));
                         }
                         String clsName = clsNameBuilder.toString();
-                        STypeDef type = getTypeWithName(clsName, true, access.line_col());
+                        STypeDef type = getTypeWithName(clsName, Collections.<STypeDef>emptyList(), true, access.line_col());
                         if (null == type) {
                                 continue;
                         }
@@ -11178,5 +11260,61 @@ public class SemanticProcessor {
 
                 // cannot be a package.type.*
                 return access;
+        }
+
+        private String accessToClassName(AST.Access access, List<Import> imports, boolean allowException) throws SyntaxException {
+                String className;
+                if (access.exp instanceof AST.Access) {
+                        boolean withPackage = false;
+                        AST.Access tmp = access;
+                        StringBuilder innerClassName = new StringBuilder(); // only used if it's inner class ref
+                        while (tmp.exp != null) {
+                                assert tmp.exp instanceof AST.Access || tmp.exp instanceof AST.PackageRef;
+                                if (tmp.exp instanceof AST.PackageRef) {
+                                        withPackage = true;
+                                        break;
+                                }
+                                innerClassName.insert(0, "$" + tmp.name);
+                                tmp = (AST.Access) tmp.exp;
+                        }
+
+                        if (withPackage) {
+                                className = getClassNameFromAccess(access);
+                                if (null == className || !typeExists(className)) {
+                                        if (!allowException) {
+                                                err.SyntaxException("type " + className + " not defined", access.line_col());
+                                        }
+                                        return null;
+                                }
+                        } else {
+                                className = findClassNameWithImport(tmp.name, imports) + innerClassName;
+                                if (!typeExists(className)) {
+                                        if (!allowException) {
+                                                err.SyntaxException("type " + innerClassName + " not defined", access.line_col());
+                                        }
+                                        return null;
+                                }
+                        }
+                        return className;
+                } else {
+                        assert access.exp == null || access.exp instanceof AST.PackageRef;
+
+                        AST.PackageRef pkg = (AST.PackageRef) access.exp;
+                        String name = access.name;
+
+                        if (pkg == null) {
+                                className = findClassNameWithImport(name, imports);
+                        } else {
+                                className = pkg.pkg.replace("::", ".") + "." + name;
+                        }
+
+                        if (null == className || !typeExists(className)) {
+                                if (!allowException) {
+                                        err.SyntaxException("type " + name + " not defined", access.line_col());
+                                }
+                                return null;
+                        }
+                }
+                return className;
         }
 }

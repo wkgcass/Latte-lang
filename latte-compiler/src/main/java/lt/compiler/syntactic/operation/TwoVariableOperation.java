@@ -24,9 +24,12 @@
 
 package lt.compiler.syntactic.operation;
 
+import lt.compiler.CompileUtil;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.Expression;
 import lt.compiler.syntactic.Operation;
+import lt.compiler.syntactic.Statement;
+import lt.lang.function.Function1;
 
 import java.util.Arrays;
 import java.util.List;
@@ -90,5 +93,10 @@ public class TwoVariableOperation implements Operation {
         @Override
         public LineCol line_col() {
                 return lineCol;
+        }
+
+        @Override
+        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                CompileUtil.visitStmt(expressions, f);
         }
 }
