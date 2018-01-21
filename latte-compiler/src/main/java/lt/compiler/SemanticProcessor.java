@@ -418,7 +418,7 @@ public class SemanticProcessor {
                 }
 
                 step2(fileNameToPackageName);
-                step3(fileNameToPackageName, fileNameToFunctions);
+                step3();
                 // ensures that @ImplicitImports and @StaticImports are loaded
                 getTypeWithName("lt.runtime.ImplicitImports", LineCol.SYNTHETIC);
                 getTypeWithName("lt.runtime.StaticImports", LineCol.SYNTHETIC);
@@ -1479,12 +1479,9 @@ public class SemanticProcessor {
          * check method signature
          * check annotations
          *
-         * @param fileNameToPackageName file name to package name
-         * @param fileNameToFunctions   file name to functions
          * @throws SyntaxException exception
          */
-        public void step3(Map<String, String> fileNameToPackageName,
-                          Map<String, List<FunDef>> fileNameToFunctions) throws SyntaxException {
+        public void step3() throws SyntaxException {
                 for (STypeDef sTypeDef : typeDefSet) {
                         if (sTypeDef instanceof SClassDef) {
                                 List<STypeDef> circularRecorder = new ArrayList<STypeDef>();
@@ -1512,11 +1509,17 @@ public class SemanticProcessor {
                 }
 
                 // after the override check are done, try to get signatures of functions.
-                for (String fileName : mapOfStatements.keySet()) {
-                        List<Import> imports = fileNameToImport.get(fileName);
-                        String pkg = fileNameToPackageName.get(fileName);
-                        List<FunDef> functionDefs = fileNameToFunctions.get(fileName);
-                        for (FunDef fun : functionDefs) {
+                for (STypeDef sTypeDef : typeDefSet) {
+                        if (sTypeDef instanceof SClassDef) {
+                                SClassDef sClassDef = (SClassDef) sTypeDef;
+                                if (sClassDef.classType() != SClassDef.FUN) {
+                                        continue;
+                                }
+
+                                ASTGHolder<FunDef> funHolder = originalFunctions.get(sClassDef.fullName());
+                                FunDef fun = funHolder.s;
+                                List<Import> imports = fileNameToImport.get(fun.line_col().fileName);
+
                                 // get super class/interface
                                 STypeDef type = getTypeWithAccess(fun.superType, imports);
                                 if (!(type instanceof SClassDef || type instanceof SInterfaceDef)) {
@@ -1531,7 +1534,6 @@ public class SemanticProcessor {
                                 }
 
                                 // class and the annos, super class
-                                SClassDef sClassDef = (SClassDef) types.get(pkg + fun.name);
                                 parseAnnos(fun.annos, sClassDef, imports, ElementType.TYPE, Arrays.asList(ElementType.METHOD, ElementType.CONSTRUCTOR));
                                 if (zeroParamConstructor[0] == null) {
                                         sClassDef.setParent(getObject_Class());
