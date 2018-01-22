@@ -32,8 +32,11 @@ public class SimpleTest {
 
                 StringBuilder sb = new StringBuilder();
                 sb.append("" +
-                        "class X\n" +
-                        "    def method(a:int, b:long, c:float)=a+b+c"
+                        "class X<:T:>\n" +
+                        "    def method(a:T):T=a\n" +
+                        "class M\n" +
+                        "  x = X<:M:>\n" +
+                        "  x.method(this)"
                 );
 
                 lt.compiler.Scanner lexicalProcessor = new lt.compiler.IndentScanner("test.lt", new StringReader(sb.toString()), new Properties(), err);
@@ -45,7 +48,7 @@ public class SimpleTest {
 
                 CodeGenerator codeGenerator = new CodeGenerator(types, semanticProcessor.getTypes());
                 Map<String, byte[]> list = codeGenerator.generate();
-                byte[] b = list.get("X");
+                byte[] b = list.get("X_$G$_M");
                 FileOutputStream fos = new FileOutputStream(new File("/Users/wkgcass/OpenSource/Latte-lang/hehe.class"));
                 fos.write(b);
                 fos.flush();

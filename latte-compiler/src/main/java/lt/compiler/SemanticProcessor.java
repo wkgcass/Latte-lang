@@ -567,7 +567,7 @@ public class SemanticProcessor {
                 for (AST.Access g : access.generics) {
                         handleGenericAST(g, imports, fileNameToPackageName);
                 }
-                String clsName = accessToClassName(access, imports, false);
+                String clsName = accessToClassName(access, Collections.<String, STypeDef>emptyMap(), imports, false);
                 List<STypeDef> genericTypes = new ArrayList<STypeDef>();
                 for (AST.Access a : access.generics) {
                         STypeDef t = getTypeWithAccess(a, Collections.<String, STypeDef>emptyMap(), imports);
@@ -993,6 +993,9 @@ public class SemanticProcessor {
          */
         public void step2(Map<String, String> fileNameToPackageName) throws SyntaxException {
                 for (STypeDef sTypeDef : typeDefSet) {
+                        if (isGenericTemplateType(sTypeDef)) {
+                                continue; // ignore the template types
+                        }
                         String fileName = sTypeDef.line_col().fileName;
                         List<Import> imports = fileNameToImport.get(fileName);
                         String pkg = fileNameToPackageName.get(fileName);
@@ -1797,6 +1800,9 @@ public class SemanticProcessor {
                 // foreach typeDefSet, parse their statements
                 List<STypeDef> typeDefList = new ArrayList<STypeDef>(typeDefSet);
                 for (STypeDef sTypeDef : typeDefList) {
+                        if (isGenericTemplateType(sTypeDef)) {
+                                continue; // TODO
+                        }
                         if (sTypeDef instanceof SClassDef) {
                                 SClassDef sClassDef = (SClassDef) sTypeDef;
                                 ASTGHolder<ClassDef> classHolder = originalClasses.get(sClassDef.fullName());
@@ -11126,7 +11132,7 @@ public class SemanticProcessor {
                                 resultType = a;
                         }
                 } else {
-                        String className = accessToClassName(access, imports, allowException);
+                        String className = accessToClassName(access, genericMap, imports, allowException);
                         if (className == null) {
                                 // if the classname not found
                                 if (!allowException) {
@@ -11292,7 +11298,7 @@ public class SemanticProcessor {
                 return access;
         }
 
-        private String accessToClassName(AST.Access access, List<Import> imports, boolean allowException) throws SyntaxException {
+        private String accessToClassName(AST.Access access, Map<String, STypeDef> genericMap, List<Import> imports, boolean allowException) throws SyntaxException {
                 String className;
                 if (access.exp instanceof AST.Access) {
                         boolean withPackage = false;
@@ -11333,7 +11339,11 @@ public class SemanticProcessor {
                         String name = access.name;
 
                         if (pkg == null) {
-                                className = findClassNameWithImport(name, imports);
+                                if (genericMap.containsKey(name)) {
+                                        className = genericMap.get(name).fullName();
+                                } else {
+                                        className = findClassNameWithImport(name, imports);
+                                }
                         } else {
                                 className = pkg.pkg.replace("::", ".") + "." + name;
                         }
@@ -11420,5 +11430,28 @@ public class SemanticProcessor {
                 // ASTGHolder<AnnotationDef> holder = originalAnnotations.get(anno.fullName());
                 // AnnotationDef annoDef = holder.s;
                 // List<STypeDef> genericArgs = holder.generics;
+        }
+
+        private boolean isGenericTemplateType(STypeDef t) {
+                if (t instanceof SClassDef) {
+                        SClassDef c = (SClassDef) t;
+                        if (c.classType() == SClassDef.NORMAL) {
+                                ASTGHolder<ClassDef> holder = originalClasses.get(t.fullName());
+                                return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
+                        } else if (c.classType() == SClassDef.OBJECT) {
+                                return false; // TODO
+                        } else if (c.classType() == SClassDef.FUN) {
+                                return false; // TODO
+                        } else {
+                                throw new LtBug("unknown classType " + c.classType());
+                        }
+                } else if (t instanceof SInterfaceDef) {
+                        ASTGHolder<InterfaceDef> holder = originalInterfaces.get(t.fullName());
+                        return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
+                } else if (t instanceof SAnnoDef) {
+                        return false; // TODO
+                } else {
+                        throw new LtBug("unknown STypeDef " + t);
+                }
         }
 }
