@@ -2087,6 +2087,7 @@ public class TestParser {
                         Collections.singletonList(
                                 new FunDef(
                                         "F",
+                                        Collections.<AST.Access>emptyList(),
                                         Collections.singletonList(
                                                 new VariableDef(
                                                         "o", Collections.<Modifier>emptySet(),
@@ -2277,14 +2278,14 @@ public class TestParser {
                         "object Test4:ArrayList([]),List"
                 );
                 assertEquals(Arrays.asList(
-                        new ObjectDef("Test1", null, Collections.<AST.Access>emptyList(), Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), Collections.<Statement>emptyList(), LineCol.SYNTHETIC),
-                        new ObjectDef("Test2", null, Collections.singletonList(new AST.Access(null, "Object", LineCol.SYNTHETIC)), Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), Collections.<Statement>emptyList(), LineCol.SYNTHETIC),
-                        new ObjectDef("Test3", new AST.Invocation(
+                        new ObjectDef("Test1", Collections.<AST.Access>emptyList(), null, Collections.<AST.Access>emptyList(), Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), Collections.<Statement>emptyList(), LineCol.SYNTHETIC),
+                        new ObjectDef("Test2", Collections.<AST.Access>emptyList(), null, Collections.singletonList(new AST.Access(null, "Object", LineCol.SYNTHETIC)), Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), Collections.<Statement>emptyList(), LineCol.SYNTHETIC),
+                        new ObjectDef("Test3", Collections.<AST.Access>emptyList(), new AST.Invocation(
                                 new AST.Access(null, "ArrayList", LineCol.SYNTHETIC),
                                 Collections.<Expression>singletonList(new AST.ArrayExp(Collections.<Expression>emptyList(), LineCol.SYNTHETIC)),
                                 false, LineCol.SYNTHETIC
                         ), Collections.<AST.Access>emptyList(), Collections.<Modifier>emptySet(), Collections.<AST.Anno>emptySet(), Collections.<Statement>emptyList(), LineCol.SYNTHETIC),
-                        new ObjectDef("Test4", new AST.Invocation(
+                        new ObjectDef("Test4", Collections.<AST.Access>emptyList(), new AST.Invocation(
                                 new AST.Access(null, "ArrayList", LineCol.SYNTHETIC),
                                 Collections.<Expression>singletonList(new AST.ArrayExp(Collections.<Expression>emptyList(), LineCol.SYNTHETIC)),
                                 false, LineCol.SYNTHETIC
@@ -2737,12 +2738,14 @@ public class TestParser {
                 assertEquals(Arrays.asList(
                         new AnnotationDef(
                                 "A",
+                                Collections.<AST.Access>emptyList(),
                                 Collections.<AST.Anno>emptySet(),
                                 Collections.<Statement>singletonList(v),
                                 LineCol.SYNTHETIC
                         ),
                         new AnnotationDef(
                                 "B",
+                                Collections.<AST.Access>emptyList(),
                                 new HashSet<AST.Anno>(
                                         Arrays.asList(
                                                 new AST.Anno(
@@ -2922,12 +2925,69 @@ public class TestParser {
                                         new AST.Access(null, "T", LineCol.SYNTHETIC)
                                 ),
                                 Collections.<Modifier>emptySet(),
-                                Collections.<AST.Access>singletonList(cExtends),
+                                Collections.singletonList(cExtends),
                                 Collections.<AST.Anno>emptySet(),
                                 Collections.<Statement>emptyList(),
                                 LineCol.SYNTHETIC
                         )
                 ), stmts);
+        }
+
+        @Test
+        public void testGenericObjectFunAnno() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "object     O<:T:>\n" +
+                        "fun        F<:T:>\n" +
+                        "annotation A<:T:>\n");
+                assertEquals(Arrays.asList(
+                        new ObjectDef("O",
+                                Collections.singletonList(new AST.Access(null, "T", LineCol.SYNTHETIC)),
+                                null,
+                                Collections.<AST.Access>emptyList(),
+                                Collections.<Modifier>emptySet(),
+                                Collections.<AST.Anno>emptySet(),
+                                Collections.<Statement>emptyList(),
+                                LineCol.SYNTHETIC),
+                        new FunDef("F",
+                                Collections.singletonList(new AST.Access(null, "T", LineCol.SYNTHETIC)),
+                                Collections.<VariableDef>emptyList(),
+                                new AST.Access(new AST.PackageRef("lt::lang::function", LineCol.SYNTHETIC), "Function0", LineCol.SYNTHETIC),
+                                Collections.<AST.Anno>emptySet(),
+                                Collections.<Statement>emptyList(),
+                                LineCol.SYNTHETIC),
+                        new AnnotationDef("A",
+                                Collections.singletonList(new AST.Access(null, "T", LineCol.SYNTHETIC)),
+                                Collections.<AST.Anno>emptySet(),
+                                Collections.<Statement>emptyList(),
+                                LineCol.SYNTHETIC)
+                ), stmts);
+        }
+
+        @Test
+        public void testUseAnnotationWithGeneric() throws Exception {
+                List<Statement> stmts = parse("" +
+                        "@Anno<:X:>\n" +
+                        "class A\n" +
+                        "@Anno<:Y:>(1)\n" +
+                        "class B\n" +
+                        "@Anno<:Z:>(a='b')\n" +
+                        "class C\n");
+                assertEquals(3, stmts.size());
+                ClassDef a = (ClassDef) stmts.get(0);
+                ClassDef b = (ClassDef) stmts.get(1);
+                ClassDef c = (ClassDef) stmts.get(2);
+                assertEquals(1, a.annos.size());
+                assertEquals(1, b.annos.size());
+                assertEquals(1, c.annos.size());
+                AST.Anno aa = a.annos.iterator().next();
+                AST.Anno ba = b.annos.iterator().next();
+                AST.Anno ca = c.annos.iterator().next();
+                assertEquals(1, aa.anno.generics.size());
+                assertEquals(1, ba.anno.generics.size());
+                assertEquals(1, ca.anno.generics.size());
+                assertEquals(new AST.Access(null, "X", LineCol.SYNTHETIC), aa.anno.generics.get(0));
+                assertEquals(new AST.Access(null, "Y", LineCol.SYNTHETIC), ba.anno.generics.get(0));
+                assertEquals(new AST.Access(null, "Z", LineCol.SYNTHETIC), ca.anno.generics.get(0));
         }
 
         @Test

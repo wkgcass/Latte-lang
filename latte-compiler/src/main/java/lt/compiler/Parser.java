@@ -531,6 +531,12 @@ public class Parser {
                 }
                 String name = ((Element) current).getContent();
                 nextNode(true);
+                List<AST.Access> generics;
+                if (current instanceof Element && ((Element) current).getContent().equals("<:")) {
+                        generics = parse_generic();
+                } else {
+                        generics = Collections.emptyList();
+                }
                 List<Statement> stmts;
                 if (current == null || current instanceof EndingNode) {
                         stmts = Collections.emptyList();
@@ -541,7 +547,7 @@ public class Parser {
                         err.debug("assume it has empty statements");
                         stmts = Collections.emptyList();
                 }
-                return new AnnotationDef(name, annos, stmts, lineCol);
+                return new AnnotationDef(name, generics, annos, stmts, lineCol);
         }
 
         /**
@@ -560,10 +566,8 @@ public class Parser {
                 if (!classDef.params.isEmpty()) {
                         err.SyntaxException("object do not have params", classDef.params.get(0).line_col());
                 }
-                if (!classDef.generics.isEmpty()) {
-                        err.SyntaxException("object do not have generics", classDef.generics.get(0).line_col());
-                }
                 return new ObjectDef(classDef.name,
+                        classDef.generics,
                         classDef.superWithInvocation, classDef.superWithoutInvocation,
                         classDef.modifiers,
                         classDef.annos, classDef.statements, classDef.line_col());
@@ -1382,14 +1386,12 @@ public class Parser {
                 if (!classDef.modifiers.isEmpty()) {
                         err.SyntaxException("function definitions do not have modifiers", classDef.line_col());
                 }
-                if (!classDef.generics.isEmpty()) {
-                        err.SyntaxException("function definitions do not have generics", classDef.generics.get(0).line_col());
-                }
 
                 // transform into fun
 
                 return new FunDef(
                         classDef.name,
+                        classDef.generics,
                         classDef.params,
                         classDef.superWithoutInvocation.get(0),
                         classDef.annos,

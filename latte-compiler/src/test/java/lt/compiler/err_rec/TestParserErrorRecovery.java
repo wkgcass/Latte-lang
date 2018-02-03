@@ -807,21 +807,4 @@ public class TestParserErrorRecovery {
 
                 assertEquals(0, statements.size());
         }
-
-        @Test
-        public void testObjectOrFunWithGeneric() throws Exception {
-                ErrorManager err = new ErrorManager(false);
-                err.out = ErrorManager.Out.allNull();
-
-                List<Statement> statements = parse("" +
-                                "object A<:T:>\n" +
-                                "fun B<:T:>"
-                        , err);
-
-                assertEquals(2, err.errorList.size());
-                assertEquals(1, err.errorList.get(0).lineCol.line);
-                assertEquals(11, err.errorList.get(0).lineCol.column);
-                assertEquals(2, err.errorList.get(1).lineCol.line);
-                assertEquals(8, err.errorList.get(1).lineCol.column);
-        }
 }

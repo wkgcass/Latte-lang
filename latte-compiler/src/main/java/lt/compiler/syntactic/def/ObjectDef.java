@@ -17,6 +17,7 @@ import java.util.Set;
  */
 public class ObjectDef implements Definition {
         public final String name;
+        public final List<AST.Access> generics;
         public final AST.Invocation superWithInvocation;
         public final List<AST.Access> superWithoutInvocation;
         public final Set<Modifier> modifiers;
@@ -26,6 +27,7 @@ public class ObjectDef implements Definition {
         private final LineCol lineCol;
 
         public ObjectDef(String name,
+                         List<AST.Access> generics,
                          AST.Invocation superWithInvocation,
                          List<AST.Access> superWithoutInvocation,
                          Set<Modifier> modifiers,
@@ -33,6 +35,7 @@ public class ObjectDef implements Definition {
                          List<Statement> statements,
                          LineCol lineCol) {
                 this.name = name;
+                this.generics = generics;
                 this.superWithInvocation = superWithInvocation;
                 this.superWithoutInvocation = superWithoutInvocation;
                 this.modifiers = modifiers;
@@ -58,6 +61,9 @@ public class ObjectDef implements Definition {
         @Override
         public String toString() {
                 StringBuilder sb = new StringBuilder("object ").append(name);
+                if (!generics.isEmpty()) {
+                        sb.append("<:").append(generics).append(":>");
+                }
                 if (superWithInvocation != null || superWithoutInvocation.isEmpty()) {
                         sb.append(":");
                 }
@@ -82,6 +88,7 @@ public class ObjectDef implements Definition {
                 ObjectDef objectDef = (ObjectDef) o;
 
                 if (!name.equals(objectDef.name)) return false;
+                if (!generics.equals(objectDef.generics)) return false;
                 if (superWithInvocation != null ? !superWithInvocation.equals(objectDef.superWithInvocation) : objectDef.superWithInvocation != null)
                         return false;
                 if (!superWithoutInvocation.equals(objectDef.superWithoutInvocation)) return false;
@@ -95,6 +102,7 @@ public class ObjectDef implements Definition {
         @Override
         public int hashCode() {
                 int result = name.hashCode();
+                result = 31 * result + generics.hashCode();
                 result = 31 * result + (superWithInvocation != null ? superWithInvocation.hashCode() : 0);
                 result = 31 * result + superWithoutInvocation.hashCode();
                 result = 31 * result + modifiers.hashCode();
