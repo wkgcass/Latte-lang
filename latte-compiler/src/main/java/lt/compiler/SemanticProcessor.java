@@ -367,7 +367,7 @@ public class SemanticProcessor {
                                 } catch (SyntaxException e) {
                                         throw e;
                                 } catch (Exception e) {
-                                        throw new LtBug("should not have any exception other than SyntaxException");
+                                        throw new LtBug("should not have any exception other than SyntaxException", e);
                                 }
                         }
                 }
@@ -568,44 +568,46 @@ public class SemanticProcessor {
                 for (AST.Access g : access.generics) {
                         handleGenericAST(g, imports, fileNameToPackageName);
                 }
+                AST.Access accessWithoutGeneric = new AST.Access(access.exp, access.name, access.line_col());
+                String templateName = accessToClassName(accessWithoutGeneric, Collections.<String, STypeDef>emptyMap(), imports, false);
                 String clsName = accessToClassName(access, Collections.<String, STypeDef>emptyMap(), imports, false);
+                if (types.containsKey(clsName)) {
+                        // already defined
+                        // ignore and return
+                        return;
+                }
                 List<STypeDef> genericTypes = new ArrayList<STypeDef>();
                 for (AST.Access a : access.generics) {
                         STypeDef t = getTypeWithAccess(a, Collections.<String, STypeDef>emptyMap(), imports);
                         genericTypes.add(t);
                 }
-                if (types.containsKey(buildTemplateAppliedName(clsName, genericTypes))) {
-                        // already defined
-                        // ignore and return
-                        return;
-                }
-                if (originalClasses.containsKey(clsName)) {
-                        ClassDef ast = originalClasses.get(clsName).s;
+                if (originalClasses.containsKey(templateName)) {
+                        ClassDef ast = originalClasses.get(templateName).s;
                         String file = ast.line_col().fileName;
                         recordClass(ast, fileNameToPackageName.get(file), genericTypes);
 
-                } else if (originalInterfaces.containsKey(clsName)) {
-                        InterfaceDef ast = originalInterfaces.get(clsName).s;
+                } else if (originalInterfaces.containsKey(templateName)) {
+                        InterfaceDef ast = originalInterfaces.get(templateName).s;
                         String file = ast.line_col().fileName;
                         recordInterface(ast, fileNameToPackageName.get(file), genericTypes);
 
-                } else if (originalObjects.containsKey(clsName)) {
-                        ObjectDef ast = originalObjects.get(clsName).s;
+                } else if (originalObjects.containsKey(templateName)) {
+                        ObjectDef ast = originalObjects.get(templateName).s;
                         String file = ast.line_col().fileName;
                         recordObject(ast, fileNameToPackageName.get(file), genericTypes);
 
-                } else if (originalFunctions.containsKey(clsName)) {
-                        FunDef ast = originalFunctions.get(clsName).s;
+                } else if (originalFunctions.containsKey(templateName)) {
+                        FunDef ast = originalFunctions.get(templateName).s;
                         String file = ast.line_col().fileName;
                         recordFun(ast, fileNameToPackageName.get(file), genericTypes);
 
-                } else if (originalAnnotations.containsKey(clsName)) {
-                        AnnotationDef ast = originalAnnotations.get(clsName).s;
+                } else if (originalAnnotations.containsKey(templateName)) {
+                        AnnotationDef ast = originalAnnotations.get(templateName).s;
                         String file = ast.line_col().fileName;
                         recordAnnotation(ast, fileNameToPackageName.get(file), genericTypes);
 
                 } else {
-                        err.SyntaxException("type " + clsName + " not found", access.line_col());
+                        err.SyntaxException("type " + templateName + " not found", access.line_col());
                 }
         }
 
@@ -2050,14 +2052,16 @@ public class SemanticProcessor {
 
                 // class
                 SClassDef c = new SClassDef(SClassDef.NORMAL, LineCol.SYNTHETIC);
+                c.setFullName(sTypeDef.fullName());
                 c.modifiers().add(SModifier.PUBLIC);
                 // field
                 SFieldDef f = new SFieldDef(LineCol.SYNTHETIC);
-                f.setName(Consts.GENERIC_TEMPLATE_FIELD);
+                f.setName(Consts.AST_FIELD);
                 f.setType(getTypeWithName("java.lang.String", LineCol.SYNTHETIC));
                 f.modifiers().add(SModifier.PUBLIC);
                 f.modifiers().add(SModifier.STATIC);
                 c.fields().add(f);
+                f.setDeclaringType(c);
                 c.staticStatements().add(new Ins.PutStatic(f, new StringConstantValue(str), LineCol.SYNTHETIC, err));
                 f.alreadyAssigned();
                 // anno
@@ -2065,6 +2069,7 @@ public class SemanticProcessor {
                 SAnno a = new SAnno();
                 a.setAnnoDef(aDef);
                 c.annos().add(a);
+                a.setPresent(c);
 
                 typeDefSet.add(c);
         }
@@ -10787,7 +10792,7 @@ public class SemanticProcessor {
                                                         recordObject((ObjectDef) defi, pkg, Collections.<STypeDef>emptyList());
                                                 } else if (defi instanceof FunDef) {
                                                         recordFun((FunDef) defi, pkg, Collections.<STypeDef>emptyList());
-                                                } else if (defi instanceof AnnotationDef) {
+                                                } else /*if (defi instanceof AnnotationDef)*/ {
                                                         recordAnnotation((AnnotationDef) defi, pkg, Collections.<STypeDef>emptyList());
                                                 }
                                         }
@@ -11421,7 +11426,6 @@ public class SemanticProcessor {
                                         return null;
                                 }
                         }
-                        return className;
                 } else {
                         assert access.exp == null || access.exp instanceof AST.PackageRef;
 
@@ -11445,7 +11449,18 @@ public class SemanticProcessor {
                                 return null;
                         }
                 }
-                return className;
+                // check the access.generics
+                if (access.generics.isEmpty()) {
+                        return className;
+                } else {
+                        List<AST.Access> genericASTList = access.generics;
+                        List<STypeDef> genericTypeList = new ArrayList<STypeDef>();
+                        for (AST.Access e : genericASTList) {
+                                STypeDef t = getTypeWithAccess(e, genericMap, imports, allowException);
+                                genericTypeList.add(t);
+                        }
+                        return buildTemplateAppliedName(className, genericTypeList);
+                }
         }
 
         private Map<String, STypeDef> getGenericMap(STypeDef t) {

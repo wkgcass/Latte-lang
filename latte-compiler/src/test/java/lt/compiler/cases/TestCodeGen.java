@@ -33,6 +33,7 @@ import lt.compiler.syntactic.Expression;
 import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.literal.NumberLiteral;
 import lt.compiler.syntactic.operation.TwoVariableOperation;
+import lt.compiler.util.Consts;
 import lt.generator.SourceGenerator;
 import lt.lang.Pointer;
 import lt.lang.Unit;
@@ -4041,5 +4042,40 @@ public class TestCodeGen {
                         , "测试UTF8变量");
                 Method method = cls.getMethod("方法");
                 assertEquals("hello world", method.invoke(null));
+        }
+
+        @Test
+        public void testSimpleGeneric() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class A<:T:>\n" +
+                                "  def m(t:T):T=t\n" +
+                                "class TestSimpleGeneric\n" +
+                                "  static\n" +
+                                "    def m1()\n" +
+                                "      a = A<:int:>\n" +
+                                "      return a.m(123)\n" +
+                                "    def m2()\n" +
+                                "      a = A<:int:>()\n" +
+                                "      return a.m(789)\n" +
+                                "    def m3() = A<:int:>().m(101)\n" +
+                                "    def t1 = type A<:int:>\n" +
+                                "    def t2 = type A<:Integer:>\n"
+                        , "TestSimpleGeneric");
+                Method m1 = cls.getMethod("m1");
+                Method m2 = cls.getMethod("m2");
+                Method m3 = cls.getMethod("m3");
+                assertEquals(123, m1.invoke(null));
+                assertEquals(789, m2.invoke(null));
+                assertEquals(101, m3.invoke(null));
+                Method t1 = cls.getMethod("t1");
+                Method t2 = cls.getMethod("t2");
+                Class<?> c1 = (Class<?>) t1.invoke(null);
+                assertEquals("A" + Consts.GENERIC_NAME_SPLIT + "int", c1.getName());
+                Method genericMethod1 = c1.getMethod("m", int.class);
+                assertEquals(int.class, genericMethod1.getReturnType());
+                Class<?> c2 = (Class<?>) t2.invoke(null);
+                assertEquals("A" + Consts.GENERIC_NAME_SPLIT + "java_lang_Integer", c2.getName());
+                Method genericMethod2 = c2.getMethod("m", Integer.class);
+                assertEquals(Integer.class, genericMethod2.getReturnType());
         }
 }

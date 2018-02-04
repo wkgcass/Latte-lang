@@ -10,7 +10,6 @@ public class Consts {
 
         public static final String AST_FIELD = "_LATTE$AST";
         public static final String GENERIC_NAME_SPLIT = "_$G$_";
-        public static final String GENERIC_TEMPLATE_FIELD = "_LATTE$GENERIC$AST";
 
         private Consts() {
         }
