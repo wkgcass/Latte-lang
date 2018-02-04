@@ -42,6 +42,7 @@ import lt.compiler.util.BindList;
 import lt.compiler.util.Consts;
 import lt.generator.SourceGenerator;
 import lt.dependencies.asm.MethodVisitor;
+import lt.lang.GenericTemplate;
 import lt.lang.Unit;
 import lt.lang.function.Function1;
 import lt.runtime.*;
@@ -1801,7 +1802,9 @@ public class SemanticProcessor {
                 List<STypeDef> typeDefList = new ArrayList<STypeDef>(typeDefSet);
                 for (STypeDef sTypeDef : typeDefList) {
                         if (isGenericTemplateType(sTypeDef)) {
-                                continue; // TODO
+                                typeDefSet.remove(sTypeDef);
+                                generateGenericTemplateClass(sTypeDef);
+                                continue;
                         }
                         if (sTypeDef instanceof SClassDef) {
                                 SClassDef sClassDef = (SClassDef) sTypeDef;
@@ -1833,6 +1836,8 @@ public class SemanticProcessor {
                                                 // parse invoke super constructor statement
                                                 SClassDef parent = sClassDef.parent();
                                                 Ins.InvokeSpecial invokeConstructor = null;
+
+                                                assert (astClass == null && astObject != null) || (astClass != null && astObject == null);
 
                                                 AST.Invocation superWithInvocation = (
                                                         astClass == null) ? astObject.superWithInvocation
@@ -1927,6 +1932,8 @@ public class SemanticProcessor {
 
                                 // if not function
                                 if (sClassDef.classType() != SClassDef.FUN) {
+                                        assert (astClass == null && astObject != null) || (astClass != null && astObject == null);
+
                                         List<Statement> statements = (
                                                 astClass == null) ? astObject.statements
                                                 : astClass.statements;
@@ -2014,6 +2021,52 @@ public class SemanticProcessor {
                                 throw new LtBug("wrong STypeDefType " + sTypeDef.getClass());
                         }
                 }
+        }
+
+        private void generateGenericTemplateClass(STypeDef sTypeDef) throws SyntaxException {
+                Definition defi;
+                if (sTypeDef instanceof SClassDef) {
+                        switch (((SClassDef) sTypeDef).classType()) {
+                                case SClassDef.NORMAL:
+                                        defi = originalClasses.get(sTypeDef.fullName()).s;
+                                        break;
+                                case SClassDef.OBJECT:
+                                        defi = originalObjects.get(sTypeDef.fullName()).s;
+                                        break;
+                                case SClassDef.FUN:
+                                        defi = originalFunctions.get(sTypeDef.fullName()).s;
+                                        break;
+                                default:
+                                        throw new LtBug("unknown class type: " + ((SClassDef) sTypeDef).classType());
+                        }
+                } else if (sTypeDef instanceof SInterfaceDef) {
+                        defi = originalInterfaces.get(sTypeDef.fullName()).s;
+                } else if (sTypeDef instanceof SAnnoDef) {
+                        defi = originalInterfaces.get(sTypeDef.fullName()).s;
+                } else {
+                        throw new LtBug("unknown sTypeDef " + sTypeDef);
+                }
+                String str = serializeObjectToString(defi);
+
+                // class
+                SClassDef c = new SClassDef(SClassDef.NORMAL, LineCol.SYNTHETIC);
+                c.modifiers().add(SModifier.PUBLIC);
+                // field
+                SFieldDef f = new SFieldDef(LineCol.SYNTHETIC);
+                f.setName(Consts.GENERIC_TEMPLATE_FIELD);
+                f.setType(getTypeWithName("java.lang.String", LineCol.SYNTHETIC));
+                f.modifiers().add(SModifier.PUBLIC);
+                f.modifiers().add(SModifier.STATIC);
+                c.fields().add(f);
+                c.staticStatements().add(new Ins.PutStatic(f, new StringConstantValue(str), LineCol.SYNTHETIC, err));
+                f.alreadyAssigned();
+                // anno
+                SAnnoDef aDef = (SAnnoDef) getTypeWithName("lt.lang.GenericTemplate", LineCol.SYNTHETIC);
+                SAnno a = new SAnno();
+                a.setAnnoDef(aDef);
+                c.annos().add(a);
+
+                typeDefSet.add(c);
         }
 
         /**
@@ -5707,24 +5760,7 @@ public class SemanticProcessor {
                                 return parseValueFromExpression(exp, requiredType, scope);
                         } else if (sourceGen.resultType() == SourceGenerator.SERIALIZE) {
                                 Serializable ser = (Serializable) sourceGen.generate();
-                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                                ObjectOutputStream oos = null;
-                                try {
-                                        oos = new ObjectOutputStream(baos);
-                                        oos.writeObject(ser);
-                                } catch (IOException e) {
-                                        throw new LtBug(e);
-                                } finally {
-                                        if (oos != null) {
-                                                try {
-                                                        oos.close();
-                                                } catch (IOException e) {
-                                                        e.printStackTrace();
-                                                }
-                                        }
-                                }
-                                String serStr;
-                                serStr = byte2hex(baos.toByteArray());
+                                String serStr = serializeObjectToString(ser);
                                 return decodeSerExp(serStr, scope, gs.line_col());
                         } else if (sourceGen.resultType() == SourceGenerator.VALUE) {
                                 return (Value) sourceGen.generate();
@@ -5735,6 +5771,26 @@ public class SemanticProcessor {
                         err.SyntaxException("Generator should be a class", gs.line_col());
                         return null;
                 }
+        }
+
+        private String serializeObjectToString(Serializable ser) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = null;
+                try {
+                        oos = new ObjectOutputStream(baos);
+                        oos.writeObject(ser);
+                } catch (IOException e) {
+                        throw new LtBug(e);
+                } finally {
+                        if (oos != null) {
+                                try {
+                                        oos.close();
+                                } catch (IOException e) {
+                                        e.printStackTrace();
+                                }
+                        }
+                }
+                return byte2hex(baos.toByteArray());
         }
 
         public Value decodeSerExp(String serStr, SemanticScope scope, LineCol lineCol) throws SyntaxException {
@@ -7846,6 +7902,7 @@ public class SemanticProcessor {
                                         if (v.type() instanceof PrimitiveTypeDef) {
                                                 v = boxPrimitive(v, access.line_col());
                                         }
+                                        assert scope != null;
                                         SFieldDef f = findFieldFromTypeDef(access.name, v.type(), scope.type(), FIND_MODE_NON_STATIC, true);
                                         if (null == f) {
                                                 return invokeGetField(v, access.name, scope.type(), access.line_col());
@@ -10694,6 +10751,46 @@ public class SemanticProcessor {
 
                                         return arrType;
                                 } else {
+                                        if (cls.isAnnotationPresent(GenericTemplate.class)) {
+                                                // it's a generic template
+                                                // retrieve and record the AST
+                                                Field astField;
+                                                try {
+                                                        astField = cls.getField(Consts.AST_FIELD);
+                                                } catch (NoSuchFieldException e) {
+                                                        throw new LtBug("the generic template doesn't have " + Consts.AST_FIELD + " field");
+                                                }
+                                                Definition defi;
+                                                try {
+                                                        defi = (Definition) astField.get(null);
+                                                } catch (IllegalAccessException e) {
+                                                        throw new LtBug("the generic template field is not public", e);
+                                                } catch (ClassCastException e) {
+                                                        throw new LtBug("the generic template field is not a definition", e);
+                                                }
+                                                if (!(defi instanceof ClassDef) && !(defi instanceof InterfaceDef) && !(defi instanceof ObjectDef)
+                                                        && !(defi instanceof FunDef) && !(defi instanceof AnnotationDef)) {
+                                                        throw new LtBug("invalid definition for generic template type: " + defi);
+                                                }
+                                                String pkg;
+                                                if (cls.getPackage() != null) {
+                                                        pkg = cls.getPackage().getName();
+                                                } else {
+                                                        pkg = cls.getName();
+                                                        pkg = pkg.substring(pkg.lastIndexOf('.'));
+                                                }
+                                                if (defi instanceof ClassDef) {
+                                                        recordClass((ClassDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                } else if (defi instanceof InterfaceDef) {
+                                                        recordInterface((InterfaceDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                } else if (defi instanceof ObjectDef) {
+                                                        recordObject((ObjectDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                } else if (defi instanceof FunDef) {
+                                                        recordFun((FunDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                } else if (defi instanceof AnnotationDef) {
+                                                        recordAnnotation((AnnotationDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                }
+                                        }
 
                                         List<SModifier> modifiers; // modifiers
                                         STypeDef typeDef;
@@ -11140,14 +11237,7 @@ public class SemanticProcessor {
                                 }
                                 return null;
                         }
-                        if (!className.contains(".") && genericMap.containsKey(className)) {
-                                return genericMap.get(className);
-                        }
-                        List<STypeDef> genericTypes = new ArrayList<STypeDef>();
-                        for (AST.Access a : access.generics) {
-                                genericTypes.add(getTypeWithAccess(a, genericMap, imports));
-                        }
-                        resultType = getTypeWithName(className, genericTypes, allowException, access.line_col());
+                        resultType = getTypeWithName(className, Collections.<STypeDef>emptyList(), allowException, access.line_col());
                 }
 
                 if (isPointer) {
@@ -11371,39 +11461,31 @@ public class SemanticProcessor {
         }
 
         private Map<String, STypeDef> getGenericMap(SClassDef c) {
+                List<STypeDef> genericArgs;
+                List<AST.Access> genericParams;
                 if (c.classType() == SClassDef.NORMAL) {
                         ASTGHolder<ClassDef> holder = originalClasses.get(c.fullName());
                         ClassDef classDef = holder.s;
-                        List<STypeDef> genericArgs = holder.generics;
-                        List<AST.Access> genericParams = classDef.generics;
-                        LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
-                        for (int i = 0; i < genericParams.size(); ++i) {
-                                ret.put(genericParams.get(i).name, genericArgs.get(i));
-                        }
-                        return ret;
+                        genericArgs = holder.generics;
+                        genericParams = classDef.generics;
                 } else if (c.classType() == SClassDef.OBJECT) {
                         ASTGHolder<ObjectDef> holder = originalObjects.get(c.fullName());
                         ObjectDef objectDef = holder.s;
-                        List<STypeDef> genericArgs = holder.generics;
-                        if (genericArgs.size() == 0) {
-                                return Collections.emptyMap();
-                        }
-                        LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
-                        // TODO
-                        throw new LtBug("objects don't support generic parameters yet...");
+                        genericArgs = holder.generics;
+                        genericParams = objectDef.generics;
                 } else if (c.classType() == SClassDef.FUN) {
                         ASTGHolder<FunDef> holder = originalFunctions.get(c.fullName());
                         FunDef funDef = holder.s;
-                        List<STypeDef> genericArgs = holder.generics;
-                        if (genericArgs.size() == 0) {
-                                return Collections.emptyMap();
-                        }
-                        LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
-                        // TODO
-                        throw new LtBug("functions don't support generic parameters yet...");
+                        genericArgs = holder.generics;
+                        genericParams = funDef.generics;
                 } else {
                         throw new LtBug("unknown classType " + c.classType());
                 }
+                LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
+                for (int i = 0; i < genericParams.size(); ++i) {
+                        ret.put(genericParams.get(i).name, genericArgs.get(i));
+                }
+                return ret;
         }
 
         private Map<String, STypeDef> getGenericMap(SInterfaceDef interf) {
@@ -11422,14 +11504,12 @@ public class SemanticProcessor {
                 ASTGHolder<AnnotationDef> holder = originalAnnotations.get(anno.fullName());
                 AnnotationDef annoDef = holder.s;
                 List<STypeDef> genericArgs = holder.generics;
-                // TODO
-                if (genericArgs.size() == 0) {
-                        return Collections.emptyMap();
+                List<AST.Access> genericParams = annoDef.generics;
+                LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
+                for (int i = 0; i < genericParams.size(); ++i) {
+                        ret.put(genericParams.get(i).name, genericArgs.get(i));
                 }
-                throw new LtBug("annotations don't support generic parameters yet...");
-                // ASTGHolder<AnnotationDef> holder = originalAnnotations.get(anno.fullName());
-                // AnnotationDef annoDef = holder.s;
-                // List<STypeDef> genericArgs = holder.generics;
+                return ret;
         }
 
         private boolean isGenericTemplateType(STypeDef t) {
@@ -11439,9 +11519,11 @@ public class SemanticProcessor {
                                 ASTGHolder<ClassDef> holder = originalClasses.get(t.fullName());
                                 return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
                         } else if (c.classType() == SClassDef.OBJECT) {
-                                return false; // TODO
+                                ASTGHolder<ObjectDef> holder = originalObjects.get(t.fullName());
+                                return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
                         } else if (c.classType() == SClassDef.FUN) {
-                                return false; // TODO
+                                ASTGHolder<FunDef> holder = originalFunctions.get(t.fullName());
+                                return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
                         } else {
                                 throw new LtBug("unknown classType " + c.classType());
                         }
@@ -11449,7 +11531,8 @@ public class SemanticProcessor {
                         ASTGHolder<InterfaceDef> holder = originalInterfaces.get(t.fullName());
                         return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
                 } else if (t instanceof SAnnoDef) {
-                        return false; // TODO
+                        ASTGHolder<AnnotationDef> holder = originalAnnotations.get(t.fullName());
+                        return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
                 } else {
                         throw new LtBug("unknown STypeDef " + t);
                 }
