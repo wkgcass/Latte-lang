@@ -2087,7 +2087,6 @@ public class TestParser {
                         Collections.singletonList(
                                 new FunDef(
                                         "F",
-                                        Collections.<AST.Access>emptyList(),
                                         Collections.singletonList(
                                                 new VariableDef(
                                                         "o", Collections.<Modifier>emptySet(),
@@ -2738,14 +2737,12 @@ public class TestParser {
                 assertEquals(Arrays.asList(
                         new AnnotationDef(
                                 "A",
-                                Collections.<AST.Access>emptyList(),
                                 Collections.<AST.Anno>emptySet(),
                                 Collections.<Statement>singletonList(v),
                                 LineCol.SYNTHETIC
                         ),
                         new AnnotationDef(
                                 "B",
-                                Collections.<AST.Access>emptyList(),
                                 new HashSet<AST.Anno>(
                                         Arrays.asList(
                                                 new AST.Anno(
@@ -2934,29 +2931,15 @@ public class TestParser {
         }
 
         @Test
-        public void testGenericObjectFunAnno() throws Exception {
+        public void testGenericObject() throws Exception {
                 List<Statement> stmts = parse("" +
-                        "object     O<:T:>\n" +
-                        "fun        F<:T:>\n" +
-                        "annotation A<:T:>\n");
-                assertEquals(Arrays.asList(
+                        "object O<:T:>");
+                assertEquals(Collections.singletonList(
                         new ObjectDef("O",
                                 Collections.singletonList(new AST.Access(null, "T", LineCol.SYNTHETIC)),
                                 null,
                                 Collections.<AST.Access>emptyList(),
                                 Collections.<Modifier>emptySet(),
-                                Collections.<AST.Anno>emptySet(),
-                                Collections.<Statement>emptyList(),
-                                LineCol.SYNTHETIC),
-                        new FunDef("F",
-                                Collections.singletonList(new AST.Access(null, "T", LineCol.SYNTHETIC)),
-                                Collections.<VariableDef>emptyList(),
-                                new AST.Access(new AST.PackageRef("lt::lang::function", LineCol.SYNTHETIC), "Function0", LineCol.SYNTHETIC),
-                                Collections.<AST.Anno>emptySet(),
-                                Collections.<Statement>emptyList(),
-                                LineCol.SYNTHETIC),
-                        new AnnotationDef("A",
-                                Collections.singletonList(new AST.Access(null, "T", LineCol.SYNTHETIC)),
                                 Collections.<AST.Anno>emptySet(),
                                 Collections.<Statement>emptyList(),
                                 LineCol.SYNTHETIC)

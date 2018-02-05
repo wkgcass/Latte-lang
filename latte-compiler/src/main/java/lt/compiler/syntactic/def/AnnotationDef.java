@@ -14,14 +14,12 @@ import java.util.Set;
  */
 public class AnnotationDef implements Statement {
         public final String name;
-        public final List<AST.Access> generics;
         public final Set<AST.Anno> annos;
         public final List<Statement> stmts;
         private final LineCol lineCol;
 
-        public AnnotationDef(String name, List<AST.Access> generics, Set<AST.Anno> annos, List<Statement> stmts, LineCol lineCol) {
+        public AnnotationDef(String name, Set<AST.Anno> annos, List<Statement> stmts, LineCol lineCol) {
                 this.name = name;
-                this.generics = generics;
                 this.annos = annos;
                 this.stmts = stmts;
                 this.lineCol = lineCol;
@@ -46,7 +44,6 @@ public class AnnotationDef implements Statement {
                 AnnotationDef that = (AnnotationDef) o;
 
                 if (!name.equals(that.name)) return false;
-                if (!generics.equals(that.generics)) return false;
                 if (!annos.equals(that.annos)) return false;
                 //
                 return stmts.equals(that.stmts);
@@ -55,7 +52,6 @@ public class AnnotationDef implements Statement {
         @Override
         public int hashCode() {
                 int result = name.hashCode();
-                result = 31 * result + generics.hashCode();
                 result = 31 * result + annos.hashCode();
                 result = 31 * result + stmts.hashCode();
                 return result;
@@ -63,12 +59,6 @@ public class AnnotationDef implements Statement {
 
         @Override
         public String toString() {
-                StringBuilder sb = new StringBuilder();
-                sb.append("((").append(annos).append(") annotation ").append(name);
-                if (!generics.isEmpty()) {
-                        sb.append("<:").append(generics).append(":>");
-                }
-                sb.append("( ").append(stmts).append(" ))");
-                return sb.toString();
+                return "((" + annos + ") annotation " + name + "( " + stmts + " ))";
         }
 }

@@ -5,7 +5,6 @@ import lt.compiler.LineCol;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Definition;
 import lt.compiler.syntactic.Statement;
-import lt.compiler.syntactic.pre.Modifier;
 import lt.lang.function.Function1;
 
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.Set;
  */
 public class FunDef implements Definition {
         public final String name;
-        public final List<AST.Access> generics;
         public final List<VariableDef> params;
         public final AST.Access superType;
         public final Set<AST.Anno> annos;
@@ -24,9 +22,8 @@ public class FunDef implements Definition {
 
         private final LineCol lineCol;
 
-        public FunDef(String name, List<AST.Access> generics, List<VariableDef> params, AST.Access superType, Set<AST.Anno> annos, List<Statement> statements, LineCol lineCol) {
+        public FunDef(String name, List<VariableDef> params, AST.Access superType, Set<AST.Anno> annos, List<Statement> statements, LineCol lineCol) {
                 this.name = name;
-                this.generics = generics;
                 this.params = params;
                 this.superType = superType;
                 this.annos = annos;
@@ -55,7 +52,6 @@ public class FunDef implements Definition {
                 FunDef funDef = (FunDef) o;
 
                 if (name != null ? !name.equals(funDef.name) : funDef.name != null) return false;
-                if (generics != null ? !generics.equals(funDef.generics) : funDef.generics != null) return false;
                 if (params != null ? !params.equals(funDef.params) : funDef.params != null) return false;
                 if (superType != null ? !superType.equals(funDef.superType) : funDef.superType != null) return false;
                 if (annos != null ? !annos.equals(funDef.annos) : funDef.annos != null) return false;
@@ -66,7 +62,6 @@ public class FunDef implements Definition {
         @Override
         public int hashCode() {
                 int result = name != null ? name.hashCode() : 0;
-                result = 31 * result + generics.hashCode();
                 result = 31 * result + (params != null ? params.hashCode() : 0);
                 result = 31 * result + (superType != null ? superType.hashCode() : 0);
                 result = 31 * result + (annos != null ? annos.hashCode() : 0);
@@ -81,9 +76,6 @@ public class FunDef implements Definition {
                         sb.append(anno).append(" ");
                 }
                 sb.append("fun ").append(name);
-                if (!generics.isEmpty()) {
-                        sb.append("<:").append(generics).append(":>");
-                }
                 sb.append("(");
                 boolean isFirst = true;
                 for (VariableDef v : params) {

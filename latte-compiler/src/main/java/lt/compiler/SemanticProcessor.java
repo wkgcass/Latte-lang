@@ -581,33 +581,45 @@ public class SemanticProcessor {
                         STypeDef t = getTypeWithAccess(a, Collections.<String, STypeDef>emptyMap(), imports);
                         genericTypes.add(t);
                 }
+                int genericParamSize;
                 if (originalClasses.containsKey(templateName)) {
                         ClassDef ast = originalClasses.get(templateName).s;
                         String file = ast.line_col().fileName;
                         recordClass(ast, fileNameToPackageName.get(file), genericTypes);
+
+                        genericParamSize = ast.generics.size();
 
                 } else if (originalInterfaces.containsKey(templateName)) {
                         InterfaceDef ast = originalInterfaces.get(templateName).s;
                         String file = ast.line_col().fileName;
                         recordInterface(ast, fileNameToPackageName.get(file), genericTypes);
 
+                        genericParamSize = ast.generics.size();
+
                 } else if (originalObjects.containsKey(templateName)) {
                         ObjectDef ast = originalObjects.get(templateName).s;
                         String file = ast.line_col().fileName;
                         recordObject(ast, fileNameToPackageName.get(file), genericTypes);
 
+                        genericParamSize = ast.generics.size();
+
                 } else if (originalFunctions.containsKey(templateName)) {
-                        FunDef ast = originalFunctions.get(templateName).s;
-                        String file = ast.line_col().fileName;
-                        recordFun(ast, fileNameToPackageName.get(file), genericTypes);
+                        err.SyntaxException("function definitions are never generic types", access.line_col());
+                        return;
 
                 } else if (originalAnnotations.containsKey(templateName)) {
-                        AnnotationDef ast = originalAnnotations.get(templateName).s;
-                        String file = ast.line_col().fileName;
-                        recordAnnotation(ast, fileNameToPackageName.get(file), genericTypes);
+                        err.SyntaxException("annotations are never generic types", access.line_col());
+                        return;
 
                 } else {
                         err.SyntaxException("type " + templateName + " not found", access.line_col());
+                        return;
+                }
+
+                if (genericParamSize != access.generics.size()) {
+                        err.SyntaxException("generic params size is " + genericParamSize
+                                        + ", but generic args size is " + access.generics.size(),
+                                access.line_col());
                 }
         }
 
@@ -11490,13 +11502,13 @@ public class SemanticProcessor {
                 }
         }
 
-        private Map<String, STypeDef> getGenericMap(STypeDef t) {
+        private Map<String, STypeDef> getGenericMap(STypeDef t) throws SyntaxException {
                 if (t instanceof SClassDef) {
                         return getGenericMap((SClassDef) t);
                 } else if (t instanceof SInterfaceDef) {
                         return getGenericMap((SInterfaceDef) t);
                 } else if (t instanceof SAnnoDef) {
-                        return getGenericMap((SAnnoDef) t);
+                        return Collections.emptyMap();
                 } else {
                         throw new LtBug("unknown STypeDef " + t);
                 }
@@ -11516,10 +11528,7 @@ public class SemanticProcessor {
                         genericArgs = holder.generics;
                         genericParams = objectDef.generics;
                 } else if (c.classType() == SClassDef.FUN) {
-                        ASTGHolder<FunDef> holder = originalFunctions.get(c.fullName());
-                        FunDef funDef = holder.s;
-                        genericArgs = holder.generics;
-                        genericParams = funDef.generics;
+                        return Collections.emptyMap();
                 } else {
                         throw new LtBug("unknown classType " + c.classType());
                 }
@@ -11542,18 +11551,6 @@ public class SemanticProcessor {
                 return ret;
         }
 
-        private Map<String, STypeDef> getGenericMap(SAnnoDef anno) {
-                ASTGHolder<AnnotationDef> holder = originalAnnotations.get(anno.fullName());
-                AnnotationDef annoDef = holder.s;
-                List<STypeDef> genericArgs = holder.generics;
-                List<AST.Access> genericParams = annoDef.generics;
-                LinkedHashMap<String, STypeDef> ret = new LinkedHashMap<String, STypeDef>();
-                for (int i = 0; i < genericParams.size(); ++i) {
-                        ret.put(genericParams.get(i).name, genericArgs.get(i));
-                }
-                return ret;
-        }
-
         private boolean isGenericTemplateType(STypeDef t) {
                 if (t instanceof SClassDef) {
                         SClassDef c = (SClassDef) t;
@@ -11564,8 +11561,8 @@ public class SemanticProcessor {
                                 ASTGHolder<ObjectDef> holder = originalObjects.get(t.fullName());
                                 return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
                         } else if (c.classType() == SClassDef.FUN) {
-                                ASTGHolder<FunDef> holder = originalFunctions.get(t.fullName());
-                                return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
+                                // functions are never generic template types
+                                return false;
                         } else {
                                 throw new LtBug("unknown classType " + c.classType());
                         }
@@ -11573,8 +11570,8 @@ public class SemanticProcessor {
                         ASTGHolder<InterfaceDef> holder = originalInterfaces.get(t.fullName());
                         return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
                 } else if (t instanceof SAnnoDef) {
-                        ASTGHolder<AnnotationDef> holder = originalAnnotations.get(t.fullName());
-                        return holder.generics.isEmpty() && !holder.s.generics.isEmpty();
+                        // annotations are never generic template types
+                        return false;
                 } else {
                         throw new LtBug("unknown STypeDef " + t);
                 }
