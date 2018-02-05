@@ -1059,16 +1059,22 @@ public class SemanticProcessor {
                                         constructor.setDeclaringType(sClassDef);
                                         sClassDef.constructors().add(constructor);
 
-                                        // static public val singletonInstance = XXX
-                                        VariableDef v = new VariableDef(CompileUtil.SingletonFieldName,
-                                                new HashSet<Modifier>(Arrays.asList(
-                                                        new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC),
-                                                        new Modifier(Modifier.Available.PUBLIC, LineCol.SYNTHETIC)
-                                                )), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
-                                        v.setType(new AST.Access(pkg.isEmpty() ? null : new AST.PackageRef(pkg, LineCol.SYNTHETIC),
-                                                objectDef.name, LineCol.SYNTHETIC));
-                                        objectDef.statements.add(0, new AST.StaticScope(Collections.<Statement>singletonList(v),
-                                                LineCol.SYNTHETIC));
+                                        // only add once, for that all types under one template share the same ast structure
+                                        if (objectDef.statements.isEmpty() || !(objectDef.statements.get(0) instanceof AST.StaticScope)) {
+                                                // static public val singletonInstance = XXX
+                                                VariableDef v = new VariableDef(CompileUtil.SingletonFieldName,
+                                                        new HashSet<Modifier>(Arrays.asList(
+                                                                new Modifier(Modifier.Available.VAL, LineCol.SYNTHETIC),
+                                                                new Modifier(Modifier.Available.PUBLIC, LineCol.SYNTHETIC)
+                                                        )), Collections.<AST.Anno>emptySet(), LineCol.SYNTHETIC);
+                                                AST.Access vType = new AST.Access(pkg.isEmpty() ? null : new AST.PackageRef(pkg, LineCol.SYNTHETIC),
+                                                        objectDef.name, LineCol.SYNTHETIC);
+                                                vType.generics.addAll(objectDef.generics);
+                                                v.setType(vType);
+                                                objectDef.statements.add(0, new AST.StaticScope(Collections.<Statement>singletonList(v),
+                                                        LineCol.SYNTHETIC));
+
+                                        }
                                         // fields methods
                                         parseFieldsAndMethodsForClass(sClassDef, objectDef.statements, imports);
                                 } else if (sClassDef.classType() == SClassDef.NORMAL) {
@@ -1491,6 +1497,7 @@ public class SemanticProcessor {
          */
         public void step3() throws SyntaxException {
                 for (STypeDef sTypeDef : typeDefSet) {
+                        if (isGenericTemplateType(sTypeDef)) continue;
                         if (sTypeDef instanceof SClassDef) {
                                 List<STypeDef> circularRecorder = new ArrayList<STypeDef>();
                                 SClassDef parent = ((SClassDef) sTypeDef).parent();
@@ -1512,12 +1519,14 @@ public class SemanticProcessor {
                 }
                 // check override and overload with super methods
                 for (STypeDef sTypeDef : typeDefSet) {
+                        if (isGenericTemplateType(sTypeDef)) continue;
                         if (sTypeDef instanceof SAnnoDef) continue;
                         checkOverrideAllMethods(sTypeDef);
                 }
 
                 // after the override check are done, try to get signatures of functions.
                 for (STypeDef sTypeDef : typeDefSet) {
+                        if (isGenericTemplateType(sTypeDef)) continue;
                         if (sTypeDef instanceof SClassDef) {
                                 SClassDef sClassDef = (SClassDef) sTypeDef;
                                 if (sClassDef.classType() != SClassDef.FUN) {
@@ -1585,6 +1594,9 @@ public class SemanticProcessor {
 
                 // check annotation (@FunctionalInterface @FunctionalAbstractClass @Override @Implicit)
                 for (STypeDef typeDef : typeDefSet) {
+                        // annotation would never be generic
+                        // no need to check
+                        // if (isGenericTemplateType(typeDef)) continue;
                         if (typeDef instanceof SAnnoDef) continue;
                         for (SAnno anno : typeDef.annos()) {
                                 if (anno.type().fullName().equals("java.lang.FunctionalInterface")
@@ -1659,6 +1671,7 @@ public class SemanticProcessor {
 
                 // data class
                 for (STypeDef typeDef : typeDefSet) {
+                        if (isGenericTemplateType(typeDef)) continue;
                         if (typeDef instanceof SClassDef) {
                                 SClassDef cls = (SClassDef) typeDef;
                                 if (cls.isDataClass()) {
@@ -9038,15 +9051,27 @@ public class SemanticProcessor {
                                                 } catch (Throwable ignore) {
                                                 }
                                                 if (type != null) {
-                                                        findMethodFromTypeWithArguments(
-                                                                access.line_col(),
-                                                                access.name,
-                                                                argList,
-                                                                scope.type(),
-                                                                type,
-                                                                FIND_MODE_STATIC,
-                                                                methodsToInvoke,
-                                                                true);
+                                                        if (type instanceof SClassDef && ((SClassDef) type).classType() == SClassDef.OBJECT) {
+                                                                findMethodFromTypeWithArguments(
+                                                                        access.line_col(),
+                                                                        access.name,
+                                                                        argList,
+                                                                        scope.type(),
+                                                                        type,
+                                                                        FIND_MODE_NON_STATIC,
+                                                                        methodsToInvoke,
+                                                                        true);
+                                                        } else {
+                                                                findMethodFromTypeWithArguments(
+                                                                        access.line_col(),
+                                                                        access.name,
+                                                                        argList,
+                                                                        scope.type(),
+                                                                        type,
+                                                                        FIND_MODE_STATIC,
+                                                                        methodsToInvoke,
+                                                                        true);
+                                                        }
                                                 }
                                         }
                                         // then:
@@ -9380,8 +9405,13 @@ public class SemanticProcessor {
                                 } else {
                                         // invoke virtual
                                         if (target == null) {
-                                                err.SyntaxException("invoke virtual should have an invoke target", invocation.line_col());
-                                                return null;
+                                                STypeDef declaringType = methodToInvoke.declaringType();
+                                                if (declaringType instanceof SClassDef && ((SClassDef) declaringType).classType() == SClassDef.OBJECT) {
+                                                        target = parseValueFromAccess((AST.Access) access.exp, scope, false);
+                                                } else {
+                                                        err.SyntaxException("invoke virtual should have an invoke target", invocation.line_col());
+                                                        return null;
+                                                }
                                         }
                                         Ins.InvokeVirtual invokeVirtual = new Ins.InvokeVirtual(target, methodToInvoke, invocation.line_col());
                                         invokeVirtual.arguments().addAll(argList);
@@ -10492,13 +10522,8 @@ public class SemanticProcessor {
                 } else throw new LtBug(Integer.toString(mode)); // no else
                 for (SFieldDef f : fields) {
                         if (fieldDef.name().equals(f.name())) {
-                                if (
-                                        (fieldDef.modifiers().contains(SModifier.STATIC) && f.modifiers().contains(SModifier.STATIC))
-                                                ||
-                                                (!fieldDef.modifiers().contains(SModifier.STATIC) && !f.modifiers().contains(SModifier.STATIC))) {
-                                        err.DuplicateVariableNameException(v.getName(), v.line_col());
-                                        return;
-                                }
+                                err.DuplicateVariableNameException(v.getName(), v.line_col());
+                                return;
                         }
                 }
 
@@ -10728,6 +10753,7 @@ public class SemanticProcessor {
          * get type by class name
          *
          * @param clsName        class name
+         * @param generics       a list of generic types
          * @param allowException if true, then no syntax exception would be thrown
          * @param lineCol        file_line_col
          * @return STypeDef (not null)
@@ -11177,8 +11203,9 @@ public class SemanticProcessor {
         /**
          * get type with access
          *
-         * @param access  access object
-         * @param imports import list
+         * @param access     access object
+         * @param genericMap generic types stored in a map of name to type
+         * @param imports    import list
          * @return retrieved STypeDef (not null)
          * @throws SyntaxException exception
          */

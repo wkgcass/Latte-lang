@@ -4078,4 +4078,34 @@ public class TestCodeGen {
                 Method genericMethod2 = c2.getMethod("m", Integer.class);
                 assertEquals(Integer.class, genericMethod2.getReturnType());
         }
+
+        @Test
+        public void testSimpleObjectGeneric() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "object A<:T:>\n" +
+                                "  def m(t:T):T=t\n" +
+                                "class TestSimpleObjectGeneric\n" +
+                                "  static\n" +
+                                "    def m1()\n" +
+                                "      a = A<:int:>\n" +
+                                "      return a.m(123)\n" +
+                                "    def m2 = A<:int:>.m(456)\n" +
+                                "    def t1 = type A<:int:>\n" +
+                                "    def t2 = type A<:Integer:>\n"
+                        , "TestSimpleObjectGeneric");
+                Method m1 = cls.getMethod("m1");
+                Method m2 = cls.getMethod("m2");
+                assertEquals(123, m1.invoke(null));
+                assertEquals(456, m2.invoke(null));
+                Method t1 = cls.getMethod("t1");
+                Method t2 = cls.getMethod("t2");
+                Class<?> c1 = (Class<?>) t1.invoke(null);
+                assertEquals("A" + Consts.GENERIC_NAME_SPLIT + "int", c1.getName());
+                Method genericMethod1 = c1.getMethod("m", int.class);
+                assertEquals(int.class, genericMethod1.getReturnType());
+                Class<?> c2 = (Class<?>) t2.invoke(null);
+                assertEquals("A" + Consts.GENERIC_NAME_SPLIT + "java_lang_Integer", c2.getName());
+                Method genericMethod2 = c2.getMethod("m", Integer.class);
+                assertEquals(Integer.class, genericMethod2.getReturnType());
+        }
 }
