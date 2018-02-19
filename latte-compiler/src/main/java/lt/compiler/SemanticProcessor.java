@@ -24,7 +24,6 @@
 
 package lt.compiler;
 
-import com.sun.istack.internal.Nullable;
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
 import lt.compiler.semantic.helper.ASTGHolder;
@@ -621,7 +620,7 @@ public class SemanticProcessor {
          */
         private boolean handleGenericAST(AST.Access accessType,
                                          List<Import> imports,
-                                         @Nullable HalfAppliedTypes currentHalfAppliedTypes,
+                                         /*@Nullable*/ HalfAppliedTypes currentHalfAppliedTypes,
                                          Map<String, HalfAppliedTypes> templateNameToHalfAppliedTypes) throws SyntaxException {
                 if (accessType.generics.isEmpty()) {
                         return true;
