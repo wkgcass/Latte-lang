@@ -24,11 +24,10 @@
 
 package lt.compiler.syntactic.pre;
 
-import lt.compiler.CompileUtil;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.Pre;
 import lt.compiler.syntactic.Statement;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 /**
  * modifier
@@ -74,7 +73,7 @@ public class Modifier implements Pre {
         }
 
         @Override
-        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+        public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                 // nothing to visit
         }
 }

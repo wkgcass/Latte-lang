@@ -4108,4 +4108,111 @@ public class TestCodeGen {
                 Method genericMethod2 = c2.getMethod("m", Integer.class);
                 assertEquals(Integer.class, genericMethod2.getReturnType());
         }
+
+        @Test
+        public void testSimpleInterfaceGeneric() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "interface A<:T:>\n" +
+                                "  def m(t:T):T\n" +
+                                "class TestSimpleInterfaceGeneric\n" +
+                                "  static\n" +
+                                "    def m1() = type A<:int:>\n" +
+                                "    def m2() = type A<:Integer:>\n"
+                        , "TestSimpleInterfaceGeneric");
+                Method m1 = cls.getMethod("m1");
+                Method m2 = cls.getMethod("m2");
+                Class<?> aInt = (Class<?>) m1.invoke(null);
+                Class<?> aInteger = (Class<?>) m2.invoke(null);
+                assertEquals("A" + Consts.GENERIC_NAME_SPLIT + "int", aInt.getName());
+                assertEquals("A" + Consts.GENERIC_NAME_SPLIT + "java_lang_Integer", aInteger.getName());
+                assertEquals(1, aInt.getMethods().length);
+                assertEquals(1, aInteger.getMethods().length);
+                Method aIntM = aInt.getMethod("m", int.class);
+                Method aIntegerM = aInteger.getMethod("m", Integer.class);
+                assertEquals(int.class, aIntM.getReturnType());
+                assertEquals(Integer.class, aIntegerM.getReturnType());
+        }
+
+        @Test
+        public void testMultiGenericParams() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class C<:T,U:>\n" +
+                                "  def m(t:T):U = 123\n" +
+                                "object O<:T,U:>\n" +
+                                "  def m(t:T):U = 123\n" +
+                                "interface I<:T,U:>\n" +
+                                "  def m(t:T):U\n" +
+                                "class TestMultiGenericParams\n" +
+                                "  static\n" +
+                                "    def m = [type C<:String,int:>, type O<:String,int:>, type I<:String,int:>,\n" +
+                                "             C<:String,int:>().m('abc'), O<:String,int:>.m('abc')\n" +
+                                "            ]\n"
+                        , "TestMultiGenericParams");
+                Method m = cls.getMethod("m");
+                List ls = (List) m.invoke(null);
+                assertEquals(5, ls.size());
+                Class<?> c = (Class<?>) ls.get(0);
+                Class<?> o = (Class<?>) ls.get(1);
+                Class<?> i = (Class<?>) ls.get(2);
+                Object oc = ls.get(3);
+                Object oo = ls.get(4);
+                assertEquals("C" + Consts.GENERIC_NAME_SPLIT + "java_lang_String" + Consts.GENERIC_NAME_SPLIT + "int", c.getName());
+                assertEquals("O" + Consts.GENERIC_NAME_SPLIT + "java_lang_String" + Consts.GENERIC_NAME_SPLIT + "int", o.getName());
+                assertEquals("I" + Consts.GENERIC_NAME_SPLIT + "java_lang_String" + Consts.GENERIC_NAME_SPLIT + "int", i.getName());
+                assertEquals(int.class, c.getMethod("m", String.class).getReturnType());
+                assertEquals(int.class, o.getMethod("m", String.class).getReturnType());
+                assertEquals(int.class, i.getMethod("m", String.class).getReturnType());
+                assertEquals(123, oc);
+                assertEquals(123, oo);
+        }
+
+        @Test
+        public void testApplyGenericWithGeneric() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "interface A<:T,U:>\n" +
+                                "  def m(t:T):U\n" +
+                                "class TestApplyGenericWithGeneric\n" +
+                                "  static\n" +
+                                "    def m = type A<:String, A<:int, double:>:>\n"
+                        , "TestApplyGenericWithGeneric");
+                Class<?> c = (Class<?>) cls.getMethod("m").invoke(null);
+                assertEquals(
+                        "A" + Consts.GENERIC_NAME_SPLIT + "java_lang_String" + Consts.GENERIC_NAME_SPLIT
+                                + "A" + Consts.GENERIC_NAME_SPLIT + "int" + Consts.GENERIC_NAME_SPLIT + "double"
+                        , c.getName());
+                Method m = c.getMethod("m", String.class);
+                Class<?> cc = m.getReturnType();
+                assertEquals("A" + Consts.GENERIC_NAME_SPLIT + "int" + Consts.GENERIC_NAME_SPLIT + "double", cc.getName());
+                assertEquals(double.class, cc.getMethod("m", int.class).getReturnType());
+        }
+
+        @Test
+        public void testGenericInherit() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "interface A<:T,U:>\n" +
+                                "  def m(t:T):U\n" +
+                                "class B<:T:> : A<:T,T:>\n" +
+                                "  def m(t:T):T = t\n" +
+                                "class TestGenericInherit\n" +
+                                "  static\n" +
+                                "    def m(i:int) = B<:int:>().m(i)\n"
+                        , "TestGenericInherit");
+                assertEquals(1, cls.getMethod("m", int.class).invoke(null, 1));
+        }
+
+        @Test
+        public void testGenericInGeneric() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class A<:T:>\n" +
+                                "class B<:U:>\n" +
+                                "  def m():A<:U:> = null\n" +
+                                "class TestGenericInGeneric\n" +
+                                "  static\n" +
+                                "    def m = type B<:int:>\n"
+                        , "TestGenericInGeneric");
+                Method m = cls.getMethod("m");
+                Class<?> b = (Class<?>) m.invoke(null);
+                Class<?> a = b.getMethod("m").getReturnType();
+                assertEquals("A" + Consts.GENERIC_NAME_SPLIT + "int", a.getName());
+        }
 }

@@ -27,8 +27,7 @@ package lt.compiler;
 import lt.compiler.lexical.*;
 import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.pre.Modifier;
-import lt.compiler.util.Consts;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 import java.util.*;
 
@@ -581,21 +580,21 @@ public class CompileUtil {
                         || isPatternMatchingSymbol(str);
         }
 
-        public static void visitStmt(Statement s, Function1<Boolean, ? super Statement> f) throws Exception {
+        public static <T> void visitStmt(Statement s, Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                 if (s == null) {
                         return;
                 }
-                if (f.apply(s)) {
-                        s.foreachInnerStatements(f);
+                if (f.apply(s, t)) {
+                        s.foreachInnerStatements(f, t);
                 }
         }
 
-        public static void visitStmt(Collection<? extends Statement> stmts, Function1<Boolean, ? super Statement> f) throws Exception {
+        public static <T> void visitStmt(Collection<? extends Statement> stmts, Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                 if (stmts == null) {
                         return;
                 }
                 for (Statement s : stmts) {
-                        visitStmt(s, f);
+                        visitStmt(s, f, t);
                 }
         }
 }

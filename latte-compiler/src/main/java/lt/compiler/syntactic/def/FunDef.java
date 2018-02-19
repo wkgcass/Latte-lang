@@ -5,7 +5,7 @@ import lt.compiler.LineCol;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Definition;
 import lt.compiler.syntactic.Statement;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 import java.util.List;
 import java.util.Set;
@@ -37,11 +37,11 @@ public class FunDef implements Definition {
         }
 
         @Override
-        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                CompileUtil.visitStmt(params, f);
-                CompileUtil.visitStmt(superType, f);
-                CompileUtil.visitStmt(annos, f);
-                CompileUtil.visitStmt(statements, f);
+        public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                CompileUtil.visitStmt(params, f, t);
+                CompileUtil.visitStmt(superType, f, t);
+                CompileUtil.visitStmt(annos, f, t);
+                CompileUtil.visitStmt(statements, f, t);
         }
 
         @Override

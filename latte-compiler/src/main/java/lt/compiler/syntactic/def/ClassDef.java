@@ -29,6 +29,7 @@ import lt.compiler.LineCol;
 import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.pre.Modifier;
 import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 import java.util.HashSet;
 import java.util.List;
@@ -145,13 +146,13 @@ public class ClassDef implements Definition {
         }
 
         @Override
-        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                CompileUtil.visitStmt(generics, f);
-                CompileUtil.visitStmt(modifiers, f);
-                CompileUtil.visitStmt(params, f);
-                CompileUtil.visitStmt(superWithInvocation, f);
-                CompileUtil.visitStmt(superWithoutInvocation, f);
-                CompileUtil.visitStmt(annos, f);
-                CompileUtil.visitStmt(statements, f);
+        public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                CompileUtil.visitStmt(generics, f, t);
+                CompileUtil.visitStmt(modifiers, f, t);
+                CompileUtil.visitStmt(params, f, t);
+                CompileUtil.visitStmt(superWithInvocation, f, t);
+                CompileUtil.visitStmt(superWithoutInvocation, f, t);
+                CompileUtil.visitStmt(annos, f, t);
+                CompileUtil.visitStmt(statements, f, t);
         }
 }

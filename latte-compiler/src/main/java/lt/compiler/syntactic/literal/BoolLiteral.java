@@ -27,7 +27,7 @@ package lt.compiler.syntactic.literal;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.Literal;
 import lt.compiler.syntactic.Statement;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 /**
  * bool literal
@@ -38,7 +38,7 @@ public class BoolLiteral extends Literal {
         }
 
         @Override
-        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+        public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                 // nothing to visit
         }
 }

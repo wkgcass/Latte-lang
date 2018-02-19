@@ -25,7 +25,7 @@
 package lt.compiler.syntactic;
 
 import lt.compiler.LineCol;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 import java.io.Serializable;
 
@@ -35,5 +35,13 @@ import java.io.Serializable;
 public interface Statement extends Serializable {
         LineCol line_col();
 
-        void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception;
+        /**
+         * travel through the ast
+         *
+         * @param f   a function takes current statement and a context object
+         * @param t   the context object
+         * @param <T> context type
+         * @throws Exception any exception
+         */
+        <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception;
 }

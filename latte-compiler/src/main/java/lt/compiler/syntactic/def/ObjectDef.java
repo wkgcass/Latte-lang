@@ -6,7 +6,7 @@ import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Definition;
 import lt.compiler.syntactic.Statement;
 import lt.compiler.syntactic.pre.Modifier;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,12 +50,12 @@ public class ObjectDef implements Definition {
         }
 
         @Override
-        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                CompileUtil.visitStmt(superWithInvocation, f);
-                CompileUtil.visitStmt(superWithoutInvocation, f);
-                CompileUtil.visitStmt(modifiers, f);
-                CompileUtil.visitStmt(annos, f);
-                CompileUtil.visitStmt(statements, f);
+        public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                CompileUtil.visitStmt(superWithInvocation, f, t);
+                CompileUtil.visitStmt(superWithoutInvocation, f, t);
+                CompileUtil.visitStmt(modifiers, f, t);
+                CompileUtil.visitStmt(annos, f, t);
+                CompileUtil.visitStmt(statements, f, t);
         }
 
         @Override

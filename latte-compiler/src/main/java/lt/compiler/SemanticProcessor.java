@@ -24,9 +24,11 @@
 
 package lt.compiler;
 
+import com.sun.istack.internal.Nullable;
 import lt.compiler.semantic.*;
 import lt.compiler.semantic.builtin.*;
 import lt.compiler.semantic.helper.ASTGHolder;
+import lt.compiler.semantic.helper.HalfAppliedTypes;
 import lt.compiler.syntactic.*;
 import lt.compiler.syntactic.def.*;
 import lt.compiler.syntactic.literal.BoolLiteral;
@@ -40,13 +42,14 @@ import lt.compiler.syntactic.pre.Modifier;
 import lt.compiler.syntactic.pre.PackageDeclare;
 import lt.compiler.util.BindList;
 import lt.compiler.util.Consts;
-import lt.generator.SourceGenerator;
 import lt.dependencies.asm.MethodVisitor;
+import lt.generator.SourceGenerator;
 import lt.lang.GenericTemplate;
 import lt.lang.Unit;
 import lt.lang.function.Function1;
+import lt.lang.function.Function2;
+import lt.lang.function.Function3;
 import lt.runtime.*;
-import sun.misc.BASE64Decoder;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -114,6 +117,10 @@ public class SemanticProcessor {
          * file name to Import info
          */
         public Map<String, List<Import>> fileNameToImport = new HashMap<String, List<Import>>();
+        /**
+         * file name to package name
+         */
+        public Map<String, String> fileNameToPackageName = new HashMap<String, String>();
         /**
          * a set of types that should be return value of {@link #parse()} method.<br>
          * these types are to be compiled into byte codes
@@ -229,7 +236,6 @@ public class SemanticProcessor {
                 Map<String, List<FunDef>> fileNameToFunctions = new HashMap<String, List<FunDef>>();
                 Map<String, List<ObjectDef>> fileNameToObjectDef = new HashMap<String, List<ObjectDef>>();
                 Map<String, List<AnnotationDef>> fileNameToAnnotationDef = new HashMap<String, List<AnnotationDef>>();
-                final Map<String, String> fileNameToPackageName = new HashMap<String, String>();
                 // record types and packages
                 for (String fileName : mapOfStatements.keySet()) {
                         List<Statement> statements = mapOfStatements.get(fileName);
@@ -348,22 +354,62 @@ public class SemanticProcessor {
                         }
                 }
 
+                // templateName to halfAppliedTypes
+                // templateName means the type without generic parameters
+                // halfAppliedType means the type is not fully applied, e.g. class A<:T,U:> and A<:int, U:>
+                final Map<String, HalfAppliedTypes> templateNameToHalfAppliedTypes = new HashMap<String, HalfAppliedTypes>();
                 for (String file : mapOfStatements.keySet()) {
                         List<Statement> stmts = mapOfStatements.get(file);
                         final List<Import> imports = fileNameToImport.get(file);
+                        final String pkg = fileNameToPackageName.get(file);
+
+                        // traverse func
+                        Function2<Boolean, Statement, HalfAppliedTypes> traverseFunc = new Function2<Boolean, Statement, HalfAppliedTypes>() {
+                                @Override
+                                public Boolean apply(Statement statement, HalfAppliedTypes halfAppliedTypes) throws Exception {
+                                        if (statement instanceof AST.Access) {
+                                                AST.Access access = (AST.Access) statement;
+                                                handleGenericAST(access, imports, halfAppliedTypes, templateNameToHalfAppliedTypes);
+                                                return true;
+                                        }
+                                        if (statement instanceof ClassDef || statement instanceof InterfaceDef || statement instanceof ObjectDef) {
+                                                assert halfAppliedTypes == null;
+                                                List<AST.Access> generics;
+                                                String simpleName;
+                                                if (statement instanceof ClassDef) {
+                                                        ClassDef c = (ClassDef) statement;
+                                                        generics = c.generics;
+                                                        simpleName = c.name;
+                                                } else if (statement instanceof InterfaceDef) {
+                                                        InterfaceDef i = (InterfaceDef) statement;
+                                                        generics = i.generics;
+                                                        simpleName = i.name;
+                                                } else /*if (statement instanceof ObjectDef)*/ {
+                                                        ObjectDef o = (ObjectDef) statement;
+                                                        generics = o.generics;
+                                                        simpleName = o.name;
+                                                }
+                                                if (!generics.isEmpty()) {
+                                                        // record the generics
+                                                        if (templateNameToHalfAppliedTypes.containsKey(pkg + simpleName)) {
+                                                                halfAppliedTypes = templateNameToHalfAppliedTypes.get(pkg + simpleName);
+                                                        } else {
+                                                                halfAppliedTypes = new HalfAppliedTypes();
+                                                                templateNameToHalfAppliedTypes.put(pkg + simpleName, halfAppliedTypes);
+                                                        }
+                                                        statement.foreachInnerStatements(this, halfAppliedTypes);
+                                                        return false;
+                                                }
+                                        }
+                                        return true;
+                                }
+                        };
+
                         for (Statement stmt : stmts) {
                                 try {
-                                        stmt.foreachInnerStatements(new Function1<Boolean, Statement>() {
-                                                @Override
-                                                public Boolean apply(Statement statement) throws Exception {
-                                                        if (statement instanceof AST.Access) {
-                                                                AST.Access access = (AST.Access) statement;
-                                                                handleGenericAST(access, imports, fileNameToPackageName);
-                                                                return false;
-                                                        }
-                                                        return true;
-                                                }
-                                        });
+                                        if (traverseFunc.apply(stmt, null)) {
+                                                stmt.foreachInnerStatements(traverseFunc, null);
+                                        }
                                 } catch (SyntaxException e) {
                                         throw e;
                                 } catch (Exception e) {
@@ -559,26 +605,83 @@ public class SemanticProcessor {
                 typeDefSet.add(sAnnoDef);
         }
 
-        private void handleGenericAST(AST.Access access,
-                                      List<Import> imports,
-                                      Map<String, String> fileNameToPackageName) throws SyntaxException {
-                if (access.generics.isEmpty()) {
-                        return;
+        /**
+         * handle the {@link lt.compiler.syntactic.AST.Access} found in ast.
+         * <br>
+         * for those generics are fully applied, check the map and apply all
+         * corresponding half applied types.<br>
+         * for those half applied types, record in list
+         *
+         * @param accessType                     the access instance
+         * @param imports                        current file imports
+         * @param currentHalfAppliedTypes        list (as the variable name says)
+         * @param templateNameToHalfAppliedTypes map (as the variable name says)
+         * @return true if fully applied, false otherwise
+         * @throws SyntaxException compile exception
+         */
+        private boolean handleGenericAST(AST.Access accessType,
+                                         List<Import> imports,
+                                         @Nullable HalfAppliedTypes currentHalfAppliedTypes,
+                                         Map<String, HalfAppliedTypes> templateNameToHalfAppliedTypes) throws SyntaxException {
+                if (accessType.generics.isEmpty()) {
+                        return true;
                 }
-                for (AST.Access g : access.generics) {
-                        handleGenericAST(g, imports, fileNameToPackageName);
+                boolean isFullyApplied = true; // any one sub generic type not fully applied then it's not applied
+                for (AST.Access g : accessType.generics) {
+                        boolean b = handleGenericAST(g, imports, currentHalfAppliedTypes, templateNameToHalfAppliedTypes);
+                        if (!b) {
+                                isFullyApplied = false;
+                        }
                 }
-                AST.Access accessWithoutGeneric = new AST.Access(access.exp, access.name, access.line_col());
+
+                if (!isFullyApplied) {
+                        // record in the list
+                        assert null != currentHalfAppliedTypes;
+                        currentHalfAppliedTypes.add(accessType);
+                        return false;
+                }
+
+                AST.Access accessWithoutGeneric = new AST.Access(accessType.exp, accessType.name, accessType.line_col());
+                // templateName means
+                // the generic type name without type parameters
+                // e.g. class A<:T:>, the templateName would be A
                 String templateName = accessToClassName(accessWithoutGeneric, Collections.<String, STypeDef>emptyMap(), imports, false);
-                String clsName = accessToClassName(access, Collections.<String, STypeDef>emptyMap(), imports, false);
+                if (tryToApplyGenericType(accessType, imports, templateName, Collections.<String, STypeDef>emptyMap(), true)) {
+                        List<STypeDef> genericTypes = new ArrayList<STypeDef>();
+                        for (AST.Access a : accessType.generics) {
+                                STypeDef t = getTypeWithAccess(a, Collections.<String, STypeDef>emptyMap(), imports);
+                                genericTypes.add(t);
+                        }
+                        applyToHalfAppliedTypes(templateNameToHalfAppliedTypes, templateName, genericTypes);
+                        return true;
+                } else {
+                        assert null != currentHalfAppliedTypes;
+                        currentHalfAppliedTypes.add(accessType);
+                        return false;
+                }
+        }
+
+        private boolean tryToApplyGenericType(AST.Access access,
+                                              List<Import> imports,
+                                              String templateName,
+                                              Map<String, STypeDef> genericMap,
+                                              boolean allowException) throws SyntaxException {
+                // clsName means
+                // the generic type full name
+                // Latte generates a long name for the applied generic type
+                // e.g. class A<:T:> and A<:int:> would be something looks like 'A_xxx_int'
+                String clsName = accessToClassName(access, genericMap, imports, allowException);
+                if (null == clsName) {
+                        return false;
+                }
                 if (types.containsKey(clsName)) {
                         // already defined
                         // ignore and return
-                        return;
+                        return true;
                 }
                 List<STypeDef> genericTypes = new ArrayList<STypeDef>();
                 for (AST.Access a : access.generics) {
-                        STypeDef t = getTypeWithAccess(a, Collections.<String, STypeDef>emptyMap(), imports);
+                        STypeDef t = getTypeWithAccess(a, genericMap, imports);
                         genericTypes.add(t);
                 }
                 int genericParamSize;
@@ -605,15 +708,15 @@ public class SemanticProcessor {
 
                 } else if (originalFunctions.containsKey(templateName)) {
                         err.SyntaxException("function definitions are never generic types", access.line_col());
-                        return;
+                        return true; // would not reach here
 
                 } else if (originalAnnotations.containsKey(templateName)) {
                         err.SyntaxException("annotations are never generic types", access.line_col());
-                        return;
+                        return true; // would not reach here
 
                 } else {
                         err.SyntaxException("type " + templateName + " not found", access.line_col());
-                        return;
+                        return true; // would not reach here
                 }
 
                 if (genericParamSize != access.generics.size()) {
@@ -621,6 +724,48 @@ public class SemanticProcessor {
                                         + ", but generic args size is " + access.generics.size(),
                                 access.line_col());
                 }
+
+                return true;
+        }
+
+        private void applyToHalfAppliedTypes(Map<String, HalfAppliedTypes> templateNameToHalfAppliedTypes,
+                                             String templateName,
+                                             List<STypeDef> genericTypes) throws SyntaxException {
+                HalfAppliedTypes types;
+                if (templateNameToHalfAppliedTypes.containsKey(templateName)) {
+                        types = templateNameToHalfAppliedTypes.get(templateName);
+                } else {
+                        types = new HalfAppliedTypes();
+                        templateNameToHalfAppliedTypes.put(templateName, types);
+                }
+                final Map<String, STypeDef> genericMap = new HashMap<String, STypeDef>();
+                List<AST.Access> typeGenerics;
+                if (originalClasses.containsKey(templateName)) {
+                        typeGenerics = originalClasses.get(templateName).s.generics;
+                } else if (originalObjects.containsKey(templateName)) {
+                        typeGenerics = originalObjects.get(templateName).s.generics;
+                } else if (originalInterfaces.containsKey(templateName)) {
+                        typeGenerics = originalInterfaces.get(templateName).s.generics;
+                } else {
+                        throw new LtBug("trying to get generic parameters from " + templateName);
+                }
+                for (int i = 0; i < typeGenerics.size(); ++i) {
+                        AST.Access g = typeGenerics.get(i);
+                        STypeDef t = genericTypes.get(i);
+                        genericMap.put(g.name, t);
+                }
+                types.setApply(new Function1<Void, AST.Access>() {
+                        @Override
+                        public Void apply(AST.Access type) throws Exception {
+                                String filename = type.line_col().fileName;
+                                List<Import> imports = fileNameToImport.get(filename);
+                                // build non generic access
+                                AST.Access nonGenericType = new AST.Access(type.exp, type.name, type.line_col());
+                                String clsName = accessToClassName(nonGenericType, Collections.<String, STypeDef>emptyMap(), imports, false);
+                                tryToApplyGenericType(type, imports, clsName, genericMap, false);
+                                return null;
+                        }
+                });
         }
 
         private AST.PackageRef checkAndGetPackage(Map<String, String> fileNameToPackageName, AST.Access access) {
@@ -11496,6 +11641,9 @@ public class SemanticProcessor {
                         List<STypeDef> genericTypeList = new ArrayList<STypeDef>();
                         for (AST.Access e : genericASTList) {
                                 STypeDef t = getTypeWithAccess(e, genericMap, imports, allowException);
+                                if (t == null) {
+                                        return null; // the type not found, and allowException is true
+                                }
                                 genericTypeList.add(t);
                         }
                         return buildTemplateAppliedName(className, genericTypeList);

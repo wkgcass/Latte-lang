@@ -29,7 +29,7 @@ import lt.compiler.LineCol;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Pre;
 import lt.compiler.syntactic.Statement;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 /**
  * import
@@ -78,9 +78,9 @@ public class Import implements Pre {
         }
 
         @Override
-        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                CompileUtil.visitStmt(pkg, f);
-                CompileUtil.visitStmt(access, f);
+        public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                CompileUtil.visitStmt(pkg, f, t);
+                CompileUtil.visitStmt(access, f, t);
         }
 
         @Override

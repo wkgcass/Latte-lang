@@ -24,14 +24,16 @@
 
 package lt.compiler.syntactic;
 
-import lt.compiler.CompileUtil;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.def.VariableDef;
 import lt.compiler.syntactic.pre.Modifier;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
 
 import static lt.compiler.CompileUtil.visitStmt;
 
@@ -86,9 +88,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(exp, f);
-                        visitStmt(generics, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(exp, f, t);
+                        visitStmt(generics, f, t);
                 }
         }
 
@@ -152,9 +154,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(anno, f);
-                        visitStmt(args, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(anno, f, t);
+                        visitStmt(args, f, t);
                 }
         }
 
@@ -174,8 +176,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(anno, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(anno, f, t);
                 }
 
                 @Override
@@ -248,8 +250,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(list, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(list, f, t);
                 }
         }
 
@@ -301,9 +303,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(assignTo, f);
-                        visitStmt(assignFrom, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(assignTo, f, t);
+                        visitStmt(assignFrom, f, t);
                 }
         }
 
@@ -352,9 +354,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(exp, f);
-                        visitStmt(type, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(exp, f, t);
+                        visitStmt(type, f, t);
                 }
         }
 
@@ -379,11 +381,11 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(modifiers, f);
-                        visitStmt(annos, f);
-                        visitStmt(pattern, f);
-                        visitStmt(exp, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(modifiers, f, t);
+                        visitStmt(annos, f, t);
+                        visitStmt(pattern, f, t);
+                        visitStmt(exp, f, t);
                 }
 
                 @Override
@@ -470,7 +472,7 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                         // nothing to visit
                 }
         }
@@ -512,8 +514,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(type, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(type, f, t);
                 }
         }
 
@@ -553,8 +555,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(exp, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(exp, f, t);
                 }
         }
 
@@ -600,9 +602,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(type, f);
-                        visitStmt(subPatterns, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(type, f, t);
+                        visitStmt(subPatterns, f, t);
                 }
         }
 
@@ -644,8 +646,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(type, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(type, f, t);
                 }
         }
 
@@ -693,9 +695,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(pattern, f);
-                        visitStmt(condition, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(pattern, f, t);
+                        visitStmt(condition, f, t);
                 }
         }
 
@@ -719,11 +721,11 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(expToMatch, f);
-                        visitStmt(patternsToStatements.keySet(), f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(expToMatch, f, t);
+                        visitStmt(patternsToStatements.keySet(), f, t);
                         for (List<Statement> l : patternsToStatements.values()) {
-                                visitStmt(l, f);
+                                visitStmt(l, f, t);
                         }
                 }
 
@@ -792,8 +794,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(statements, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(statements, f, t);
                 }
         }
 
@@ -842,9 +844,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(exp, f);
-                        visitStmt(body, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(exp, f, t);
+                        visitStmt(body, f, t);
                 }
         }
 
@@ -868,9 +870,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(type, f);
-                        visitStmt(ast, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(type, f, t);
+                        visitStmt(ast, f, t);
                 }
 
                 @Override
@@ -936,9 +938,9 @@ public class AST {
                         }
 
                         @Override
-                        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                                visitStmt(condition, f);
-                                visitStmt(body, f);
+                        public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                                visitStmt(condition, f, t);
+                                visitStmt(body, f, t);
                         }
                 }
 
@@ -978,8 +980,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(ifs, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(ifs, f, t);
                 }
 
                 @Override
@@ -1054,9 +1056,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(exp, f);
-                        visitStmt(args, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(exp, f, t);
+                        visitStmt(args, f, t);
                 }
         }
 
@@ -1122,9 +1124,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(exp, f);
-                        visitStmt(args, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(exp, f, t);
+                        visitStmt(args, f, t);
                 }
         }
 
@@ -1181,9 +1183,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(params, f);
-                        visitStmt(statements, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(params, f, t);
+                        visitStmt(statements, f, t);
                 }
         }
 
@@ -1237,9 +1239,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(map.keySet(), f);
-                        visitStmt(map.values(), f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(map.keySet(), f, t);
+                        visitStmt(map.values(), f, t);
                 }
         }
 
@@ -1261,8 +1263,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(invocation, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(invocation, f, t);
                 }
 
                 @Override
@@ -1312,7 +1314,7 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                         // nothing to visit
                 }
         }
@@ -1355,7 +1357,7 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                         // nothing to visit
                 }
         }
@@ -1391,7 +1393,7 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                         // nothing to visit
                 }
         }
@@ -1414,8 +1416,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(required, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(required, f, t);
                 }
         }
 
@@ -1457,8 +1459,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(exp, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(exp, f, t);
                 }
         }
 
@@ -1501,8 +1503,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(statements, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(statements, f, t);
                 }
         }
 
@@ -1561,9 +1563,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(toSync, f);
-                        visitStmt(statements, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(toSync, f, t);
+                        visitStmt(statements, f, t);
                 }
         }
 
@@ -1605,8 +1607,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(exp, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(exp, f, t);
                 }
         }
 
@@ -1664,10 +1666,10 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(statements, f);
-                        visitStmt(catchStatements, f);
-                        visitStmt(fin, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(statements, f, t);
+                        visitStmt(catchStatements, f, t);
+                        visitStmt(fin, f, t);
                 }
         }
 
@@ -1709,8 +1711,8 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(type, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(type, f, t);
                 }
         }
 
@@ -1769,9 +1771,9 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                        visitStmt(condition, f);
-                        visitStmt(statements, f);
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                        visitStmt(condition, f, t);
+                        visitStmt(statements, f, t);
                 }
         }
 
@@ -1791,7 +1793,7 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                         // do nothing
                 }
         }
@@ -1812,7 +1814,7 @@ public class AST {
                 }
 
                 @Override
-                public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
+                public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
                         // do nothing
                 }
         }

@@ -4,7 +4,7 @@ import lt.compiler.CompileUtil;
 import lt.compiler.LineCol;
 import lt.compiler.syntactic.AST;
 import lt.compiler.syntactic.Statement;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 import java.util.List;
 import java.util.Set;
@@ -31,9 +31,9 @@ public class AnnotationDef implements Statement {
         }
 
         @Override
-        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                CompileUtil.visitStmt(annos, f);
-                CompileUtil.visitStmt(stmts, f);
+        public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                CompileUtil.visitStmt(annos, f, t);
+                CompileUtil.visitStmt(stmts, f, t);
         }
 
         @Override

@@ -29,7 +29,7 @@ import lt.compiler.LineCol;
 import lt.compiler.syntactic.Expression;
 import lt.compiler.syntactic.Operation;
 import lt.compiler.syntactic.Statement;
-import lt.lang.function.Function1;
+import lt.lang.function.Function2;
 
 import java.util.Collections;
 import java.util.List;
@@ -96,7 +96,7 @@ public class UnaryOneVariableOperation implements Operation {
         }
 
         @Override
-        public void foreachInnerStatements(Function1<Boolean, ? super Statement> f) throws Exception {
-                CompileUtil.visitStmt(expressions, f);
+        public <T> void foreachInnerStatements(Function2<Boolean, ? super Statement, T> f, T t) throws Exception {
+                CompileUtil.visitStmt(expressions, f, t);
         }
 }
