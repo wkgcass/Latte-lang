@@ -4215,4 +4215,51 @@ public class TestCodeGen {
                 Class<?> a = b.getMethod("m").getReturnType();
                 assertEquals("A" + Consts.GENERIC_NAME_SPLIT + "int", a.getName());
         }
+
+        @Test
+        public void testGenericFirstApplyThenAdd() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class A<:T:>\n" +
+                                "  public i : T\n" +
+                                "class Y : B<:int:>\n" + // b<:int:> before A<:U:>
+                                "class B<:U:> : A<:U:>\n" +
+                                "\n" +
+                                "class TestGenericFirstApplyThenAdd\n" +
+                                "  static\n" +
+                                "    def m = type Y\n"
+                        , "TestGenericFirstApplyThenAdd");
+                Class<?> y = (Class<?>) cls.getMethod("m").invoke(null);
+                assertEquals(int.class, y.getField("i").getType());
+        }
+
+        @Test
+        public void testHigherKindType() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class Functor<:F, T, U:>\n" +
+                                "  def fmap(f, a:F<:T:>):F<:U:> = null\n" +
+                                "class X<:T:>\n" +
+                                "class TestHigherKindType\n" +
+                                "  static\n" +
+                                "    def m = type Functor<:X, int, double:>"
+                        , "TestHigherKindType");
+                Class<?> f = (Class<?>) cls.getMethod("m").invoke(null);
+                assertEquals("Functor" +
+                        Consts.GENERIC_NAME_SPLIT + "X" +
+                        Consts.GENERIC_NAME_SPLIT + "int" +
+                        Consts.GENERIC_NAME_SPLIT + "double", f.getName());
+                Method[] methods = f.getMethods();
+                Method fmap = null;
+                for (Method m : methods) {
+                        if (m.getName().equals("fmap")) {
+                                fmap = m;
+                                break;
+                        }
+                }
+                assertNotNull(fmap);
+                assertEquals(2, fmap.getParameterTypes().length);
+                assertEquals(Object.class, fmap.getParameterTypes()[0]);
+                Class<?> p1 = fmap.getParameterTypes()[1];
+                assertEquals("X" + Consts.GENERIC_NAME_SPLIT + "int", p1.getName());
+                assertEquals("X" + Consts.GENERIC_NAME_SPLIT + "double", fmap.getReturnType().getName());
+        }
 }

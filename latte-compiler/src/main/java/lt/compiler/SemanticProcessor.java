@@ -47,7 +47,6 @@ import lt.lang.GenericTemplate;
 import lt.lang.Unit;
 import lt.lang.function.Function1;
 import lt.lang.function.Function2;
-import lt.lang.function.Function3;
 import lt.runtime.*;
 
 import java.io.*;
@@ -644,7 +643,14 @@ public class SemanticProcessor {
                 // templateName means
                 // the generic type name without type parameters
                 // e.g. class A<:T:>, the templateName would be A
-                String templateName = accessToClassName(accessWithoutGeneric, Collections.<String, STypeDef>emptyMap(), imports, false);
+                //
+                // the templateName might not be able to find when
+                // higher kind is supportted
+                String templateName = accessToClassName(accessWithoutGeneric, Collections.<String, STypeDef>emptyMap(), imports, true);
+                if (templateName == null) {
+                        currentHalfAppliedTypes.add(accessType);
+                        return false;
+                }
                 if (tryToApplyGenericType(accessType, imports, templateName, Collections.<String, STypeDef>emptyMap(), true)) {
                         List<STypeDef> genericTypes = new ArrayList<STypeDef>();
                         for (AST.Access a : accessType.generics) {
@@ -760,7 +766,7 @@ public class SemanticProcessor {
                                 List<Import> imports = fileNameToImport.get(filename);
                                 // build non generic access
                                 AST.Access nonGenericType = new AST.Access(type.exp, type.name, type.line_col());
-                                String clsName = accessToClassName(nonGenericType, Collections.<String, STypeDef>emptyMap(), imports, false);
+                                String clsName = accessToClassName(nonGenericType, genericMap, imports, false);
                                 tryToApplyGenericType(type, imports, clsName, genericMap, false);
                                 return null;
                         }
