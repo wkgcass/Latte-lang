@@ -1181,7 +1181,7 @@ public class CodeGenerator {
                         buildUnitWhenInvokeVoid(invokable, info);
 
                 } else if (invoke instanceof Ins.InvokeVirtual) {
-                        if (Consts.match(((Ins.InvokeVirtual) invoke).flag, Consts.IS_POINTER_GET)) {
+                        if (Consts.flagMatch(((Ins.InvokeVirtual) invoke).flag, Consts.IS_POINTER_GET)) {
                                 // pointer get
                                 if (!requireValue) {
                                         return;
@@ -1198,7 +1198,7 @@ public class CodeGenerator {
                                         _buildOptimizedPointerTLoad(methodVisitor, info, index, ((PointerType) target.type()).getPointingType());
                                         return;
                                 }
-                        } else if (Consts.match(((Ins.InvokeVirtual) invoke).flag, Consts.IS_POINTER_SET)) {
+                        } else if (Consts.flagMatch(((Ins.InvokeVirtual) invoke).flag, Consts.IS_POINTER_SET)) {
                                 // pointer set
 
                                 if (((Ins.InvokeVirtual) invoke).target() instanceof Ins.TLoad) {

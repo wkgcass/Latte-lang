@@ -14,7 +14,7 @@ public class Consts {
         private Consts() {
         }
 
-        public static boolean match(int field, int flag) {
+        public static boolean flagMatch(int field, int flag) {
                 return (field & flag) == flag;
         }
 }
