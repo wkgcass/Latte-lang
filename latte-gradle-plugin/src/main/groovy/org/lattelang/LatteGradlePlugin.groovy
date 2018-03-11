@@ -103,8 +103,31 @@ class LatteGradlePlugin implements Plugin<Project> {
         def mainSrc = project.sourceSets.main.latte.srcDirs
         def testSrc = project.sourceSets.test.latte.srcDirs
 
-        File mainOutputDir = new File(project.buildDir.absolutePath + '/classes/main')
-        File testOutputDir = new File(project.buildDir.absolutePath + '/classes/test')
+        int javaCompilePathFlag = 0 // 0 -> /classes/main, 1 -> /classes/java/main
+
+        String gradleVer = project.gradle.gradleVersion
+        project.logger.println("gradle version is " + gradleVer)
+        String[] gradleVersions = gradleVer.split("\\.")
+        if (gradleVersions.length > 0) {
+            try {
+                int v = Integer.parseInt(gradleVersions[0])
+                if (v >= 4) {
+                    javaCompilePathFlag = 1
+                }
+            } catch (ignore) {
+            }
+        }
+        File mainOutputDir
+        File testOutputDir
+        switch (javaCompilePathFlag) {
+            case 1:
+                mainOutputDir = new File(project.buildDir.absolutePath + '/classes/java/main')
+                testOutputDir = new File(project.buildDir.absolutePath + '/classes/java/test')
+                break;
+            default:
+                mainOutputDir = new File(project.buildDir.absolutePath + '/classes/main')
+                testOutputDir = new File(project.buildDir.absolutePath + '/classes/test')
+        }
 
         def theSourceDirs = isTest ? testSrc : mainSrc
         File theOutputDir = isTest ? testOutputDir : mainOutputDir
@@ -168,17 +191,17 @@ class LatteGradlePlugin implements Plugin<Project> {
     private void configureSourceSetDefaults() {
         project.getConvention().getPlugin(JavaPluginConvention).getSourceSets().all(new Action<SourceSet>() {
             public void execute(SourceSet sourceSet) {
-                final DefaultLatteSourceSet groovySourceSet = new DefaultLatteSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), sourceDirectorySetFactory);
-                new DslObject(sourceSet).getConvention().getPlugins().put("groovy", groovySourceSet);
+                final LatteSourceSet latteSourceSet = new DefaultLatteSourceSet(((DefaultSourceSet) sourceSet).getDisplayName(), sourceDirectorySetFactory);
+                new DslObject(sourceSet).getConvention().getPlugins().put("latte", latteSourceSet);
 
-                groovySourceSet.getLatte().srcDir("src/" + sourceSet.getName() + "/latte");
+                latteSourceSet.getLatte().srcDir("src/" + sourceSet.getName() + "/latte");
                 sourceSet.getResources().getFilter().exclude(new Spec<FileTreeElement>() {
                     public boolean isSatisfiedBy(FileTreeElement element) {
-                        return groovySourceSet.getLatte().contains(element.getFile());
+                        return latteSourceSet.getLatte().contains(element.getFile());
                     }
                 });
-                sourceSet.getAllJava().source(groovySourceSet.getLatte());
-                sourceSet.getAllSource().source(groovySourceSet.getLatte());
+                sourceSet.getAllJava().source(latteSourceSet.getLatte());
+                sourceSet.getAllSource().source(latteSourceSet.getLatte());
             }
         });
     }
