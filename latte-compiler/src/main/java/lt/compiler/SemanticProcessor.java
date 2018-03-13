@@ -186,7 +186,6 @@ public class SemanticProcessor {
                 return sb.toString();
         }
 
-        @SuppressWarnings("unused")
         public static byte[] hex2byte(String str) {
                 str = str.trim();
                 int len = str.length();
@@ -464,9 +463,10 @@ public class SemanticProcessor {
 
                 step2(fileNameToPackageName);
                 step3();
-                // ensures that @ImplicitImports and @StaticImports are loaded
+                // ensures that @ImplicitImports / @StaticImports / @GenericTemplate are loaded
                 getTypeWithName("lt.runtime.ImplicitImports", LineCol.SYNTHETIC);
                 getTypeWithName("lt.runtime.StaticImports", LineCol.SYNTHETIC);
+                getTypeWithName("lt.lang.GenericTemplate", LineCol.SYNTHETIC);
                 getTypeWithName("java.lang.annotation.Retention", LineCol.SYNTHETIC);
                 step4();
                 addImportImplicit();
@@ -477,11 +477,17 @@ public class SemanticProcessor {
         }
 
         private void recordClass(ClassDef c, String pkg, List<STypeDef> generics) throws SyntaxException {
+                recordClass(c, pkg, generics, false);
+        }
+
+        private void recordClass(ClassDef c, String pkg, List<STypeDef> generics, boolean isTemplateType) throws SyntaxException {
                 String className = buildTemplateAppliedName(pkg + c.name, generics);
                 // check occurrence
                 if (typeExists(className)) {
-                        err.SyntaxException("duplicate type names " + className, c.line_col());
-                        return;
+                        if (!isTemplateType) {
+                                err.SyntaxException("duplicate type names " + className, c.line_col());
+                                return;
+                        }
                 }
 
                 SClassDef sClassDef = new SClassDef(SClassDef.NORMAL, c.line_col());
@@ -512,17 +518,25 @@ public class SemanticProcessor {
                         }
                 }
 
-                types.put(className, sClassDef); // record the class
+                if (!isTemplateType) {
+                        types.put(className, sClassDef); // record the class
+                        typeDefSet.add(sClassDef);
+                }
                 originalClasses.put(className, new ASTGHolder<ClassDef>(c, generics));
-                typeDefSet.add(sClassDef);
         }
 
         private void recordInterface(InterfaceDef i, String pkg, List<STypeDef> generics) throws SyntaxException {
+                recordInterface(i, pkg, generics, false);
+        }
+
+        private void recordInterface(InterfaceDef i, String pkg, List<STypeDef> generics, boolean isTemplateType) throws SyntaxException {
                 String interfaceName = buildTemplateAppliedName(pkg + i.name, generics);
                 // check occurrence
                 if (typeExists(interfaceName)) {
-                        err.SyntaxException("duplicate type names " + interfaceName, i.line_col());
-                        return;
+                        if (!isTemplateType) {
+                                err.SyntaxException("duplicate type names " + interfaceName, i.line_col());
+                                return;
+                        }
                 }
 
                 SInterfaceDef sInterfaceDef = new SInterfaceDef(i.line_col());
@@ -543,17 +557,25 @@ public class SemanticProcessor {
                         }
                 }
 
-                types.put(interfaceName, sInterfaceDef); // record the interface
+                if (!isTemplateType) {
+                        types.put(interfaceName, sInterfaceDef); // record the interface
+                        typeDefSet.add(sInterfaceDef);
+                }
                 originalInterfaces.put(interfaceName, new ASTGHolder<InterfaceDef>(i, generics));
-                typeDefSet.add(sInterfaceDef);
         }
 
         private void recordFun(FunDef f, String pkg, List<STypeDef> generics) throws SyntaxException {
+                recordFun(f, pkg, generics, false);
+        }
+
+        private void recordFun(FunDef f, String pkg, List<STypeDef> generics, boolean isTemplateType) throws SyntaxException {
                 String className = buildTemplateAppliedName(pkg + f.name, generics);
                 // check occurrence
                 if (typeExists(className)) {
-                        err.SyntaxException("duplicate type names " + className, f.line_col());
-                        return;
+                        if (!isTemplateType) {
+                                err.SyntaxException("duplicate type names " + className, f.line_col());
+                                return;
+                        }
                 }
 
                 SClassDef sClassDef = new SClassDef(SClassDef.FUN, f.line_col());
@@ -562,17 +584,25 @@ public class SemanticProcessor {
                 sClassDef.modifiers().add(SModifier.PUBLIC);
                 sClassDef.modifiers().add(SModifier.FINAL);
 
-                types.put(className, sClassDef); // record the class
+                if (!isTemplateType) {
+                        types.put(className, sClassDef); // record the class
+                        typeDefSet.add(sClassDef);
+                }
                 originalFunctions.put(className, new ASTGHolder<FunDef>(f, generics));
-                typeDefSet.add(sClassDef);
         }
 
         private void recordObject(ObjectDef o, String pkg, List<STypeDef> generics) throws SyntaxException {
+                recordObject(o, pkg, generics, false);
+        }
+
+        private void recordObject(ObjectDef o, String pkg, List<STypeDef> generics, boolean isTemplateType) throws SyntaxException {
                 String className = buildTemplateAppliedName(pkg + o.name, generics);
                 // check occurrence
                 if (typeExists(className)) {
-                        err.SyntaxException("duplicate type names " + className, o.line_col());
-                        return;
+                        if (!isTemplateType) {
+                                err.SyntaxException("duplicate type names " + className, o.line_col());
+                                return;
+                        }
                 }
 
                 SClassDef sClassDef = new SClassDef(SClassDef.OBJECT, o.line_col());
@@ -581,26 +611,36 @@ public class SemanticProcessor {
                 sClassDef.modifiers().add(SModifier.PUBLIC);
                 sClassDef.modifiers().add(SModifier.FINAL);
 
-                types.put(className, sClassDef);
+                if (!isTemplateType) {
+                        types.put(className, sClassDef); // record the object
+                        typeDefSet.add(sClassDef);
+                }
                 originalObjects.put(className, new ASTGHolder<ObjectDef>(o, generics));
-                typeDefSet.add(sClassDef);
         }
 
         private void recordAnnotation(AnnotationDef a, String pkg, List<STypeDef> generics) throws SyntaxException {
+                recordAnnotation(a, pkg, generics, false);
+        }
+
+        private void recordAnnotation(AnnotationDef a, String pkg, List<STypeDef> generics, boolean isTemplateType) throws SyntaxException {
                 String annoName = buildTemplateAppliedName(pkg + a.name, generics);
                 // check occurrence
                 if (typeExists(annoName)) {
-                        err.SyntaxException("duplicate type names " + annoName, a.line_col());
-                        return;
+                        if (!isTemplateType) {
+                                err.SyntaxException("duplicate type names " + annoName, a.line_col());
+                                return;
+                        }
                 }
 
                 SAnnoDef sAnnoDef = new SAnnoDef(a.line_col());
                 sAnnoDef.setPkg(pkg);
                 sAnnoDef.setFullName(annoName);
 
-                types.put(annoName, sAnnoDef);
+                if (!isTemplateType) {
+                        types.put(annoName, sAnnoDef); // record the annotation
+                        typeDefSet.add(sAnnoDef);
+                }
                 originalAnnotations.put(annoName, new ASTGHolder<AnnotationDef>(a, generics));
-                typeDefSet.add(sAnnoDef);
         }
 
         /**
@@ -671,6 +711,10 @@ public class SemanticProcessor {
                                               String templateName,
                                               Map<String, STypeDef> genericMap,
                                               boolean allowException) throws SyntaxException {
+                // load the template type first
+                AST.Access tmpAccess = new AST.Access(access.exp, access.name, access.line_col());
+                getTypeWithAccess(tmpAccess, Collections.<String, STypeDef>emptyMap(), imports, /* exception allowed */true);
+
                 // clsName means
                 // the generic type full name
                 // Latte generates a long name for the applied generic type
@@ -2240,7 +2284,7 @@ public class SemanticProcessor {
                 c.staticStatements().add(new Ins.PutStatic(f, new StringConstantValue(str), LineCol.SYNTHETIC, err));
                 f.alreadyAssigned();
                 // anno
-                SAnnoDef aDef = (SAnnoDef) getTypeWithName("lt.lang.GenericTemplate", LineCol.SYNTHETIC);
+                SAnnoDef aDef = (SAnnoDef) getTypeWithName(GenericTemplate.class.getName(), LineCol.SYNTHETIC);
                 SAnno a = new SAnno();
                 a.setAnnoDef(aDef);
                 c.annos().add(a);
@@ -10953,13 +10997,34 @@ public class SemanticProcessor {
                                                 } catch (NoSuchFieldException e) {
                                                         throw new LtBug("the generic template doesn't have " + Consts.AST_FIELD + " field");
                                                 }
-                                                Definition defi;
+                                                if (astField.getType() != String.class) {
+                                                        throw new LtBug("the ast field is not of String type");
+                                                }
+                                                String s;
                                                 try {
-                                                        defi = (Definition) astField.get(null);
+                                                        s = (String) astField.get(null);
                                                 } catch (IllegalAccessException e) {
                                                         throw new LtBug("the generic template field is not public", e);
+                                                }
+                                                byte[] serializedBytes = hex2byte(s);
+                                                Definition defi;
+                                                ObjectInputStream ois = null;
+                                                try {
+                                                        ois = new ObjectInputStream(new ByteArrayInputStream(serializedBytes));
+                                                        defi = (Definition) ois.readObject();
                                                 } catch (ClassCastException e) {
                                                         throw new LtBug("the generic template field is not a definition", e);
+                                                } catch (IOException e) {
+                                                        throw new LtBug(e);
+                                                } finally {
+                                                        if (ois != null) {
+                                                                try {
+                                                                        ois.close();
+                                                                } catch (IOException e) {
+                                                                        //noinspection ThrowFromFinallyBlock
+                                                                        throw new LtBug(e);
+                                                                }
+                                                        }
                                                 }
                                                 if (!(defi instanceof ClassDef) && !(defi instanceof InterfaceDef) && !(defi instanceof ObjectDef)
                                                         && !(defi instanceof FunDef) && !(defi instanceof AnnotationDef)) {
@@ -10968,20 +11033,22 @@ public class SemanticProcessor {
                                                 String pkg;
                                                 if (cls.getPackage() != null) {
                                                         pkg = cls.getPackage().getName();
-                                                } else {
+                                                } else if (cls.getName().contains(".")) {
                                                         pkg = cls.getName();
                                                         pkg = pkg.substring(pkg.lastIndexOf('.'));
+                                                } else {
+                                                        pkg = "";
                                                 }
                                                 if (defi instanceof ClassDef) {
-                                                        recordClass((ClassDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                        recordClass((ClassDef) defi, pkg, Collections.<STypeDef>emptyList(), true);
                                                 } else if (defi instanceof InterfaceDef) {
-                                                        recordInterface((InterfaceDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                        recordInterface((InterfaceDef) defi, pkg, Collections.<STypeDef>emptyList(), true);
                                                 } else if (defi instanceof ObjectDef) {
-                                                        recordObject((ObjectDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                        recordObject((ObjectDef) defi, pkg, Collections.<STypeDef>emptyList(), true);
                                                 } else if (defi instanceof FunDef) {
-                                                        recordFun((FunDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                        recordFun((FunDef) defi, pkg, Collections.<STypeDef>emptyList(), true);
                                                 } else /*if (defi instanceof AnnotationDef)*/ {
-                                                        recordAnnotation((AnnotationDef) defi, pkg, Collections.<STypeDef>emptyList());
+                                                        recordAnnotation((AnnotationDef) defi, pkg, Collections.<STypeDef>emptyList(), true);
                                                 }
                                         }
 
