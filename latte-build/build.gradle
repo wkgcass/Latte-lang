@@ -21,6 +21,7 @@ mainClassName = 'lt.repl.REPL'
 applicationName = 'latte'
 
 sourceCompatibility = 1.6
+targetCompatibility = 1.6
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 configurations {

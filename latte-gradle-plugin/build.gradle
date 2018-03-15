@@ -16,6 +16,11 @@ if ('deploy' == ACTION) {
 }
 apply plugin: LatteBuild
 
+compileJava {
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
+}
+
 compileGroovy {
     sourceCompatibility = 1.6
     targetCompatibility = 1.6
