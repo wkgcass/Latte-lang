@@ -62,7 +62,8 @@ import org.junit.runner.RunWith;
         TestDefineAnnotations.class,
         TestJsr223.class,
         TestDotPackage.class,
-        TestLambdaGen.class
+        TestLambdaGen.class,
+        TestGenericInREPL.class
 })
 public class Suite extends TestSuite {
 }

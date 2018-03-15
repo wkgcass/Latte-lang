@@ -47,7 +47,6 @@ import java.util.zip.ZipOutputStream;
  * finally creates a ThreadPool to run Code Generation and write files to disk (or store these byte code for loading)<br>
  * if requires loading, then load all these generated classes
  */
-@SuppressWarnings("unused")
 public class Compiler {
         private static final int availableProcessors = Runtime.getRuntime().availableProcessors();
 

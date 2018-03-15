@@ -52,6 +52,7 @@ import lt.runtime.*;
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
 import java.lang.reflect.*;
 import java.net.URL;
 import java.util.*;
@@ -463,11 +464,11 @@ public class SemanticProcessor {
 
                 step2(fileNameToPackageName);
                 step3();
-                // ensures that @ImplicitImports / @StaticImports / @GenericTemplate are loaded
-                getTypeWithName("lt.runtime.ImplicitImports", LineCol.SYNTHETIC);
-                getTypeWithName("lt.runtime.StaticImports", LineCol.SYNTHETIC);
-                getTypeWithName("lt.lang.GenericTemplate", LineCol.SYNTHETIC);
-                getTypeWithName("java.lang.annotation.Retention", LineCol.SYNTHETIC);
+                // ensures some annotations are loaded
+                getTypeWithName(ImplicitImports.class.getName(), LineCol.SYNTHETIC);
+                getTypeWithName(StaticImports.class.getName(), LineCol.SYNTHETIC);
+                getTypeWithName(GenericTemplate.class.getName(), LineCol.SYNTHETIC);
+                getTypeWithName(Retention.class.getName(), LineCol.SYNTHETIC);
                 step4();
                 addImportImplicit();
                 addImportStatic();
