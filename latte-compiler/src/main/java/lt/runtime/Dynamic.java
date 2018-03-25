@@ -684,7 +684,12 @@ public class Dynamic {
                                         type = ((Constructor) m).getParameterTypes()[i];
                                 }
                                 if (primitives[i] && type.isPrimitive()) {
-                                        step[i] = getNumberPrimitiveCastDepth(args[i].getClass(), type);
+                                        if (args[i] instanceof Number || args[i] instanceof Character) {
+                                                step[i] = getNumberPrimitiveCastDepth(args[i].getClass(), type);
+                                        } else {
+                                                // for non number type (bool)
+                                                step[i] = 0;
+                                        }
                                 } else if (primitives[i]) {
                                         // param is not primitive
                                         step[i] = PRIMITIVE_BOX_CAST_BASE; // first cast to box type

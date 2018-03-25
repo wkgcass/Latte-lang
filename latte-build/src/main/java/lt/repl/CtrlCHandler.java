@@ -4,7 +4,13 @@ package lt.repl;
  * handle ctrl-c (INT) event
  */
 public interface CtrlCHandler {
-        void handle();
+        interface ExitCallback {
+                void exit();
+        }
 
-        void onAlert(Runnable alert);
+        void setExitCallback(ExitCallback exitCallback);
+
+        void setAlert(Runnable alert);
+
+        void handle();
 }

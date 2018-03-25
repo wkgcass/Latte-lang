@@ -17,7 +17,7 @@ if ('deploy' == ACTION) {
 }
 apply plugin: LatteBuild
 
-mainClassName = 'lt.repl.REPL'
+mainClassName = 'lt.repl.Entry'
 applicationName = 'latte'
 
 sourceCompatibility = 1.6
@@ -105,7 +105,7 @@ if (null == ACTION) {
     jar {
         manifest {
             attributes("Manifest-Version": 1.0,
-                       "Main-Class": "lt.repl.REPL")
+                       "Main-Class": "lt.repl.Entry")
         }
         from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
         into('assets') {
@@ -123,14 +123,14 @@ if ('deploy' == ACTION) {
 dependencies {
     compile group: 'org.latte-lang', name: 'latte-compiler', version: VERSION
     compile group: 'org.latte-lang', name: 'latte-library', version: VERSION
-    provided group: 'jline', name: 'jline', version: '2.14.2'
+    provided group: 'jline', name: 'jline', version: '2.14.5'
 }
 
 class LatteBuild implements Plugin<Project> {
     @Override
     void apply(Project project) {
         def latteBuild = project.task('latteBuild')
-        latteBuild.dependsOn project.tasks['assemble']
+        latteBuild.dependsOn project.tasks['install']
 
         project.task('latteTest') // do nothing
 

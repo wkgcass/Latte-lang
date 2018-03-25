@@ -4262,4 +4262,26 @@ public class TestCodeGen {
                 assertEquals("X" + Consts.GENERIC_NAME_SPLIT + "int", p1.getName());
                 assertEquals("X" + Consts.GENERIC_NAME_SPLIT + "double", fmap.getReturnType().getName());
         }
+
+        @Test
+        public void testDynamicInvokeWithBool() throws Exception {
+                Class<?> cls = retrieveClass("" +
+                                "class TestDynamicInvokeWithBool\n" +
+                                "  def a(b:bool)=1\n" +
+                                "  def m(o) = o.a(true)"
+                        , "TestDynamicInvokeWithBool");
+                Object o = cls.newInstance();
+                Method m = cls.getMethod("m", Object.class);
+                // it used to cause an exception
+                /*
+                 * lt.compiler.LtBug: should not reach here, from: class java.lang.Boolean
+                 * at lt.runtime.Dynamic.getNumberPrimitiveCastDepth(Dynamic.java:662)
+                 * at lt.runtime.Dynamic.findBestMatch(Dynamic.java:687)
+                 * at lt.runtime.Dynamic.findMethod(Dynamic.java:214)
+                 * at lt.runtime.Dynamic.invoke(Dynamic.java:840)
+                 * at lt.runtime.Dynamic.invoke(Dynamic.java:1093)
+                 * at TestDynamicInvokeWithBool.m(test.lt:3)
+                 */
+                assertEquals(1, m.invoke(o, o));
+        }
 }
