@@ -1068,7 +1068,7 @@ public class CodeGenerator {
                                 info.push(CodeInfo.Size._2);
                         } else if (v.type().fullName().equals("java.lang.Long")) {
                                 methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                                        "java/lang/Long", "longValue", "()L", false);
+                                        "java/lang/Long", "longValue", "()J", false);
                                 info.push(CodeInfo.Size._2);
                         } else if (v.type().fullName().equals("java.lang.Float")) {
                                 methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
