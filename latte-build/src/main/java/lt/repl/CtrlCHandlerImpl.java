@@ -47,7 +47,7 @@ public class CtrlCHandlerImpl implements CtrlCHandler {
                                         }
                                         count = 0;
                                 }
-                        }).run();
+                        }).start();
                 }
         }
 }
